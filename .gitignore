@@ -1,0 +1,12 @@
+# Fotos sin optimizar (formato iPhone, no se ven en navegadores)
+*.HEIC
+*.heic
+
+# Carpeta de fotos originales / sin procesar (pesada, no va a GitHub)
+drive-download-*/
+originales/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+desktop.ini
