@@ -6,6 +6,9 @@
 drive-download-*/
 originales/
 
+# Material privado del negocio (catalogos, ventas, marca, ads) - SOLO local, NUNCA publico
+material/
+
 # Archivos del sistema
 .DS_Store
 Thumbs.db
