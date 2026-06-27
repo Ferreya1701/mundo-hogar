@@ -276,6 +276,25 @@ footer{background:var(--night);border-top:1px solid rgba(255,255,255,.08)}
 #mobile-menu.open{display:flex}
 #mobile-menu a{color:rgba(255,255,255,.65);font-size:14px;font-weight:500;padding:10px 12px;border-radius:3px;transition:all .15s}
 #mobile-menu a:hover{color:#fff;background:rgba(255,255,255,.04)}
+
+/* ── GALERÍA ── */
+#galeria{background:var(--bg)}
+.gallery-filter-btn{background:#fff;border:1px solid var(--border);color:var(--night);font-size:13px;font-weight:500;padding:8px 16px;border-radius:3px;cursor:pointer;transition:all .2s}
+.gallery-filter-btn:hover{border-color:var(--gold);color:var(--gold)}
+.gallery-filter-btn.active{background:var(--night);border-color:var(--night);color:#fff}
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.gallery-card{background:#fff;border:1px solid var(--border);border-radius:3px;overflow:hidden;transition:all .25s;display:flex;flex-direction:column}
+.gallery-card:hover{border-color:rgba(200,169,106,.4);box-shadow:0 12px 40px rgba(26,26,46,.15)}
+.gallery-card-img{width:100%;aspect-ratio:1;background:#f5f5f5;overflow:hidden}
+.gallery-card-img img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.gallery-card:hover .gallery-card-img img{transform:scale(1.05)}
+.gallery-card-body{padding:16px;flex:1;display:flex;flex-direction:column}
+.gallery-card-title{font-family:'Playfair Display',serif;color:var(--night);font-weight:600;font-size:0.95rem;line-height:1.3;margin-bottom:8px}
+.gallery-card-cat{font-size:11px;color:var(--gold);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.gallery-card-cta{margin-top:auto;display:inline-flex;align-items:center;gap:6px;color:var(--night);font-size:13px;font-weight:600;transition:color .2s}
+.gallery-card-cta:hover{color:var(--gold)}
+.gallery-card.hidden{display:none}
+@media(max-width:768px){.gallery-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}}
 </style>
 </head>
 <body>
@@ -627,6 +646,32 @@ footer{background:var(--night);border-top:1px solid rgba(255,255,255,.08)}
   </div>
 </section>
 
+<!-- GALERÍA DE PRODUCTOS -->
+<section id="galeria" class="section">
+  <div class="container">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:36px;flex-wrap:wrap">
+      <div>
+        <div class="section-eyebrow"><div class="section-eyebrow-line"></div><span class="section-eyebrow-text">Productos en stock</span></div>
+        <h2 class="section-h2" style="margin-top:16px">Nuestro catálogo<br><em>en fotos.</em></h2>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:32px">
+      <button class="gallery-filter-btn active" data-category="all">Todos</button>
+      <button class="gallery-filter-btn" data-category="electrodomesticos">Electrodomésticos</button>
+      <button class="gallery-filter-btn" data-category="herramientas">Herramientas</button>
+      <button class="gallery-filter-btn" data-category="tecnologia">Tecnología</button>
+      <button class="gallery-filter-btn" data-category="muebles">Muebles</button>
+      <button class="gallery-filter-btn" data-category="cuidado">Cuidado Personal</button>
+      <button class="gallery-filter-btn" data-category="salud">Salud</button>
+    </div>
+
+    <div class="gallery-grid" id="gallery-grid">
+      <!-- Cargado por JavaScript -->
+    </div>
+  </div>
+</section>
+
 <!-- CONTACTO -->
 <section id="contacto" class="section" style="background:#fff;border-top:1px solid var(--border)">
   <div class="container">
@@ -730,6 +775,88 @@ footer{background:var(--night);border-top:1px solid rgba(255,255,255,.08)}
 </a>
 
 <script>
+const CLOUDINARY_NAME='dsmqxp2ek';
+const products=[
+  {name:'Air Fryer Yelmo Lila',category:'electrodomesticos',img:'IMG_0289.jpg'},
+  {name:'Air Fryer Yelmo Verde Menta',category:'electrodomesticos',img:'IMG_0292.jpg'},
+  {name:'Cafetera Espresso Ultracomb',category:'electrodomesticos',img:'IMG_0283.jpg'},
+  {name:'Lavarropas + Secarropas Codini',category:'electrodomesticos',img:'IMG_0759.jpg'},
+  {name:'Microondas KANJI HOME',category:'electrodomesticos',img:'IMG_0595.jpg'},
+  {name:'Horno Yelmo con Hornallas',category:'electrodomesticos',img:'IMG_0974.jpg'},
+  {name:'Robot de Cocina Liliana',category:'electrodomesticos',img:'IMG_1026.jpg'},
+  {name:'Cocina Peabody 4 Hornallas',category:'electrodomesticos',img:'IMG_0031.jpg'},
+  {name:'Air Fryer Yelmo Verde',category:'electrodomesticos',img:'IMG_0292.jpg'},
+  {name:'Batidora Yelmo Celeste',category:'electrodomesticos',img:'IMG_0922.jpg'},
+  {name:'Taladro Bauen 20V',category:'herramientas',img:'IMG_0431.jpg'},
+  {name:'Hidrolavadora INGCO Batería',category:'herramientas',img:'IMG_0376.jpg'},
+  {name:'Amoladora Black+Decker',category:'herramientas',img:'IMG_0357.jpg'},
+  {name:'Inflador INGCO 20V',category:'herramientas',img:'IMG_0363.jpg'},
+  {name:'Sierra Caladora KANJI',category:'herramientas',img:'IMG_0178.jpg'},
+  {name:'Smart TV Enova 50"',category:'tecnologia',img:'IMG_1431.jpg'},
+  {name:'Auriculares TWS Inalámbricos',category:'tecnologia',img:'IMG_0127.jpg'},
+  {name:'Tablet con Funda Verde Lima',category:'tecnologia',img:'IMG_0618.jpg'},
+  {name:'Silla Gamer CL RGB',category:'muebles',img:'IMG_0523.jpg'},
+  {name:'Silla Masters Negra',category:'muebles',img:'IMG_0682.jpg'},
+  {name:'Sofá 2 Cuerpos Gris',category:'muebles',img:'IMG_0053.jpg'},
+  {name:'Colchón + Sommier Gris',category:'muebles',img:'IMG_0756.jpg'},
+  {name:'Kit Ultracomb Devotion',category:'cuidado',img:'IMG_0932.jpg'},
+  {name:'Plancha Yelmo Fucsia',category:'cuidado',img:'IMG_0967.jpg'},
+  {name:'Cepillo Secador Westinghouse',category:'cuidado',img:'IMG_0550.jpg'},
+  {name:'Secador Yelmo Violeta',category:'cuidado',img:'IMG_0314.jpg'},
+  {name:'Tensiómetro Ecopower',category:'salud',img:'IMG_0572.jpg'},
+  {name:'Nebulizador Ecopower',category:'salud',img:'IMG_0581.jpg'}
+];
+
+function initGallery(){
+  const grid=document.getElementById('gallery-grid');
+  renderProducts(products);
+
+  document.querySelectorAll('.gallery-filter-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      document.querySelectorAll('.gallery-filter-btn').forEach(b=>b.classList.remove('active'));
+      e.target.classList.add('active');
+      const cat=e.target.dataset.category;
+      filterProducts(cat);
+    });
+  });
+}
+
+function renderProducts(list){
+  const grid=document.getElementById('gallery-grid');
+  grid.innerHTML='';
+  list.forEach(p=>{
+    const url=`https://res.cloudinary.com/${CLOUDINARY_NAME}/image/upload/c_fill,w_400,q_85/${p.img}`;
+    const card=document.createElement('div');
+    card.className='gallery-card';
+    card.dataset.category=p.category;
+    card.innerHTML=`
+      <div class="gallery-card-img"><img src="${url}" alt="${p.name}" loading="lazy"></div>
+      <div class="gallery-card-body">
+        <div class="gallery-card-cat">${p.category}</div>
+        <h3 class="gallery-card-title">${p.name}</h3>
+        <a href="https://wa.me/5493426481326?text=Hola!%20Me%20interesa%20${encodeURIComponent(p.name)}%20%C2%BFTienen%20stock%20y%20precio%3F" target="_blank" class="gallery-card-cta">
+          Consultar precio →
+        </a>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function filterProducts(cat){
+  const cards=document.querySelectorAll('.gallery-card');
+  cards.forEach(card=>{
+    if(cat==='all' || card.dataset.category===cat){
+      card.classList.remove('hidden');
+    }else{
+      card.classList.add('hidden');
+    }
+  });
+}
+
+// Init cuando carga
+document.addEventListener('DOMContentLoaded',initGallery);
+
 function toggleMenu(){
   const m=document.getElementById('mobile-menu');
   m.classList.toggle('open');
