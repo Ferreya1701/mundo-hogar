@@ -1,0 +1,1245 @@
+﻿{
+    "version":  "2.0",
+    "estadisticas":  {
+                         "cuidado-personal":  10,
+                         "herramientas":  18,
+                         "tecnologia-celulares":  9,
+                         "electrodomesticos":  60,
+                         "seguridad":  2,
+                         "salud":  4,
+                         "muebles-hogar":  19
+                     },
+    "total":  122,
+    "categorias":  [
+                       "cuidado-personal",
+                       "electrodomesticos",
+                       "herramientas",
+                       "muebles-hogar",
+                       "salud",
+                       "seguridad",
+                       "tecnologia-celulares"
+                   ],
+    "productos":  [
+                      {
+                          "id":  "cuidado-personal-img_0065",
+                          "orden":  1,
+                          "nombre":  "Rulero/rizador rosa fucsia doble barril",
+                          "imagen":  "/images/productos/cuidado-personal/IMG_0065.jpg",
+                          "alt":  "Rulero/rizador rosa fucsia doble barril - Mundo Hogar",
+                          "categoria":  "cuidado-personal",
+                          "slug":  "img_0065",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "cuidado-personal-img_0314",
+                          "orden":  2,
+                          "nombre":  "Secador de pelo Yelmo lila Thermal Ion",
+                          "imagen":  "/images/productos/cuidado-personal/IMG_0314.jpg",
+                          "alt":  "Secador de pelo Yelmo lila Thermal Ion - Mundo Hogar",
+                          "categoria":  "cuidado-personal",
+                          "slug":  "img_0314",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "cuidado-personal-img_0316",
+                          "orden":  3,
+                          "nombre":  "Secador de pelo Yelmo negro/antracita",
+                          "imagen":  "/images/productos/cuidado-personal/IMG_0316.jpg",
+                          "alt":  "Secador de pelo Yelmo negro/antracita - Mundo Hogar",
+                          "categoria":  "cuidado-personal",
+                          "slug":  "img_0316",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "cuidado-personal-img_0550",
+                          "orden":  4,
+                          "nombre":  "Cepillo secador volumizador Westinghouse",
+                          "imagen":  "/images/productos/cuidado-personal/IMG_0550.jpg",
+                          "alt":  "Cepillo secador volumizador Westinghouse - Mundo Hogar",
+                          "categoria":  "cuidado-personal",
+                          "slug":  "img_0550",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "cuidado-personal-img_0624",
+                          "orden":  5,
+                          "nombre":  "Trimmer/recortadora de pelo dorado",
+                          "imagen":  "/images/productos/cuidado-personal/IMG_0624.jpg",
+                          "alt":  "Trimmer/recortadora de pelo dorado - Mundo Hogar",
+                          "categoria":  "cuidado-personal",
+                          "slug":  "img_0624",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "cuidado-personal-img_0629",
+                          "orden":  6,
+                          "nombre":  "Secador Westinghouse negro/dorado + plancha",
+                          "imagen":  "/images/productos/cuidado-personal/IMG_0629.jpg",
+                          "alt":  "Secador Westinghouse negro/dorado + plancha - Mundo Hogar",
+                          "categoria":  "cuidado-personal",
+                          "slug":  "img_0629",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "cuidado-personal-img_0640",
+                          "orden":  7,
+                          "nombre":  "Planchita de pelo KANJI HOME plateada",
+                          "imagen":  "/images/productos/cuidado-personal/IMG_0640.jpg",
+                          "alt":  "Planchita de pelo KANJI HOME plateada - Mundo Hogar",
+                          "categoria":  "cuidado-personal",
+                          "slug":  "img_0640",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "cuidado-personal-img_0923",
+                          "orden":  8,
+                          "nombre":  "Plancha onduladora/waver Yelmo gris/azul",
+                          "imagen":  "/images/productos/cuidado-personal/IMG_0923.jpg",
+                          "alt":  "Plancha onduladora/waver Yelmo gris/azul - Mundo Hogar",
+                          "categoria":  "cuidado-personal",
+                          "slug":  "img_0923",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "cuidado-personal-img_0932",
+                          "orden":  9,
+                          "nombre":  "Kit Ultracomb Devotion secador + plancha",
+                          "imagen":  "/images/productos/cuidado-personal/IMG_0932.jpg",
+                          "alt":  "Kit Ultracomb Devotion secador + plancha - Mundo Hogar",
+                          "categoria":  "cuidado-personal",
+                          "slug":  "img_0932",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "cuidado-personal-img_0967",
+                          "orden":  10,
+                          "nombre":  "Plancha de pelo Yelmo fucsia",
+                          "imagen":  "/images/productos/cuidado-personal/IMG_0967.jpg",
+                          "alt":  "Plancha de pelo Yelmo fucsia - Mundo Hogar",
+                          "categoria":  "cuidado-personal",
+                          "slug":  "img_0967",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-34735970_005_05app",
+                          "orden":  11,
+                          "nombre":  " 005 05app",
+                          "imagen":  "/images/productos/muebles-hogar/34735970_005_05app.jpg",
+                          "alt":  " 005 05app - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "34735970_005_05app",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-d20c2a9f-4788-44d7-a7bb-54018e918674",
+                          "orden":  12,
+                          "nombre":  "D20C2A9F-4788-44D7-A7BB-54018E918674",
+                          "imagen":  "/images/productos/muebles-hogar/D20C2A9F-4788-44D7-A7BB-54018E918674.jpg",
+                          "alt":  "D20C2A9F-4788-44D7-A7BB-54018E918674 - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "d20c2a9f-4788-44d7-a7bb-54018e918674",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-d6ab70f7-b61f-455b-a1a5-dbaa5d33ac92",
+                          "orden":  13,
+                          "nombre":  "D6AB70F7-B61F-455B-A1A5-DBAA5D33AC92",
+                          "imagen":  "/images/productos/muebles-hogar/D6AB70F7-B61F-455B-A1A5-DBAA5D33AC92.jpg",
+                          "alt":  "D6AB70F7-B61F-455B-A1A5-DBAA5D33AC92 - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "d6ab70f7-b61f-455b-a1a5-dbaa5d33ac92",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-img_0036",
+                          "orden":  14,
+                          "nombre":  "ColchÃ³n 1 plaza azul/celeste con sommier",
+                          "imagen":  "/images/productos/muebles-hogar/IMG_0036.jpg",
+                          "alt":  "ColchÃ³n 1 plaza azul/celeste con sommier - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "img_0036",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-img_0038",
+                          "orden":  15,
+                          "nombre":  "ColchÃ³n 1 plaza azul/celeste con sommier",
+                          "imagen":  "/images/productos/muebles-hogar/IMG_0038.jpg",
+                          "alt":  "ColchÃ³n 1 plaza azul/celeste con sommier - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "img_0038",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-img_0053",
+                          "orden":  16,
+                          "nombre":  "SofÃ¡ 2 cuerpos gris oscuro",
+                          "imagen":  "/images/productos/muebles-hogar/IMG_0053.jpg",
+                          "alt":  "SofÃ¡ 2 cuerpos gris oscuro - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "img_0053",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-img_0061",
+                          "orden":  17,
+                          "nombre":  "Termo Stanley verde menta con taza",
+                          "imagen":  "/images/productos/muebles-hogar/IMG_0061.jpg",
+                          "alt":  "Termo Stanley verde menta con taza - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "img_0061",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-img_0063",
+                          "orden":  18,
+                          "nombre":  "Termo acero inox con asa negra",
+                          "imagen":  "/images/productos/muebles-hogar/IMG_0063.jpg",
+                          "alt":  "Termo acero inox con asa negra - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "img_0063",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-img_0074(1)",
+                          "orden":  19,
+                          "nombre":  "IMG 0074(1)",
+                          "imagen":  "/images/productos/muebles-hogar/IMG_0074(1).JPG",
+                          "alt":  "IMG 0074(1) - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "img_0074(1)",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-img_0074",
+                          "orden":  20,
+                          "nombre":  "IMG 0074",
+                          "imagen":  "/images/productos/muebles-hogar/IMG_0074.JPG",
+                          "alt":  "IMG 0074 - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "img_0074",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-img_0076",
+                          "orden":  21,
+                          "nombre":  "Bicicleta AZR mountain bike negra/azul",
+                          "imagen":  "/images/productos/muebles-hogar/IMG_0076.jpg",
+                          "alt":  "Bicicleta AZR mountain bike negra/azul - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "img_0076",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-img_0089",
+                          "orden":  22,
+                          "nombre":  "Canilla extensible cromada tipo industrial",
+                          "imagen":  "/images/productos/muebles-hogar/IMG_0089.jpg",
+                          "alt":  "Canilla extensible cromada tipo industrial - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "img_0089",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-img_0395",
+                          "orden":  23,
+                          "nombre":  "Silla de jardÃ­n plÃ¡stico negra",
+                          "imagen":  "/images/productos/muebles-hogar/IMG_0395.jpg",
+                          "alt":  "Silla de jardÃ­n plÃ¡stico negra - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "img_0395",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-img_0507",
+                          "orden":  24,
+                          "nombre":  "Silla gamer CL negro/blanco",
+                          "imagen":  "/images/productos/muebles-hogar/IMG_0507.jpg",
+                          "alt":  "Silla gamer CL negro/blanco - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "img_0507",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-img_0523",
+                          "orden":  25,
+                          "nombre":  "Silla gamer CL negro con luces RGB",
+                          "imagen":  "/images/productos/muebles-hogar/IMG_0523.jpg",
+                          "alt":  "Silla gamer CL negro con luces RGB - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "img_0523",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-img_0554",
+                          "orden":  26,
+                          "nombre":  "Canilla monomando alta cromada",
+                          "imagen":  "/images/productos/muebles-hogar/IMG_0554.jpg",
+                          "alt":  "Canilla monomando alta cromada - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "img_0554",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-img_0682",
+                          "orden":  27,
+                          "nombre":  "Silla negra estilo Masters plÃ¡stico",
+                          "imagen":  "/images/productos/muebles-hogar/IMG_0682.jpg",
+                          "alt":  "Silla negra estilo Masters plÃ¡stico - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "img_0682",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-img_0756",
+                          "orden":  28,
+                          "nombre":  "ColchÃ³n + sommier gris/rojo/negro",
+                          "imagen":  "/images/productos/muebles-hogar/IMG_0756.jpg",
+                          "alt":  "ColchÃ³n + sommier gris/rojo/negro - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "img_0756",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "muebles-hogar-img_0778",
+                          "orden":  29,
+                          "nombre":  "ColchÃ³n + sommier marrÃ³n",
+                          "imagen":  "/images/productos/muebles-hogar/IMG_0778.jpg",
+                          "alt":  "ColchÃ³n + sommier marrÃ³n - Mundo Hogar",
+                          "categoria":  "muebles-hogar",
+                          "slug":  "img_0778",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "salud-e640e3fb-ad86-496c-930f-c7776e358907",
+                          "orden":  30,
+                          "nombre":  "E640E3FB-AD86-496C-930F-C7776E358907",
+                          "imagen":  "/images/productos/salud/E640E3FB-AD86-496C-930F-C7776E358907.jpg",
+                          "alt":  "E640E3FB-AD86-496C-930F-C7776E358907 - Mundo Hogar",
+                          "categoria":  "salud",
+                          "slug":  "e640e3fb-ad86-496c-930f-c7776e358907",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "salud-img_0572",
+                          "orden":  31,
+                          "nombre":  "TensiÃ³metro digital Ecopower",
+                          "imagen":  "/images/productos/salud/IMG_0572.jpg",
+                          "alt":  "TensiÃ³metro digital Ecopower - Mundo Hogar",
+                          "categoria":  "salud",
+                          "slug":  "img_0572",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "salud-img_0581",
+                          "orden":  32,
+                          "nombre":  "Nebulizador de pistÃ³n Ecopower",
+                          "imagen":  "/images/productos/salud/IMG_0581.jpg",
+                          "alt":  "Nebulizador de pistÃ³n Ecopower - Mundo Hogar",
+                          "categoria":  "salud",
+                          "slug":  "img_0581",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "salud-img_0609",
+                          "orden":  33,
+                          "nombre":  "Balanza personal digital vidrio KANJI",
+                          "imagen":  "/images/productos/salud/IMG_0609.jpg",
+                          "alt":  "Balanza personal digital vidrio KANJI - Mundo Hogar",
+                          "categoria":  "salud",
+                          "slug":  "img_0609",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "herramientas-384df2ee-688a-401f-8a67-b1dfaceff21f",
+                          "orden":  34,
+                          "nombre":  "DF2EE-688A-401F-8A67-B1DFACEFF21F",
+                          "imagen":  "/images/productos/herramientas/384DF2EE-688A-401F-8A67-B1DFACEFF21F.jpg",
+                          "alt":  "DF2EE-688A-401F-8A67-B1DFACEFF21F - Mundo Hogar",
+                          "categoria":  "herramientas",
+                          "slug":  "384df2ee-688a-401f-8a67-b1dfaceff21f",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "herramientas-78558b38-4ddf-4199-b7c0-a7a48a508cb7",
+                          "orden":  35,
+                          "nombre":  "B38-4DDF-4199-B7C0-A7A48A508CB7",
+                          "imagen":  "/images/productos/herramientas/78558B38-4DDF-4199-B7C0-A7A48A508CB7.jpg",
+                          "alt":  "B38-4DDF-4199-B7C0-A7A48A508CB7 - Mundo Hogar",
+                          "categoria":  "herramientas",
+                          "slug":  "78558b38-4ddf-4199-b7c0-a7a48a508cb7",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "herramientas-8e761b2d-6a07-4a6d-b46e-0180ee629098",
+                          "orden":  36,
+                          "nombre":  "E761B2D-6A07-4A6D-B46E-0180EE629098",
+                          "imagen":  "/images/productos/herramientas/8E761B2D-6A07-4A6D-B46E-0180EE629098.jpg",
+                          "alt":  "E761B2D-6A07-4A6D-B46E-0180EE629098 - Mundo Hogar",
+                          "categoria":  "herramientas",
+                          "slug":  "8e761b2d-6a07-4a6d-b46e-0180ee629098",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "herramientas-95ea78eb-4456-418c-8c45-4577847b008d",
+                          "orden":  37,
+                          "nombre":  "EA78EB-4456-418C-8C45-4577847B008D",
+                          "imagen":  "/images/productos/herramientas/95EA78EB-4456-418C-8C45-4577847B008D.jpg",
+                          "alt":  "EA78EB-4456-418C-8C45-4577847B008D - Mundo Hogar",
+                          "categoria":  "herramientas",
+                          "slug":  "95ea78eb-4456-418c-8c45-4577847b008d",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "herramientas-ae15c1ee-9816-4df3-bb59-28c7a1c92f1e",
+                          "orden":  38,
+                          "nombre":  "AE15C1EE-9816-4DF3-BB59-28C7A1C92F1E",
+                          "imagen":  "/images/productos/herramientas/AE15C1EE-9816-4DF3-BB59-28C7A1C92F1E.jpg",
+                          "alt":  "AE15C1EE-9816-4DF3-BB59-28C7A1C92F1E - Mundo Hogar",
+                          "categoria":  "herramientas",
+                          "slug":  "ae15c1ee-9816-4df3-bb59-28c7a1c92f1e",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "herramientas-atornilladora-21-01",
+                          "orden":  39,
+                          "nombre":  "atornilladora-21-01",
+                          "imagen":  "/images/productos/herramientas/atornilladora-21-01.jpg",
+                          "alt":  "atornilladora-21-01 - Mundo Hogar",
+                          "categoria":  "herramientas",
+                          "slug":  "atornilladora-21-01",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "herramientas-b36173e0-6d5a-4b99-a90f-441346e7e1ae",
+                          "orden":  40,
+                          "nombre":  "B36173E0-6D5A-4B99-A90F-441346E7E1AE",
+                          "imagen":  "/images/productos/herramientas/B36173E0-6D5A-4B99-A90F-441346E7E1AE.jpg",
+                          "alt":  "B36173E0-6D5A-4B99-A90F-441346E7E1AE - Mundo Hogar",
+                          "categoria":  "herramientas",
+                          "slug":  "b36173e0-6d5a-4b99-a90f-441346e7e1ae",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "herramientas-e741a135-0921-4191-90d1-a90ddaf07e36",
+                          "orden":  41,
+                          "nombre":  "E741A135-0921-4191-90D1-A90DDAF07E36",
+                          "imagen":  "/images/productos/herramientas/E741A135-0921-4191-90D1-A90DDAF07E36.jpg",
+                          "alt":  "E741A135-0921-4191-90D1-A90DDAF07E36 - Mundo Hogar",
+                          "categoria":  "herramientas",
+                          "slug":  "e741a135-0921-4191-90d1-a90ddaf07e36",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "herramientas-hpc0442",
+                          "orden":  42,
+                          "nombre":  "HPC0442",
+                          "imagen":  "/images/productos/herramientas/HPC0442.jpg",
+                          "alt":  "HPC0442 - Mundo Hogar",
+                          "categoria":  "herramientas",
+                          "slug":  "hpc0442",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "herramientas-img_0178",
+                          "orden":  43,
+                          "nombre":  "Sierra caladora KANJI TOOLS negra",
+                          "imagen":  "/images/productos/herramientas/IMG_0178.jpg",
+                          "alt":  "Sierra caladora KANJI TOOLS negra - Mundo Hogar",
+                          "categoria":  "herramientas",
+                          "slug":  "img_0178",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "herramientas-img_0357",
+                          "orden":  44,
+                          "nombre":  "Amoladora angular Black+Decker naranja/negro",
+                          "imagen":  "/images/productos/herramientas/IMG_0357.jpg",
+                          "alt":  "Amoladora angular Black+Decker naranja/negro - Mundo Hogar",
+                          "categoria":  "herramientas",
+                          "slug":  "img_0357",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "herramientas-img_0363",
+                          "orden":  45,
+                          "nombre":  "Inflador a baterÃ­a INGCO 20V con bolso",
+                          "imagen":  "/images/productos/herramientas/IMG_0363.jpg",
+                          "alt":  "Inflador a baterÃ­a INGCO 20V con bolso - Mundo Hogar",
+                          "categoria":  "herramientas",
+                          "slug":  "img_0363",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "herramientas-img_0371",
+                          "orden":  46,
+                          "nombre":  "Cutter/trincheta INGCO HKNS1806",
+                          "imagen":  "/images/productos/herramientas/IMG_0371.jpg",
+                          "alt":  "Cutter/trincheta INGCO HKNS1806 - Mundo Hogar",
+                          "categoria":  "herramientas",
+                          "slug":  "img_0371",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "herramientas-img_0372",
+                          "orden":  47,
+                          "nombre":  "Set 2 pinzas INGCO pinza diagonal",
+                          "imagen":  "/images/productos/herramientas/IMG_0372.jpg",
+                          "alt":  "Set 2 pinzas INGCO pinza diagonal - Mundo Hogar",
+                          "categoria":  "herramientas",
+                          "slug":  "img_0372",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "herramientas-img_0376",
+                          "orden":  48,
+                          "nombre":  "Hidrolavadora a baterÃ­a INGCO",
+                          "imagen":  "/images/productos/herramientas/IMG_0376.jpg",
+                          "alt":  "Hidrolavadora a baterÃ­a INGCO - Mundo Hogar",
+                          "categoria":  "herramientas",
+                          "slug":  "img_0376",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "herramientas-img_0431",
+                          "orden":  49,
+                          "nombre":  "Taladro/atornilladora Bauen 20V",
+                          "imagen":  "/images/productos/herramientas/IMG_0431.jpg",
+                          "alt":  "Taladro/atornilladora Bauen 20V - Mundo Hogar",
+                          "categoria":  "herramientas",
+                          "slug":  "img_0431",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "herramientas-pistola-de-calor-01",
+                          "orden":  50,
+                          "nombre":  "pistola-de-calor-01",
+                          "imagen":  "/images/productos/herramientas/pistola-de-calor-01.jpg",
+                          "alt":  "pistola-de-calor-01 - Mundo Hogar",
+                          "categoria":  "herramientas",
+                          "slug":  "pistola-de-calor-01",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "herramientas-rotomartillo-01",
+                          "orden":  51,
+                          "nombre":  "rotomartillo-01",
+                          "imagen":  "/images/productos/herramientas/rotomartillo-01.jpg",
+                          "alt":  "rotomartillo-01 - Mundo Hogar",
+                          "categoria":  "herramientas",
+                          "slug":  "rotomartillo-01",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "tecnologia-celulares-43033a6a-9636-4539-814a-bc391b025f34",
+                          "orden":  52,
+                          "nombre":  "A6A-9636-4539-814A-BC391B025F34",
+                          "imagen":  "/images/productos/tecnologia-celulares/43033A6A-9636-4539-814A-BC391B025F34.jpg",
+                          "alt":  "A6A-9636-4539-814A-BC391B025F34 - Mundo Hogar",
+                          "categoria":  "tecnologia-celulares",
+                          "slug":  "43033a6a-9636-4539-814a-bc391b025f34",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "tecnologia-celulares-8a0dec27-0250-431d-b3e5-3824f7986e70",
+                          "orden":  53,
+                          "nombre":  "A0DEC27-0250-431D-B3E5-3824F7986E70",
+                          "imagen":  "/images/productos/tecnologia-celulares/8A0DEC27-0250-431D-B3E5-3824F7986E70.jpg",
+                          "alt":  "A0DEC27-0250-431D-B3E5-3824F7986E70 - Mundo Hogar",
+                          "categoria":  "tecnologia-celulares",
+                          "slug":  "8a0dec27-0250-431d-b3e5-3824f7986e70",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "tecnologia-celulares-a4d7066f-1779-475c-8e48-0dcb0372035c",
+                          "orden":  54,
+                          "nombre":  "A4D7066F-1779-475C-8E48-0DCB0372035C",
+                          "imagen":  "/images/productos/tecnologia-celulares/A4D7066F-1779-475C-8E48-0DCB0372035C.jpg",
+                          "alt":  "A4D7066F-1779-475C-8E48-0DCB0372035C - Mundo Hogar",
+                          "categoria":  "tecnologia-celulares",
+                          "slug":  "a4d7066f-1779-475c-8e48-0dcb0372035c",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "tecnologia-celulares-d525e660-8c21-4d90-8575-d0114553e150",
+                          "orden":  55,
+                          "nombre":  "D525E660-8C21-4D90-8575-D0114553E150",
+                          "imagen":  "/images/productos/tecnologia-celulares/D525E660-8C21-4D90-8575-D0114553E150.jpg",
+                          "alt":  "D525E660-8C21-4D90-8575-D0114553E150 - Mundo Hogar",
+                          "categoria":  "tecnologia-celulares",
+                          "slug":  "d525e660-8c21-4d90-8575-d0114553e150",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "tecnologia-celulares-img_0127",
+                          "orden":  56,
+                          "nombre":  "Auriculares TWS inalÃ¡mbricos negros",
+                          "imagen":  "/images/productos/tecnologia-celulares/IMG_0127.jpg",
+                          "alt":  "Auriculares TWS inalÃ¡mbricos negros - Mundo Hogar",
+                          "categoria":  "tecnologia-celulares",
+                          "slug":  "img_0127",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "tecnologia-celulares-img_0429",
+                          "orden":  57,
+                          "nombre":  "Soporte TV para pared LED/LCD/PDP",
+                          "imagen":  "/images/productos/tecnologia-celulares/IMG_0429.jpg",
+                          "alt":  "Soporte TV para pared LED/LCD/PDP - Mundo Hogar",
+                          "categoria":  "tecnologia-celulares",
+                          "slug":  "img_0429",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "tecnologia-celulares-img_0618",
+                          "orden":  58,
+                          "nombre":  "Tablet con funda transparente verde lima",
+                          "imagen":  "/images/productos/tecnologia-celulares/IMG_0618.jpg",
+                          "alt":  "Tablet con funda transparente verde lima - Mundo Hogar",
+                          "categoria":  "tecnologia-celulares",
+                          "slug":  "img_0618",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "tecnologia-celulares-img_0619",
+                          "orden":  59,
+                          "nombre":  "Funda/case para tablet verde lima origami",
+                          "imagen":  "/images/productos/tecnologia-celulares/IMG_0619.jpg",
+                          "alt":  "Funda/case para tablet verde lima origami - Mundo Hogar",
+                          "categoria":  "tecnologia-celulares",
+                          "slug":  "img_0619",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "tecnologia-celulares-img_1431",
+                          "orden":  60,
+                          "nombre":  "Smart TV Enova Google TV 50\"",
+                          "imagen":  "/images/productos/tecnologia-celulares/IMG_1431.jpg",
+                          "alt":  "Smart TV Enova Google TV 50\" - Mundo Hogar",
+                          "categoria":  "tecnologia-celulares",
+                          "slug":  "img_1431",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-2333683e-52cc-47c3-aa50-483e7519104f",
+                          "orden":  61,
+                          "nombre":  "E-52CC-47C3-AA50-483E7519104F",
+                          "imagen":  "/images/productos/electrodomesticos/2333683E-52CC-47C3-AA50-483E7519104F.jpg",
+                          "alt":  "E-52CC-47C3-AA50-483E7519104F - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "2333683e-52cc-47c3-aa50-483e7519104f",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-3d218783-8f19-4d43-8b04-17b5cfcf68a4",
+                          "orden":  62,
+                          "nombre":  "D218783-8F19-4D43-8B04-17B5CFCF68A4",
+                          "imagen":  "/images/productos/electrodomesticos/3D218783-8F19-4D43-8B04-17B5CFCF68A4.jpg",
+                          "alt":  "D218783-8F19-4D43-8B04-17B5CFCF68A4 - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "3d218783-8f19-4d43-8b04-17b5cfcf68a4",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-602527a1-d779-4377-bbb3-78d7dd7f6007",
+                          "orden":  63,
+                          "nombre":  "A1-D779-4377-BBB3-78D7DD7F6007",
+                          "imagen":  "/images/productos/electrodomesticos/602527A1-D779-4377-BBB3-78D7DD7F6007.jpg",
+                          "alt":  "A1-D779-4377-BBB3-78D7DD7F6007 - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "602527a1-d779-4377-bbb3-78d7dd7f6007",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-7d7a06b5-a447-49f1-8110-2a551aeb3e64",
+                          "orden":  64,
+                          "nombre":  "D7A06B5-A447-49F1-8110-2A551AEB3E64",
+                          "imagen":  "/images/productos/electrodomesticos/7D7A06B5-A447-49F1-8110-2A551AEB3E64.jpg",
+                          "alt":  "D7A06B5-A447-49F1-8110-2A551AEB3E64 - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "7d7a06b5-a447-49f1-8110-2a551aeb3e64",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-7f7759a6-173d-4ac7-96e2-c00dfe9ecee7",
+                          "orden":  65,
+                          "nombre":  "F7759A6-173D-4AC7-96E2-C00DFE9ECEE7",
+                          "imagen":  "/images/productos/electrodomesticos/7F7759A6-173D-4AC7-96E2-C00DFE9ECEE7.jpg",
+                          "alt":  "F7759A6-173D-4AC7-96E2-C00DFE9ECEE7 - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "7f7759a6-173d-4ac7-96e2-c00dfe9ecee7",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0031",
+                          "orden":  66,
+                          "nombre":  "Cocina a gas PEABODY negra 4 hornallas",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0031.jpg",
+                          "alt":  "Cocina a gas PEABODY negra 4 hornallas - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0031",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0064",
+                          "orden":  67,
+                          "nombre":  "Cafetera de cÃ¡psulas KANJI HOME blanca/negra",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0064.jpg",
+                          "alt":  "Cafetera de cÃ¡psulas KANJI HOME blanca/negra - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0064",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0068",
+                          "orden":  68,
+                          "nombre":  "Balanza comercial Vestax Ecostar 40 kg",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0068.jpg",
+                          "alt":  "Balanza comercial Vestax Ecostar 40 kg - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0068",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0070",
+                          "orden":  69,
+                          "nombre":  "Urna/percoladora grande inox con canilla",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0070.jpg",
+                          "alt":  "Urna/percoladora grande inox con canilla - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0070",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0114",
+                          "orden":  70,
+                          "nombre":  "Freezer horizontal KANJI HOME blanco",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0114.jpg",
+                          "alt":  "Freezer horizontal KANJI HOME blanco - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0114",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0156",
+                          "orden":  71,
+                          "nombre":  "Air fryer doble canasta Westinghouse negro",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0156.jpg",
+                          "alt":  "Air fryer doble canasta Westinghouse negro - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0156",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0159",
+                          "orden":  72,
+                          "nombre":  "Air fryer doble canasta Westinghouse abierto",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0159.jpg",
+                          "alt":  "Air fryer doble canasta Westinghouse abierto - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0159",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0173",
+                          "orden":  73,
+                          "nombre":  "Batidora de pie con bowl KANJI HOME blanca",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0173.jpg",
+                          "alt":  "Batidora de pie con bowl KANJI HOME blanca - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0173",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0180",
+                          "orden":  74,
+                          "nombre":  "Air fryer KANJI HOME negro/inox",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0180.jpg",
+                          "alt":  "Air fryer KANJI HOME negro/inox - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0180",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0185",
+                          "orden":  75,
+                          "nombre":  "Sandwichera/grill 3-en-1 negra con placas",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0185.jpg",
+                          "alt":  "Sandwichera/grill 3-en-1 negra con placas - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0185",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0190",
+                          "orden":  76,
+                          "nombre":  "MÃ¡quina para pasta KANJI HOME roja",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0190.jpg",
+                          "alt":  "MÃ¡quina para pasta KANJI HOME roja - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0190",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0195",
+                          "orden":  77,
+                          "nombre":  "Pava elÃ©ctrica KANJI inox/negra",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0195.jpg",
+                          "alt":  "Pava elÃ©ctrica KANJI inox/negra - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0195",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0265",
+                          "orden":  78,
+                          "nombre":  "Espumador de leche Ultracomb EL-8501 inox",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0265.jpg",
+                          "alt":  "Espumador de leche Ultracomb EL-8501 inox - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0265",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0280",
+                          "orden":  79,
+                          "nombre":  "Aspiradora Yelmo gris/rosa multiciclÃ³nica",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0280.jpg",
+                          "alt":  "Aspiradora Yelmo gris/rosa multiciclÃ³nica - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0280",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0283",
+                          "orden":  80,
+                          "nombre":  "Cafetera espresso Ultracomb con pantalla tÃ¡ctil",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0283.jpg",
+                          "alt":  "Cafetera espresso Ultracomb con pantalla tÃ¡ctil - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0283",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0285",
+                          "orden":  81,
+                          "nombre":  "Anafe de inducciÃ³n Ultracomb negro 1 hornalla",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0285.jpg",
+                          "alt":  "Anafe de inducciÃ³n Ultracomb negro 1 hornalla - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0285",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0289",
+                          "orden":  82,
+                          "nombre":  "Air fryer Yelmo lila/violeta redondo",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0289.jpg",
+                          "alt":  "Air fryer Yelmo lila/violeta redondo - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0289",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0292",
+                          "orden":  83,
+                          "nombre":  "Air fryer Yelmo verde menta cuadrado",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0292.jpg",
+                          "alt":  "Air fryer Yelmo verde menta cuadrado - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0292",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0295",
+                          "orden":  84,
+                          "nombre":  "Air fryer Yelmo lila/violeta cuadrado",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0295.jpg",
+                          "alt":  "Air fryer Yelmo lila/violeta cuadrado - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0295",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0303",
+                          "orden":  85,
+                          "nombre":  "Cortadora de fiambre/embutidos Ultracomb inox",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0303.jpg",
+                          "alt":  "Cortadora de fiambre/embutidos Ultracomb inox - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0303",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0306",
+                          "orden":  86,
+                          "nombre":  "Procesadora/ralladora Ultracomb blanca/roja",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0306.jpg",
+                          "alt":  "Procesadora/ralladora Ultracomb blanca/roja - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0306",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0312",
+                          "orden":  87,
+                          "nombre":  "Yogurtera Ultracomb inox con 7 frasquitos",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0312.jpg",
+                          "alt":  "Yogurtera Ultracomb inox con 7 frasquitos - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0312",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0318",
+                          "orden":  88,
+                          "nombre":  "Anafe vitrocerÃ¡mica Ultracomb AN-E604 4 hornallas",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0318.jpg",
+                          "alt":  "Anafe vitrocerÃ¡mica Ultracomb AN-E604 4 hornallas - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0318",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0391",
+                          "orden":  89,
+                          "nombre":  "Mixer de mano Liliana EasyHome blanco/negro",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0391.jpg",
+                          "alt":  "Mixer de mano Liliana EasyHome blanco/negro - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0391",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0595",
+                          "orden":  90,
+                          "nombre":  "Microondas KANJI HOME blanco/negro cerrado",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0595.jpg",
+                          "alt":  "Microondas KANJI HOME blanco/negro cerrado - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0595",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0596",
+                          "orden":  91,
+                          "nombre":  "Microondas KANJI HOME blanco/negro abierto",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0596.jpg",
+                          "alt":  "Microondas KANJI HOME blanco/negro abierto - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0596",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0599",
+                          "orden":  92,
+                          "nombre":  "Plancha a vapor KANJI HOME verde/azul oscuro",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0599.jpg",
+                          "alt":  "Plancha a vapor KANJI HOME verde/azul oscuro - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0599",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0604",
+                          "orden":  93,
+                          "nombre":  "Set de ollas marmoladas negras + sartÃ©n",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0604.jpg",
+                          "alt":  "Set de ollas marmoladas negras + sartÃ©n - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0604",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0606",
+                          "orden":  94,
+                          "nombre":  "Set de ollas crema con asas/tapa madera",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0606.jpg",
+                          "alt":  "Set de ollas crema con asas/tapa madera - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0606",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0754",
+                          "orden":  95,
+                          "nombre":  "Secarropas centrÃ­fuga Codini 6,5 kg blanca",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0754.jpg",
+                          "alt":  "Secarropas centrÃ­fuga Codini 6,5 kg blanca - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0754",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0759",
+                          "orden":  96,
+                          "nombre":  "Secarropas + lavarropas Codini dÃºo blanco",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0759.jpg",
+                          "alt":  "Secarropas + lavarropas Codini dÃºo blanco - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0759",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0765",
+                          "orden":  97,
+                          "nombre":  "Lavarropas carga superior Codini blanco",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0765.jpg",
+                          "alt":  "Lavarropas carga superior Codini blanco - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0765",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0817",
+                          "orden":  98,
+                          "nombre":  "Anafe vitrocerÃ¡mica Ultracomb AN-E604",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0817.jpg",
+                          "alt":  "Anafe vitrocerÃ¡mica Ultracomb AN-E604 - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0817",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0909",
+                          "orden":  99,
+                          "nombre":  "Calefactor elÃ©ctrico cerÃ¡mico/cuarzo negro",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0909.jpg",
+                          "alt":  "Calefactor elÃ©ctrico cerÃ¡mico/cuarzo negro - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0909",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0922",
+                          "orden":  100,
+                          "nombre":  "Batidora de mano Yelmo celeste/turquesa",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0922.jpg",
+                          "alt":  "Batidora de mano Yelmo celeste/turquesa - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0922",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0941",
+                          "orden":  101,
+                          "nombre":  "Air fryer Yelmo violeta con ventana negra",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0941.jpg",
+                          "alt":  "Air fryer Yelmo violeta con ventana negra - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0941",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0942",
+                          "orden":  102,
+                          "nombre":  "Licuadora de vidrio Yelmo rosa/salmÃ³n",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0942.jpg",
+                          "alt":  "Licuadora de vidrio Yelmo rosa/salmÃ³n - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0942",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0946",
+                          "orden":  103,
+                          "nombre":  "Pava elÃ©ctrica Ultracomb inox 1,7 L",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0946.jpg",
+                          "alt":  "Pava elÃ©ctrica Ultracomb inox 1,7 L - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0946",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0951",
+                          "orden":  104,
+                          "nombre":  "Panificadora Ultracomb celeste abierta",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0951.jpg",
+                          "alt":  "Panificadora Ultracomb celeste abierta - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0951",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0954",
+                          "orden":  105,
+                          "nombre":  "Juguera/extractor de jugos Ultracomb inox",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0954.jpg",
+                          "alt":  "Juguera/extractor de jugos Ultracomb inox - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0954",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0958",
+                          "orden":  106,
+                          "nombre":  "Molinillo de cafÃ©/especias Ultracomb inox",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0958.jpg",
+                          "alt":  "Molinillo de cafÃ©/especias Ultracomb inox - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0958",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0959",
+                          "orden":  107,
+                          "nombre":  "Mini picadora/procesadora Ultracomb naranja",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0959.jpg",
+                          "alt":  "Mini picadora/procesadora Ultracomb naranja - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0959",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0962",
+                          "orden":  108,
+                          "nombre":  "Tostadora Ultracomb roja 2 ranuras",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0962.jpg",
+                          "alt":  "Tostadora Ultracomb roja 2 ranuras - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0962",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0974",
+                          "orden":  109,
+                          "nombre":  "Horno elÃ©ctrico Yelmo YL-45AN negro",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0974.jpg",
+                          "alt":  "Horno elÃ©ctrico Yelmo YL-45AN negro - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0974",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_0975",
+                          "orden":  110,
+                          "nombre":  "Horno elÃ©ctrico Yelmo YL-45AN gris",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_0975.jpg",
+                          "alt":  "Horno elÃ©ctrico Yelmo YL-45AN gris - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_0975",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_1023",
+                          "orden":  111,
+                          "nombre":  "Cafetera de filtro whiterblack negra",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_1023.jpg",
+                          "alt":  "Cafetera de filtro whiterblack negra - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_1023",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_1026",
+                          "orden":  112,
+                          "nombre":  "Robot de cocina Liliana con licuadora",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_1026.jpg",
+                          "alt":  "Robot de cocina Liliana con licuadora - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_1026",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_1036",
+                          "orden":  113,
+                          "nombre":  "Wafflera corazÃ³n negra",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_1036.jpg",
+                          "alt":  "Wafflera corazÃ³n negra - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_1036",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_1043",
+                          "orden":  114,
+                          "nombre":  "Grill elÃ©ctrico redondo Liliana dorado",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_1043.jpg",
+                          "alt":  "Grill elÃ©ctrico redondo Liliana dorado - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_1043",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_1046",
+                          "orden":  115,
+                          "nombre":  "Pava elÃ©ctrica Liliana inox",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_1046.jpg",
+                          "alt":  "Pava elÃ©ctrica Liliana inox - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_1046",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_1051",
+                          "orden":  116,
+                          "nombre":  "Panificadora Liliana Breadly blanca",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_1051.jpg",
+                          "alt":  "Panificadora Liliana Breadly blanca - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_1051",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_1053",
+                          "orden":  117,
+                          "nombre":  "Panificadora Liliana Breadly blanca abierta",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_1053.jpg",
+                          "alt":  "Panificadora Liliana Breadly blanca abierta - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_1053",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_1439",
+                          "orden":  118,
+                          "nombre":  "Vitrinas refrigeradas Pioneer Home",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_1439.jpg",
+                          "alt":  "Vitrinas refrigeradas Pioneer Home - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_1439",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-img_1440",
+                          "orden":  119,
+                          "nombre":  "Heladera Pioneer Home 2 puertas inox",
+                          "imagen":  "/images/productos/electrodomesticos/IMG_1440.jpg",
+                          "alt":  "Heladera Pioneer Home 2 puertas inox - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "img_1440",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "electrodomesticos-pochoclera-electrica",
+                          "orden":  120,
+                          "nombre":  "pochoclera-electrica",
+                          "imagen":  "/images/productos/electrodomesticos/pochoclera-electrica.jpg",
+                          "alt":  "pochoclera-electrica - Mundo Hogar",
+                          "categoria":  "electrodomesticos",
+                          "slug":  "pochoclera-electrica",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "seguridad-cerradura-01",
+                          "orden":  121,
+                          "nombre":  "cerradura-01",
+                          "imagen":  "/images/productos/seguridad/cerradura-01.jpg",
+                          "alt":  "cerradura-01 - Mundo Hogar",
+                          "categoria":  "seguridad",
+                          "slug":  "cerradura-01",
+                          "activo":  true
+                      },
+                      {
+                          "id":  "seguridad-cerradura-02",
+                          "orden":  122,
+                          "nombre":  "cerradura-02",
+                          "imagen":  "/images/productos/seguridad/cerradura-02.jpg",
+                          "alt":  "cerradura-02 - Mundo Hogar",
+                          "categoria":  "seguridad",
+                          "slug":  "cerradura-02",
+                          "activo":  true
+                      }
+                  ],
+    "generado":  "2026-06-27 02:40:41"
+}

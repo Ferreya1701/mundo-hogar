@@ -775,8 +775,27 @@ footer{background:var(--night);border-top:1px solid rgba(255,255,255,.08)}
 </a>
 
 <script>
-const CLOUDINARY_NAME='dsmqxp2ek';
-const products=[
+// Cargar catálogo desde JSON
+let products = [];
+
+fetch('/src/data/productos.json')
+  .then(response => response.json())
+  .then(data => {
+    products = data.productos.map(p => ({
+      name: p.nombre,
+      category: p.categoria,
+      img: p.imagen.split('/').pop(),
+      id: p.id,
+      alt: p.alt
+    }));
+
+    // Inicializar galería cuando carguen los datos
+    initGallery();
+  })
+  .catch(error => {
+    console.warn('No se pudo cargar el catálogo JSON, usando datos locales:', error);
+    // Fallback a datos locales si falla el JSON
+    products=[
   {name:'Cocina Peabody 4 hornallas',category:'electrodomesticos',img:'IMG_0031.jpg'},
   {name:'Cafetera cápsulas KANJI HOME',category:'electrodomesticos',img:'IMG_0064.jpg'},
   {name:'Balanza comercial Vestax 40kg',category:'electrodomesticos',img:'IMG_0068.jpg'},
@@ -851,12 +870,15 @@ function renderProducts(list){
   const grid=document.getElementById('gallery-grid');
   grid.innerHTML='';
   list.forEach(p=>{
-    const url=`https://res.cloudinary.com/${CLOUDINARY_NAME}/image/upload/c_fill,w_400,q_85/${p.img}`;
+    // Usar imagen local si está disponible, si no usar Cloudinary
+    const imageUrl = p.img.startsWith('/')
+      ? p.img
+      : `/images/productos/${p.category}/${p.img}`;
     const card=document.createElement('div');
     card.className='gallery-card';
     card.dataset.category=p.category;
     card.innerHTML=`
-      <div class="gallery-card-img"><img src="${url}" alt="${p.name}" loading="lazy"></div>
+      <div class="gallery-card-img"><img src="${imageUrl}" alt="${p.name}" loading="lazy"></div>
       <div class="gallery-card-body">
         <div class="gallery-card-cat">${p.category}</div>
         <h3 class="gallery-card-title">${p.name}</h3>
