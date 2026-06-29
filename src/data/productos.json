@@ -1,5 +1,5 @@
 {
-  "version": "2.1",
+  "version": "2.2",
   "estadisticas": {
     "cuidado-personal": 10,
     "muebles-hogar": 22,
@@ -26,6 +26,7 @@
       "nombre": "Rulero/rizador rosa fucsia doble barril",
       "imagen": "/images/productos/cuidado-personal/IMG_0065.jpg",
       "alt": "Rulero/rizador rosa fucsia doble barril - Mundo Hogar",
+      "descripcion": "Rizador de pelo doble barril en rosa fucsia. Crea ondas y rulos parejos de forma rápida y sencilla.",
       "categoria": "cuidado-personal",
       "slug": "img_0065",
       "activo": true
@@ -36,6 +37,7 @@
       "nombre": "Secador de pelo Yelmo lila Thermal Ion",
       "imagen": "/images/productos/cuidado-personal/IMG_0314.jpg",
       "alt": "Secador de pelo Yelmo lila Thermal Ion - Mundo Hogar",
+      "descripcion": "Secador de pelo Yelmo Thermal Ion en lila. Tecnología iónica para un secado más rápido y con menos frizz.",
       "categoria": "cuidado-personal",
       "slug": "img_0314",
       "activo": true
@@ -46,6 +48,7 @@
       "nombre": "Secador de pelo Yelmo negro/antracita",
       "imagen": "/images/productos/cuidado-personal/IMG_0316.jpg",
       "alt": "Secador de pelo Yelmo negro/antracita - Mundo Hogar",
+      "descripcion": "Secador de pelo Yelmo en negro antracita. Potencia y varias temperaturas para un peinado profesional en casa.",
       "categoria": "cuidado-personal",
       "slug": "img_0316",
       "activo": true
@@ -56,6 +59,7 @@
       "nombre": "Cepillo secador volumizador Westinghouse",
       "imagen": "/images/productos/cuidado-personal/IMG_0550.jpg",
       "alt": "Cepillo secador volumizador Westinghouse - Mundo Hogar",
+      "descripcion": "Cepillo secador y volumizador Westinghouse. Seca y da volumen al mismo tiempo, en un solo paso.",
       "categoria": "cuidado-personal",
       "slug": "img_0550",
       "activo": true
@@ -66,6 +70,7 @@
       "nombre": "Trimmer/recortadora de pelo dorado",
       "imagen": "/images/productos/cuidado-personal/IMG_0624.jpg",
       "alt": "Trimmer/recortadora de pelo dorado - Mundo Hogar",
+      "descripcion": "Recortadora/trimmer de pelo en acabado dorado. Ideal para barba, patillas y contornos prolijos.",
       "categoria": "cuidado-personal",
       "slug": "img_0624",
       "activo": true
@@ -76,6 +81,7 @@
       "nombre": "Secador Westinghouse negro/dorado + plancha",
       "imagen": "/images/productos/cuidado-personal/IMG_0629.jpg",
       "alt": "Secador Westinghouse negro/dorado + plancha - Mundo Hogar",
+      "descripcion": "Set Westinghouse en negro y dorado: secador de pelo más planchita. Todo para tu peinado en un combo.",
       "categoria": "cuidado-personal",
       "slug": "img_0629",
       "activo": true
@@ -86,6 +92,7 @@
       "nombre": "Planchita de pelo KANJI HOME plateada",
       "imagen": "/images/productos/cuidado-personal/IMG_0640.jpg",
       "alt": "Planchita de pelo KANJI HOME plateada - Mundo Hogar",
+      "descripcion": "Planchita de pelo Kanji Home en plateado. Placas que alisan de forma pareja y cuidan el cabello.",
       "categoria": "cuidado-personal",
       "slug": "img_0640",
       "activo": true
@@ -96,6 +103,7 @@
       "nombre": "Plancha onduladora/waver Yelmo gris/azul",
       "imagen": "/images/productos/cuidado-personal/IMG_0923.jpg",
       "alt": "Plancha onduladora/waver Yelmo gris/azul - Mundo Hogar",
+      "descripcion": "Onduladora/waver Yelmo en gris y azul. Conseguí ondas marcadas y con estilo en pocos minutos.",
       "categoria": "cuidado-personal",
       "slug": "img_0923",
       "activo": true
@@ -106,6 +114,7 @@
       "nombre": "Kit Ultracomb Devotion secador + plancha",
       "imagen": "/images/productos/cuidado-personal/IMG_0932.jpg",
       "alt": "Kit Ultracomb Devotion secador + plancha - Mundo Hogar",
+      "descripcion": "Kit Ultracomb Devotion: secador de pelo más planchita. El combo completo para peinarte como en la peluquería.",
       "categoria": "cuidado-personal",
       "slug": "img_0932",
       "activo": true
@@ -116,6 +125,7 @@
       "nombre": "Plancha de pelo Yelmo fucsia",
       "imagen": "/images/productos/cuidado-personal/IMG_0967.jpg",
       "alt": "Plancha de pelo Yelmo fucsia - Mundo Hogar",
+      "descripcion": "Planchita de pelo Yelmo en fucsia. Calienta rápido y alisa con un acabado suave y brillante.",
       "categoria": "cuidado-personal",
       "slug": "img_0967",
       "activo": true
@@ -126,6 +136,7 @@
       "nombre": "Tocador / mesa de maquillaje con espejo rebatible",
       "imagen": "/images/productos/muebles-hogar/34735970_005_05app.jpg",
       "alt": "Tocador / mesa de maquillaje con espejo rebatible - Mundo Hogar",
+      "descripcion": "Tocador con espejo rebatible y espacio de guardado. Tu rincón ideal para maquillarte y organizar accesorios.",
       "categoria": "muebles-hogar",
       "slug": "34735970_005_05app",
       "activo": true
@@ -136,6 +147,7 @@
       "nombre": "Monocomando de cocina extensible cromado",
       "imagen": "/images/productos/muebles-hogar/D20C2A9F-4788-44D7-A7BB-54018E918674.jpg",
       "alt": "Monocomando de cocina extensible cromado - Mundo Hogar",
+      "descripcion": "Grifería monocomando para cocina con caño extensible y acabado cromado. Práctica, moderna y resistente.",
       "categoria": "muebles-hogar",
       "slug": "d20c2a9f-4788-44d7-a7bb-54018e918674",
       "activo": true
@@ -146,6 +158,7 @@
       "nombre": "Colchón Deseo Mistyc + sommier",
       "imagen": "/images/productos/muebles-hogar/D6AB70F7-B61F-455B-A1A5-DBAA5D33AC92.jpg",
       "alt": "Colchón Deseo Mistyc + sommier - Mundo Hogar",
+      "descripcion": "Colchón Deseo Mistyc con sommier. Descanso firme y confortable para tu habitación.",
       "categoria": "muebles-hogar",
       "slug": "d6ab70f7-b61f-455b-a1a5-dbaa5d33ac92",
       "activo": true
@@ -156,6 +169,7 @@
       "nombre": "Colchón 1 plaza azul/celeste con sommier",
       "imagen": "/images/productos/muebles-hogar/IMG_0036.jpg",
       "alt": "Colchón 1 plaza azul/celeste con sommier - Mundo Hogar",
+      "descripcion": "Colchón de 1 plaza con sommier en tonos azul y celeste. Ideal para cuartos juveniles o de invitados.",
       "categoria": "muebles-hogar",
       "slug": "img_0036",
       "activo": true
@@ -166,9 +180,10 @@
       "nombre": "Colchón 1 plaza azul/celeste con sommier",
       "imagen": "/images/productos/muebles-hogar/IMG_0038.jpg",
       "alt": "Colchón 1 plaza azul/celeste con sommier - Mundo Hogar",
+      "descripcion": "Conjunto de colchón y sommier de 1 plaza en azul y celeste. Confort y soporte para un buen descanso.",
       "categoria": "muebles-hogar",
       "slug": "img_0038",
-      "activo": true
+      "activo": false
     },
     {
       "id": "muebles-hogar-img_0053",
@@ -176,6 +191,7 @@
       "nombre": "Sofá 2 cuerpos gris oscuro",
       "imagen": "/images/productos/muebles-hogar/IMG_0053.jpg",
       "alt": "Sofá 2 cuerpos gris oscuro - Mundo Hogar",
+      "descripcion": "Sofá de 2 cuerpos en gris oscuro. Comodidad y diseño moderno para tu living.",
       "categoria": "muebles-hogar",
       "slug": "img_0053",
       "activo": true
@@ -186,6 +202,7 @@
       "nombre": "Termo Stanley verde menta con taza",
       "imagen": "/images/productos/muebles-hogar/IMG_0061.jpg",
       "alt": "Termo Stanley verde menta con taza - Mundo Hogar",
+      "descripcion": "Termo Stanley en verde menta con taza. Mantiene la temperatura por horas, ideal para el mate o el café.",
       "categoria": "muebles-hogar",
       "slug": "img_0061",
       "activo": true
@@ -196,6 +213,7 @@
       "nombre": "Termo acero inox con asa negra",
       "imagen": "/images/productos/muebles-hogar/IMG_0063.jpg",
       "alt": "Termo acero inox con asa negra - Mundo Hogar",
+      "descripcion": "Termo de acero inoxidable con asa negra. Resistente y con excelente conservación de temperatura.",
       "categoria": "muebles-hogar",
       "slug": "img_0063",
       "activo": true
@@ -203,12 +221,13 @@
     {
       "id": "muebles-hogar-img_0074(1)",
       "orden": 19,
-      "nombre": "Ropero placard melamina blanco 3 puertas (duplicado)",
+      "nombre": "Ropero placard de melamina blanco 3 puertas",
       "imagen": "/images/productos/muebles-hogar/IMG_0074(1).jpg",
-      "alt": "Ropero placard melamina blanco 3 puertas - Mundo Hogar",
+      "alt": "Ropero placard de melamina blanco 3 puertas - Mundo Hogar",
+      "descripcion": "Ropero placard de melamina blanco de 3 puertas, con amplio espacio de guardado.",
       "categoria": "muebles-hogar",
       "slug": "img_0074(1)",
-      "activo": true
+      "activo": false
     },
     {
       "id": "muebles-hogar-img_0074",
@@ -216,6 +235,7 @@
       "nombre": "Ropero placard de melamina blanco 3 puertas",
       "imagen": "/images/productos/muebles-hogar/IMG_0074.jpg",
       "alt": "Ropero placard de melamina blanco 3 puertas - Mundo Hogar",
+      "descripcion": "Ropero placard de melamina blanco de 3 puertas. Mucho espacio de guardado con un diseño limpio y prolijo.",
       "categoria": "muebles-hogar",
       "slug": "img_0074",
       "activo": true
@@ -226,6 +246,7 @@
       "nombre": "Bicicleta AZR mountain bike negra/azul",
       "imagen": "/images/productos/muebles-hogar/IMG_0076.jpg",
       "alt": "Bicicleta AZR mountain bike negra/azul - Mundo Hogar",
+      "descripcion": "Bicicleta mountain bike AZR en negro y azul. Lista para la ciudad o los caminos de tierra.",
       "categoria": "muebles-hogar",
       "slug": "img_0076",
       "activo": true
@@ -236,6 +257,7 @@
       "nombre": "Canilla extensible cromada tipo industrial",
       "imagen": "/images/productos/muebles-hogar/IMG_0089.jpg",
       "alt": "Canilla extensible cromada tipo industrial - Mundo Hogar",
+      "descripcion": "Canilla de cocina extensible estilo industrial con acabado cromado. Diseño moderno y muy funcional.",
       "categoria": "muebles-hogar",
       "slug": "img_0089",
       "activo": true
@@ -246,6 +268,7 @@
       "nombre": "Silla de jardín plástico negra",
       "imagen": "/images/productos/muebles-hogar/IMG_0395.jpg",
       "alt": "Silla de jardín plástico negra - Mundo Hogar",
+      "descripcion": "Silla de jardín de plástico resistente en negro. Liviana, apilable y fácil de limpiar.",
       "categoria": "muebles-hogar",
       "slug": "img_0395",
       "activo": true
@@ -256,6 +279,7 @@
       "nombre": "Silla gamer CL negro/blanco",
       "imagen": "/images/productos/muebles-hogar/IMG_0507.jpg",
       "alt": "Silla gamer CL negro/blanco - Mundo Hogar",
+      "descripcion": "Silla gamer CL en negro y blanco. Respaldo ergonómico y reclinable para largas sesiones de juego o trabajo.",
       "categoria": "muebles-hogar",
       "slug": "img_0507",
       "activo": true
@@ -266,6 +290,7 @@
       "nombre": "Silla gamer CL negro con luces RGB",
       "imagen": "/images/productos/muebles-hogar/IMG_0523.jpg",
       "alt": "Silla gamer CL negro con luces RGB - Mundo Hogar",
+      "descripcion": "Silla gamer CL en negro con luces RGB. Comodidad ergonómica y estilo gamer para tu setup.",
       "categoria": "muebles-hogar",
       "slug": "img_0523",
       "activo": true
@@ -276,6 +301,7 @@
       "nombre": "Canilla monomando alta cromada",
       "imagen": "/images/productos/muebles-hogar/IMG_0554.jpg",
       "alt": "Canilla monomando alta cromada - Mundo Hogar",
+      "descripcion": "Canilla monomando alta con acabado cromado. Ideal para piletas amplias, con diseño elegante.",
       "categoria": "muebles-hogar",
       "slug": "img_0554",
       "activo": true
@@ -286,6 +312,7 @@
       "nombre": "Silla negra estilo Masters plástico",
       "imagen": "/images/productos/muebles-hogar/IMG_0682.jpg",
       "alt": "Silla negra estilo Masters plástico - Mundo Hogar",
+      "descripcion": "Silla estilo Masters en plástico negro. Diseño moderno y versátil para comedor o escritorio.",
       "categoria": "muebles-hogar",
       "slug": "img_0682",
       "activo": true
@@ -296,6 +323,7 @@
       "nombre": "Colchón + sommier gris/rojo/negro",
       "imagen": "/images/productos/muebles-hogar/IMG_0756.jpg",
       "alt": "Colchón + sommier gris/rojo/negro - Mundo Hogar",
+      "descripcion": "Conjunto de colchón y sommier en gris, rojo y negro. Soporte firme para un descanso reparador.",
       "categoria": "muebles-hogar",
       "slug": "img_0756",
       "activo": true
@@ -306,6 +334,7 @@
       "nombre": "Colchón + sommier marrón",
       "imagen": "/images/productos/muebles-hogar/IMG_0778.jpg",
       "alt": "Colchón + sommier marrón - Mundo Hogar",
+      "descripcion": "Conjunto de colchón y sommier en tono marrón. Confort y prolijidad para tu dormitorio.",
       "categoria": "muebles-hogar",
       "slug": "img_0778",
       "activo": true
@@ -316,6 +345,7 @@
       "nombre": "Medidor de presión / tensiómetro Ecopower",
       "imagen": "/images/productos/salud/E640E3FB-AD86-496C-930F-C7776E358907.jpg",
       "alt": "Medidor de presión / tensiómetro Ecopower - Mundo Hogar",
+      "descripcion": "Tensiómetro Ecopower para medir la presión arterial en casa de forma simple y precisa.",
       "categoria": "salud",
       "slug": "e640e3fb-ad86-496c-930f-c7776e358907",
       "activo": true
@@ -326,6 +356,7 @@
       "nombre": "Tensiómetro digital Ecopower",
       "imagen": "/images/productos/salud/IMG_0572.jpg",
       "alt": "Tensiómetro digital Ecopower - Mundo Hogar",
+      "descripcion": "Tensiómetro digital Ecopower con pantalla de fácil lectura. Controlá tu presión cómodamente en casa.",
       "categoria": "salud",
       "slug": "img_0572",
       "activo": true
@@ -336,6 +367,7 @@
       "nombre": "Nebulizador de pistón Ecopower",
       "imagen": "/images/productos/salud/IMG_0581.jpg",
       "alt": "Nebulizador de pistón Ecopower - Mundo Hogar",
+      "descripcion": "Nebulizador de pistón Ecopower. Eficaz y confiable para tratamientos respiratorios de toda la familia.",
       "categoria": "salud",
       "slug": "img_0581",
       "activo": true
@@ -346,6 +378,7 @@
       "nombre": "Balanza personal digital vidrio KANJI",
       "imagen": "/images/productos/salud/IMG_0609.jpg",
       "alt": "Balanza personal digital vidrio KANJI - Mundo Hogar",
+      "descripcion": "Balanza personal digital Kanji con plataforma de vidrio templado. Pesaje preciso y diseño moderno.",
       "categoria": "salud",
       "slug": "img_0609",
       "activo": true
@@ -356,6 +389,7 @@
       "nombre": "Soldadora inverter NOVA 220V",
       "imagen": "/images/productos/herramientas/384DF2EE-688A-401F-8A67-B1DFACEFF21F.jpg",
       "alt": "Soldadora inverter NOVA 220V - Mundo Hogar",
+      "descripcion": "Soldadora inverter NOVA 220V. Compacta y potente para trabajos de soldadura en el hogar o el taller.",
       "categoria": "herramientas",
       "slug": "384df2ee-688a-401f-8a67-b1dfaceff21f",
       "activo": true
@@ -366,6 +400,7 @@
       "nombre": "Juego de pinza + alicate INGCO 2 piezas Cr-V",
       "imagen": "/images/productos/herramientas/78558B38-4DDF-4199-B7C0-A7A48A508CB7.jpg",
       "alt": "Juego de pinza + alicate INGCO 2 piezas Cr-V - Mundo Hogar",
+      "descripcion": "Juego INGCO de 2 piezas (pinza más alicate) en acero Cr-V. Herramientas resistentes para uso diario.",
       "categoria": "herramientas",
       "slug": "78558b38-4ddf-4199-b7c0-a7a48a508cb7",
       "activo": true
@@ -376,6 +411,7 @@
       "nombre": "Combo esencial INGCO: bolso + pinzas + llave + martillo",
       "imagen": "/images/productos/herramientas/8E761B2D-6A07-4A6D-B46E-0180EE629098.jpg",
       "alt": "Combo esencial INGCO: bolso + pinzas + llave + martillo - Mundo Hogar",
+      "descripcion": "Combo esencial INGCO: bolso, pinzas, llave y martillo. El kit básico para arrancar tu caja de herramientas.",
       "categoria": "herramientas",
       "slug": "8e761b2d-6a07-4a6d-b46e-0180ee629098",
       "activo": true
@@ -386,6 +422,7 @@
       "nombre": "Podadora portátil KANJI TOOLS 18V a batería",
       "imagen": "/images/productos/herramientas/95EA78EB-4456-418C-8C45-4577847B008D.jpg",
       "alt": "Podadora portátil KANJI TOOLS 18V a batería - Mundo Hogar",
+      "descripcion": "Podadora portátil Kanji Tools 18V a batería. Sin cables y liviana para mantener tu jardín al día.",
       "categoria": "herramientas",
       "slug": "95ea78eb-4456-418c-8c45-4577847b008d",
       "activo": true
@@ -396,6 +433,7 @@
       "nombre": "Escalera de aluminio articulada multiposición",
       "imagen": "/images/productos/herramientas/AE15C1EE-9816-4DF3-BB59-28C7A1C92F1E.jpg",
       "alt": "Escalera de aluminio articulada multiposición - Mundo Hogar",
+      "descripcion": "Escalera de aluminio articulada multiposición. Se adapta a varias formas para distintos trabajos en altura.",
       "categoria": "herramientas",
       "slug": "ae15c1ee-9816-4df3-bb59-28c7a1c92f1e",
       "activo": true
@@ -406,6 +444,7 @@
       "nombre": "Taladro / atornillador inalámbrico KANJI TOOLS",
       "imagen": "/images/productos/herramientas/atornilladora-21-01.jpg",
       "alt": "Taladro / atornillador inalámbrico KANJI TOOLS - Mundo Hogar",
+      "descripcion": "Taladro atornillador inalámbrico Kanji Tools. Práctico y versátil para perforar y atornillar sin cables.",
       "categoria": "herramientas",
       "slug": "atornilladora-21-01",
       "activo": true
@@ -413,12 +452,13 @@
     {
       "id": "herramientas-b36173e0-6d5a-4b99-a90f-441346e7e1ae",
       "orden": 40,
-      "nombre": "Escalera de aluminio articulada (vista alternativa)",
+      "nombre": "Escalera de aluminio articulada multiposición",
       "imagen": "/images/productos/herramientas/B36173E0-6D5A-4B99-A90F-441346E7E1AE.jpg",
-      "alt": "Escalera de aluminio articulada (vista alternativa) - Mundo Hogar",
+      "alt": "Escalera de aluminio articulada multiposición - Mundo Hogar",
+      "descripcion": "Escalera de aluminio articulada multiposición. Resistente y segura para distintos trabajos en altura.",
       "categoria": "herramientas",
       "slug": "b36173e0-6d5a-4b99-a90f-441346e7e1ae",
-      "activo": true
+      "activo": false
     },
     {
       "id": "herramientas-e741a135-0921-4191-90d1-a90ddaf07e36",
@@ -426,6 +466,7 @@
       "nombre": "Juego de 4 pinzas INGCO",
       "imagen": "/images/productos/herramientas/E741A135-0921-4191-90D1-A90DDAF07E36.jpg",
       "alt": "Juego de 4 pinzas INGCO - Mundo Hogar",
+      "descripcion": "Juego de 4 pinzas INGCO. Distintos modelos para cubrir las tareas más comunes con calidad profesional.",
       "categoria": "herramientas",
       "slug": "e741a135-0921-4191-90d1-a90ddaf07e36",
       "activo": true
@@ -436,6 +477,7 @@
       "nombre": "Cortatubos de PVC INGCO Automatic Open",
       "imagen": "/images/productos/herramientas/HPC0442.jpg",
       "alt": "Cortatubos de PVC INGCO Automatic Open - Mundo Hogar",
+      "descripcion": "Cortatubos de PVC INGCO con apertura automática. Cortes limpios y precisos en caños plásticos.",
       "categoria": "herramientas",
       "slug": "hpc0442",
       "activo": true
@@ -446,6 +488,7 @@
       "nombre": "Sierra caladora KANJI TOOLS negra",
       "imagen": "/images/productos/herramientas/IMG_0178.jpg",
       "alt": "Sierra caladora KANJI TOOLS negra - Mundo Hogar",
+      "descripcion": "Sierra caladora Kanji Tools en negro. Para cortes rectos y curvos en madera, plástico y más.",
       "categoria": "herramientas",
       "slug": "img_0178",
       "activo": true
@@ -456,6 +499,7 @@
       "nombre": "Amoladora angular Black+Decker naranja/negro",
       "imagen": "/images/productos/herramientas/IMG_0357.jpg",
       "alt": "Amoladora angular Black+Decker naranja/negro - Mundo Hogar",
+      "descripcion": "Amoladora angular Black+Decker. Potencia para cortar y desbastar metal, mampostería y más.",
       "categoria": "herramientas",
       "slug": "img_0357",
       "activo": true
@@ -466,6 +510,7 @@
       "nombre": "Inflador a batería INGCO 20V con bolso",
       "imagen": "/images/productos/herramientas/IMG_0363.jpg",
       "alt": "Inflador a batería INGCO 20V con bolso - Mundo Hogar",
+      "descripcion": "Inflador a batería INGCO 20V con bolso. Inflá neumáticos y pelotas donde estés, sin cables.",
       "categoria": "herramientas",
       "slug": "img_0363",
       "activo": true
@@ -476,6 +521,7 @@
       "nombre": "Cutter/trincheta INGCO HKNS1806",
       "imagen": "/images/productos/herramientas/IMG_0371.jpg",
       "alt": "Cutter/trincheta INGCO HKNS1806 - Mundo Hogar",
+      "descripcion": "Cutter/trincheta INGCO HKNS1806. Cuchilla retráctil resistente para cortes precisos y seguros.",
       "categoria": "herramientas",
       "slug": "img_0371",
       "activo": true
@@ -486,6 +532,7 @@
       "nombre": "Set 2 pinzas INGCO pinza diagonal",
       "imagen": "/images/productos/herramientas/IMG_0372.jpg",
       "alt": "Set 2 pinzas INGCO pinza diagonal - Mundo Hogar",
+      "descripcion": "Set INGCO de 2 pinzas con pinza diagonal. Herramientas firmes para corte y agarre.",
       "categoria": "herramientas",
       "slug": "img_0372",
       "activo": true
@@ -496,6 +543,7 @@
       "nombre": "Hidrolavadora a batería INGCO",
       "imagen": "/images/productos/herramientas/IMG_0376.jpg",
       "alt": "Hidrolavadora a batería INGCO - Mundo Hogar",
+      "descripcion": "Hidrolavadora a batería INGCO. Limpieza a presión sin depender de un enchufe.",
       "categoria": "herramientas",
       "slug": "img_0376",
       "activo": true
@@ -506,6 +554,7 @@
       "nombre": "Taladro/atornilladora Bauen 20V",
       "imagen": "/images/productos/herramientas/IMG_0431.jpg",
       "alt": "Taladro/atornilladora Bauen 20V - Mundo Hogar",
+      "descripcion": "Taladro atornillador Bauen 20V a batería. Potencia y autonomía para tus proyectos.",
       "categoria": "herramientas",
       "slug": "img_0431",
       "activo": true
@@ -516,6 +565,7 @@
       "nombre": "Pistola de calor KANJI TOOLS",
       "imagen": "/images/productos/herramientas/pistola-de-calor-01.jpg",
       "alt": "Pistola de calor KANJI TOOLS - Mundo Hogar",
+      "descripcion": "Pistola de calor Kanji Tools. Ideal para remover pintura, termocontraer y trabajos de bricolaje.",
       "categoria": "herramientas",
       "slug": "pistola-de-calor-01",
       "activo": true
@@ -526,6 +576,7 @@
       "nombre": "Rotomartillo KANJI TOOLS con mango auxiliar",
       "imagen": "/images/productos/herramientas/rotomartillo-01.jpg",
       "alt": "Rotomartillo KANJI TOOLS con mango auxiliar - Mundo Hogar",
+      "descripcion": "Rotomartillo Kanji Tools con mango auxiliar. Perforá hormigón y mampostería con potencia y control.",
       "categoria": "herramientas",
       "slug": "rotomartillo-01",
       "activo": true
@@ -536,6 +587,7 @@
       "nombre": "Auriculares gamer Kanji Z-32",
       "imagen": "/images/productos/tecnologia-celulares/43033A6A-9636-4539-814A-BC391B025F34.jpg",
       "alt": "Auriculares gamer Kanji Z-32 - Mundo Hogar",
+      "descripcion": "Auriculares gamer Kanji Z-32 con micrófono. Sonido envolvente y comodidad para tus partidas.",
       "categoria": "tecnologia-celulares",
       "slug": "43033a6a-9636-4539-814a-bc391b025f34",
       "activo": true
@@ -546,6 +598,7 @@
       "nombre": "Cámara Smart IP Kanjinet 1 antena visión nocturna",
       "imagen": "/images/productos/tecnologia-celulares/8A0DEC27-0250-431D-B3E5-3824F7986E70.jpg",
       "alt": "Cámara Smart IP Kanjinet 1 antena visión nocturna - Mundo Hogar",
+      "descripcion": "Cámara IP smart Kanjinet con visión nocturna. Vigilá tu casa o negocio desde el celular.",
       "categoria": "tecnologia-celulares",
       "slug": "8a0dec27-0250-431d-b3e5-3824f7986e70",
       "activo": true
@@ -556,6 +609,7 @@
       "nombre": "Cámara Smart IP Kanjinet 2 antenas lente 3.6 mm",
       "imagen": "/images/productos/tecnologia-celulares/A4D7066F-1779-475C-8E48-0DCB0372035C.jpg",
       "alt": "Cámara Smart IP Kanjinet 2 antenas lente 3.6 mm - Mundo Hogar",
+      "descripcion": "Cámara IP smart Kanjinet de 2 antenas y lente 3.6 mm. Mejor alcance y nitidez para tu seguridad.",
       "categoria": "tecnologia-celulares",
       "slug": "a4d7066f-1779-475c-8e48-0dcb0372035c",
       "activo": true
@@ -566,6 +620,7 @@
       "nombre": "Soporte para TV de pie con ruedas",
       "imagen": "/images/productos/tecnologia-celulares/D525E660-8C21-4D90-8575-D0114553E150.jpg",
       "alt": "Soporte para TV de pie con ruedas - Mundo Hogar",
+      "descripcion": "Soporte de pie con ruedas para TV. Movés tu pantalla a cualquier ambiente con facilidad.",
       "categoria": "tecnologia-celulares",
       "slug": "d525e660-8c21-4d90-8575-d0114553e150",
       "activo": true
@@ -576,6 +631,7 @@
       "nombre": "Auriculares TWS inalámbricos negros",
       "imagen": "/images/productos/tecnologia-celulares/IMG_0127.jpg",
       "alt": "Auriculares TWS inalámbricos negros - Mundo Hogar",
+      "descripcion": "Auriculares TWS inalámbricos en negro. Libertad total y buen sonido para el día a día.",
       "categoria": "tecnologia-celulares",
       "slug": "img_0127",
       "activo": true
@@ -586,6 +642,7 @@
       "nombre": "Soporte TV para pared LED/LCD/PDP",
       "imagen": "/images/productos/tecnologia-celulares/IMG_0429.jpg",
       "alt": "Soporte TV para pared LED/LCD/PDP - Mundo Hogar",
+      "descripcion": "Soporte de pared para TV LED, LCD y PDP. Fijación firme y prolija para tu televisor.",
       "categoria": "tecnologia-celulares",
       "slug": "img_0429",
       "activo": true
@@ -596,6 +653,7 @@
       "nombre": "Tablet con funda transparente verde lima",
       "imagen": "/images/productos/tecnologia-celulares/IMG_0618.jpg",
       "alt": "Tablet con funda transparente verde lima - Mundo Hogar",
+      "descripcion": "Tablet con funda protectora transparente en verde lima. Lista para estudiar, navegar y entretenerte.",
       "categoria": "tecnologia-celulares",
       "slug": "img_0618",
       "activo": true
@@ -606,6 +664,7 @@
       "nombre": "Funda/case para tablet verde lima origami",
       "imagen": "/images/productos/tecnologia-celulares/IMG_0619.jpg",
       "alt": "Funda/case para tablet verde lima origami - Mundo Hogar",
+      "descripcion": "Funda tipo origami para tablet en verde lima. Protege la pantalla y sirve de soporte.",
       "categoria": "tecnologia-celulares",
       "slug": "img_0619",
       "activo": true
@@ -616,6 +675,7 @@
       "nombre": "Smart TV Enova Google TV 50\"",
       "imagen": "/images/productos/tecnologia-celulares/IMG_1431.jpg",
       "alt": "Smart TV Enova Google TV 50\" - Mundo Hogar",
+      "descripcion": "Smart TV Enova de 50 pulgadas con Google TV. Todas tus apps y contenidos en una pantalla grande.",
       "categoria": "tecnologia-celulares",
       "slug": "img_1431",
       "activo": true
@@ -626,6 +686,7 @@
       "nombre": "Máquina de copos de azúcar KANJI HOME",
       "imagen": "/images/productos/electrodomesticos/2333683E-52CC-47C3-AA50-483E7519104F.jpg",
       "alt": "Máquina de copos de azúcar KANJI HOME - Mundo Hogar",
+      "descripcion": "Máquina de copos de azúcar (algodón de azúcar) Kanji Home. Diversión dulce para cumpleaños y eventos.",
       "categoria": "electrodomesticos",
       "slug": "2333683e-52cc-47c3-aa50-483e7519104f",
       "activo": true
@@ -636,6 +697,7 @@
       "nombre": "Heladera Telefunken 220 lt con dispenser de agua",
       "imagen": "/images/productos/electrodomesticos/3D218783-8F19-4D43-8B04-17B5CFCF68A4.jpg",
       "alt": "Heladera Telefunken 220 lt con dispenser de agua - Mundo Hogar",
+      "descripcion": "Heladera Telefunken de 220 litros con dispenser de agua. Capacidad y practicidad para toda la familia.",
       "categoria": "electrodomesticos",
       "slug": "3d218783-8f19-4d43-8b04-17b5cfcf68a4",
       "activo": true
@@ -646,6 +708,7 @@
       "nombre": "Dispenser de agua frío/calor Telefunken blanco",
       "imagen": "/images/productos/electrodomesticos/602527A1-D779-4377-BBB3-78D7DD7F6007.jpg",
       "alt": "Dispenser de agua frío/calor Telefunken blanco - Mundo Hogar",
+      "descripcion": "Dispenser de agua frío/calor Telefunken blanco. Agua a la temperatura justa en todo momento.",
       "categoria": "electrodomesticos",
       "slug": "602527a1-d779-4377-bbb3-78d7dd7f6007",
       "activo": true
@@ -656,6 +719,7 @@
       "nombre": "Frigobar retro 50 lt KANJI HOME negro",
       "imagen": "/images/productos/electrodomesticos/7D7A06B5-A447-49F1-8110-2A551AEB3E64.jpg",
       "alt": "Frigobar retro 50 lt KANJI HOME negro - Mundo Hogar",
+      "descripcion": "Frigobar retro Kanji Home de 50 litros en negro. Compacto y con estilo para oficina, cuarto o bar.",
       "categoria": "electrodomesticos",
       "slug": "7d7a06b5-a447-49f1-8110-2a551aeb3e64",
       "activo": true
@@ -666,6 +730,7 @@
       "nombre": "Lavarropas automático VITTA 6 kg Inverter gris",
       "imagen": "/images/productos/electrodomesticos/7F7759A6-173D-4AC7-96E2-C00DFE9ECEE7.jpg",
       "alt": "Lavarropas automático VITTA 6 kg Inverter gris - Mundo Hogar",
+      "descripcion": "Lavarropas automático Vitta de 6 kg con motor Inverter, en gris. Lavado eficiente y silencioso.",
       "categoria": "electrodomesticos",
       "slug": "7f7759a6-173d-4ac7-96e2-c00dfe9ecee7",
       "activo": true
@@ -676,6 +741,7 @@
       "nombre": "Cocina a gas PEABODY negra 4 hornallas",
       "imagen": "/images/productos/electrodomesticos/IMG_0031.jpg",
       "alt": "Cocina a gas PEABODY negra 4 hornallas - Mundo Hogar",
+      "descripcion": "Cocina a gas Peabody de 4 hornallas en negro. Horno amplio y diseño moderno para tu cocina.",
       "categoria": "electrodomesticos",
       "slug": "img_0031",
       "activo": true
@@ -686,6 +752,7 @@
       "nombre": "Cafetera de cápsulas KANJI HOME blanca/negra",
       "imagen": "/images/productos/electrodomesticos/IMG_0064.jpg",
       "alt": "Cafetera de cápsulas KANJI HOME blanca/negra - Mundo Hogar",
+      "descripcion": "Cafetera de cápsulas Kanji Home en blanco y negro. Tu café listo en segundos.",
       "categoria": "electrodomesticos",
       "slug": "img_0064",
       "activo": true
@@ -696,6 +763,7 @@
       "nombre": "Balanza comercial Vestax Ecostar 40 kg",
       "imagen": "/images/productos/electrodomesticos/IMG_0068.jpg",
       "alt": "Balanza comercial Vestax Ecostar 40 kg - Mundo Hogar",
+      "descripcion": "Balanza comercial Vestax Ecostar de hasta 40 kg. Precisa y robusta para tu negocio.",
       "categoria": "electrodomesticos",
       "slug": "img_0068",
       "activo": true
@@ -706,6 +774,7 @@
       "nombre": "Urna/percoladora grande inox con canilla",
       "imagen": "/images/productos/electrodomesticos/IMG_0070.jpg",
       "alt": "Urna/percoladora grande inox con canilla - Mundo Hogar",
+      "descripcion": "Percoladora/urna de acero inoxidable con canilla. Ideal para servir café o agua caliente en cantidad.",
       "categoria": "electrodomesticos",
       "slug": "img_0070",
       "activo": true
@@ -716,6 +785,7 @@
       "nombre": "Freezer horizontal KANJI HOME blanco",
       "imagen": "/images/productos/electrodomesticos/IMG_0114.jpg",
       "alt": "Freezer horizontal KANJI HOME blanco - Mundo Hogar",
+      "descripcion": "Freezer horizontal Kanji Home blanco. Gran capacidad de congelado para el hogar o el comercio.",
       "categoria": "electrodomesticos",
       "slug": "img_0114",
       "activo": true
@@ -726,6 +796,7 @@
       "nombre": "Air fryer doble canasta Westinghouse negro",
       "imagen": "/images/productos/electrodomesticos/IMG_0156.jpg",
       "alt": "Air fryer doble canasta Westinghouse negro - Mundo Hogar",
+      "descripcion": "Freidora de aire Westinghouse de doble canasta, en negro. Cociná dos cosas a la vez con poco aceite.",
       "categoria": "electrodomesticos",
       "slug": "img_0156",
       "activo": true
@@ -736,6 +807,7 @@
       "nombre": "Air fryer doble canasta Westinghouse abierto",
       "imagen": "/images/productos/electrodomesticos/IMG_0159.jpg",
       "alt": "Air fryer doble canasta Westinghouse abierto - Mundo Hogar",
+      "descripcion": "Freidora de aire Westinghouse de doble canasta. Dos cestos independientes para preparar comidas completas.",
       "categoria": "electrodomesticos",
       "slug": "img_0159",
       "activo": true
@@ -746,6 +818,7 @@
       "nombre": "Batidora de pie con bowl KANJI HOME blanca",
       "imagen": "/images/productos/electrodomesticos/IMG_0173.jpg",
       "alt": "Batidora de pie con bowl KANJI HOME blanca - Mundo Hogar",
+      "descripcion": "Batidora de pie Kanji Home con bowl, en blanco. Mezclá y batí sin esfuerzo para tus recetas.",
       "categoria": "electrodomesticos",
       "slug": "img_0173",
       "activo": true
@@ -756,6 +829,7 @@
       "nombre": "Air fryer KANJI HOME negro/inox",
       "imagen": "/images/productos/electrodomesticos/IMG_0180.jpg",
       "alt": "Air fryer KANJI HOME negro/inox - Mundo Hogar",
+      "descripcion": "Freidora de aire Kanji Home en negro e inox. Frituras más sanas con poco o nada de aceite.",
       "categoria": "electrodomesticos",
       "slug": "img_0180",
       "activo": true
@@ -766,6 +840,7 @@
       "nombre": "Sandwichera/grill 3-en-1 negra con placas",
       "imagen": "/images/productos/electrodomesticos/IMG_0185.jpg",
       "alt": "Sandwichera/grill 3-en-1 negra con placas - Mundo Hogar",
+      "descripcion": "Sandwichera y grill 3 en 1 con placas intercambiables, en negro. Tostados, wafles y grillados en un solo equipo.",
       "categoria": "electrodomesticos",
       "slug": "img_0185",
       "activo": true
@@ -776,6 +851,7 @@
       "nombre": "Máquina para pasta KANJI HOME roja",
       "imagen": "/images/productos/electrodomesticos/IMG_0190.jpg",
       "alt": "Máquina para pasta KANJI HOME roja - Mundo Hogar",
+      "descripcion": "Máquina para pasta Kanji Home en rojo. Hacé fideos caseros de forma fácil y divertida.",
       "categoria": "electrodomesticos",
       "slug": "img_0190",
       "activo": true
@@ -786,6 +862,7 @@
       "nombre": "Pava eléctrica KANJI inox/negra",
       "imagen": "/images/productos/electrodomesticos/IMG_0195.jpg",
       "alt": "Pava eléctrica KANJI inox/negra - Mundo Hogar",
+      "descripcion": "Pava eléctrica Kanji en acero inoxidable y negro. Agua caliente rápida con apagado automático.",
       "categoria": "electrodomesticos",
       "slug": "img_0195",
       "activo": true
@@ -796,6 +873,7 @@
       "nombre": "Espumador de leche Ultracomb EL-8501 inox",
       "imagen": "/images/productos/electrodomesticos/IMG_0265.jpg",
       "alt": "Espumador de leche Ultracomb EL-8501 inox - Mundo Hogar",
+      "descripcion": "Espumador de leche Ultracomb EL-8501 en inox. Espuma cremosa para tus cafés tipo cafetería.",
       "categoria": "electrodomesticos",
       "slug": "img_0265",
       "activo": true
@@ -806,6 +884,7 @@
       "nombre": "Aspiradora Yelmo gris/rosa multiciclónica",
       "imagen": "/images/productos/electrodomesticos/IMG_0280.jpg",
       "alt": "Aspiradora Yelmo gris/rosa multiciclónica - Mundo Hogar",
+      "descripcion": "Aspiradora multiciclónica Yelmo en gris y rosa. Potencia de succión sin perder fuerza.",
       "categoria": "electrodomesticos",
       "slug": "img_0280",
       "activo": true
@@ -816,6 +895,7 @@
       "nombre": "Cafetera espresso Ultracomb con pantalla táctil",
       "imagen": "/images/productos/electrodomesticos/IMG_0283.jpg",
       "alt": "Cafetera espresso Ultracomb con pantalla táctil - Mundo Hogar",
+      "descripcion": "Cafetera espresso Ultracomb con pantalla táctil. Café de calidad barista en tu casa.",
       "categoria": "electrodomesticos",
       "slug": "img_0283",
       "activo": true
@@ -826,6 +906,7 @@
       "nombre": "Anafe de inducción Ultracomb negro 1 hornalla",
       "imagen": "/images/productos/electrodomesticos/IMG_0285.jpg",
       "alt": "Anafe de inducción Ultracomb negro 1 hornalla - Mundo Hogar",
+      "descripcion": "Anafe de inducción Ultracomb de 1 hornalla, en negro. Cocción rápida, segura y eficiente.",
       "categoria": "electrodomesticos",
       "slug": "img_0285",
       "activo": true
@@ -836,6 +917,7 @@
       "nombre": "Air fryer Yelmo lila/violeta redondo",
       "imagen": "/images/productos/electrodomesticos/IMG_0289.jpg",
       "alt": "Air fryer Yelmo lila/violeta redondo - Mundo Hogar",
+      "descripcion": "Freidora de aire Yelmo redonda en lila. Color y diseño para una cocina más saludable.",
       "categoria": "electrodomesticos",
       "slug": "img_0289",
       "activo": true
@@ -846,6 +928,7 @@
       "nombre": "Air fryer Yelmo verde menta cuadrado",
       "imagen": "/images/productos/electrodomesticos/IMG_0292.jpg",
       "alt": "Air fryer Yelmo verde menta cuadrado - Mundo Hogar",
+      "descripcion": "Freidora de aire Yelmo cuadrada en verde menta. Frituras crocantes con menos aceite.",
       "categoria": "electrodomesticos",
       "slug": "img_0292",
       "activo": true
@@ -856,6 +939,7 @@
       "nombre": "Air fryer Yelmo lila/violeta cuadrado",
       "imagen": "/images/productos/electrodomesticos/IMG_0295.jpg",
       "alt": "Air fryer Yelmo lila/violeta cuadrado - Mundo Hogar",
+      "descripcion": "Freidora de aire Yelmo cuadrada en violeta. Práctica, moderna y con mucho color.",
       "categoria": "electrodomesticos",
       "slug": "img_0295",
       "activo": true
@@ -866,6 +950,7 @@
       "nombre": "Cortadora de fiambre/embutidos Ultracomb inox",
       "imagen": "/images/productos/electrodomesticos/IMG_0303.jpg",
       "alt": "Cortadora de fiambre/embutidos Ultracomb inox - Mundo Hogar",
+      "descripcion": "Cortadora de fiambres y embutidos Ultracomb en inox. Fetas parejas de fiambres en casa.",
       "categoria": "electrodomesticos",
       "slug": "img_0303",
       "activo": true
@@ -876,6 +961,7 @@
       "nombre": "Procesadora/ralladora Ultracomb blanca/roja",
       "imagen": "/images/productos/electrodomesticos/IMG_0306.jpg",
       "alt": "Procesadora/ralladora Ultracomb blanca/roja - Mundo Hogar",
+      "descripcion": "Procesadora y ralladora Ultracomb en blanco y rojo. Picá, rallá y procesá en minutos.",
       "categoria": "electrodomesticos",
       "slug": "img_0306",
       "activo": true
@@ -886,6 +972,7 @@
       "nombre": "Yogurtera Ultracomb inox con 7 frasquitos",
       "imagen": "/images/productos/electrodomesticos/IMG_0312.jpg",
       "alt": "Yogurtera Ultracomb inox con 7 frasquitos - Mundo Hogar",
+      "descripcion": "Yogurtera Ultracomb en inox con 7 frasquitos. Yogur casero y natural para toda la semana.",
       "categoria": "electrodomesticos",
       "slug": "img_0312",
       "activo": true
@@ -896,6 +983,7 @@
       "nombre": "Anafe vitrocerámica Ultracomb AN-E604 4 hornallas",
       "imagen": "/images/productos/electrodomesticos/IMG_0318.jpg",
       "alt": "Anafe vitrocerámica Ultracomb AN-E604 4 hornallas - Mundo Hogar",
+      "descripcion": "Anafe vitrocerámica Ultracomb AN-E604 de 4 hornallas. Superficie elegante y fácil de limpiar.",
       "categoria": "electrodomesticos",
       "slug": "img_0318",
       "activo": true
@@ -906,6 +994,7 @@
       "nombre": "Mixer de mano Liliana EasyHome blanco/negro",
       "imagen": "/images/productos/electrodomesticos/IMG_0391.jpg",
       "alt": "Mixer de mano Liliana EasyHome blanco/negro - Mundo Hogar",
+      "descripcion": "Mixer de mano Liliana EasyHome en blanco y negro. Licuá y procesá directo en la olla o el vaso.",
       "categoria": "electrodomesticos",
       "slug": "img_0391",
       "activo": true
@@ -916,6 +1005,7 @@
       "nombre": "Microondas KANJI HOME blanco/negro cerrado",
       "imagen": "/images/productos/electrodomesticos/IMG_0595.jpg",
       "alt": "Microondas KANJI HOME blanco/negro cerrado - Mundo Hogar",
+      "descripcion": "Microondas Kanji Home en blanco y negro. Calentá y cociná con varias potencias.",
       "categoria": "electrodomesticos",
       "slug": "img_0595",
       "activo": true
@@ -926,6 +1016,7 @@
       "nombre": "Microondas KANJI HOME blanco/negro abierto",
       "imagen": "/images/productos/electrodomesticos/IMG_0596.jpg",
       "alt": "Microondas KANJI HOME blanco/negro abierto - Mundo Hogar",
+      "descripcion": "Microondas Kanji Home con amplio interior. Práctico para el día a día de tu cocina.",
       "categoria": "electrodomesticos",
       "slug": "img_0596",
       "activo": true
@@ -936,6 +1027,7 @@
       "nombre": "Plancha a vapor KANJI HOME verde/azul oscuro",
       "imagen": "/images/productos/electrodomesticos/IMG_0599.jpg",
       "alt": "Plancha a vapor KANJI HOME verde/azul oscuro - Mundo Hogar",
+      "descripcion": "Plancha a vapor Kanji Home en verde y azul. Vapor potente para prendas sin arrugas.",
       "categoria": "electrodomesticos",
       "slug": "img_0599",
       "activo": true
@@ -946,6 +1038,7 @@
       "nombre": "Set de ollas marmoladas negras + sartén",
       "imagen": "/images/productos/electrodomesticos/IMG_0604.jpg",
       "alt": "Set de ollas marmoladas negras + sartén - Mundo Hogar",
+      "descripcion": "Set de ollas marmoladas en negro con sartén. Antiadherentes y resistentes para cocinar a diario.",
       "categoria": "electrodomesticos",
       "slug": "img_0604",
       "activo": true
@@ -956,6 +1049,7 @@
       "nombre": "Set de ollas crema con asas/tapa madera",
       "imagen": "/images/productos/electrodomesticos/IMG_0606.jpg",
       "alt": "Set de ollas crema con asas/tapa madera - Mundo Hogar",
+      "descripcion": "Set de ollas crema con asas y tapas tipo madera. Diseño cálido y práctico para tu cocina.",
       "categoria": "electrodomesticos",
       "slug": "img_0606",
       "activo": true
@@ -966,6 +1060,7 @@
       "nombre": "Secarropas centrífuga Codini 6,5 kg blanca",
       "imagen": "/images/productos/electrodomesticos/IMG_0754.jpg",
       "alt": "Secarropas centrífuga Codini 6,5 kg blanca - Mundo Hogar",
+      "descripcion": "Secarropas centrífugo Codini de 6,5 kg en blanco. Quita el agua de la ropa en minutos.",
       "categoria": "electrodomesticos",
       "slug": "img_0754",
       "activo": true
@@ -976,6 +1071,7 @@
       "nombre": "Secarropas + lavarropas Codini dúo blanco",
       "imagen": "/images/productos/electrodomesticos/IMG_0759.jpg",
       "alt": "Secarropas + lavarropas Codini dúo blanco - Mundo Hogar",
+      "descripcion": "Dúo Codini: lavarropas más secarropas en blanco. La solución completa para el lavado en poco espacio.",
       "categoria": "electrodomesticos",
       "slug": "img_0759",
       "activo": true
@@ -986,6 +1082,7 @@
       "nombre": "Lavarropas carga superior Codini blanco",
       "imagen": "/images/productos/electrodomesticos/IMG_0765.jpg",
       "alt": "Lavarropas carga superior Codini blanco - Mundo Hogar",
+      "descripcion": "Lavarropas de carga superior Codini en blanco. Práctico, resistente y fácil de usar.",
       "categoria": "electrodomesticos",
       "slug": "img_0765",
       "activo": true
@@ -996,6 +1093,7 @@
       "nombre": "Anafe vitrocerámica Ultracomb AN-E604",
       "imagen": "/images/productos/electrodomesticos/IMG_0817.jpg",
       "alt": "Anafe vitrocerámica Ultracomb AN-E604 - Mundo Hogar",
+      "descripcion": "Anafe vitrocerámica Ultracomb AN-E604. Cocción pareja y superficie fácil de limpiar.",
       "categoria": "electrodomesticos",
       "slug": "img_0817",
       "activo": true
@@ -1006,6 +1104,7 @@
       "nombre": "Calefactor eléctrico cerámico/cuarzo negro",
       "imagen": "/images/productos/electrodomesticos/IMG_0909.jpg",
       "alt": "Calefactor eléctrico cerámico/cuarzo negro - Mundo Hogar",
+      "descripcion": "Calefactor eléctrico cerámico/cuarzo en negro. Calor rápido para los días más fríos.",
       "categoria": "electrodomesticos",
       "slug": "img_0909",
       "activo": true
@@ -1016,6 +1115,7 @@
       "nombre": "Batidora de mano Yelmo celeste/turquesa",
       "imagen": "/images/productos/electrodomesticos/IMG_0922.jpg",
       "alt": "Batidora de mano Yelmo celeste/turquesa - Mundo Hogar",
+      "descripcion": "Batidora de mano Yelmo en celeste. Liviana y práctica para batir y mezclar.",
       "categoria": "electrodomesticos",
       "slug": "img_0922",
       "activo": true
@@ -1026,6 +1126,7 @@
       "nombre": "Air fryer Yelmo violeta con ventana negra",
       "imagen": "/images/productos/electrodomesticos/IMG_0941.jpg",
       "alt": "Air fryer Yelmo violeta con ventana negra - Mundo Hogar",
+      "descripcion": "Freidora de aire Yelmo en violeta con ventana. Mirá la cocción sin abrir, con menos aceite.",
       "categoria": "electrodomesticos",
       "slug": "img_0941",
       "activo": true
@@ -1036,6 +1137,7 @@
       "nombre": "Licuadora de vidrio Yelmo rosa/salmón",
       "imagen": "/images/productos/electrodomesticos/IMG_0942.jpg",
       "alt": "Licuadora de vidrio Yelmo rosa/salmón - Mundo Hogar",
+      "descripcion": "Licuadora con jarra de vidrio Yelmo en rosa salmón. Licuados y batidos resistentes y con estilo.",
       "categoria": "electrodomesticos",
       "slug": "img_0942",
       "activo": true
@@ -1046,6 +1148,7 @@
       "nombre": "Pava eléctrica Ultracomb inox 1,7 L",
       "imagen": "/images/productos/electrodomesticos/IMG_0946.jpg",
       "alt": "Pava eléctrica Ultracomb inox 1,7 L - Mundo Hogar",
+      "descripcion": "Pava eléctrica Ultracomb de 1,7 L en inox. Hierve rápido con apagado automático de seguridad.",
       "categoria": "electrodomesticos",
       "slug": "img_0946",
       "activo": true
@@ -1056,6 +1159,7 @@
       "nombre": "Panificadora Ultracomb celeste abierta",
       "imagen": "/images/productos/electrodomesticos/IMG_0951.jpg",
       "alt": "Panificadora Ultracomb celeste abierta - Mundo Hogar",
+      "descripcion": "Panificadora Ultracomb en celeste. Pan casero recién hecho con distintos programas.",
       "categoria": "electrodomesticos",
       "slug": "img_0951",
       "activo": true
@@ -1066,6 +1170,7 @@
       "nombre": "Juguera/extractor de jugos Ultracomb inox",
       "imagen": "/images/productos/electrodomesticos/IMG_0954.jpg",
       "alt": "Juguera/extractor de jugos Ultracomb inox - Mundo Hogar",
+      "descripcion": "Extractor de jugos Ultracomb en inox. Jugos naturales aprovechando al máximo la fruta.",
       "categoria": "electrodomesticos",
       "slug": "img_0954",
       "activo": true
@@ -1076,6 +1181,7 @@
       "nombre": "Molinillo de café/especias Ultracomb inox",
       "imagen": "/images/productos/electrodomesticos/IMG_0958.jpg",
       "alt": "Molinillo de café/especias Ultracomb inox - Mundo Hogar",
+      "descripcion": "Molinillo de café y especias Ultracomb en inox. Molido al instante para más aroma y sabor.",
       "categoria": "electrodomesticos",
       "slug": "img_0958",
       "activo": true
@@ -1086,6 +1192,7 @@
       "nombre": "Mini picadora/procesadora Ultracomb naranja",
       "imagen": "/images/productos/electrodomesticos/IMG_0959.jpg",
       "alt": "Mini picadora/procesadora Ultracomb naranja - Mundo Hogar",
+      "descripcion": "Mini picadora Ultracomb en naranja. Pica verduras, frutos secos y más en segundos.",
       "categoria": "electrodomesticos",
       "slug": "img_0959",
       "activo": true
@@ -1096,6 +1203,7 @@
       "nombre": "Tostadora Ultracomb roja 2 ranuras",
       "imagen": "/images/productos/electrodomesticos/IMG_0962.jpg",
       "alt": "Tostadora Ultracomb roja 2 ranuras - Mundo Hogar",
+      "descripcion": "Tostadora Ultracomb de 2 ranuras en rojo. Tostadas en su punto con varios niveles.",
       "categoria": "electrodomesticos",
       "slug": "img_0962",
       "activo": true
@@ -1106,6 +1214,7 @@
       "nombre": "Horno eléctrico Yelmo YL-45AN negro",
       "imagen": "/images/productos/electrodomesticos/IMG_0974.jpg",
       "alt": "Horno eléctrico Yelmo YL-45AN negro - Mundo Hogar",
+      "descripcion": "Horno eléctrico Yelmo YL-45AN en negro. Capacidad y potencia para hornear y gratinar.",
       "categoria": "electrodomesticos",
       "slug": "img_0974",
       "activo": true
@@ -1116,6 +1225,7 @@
       "nombre": "Horno eléctrico Yelmo YL-45AN gris",
       "imagen": "/images/productos/electrodomesticos/IMG_0975.jpg",
       "alt": "Horno eléctrico Yelmo YL-45AN gris - Mundo Hogar",
+      "descripcion": "Horno eléctrico Yelmo YL-45AN en gris. Práctico para tortas, pizzas y comidas al horno.",
       "categoria": "electrodomesticos",
       "slug": "img_0975",
       "activo": true
@@ -1126,6 +1236,7 @@
       "nombre": "Cafetera de filtro whiterblack negra",
       "imagen": "/images/productos/electrodomesticos/IMG_1023.jpg",
       "alt": "Cafetera de filtro whiterblack negra - Mundo Hogar",
+      "descripcion": "Cafetera de filtro en negro. Prepará varias tazas de café de una sola vez.",
       "categoria": "electrodomesticos",
       "slug": "img_1023",
       "activo": true
@@ -1136,6 +1247,7 @@
       "nombre": "Robot de cocina Liliana con licuadora",
       "imagen": "/images/productos/electrodomesticos/IMG_1026.jpg",
       "alt": "Robot de cocina Liliana con licuadora - Mundo Hogar",
+      "descripcion": "Robot de cocina Liliana con vaso licuador. Múltiples funciones para cocinar más fácil.",
       "categoria": "electrodomesticos",
       "slug": "img_1026",
       "activo": true
@@ -1146,6 +1258,7 @@
       "nombre": "Wafflera corazón negra",
       "imagen": "/images/productos/electrodomesticos/IMG_1036.jpg",
       "alt": "Wafflera corazón negra - Mundo Hogar",
+      "descripcion": "Wafflera con forma de corazones, en negro. Wafles caseros listos en minutos.",
       "categoria": "electrodomesticos",
       "slug": "img_1036",
       "activo": true
@@ -1156,6 +1269,7 @@
       "nombre": "Grill eléctrico redondo Liliana dorado",
       "imagen": "/images/productos/electrodomesticos/IMG_1043.jpg",
       "alt": "Grill eléctrico redondo Liliana dorado - Mundo Hogar",
+      "descripcion": "Grill eléctrico redondo Liliana en dorado. Ideal para grillar carnes y verduras en la mesa.",
       "categoria": "electrodomesticos",
       "slug": "img_1043",
       "activo": true
@@ -1166,6 +1280,7 @@
       "nombre": "Pava eléctrica Liliana inox",
       "imagen": "/images/productos/electrodomesticos/IMG_1046.jpg",
       "alt": "Pava eléctrica Liliana inox - Mundo Hogar",
+      "descripcion": "Pava eléctrica Liliana en acero inoxidable. Herví agua rápido con un diseño elegante.",
       "categoria": "electrodomesticos",
       "slug": "img_1046",
       "activo": true
@@ -1176,6 +1291,7 @@
       "nombre": "Panificadora Liliana Breadly blanca",
       "imagen": "/images/productos/electrodomesticos/IMG_1051.jpg",
       "alt": "Panificadora Liliana Breadly blanca - Mundo Hogar",
+      "descripcion": "Panificadora Liliana Breadly en blanco. Pan casero a tu gusto con varios programas.",
       "categoria": "electrodomesticos",
       "slug": "img_1051",
       "activo": true
@@ -1186,6 +1302,7 @@
       "nombre": "Panificadora Liliana Breadly blanca abierta",
       "imagen": "/images/productos/electrodomesticos/IMG_1053.jpg",
       "alt": "Panificadora Liliana Breadly blanca abierta - Mundo Hogar",
+      "descripcion": "Panificadora Liliana Breadly con cuba antiadherente. Pan fresco y casero todos los días.",
       "categoria": "electrodomesticos",
       "slug": "img_1053",
       "activo": true
@@ -1196,6 +1313,7 @@
       "nombre": "Vitrinas refrigeradas Pioneer Home",
       "imagen": "/images/productos/electrodomesticos/IMG_1439.jpg",
       "alt": "Vitrinas refrigeradas Pioneer Home - Mundo Hogar",
+      "descripcion": "Vitrinas refrigeradas Pioneer Home. Exhibí y conservá productos en frío en tu comercio.",
       "categoria": "electrodomesticos",
       "slug": "img_1439",
       "activo": true
@@ -1206,6 +1324,7 @@
       "nombre": "Heladera Pioneer Home 2 puertas inox",
       "imagen": "/images/productos/electrodomesticos/IMG_1440.jpg",
       "alt": "Heladera Pioneer Home 2 puertas inox - Mundo Hogar",
+      "descripcion": "Heladera Pioneer Home de 2 puertas en acero inoxidable. Mucho espacio y diseño moderno.",
       "categoria": "electrodomesticos",
       "slug": "img_1440",
       "activo": true
@@ -1216,6 +1335,7 @@
       "nombre": "Pochoclera eléctrica KANJI HOME",
       "imagen": "/images/productos/electrodomesticos/pochoclera-electrica.jpg",
       "alt": "Pochoclera eléctrica KANJI HOME - Mundo Hogar",
+      "descripcion": "Pochoclera eléctrica Kanji Home. Pochoclo casero sin aceite, ideal para las pelis en familia.",
       "categoria": "electrodomesticos",
       "slug": "pochoclera-electrica",
       "activo": true
@@ -1223,9 +1343,10 @@
     {
       "id": "seguridad-cerradura-01",
       "orden": 121,
-      "nombre": "cerradura-01",
+      "nombre": "Cerradura inteligente digital KB con teclado",
       "imagen": "/images/productos/seguridad/cerradura-01.jpg",
-      "alt": "cerradura-01 - Mundo Hogar",
+      "alt": "Cerradura inteligente digital KB con teclado - Mundo Hogar",
+      "descripcion": "Cerradura inteligente digital con teclado numérico y apertura por código. Diseño moderno tipo push-pull para más seguridad en tu puerta.",
       "categoria": "seguridad",
       "slug": "cerradura-01",
       "activo": true
@@ -1233,9 +1354,10 @@
     {
       "id": "seguridad-cerradura-02",
       "orden": 122,
-      "nombre": "cerradura-02",
+      "nombre": "Cerradura inteligente KB con manija y huella digital",
       "imagen": "/images/productos/seguridad/cerradura-02.jpg",
-      "alt": "cerradura-02 - Mundo Hogar",
+      "alt": "Cerradura inteligente KB con manija y huella digital - Mundo Hogar",
+      "descripcion": "Cerradura inteligente con manija, lector de huella digital y teclado táctil. Varias formas de apertura para controlar el acceso a tu hogar.",
       "categoria": "seguridad",
       "slug": "cerradura-02",
       "activo": true
@@ -1439,5 +1561,5 @@
       "activo": true
     }
   ],
-  "generado": "2026-06-29 05:57:49"
+  "generado": "2026-06-29 06:07:16"
 }

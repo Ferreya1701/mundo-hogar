@@ -820,14 +820,16 @@ let products = [];
 fetch('/src/data/productos.json')
   .then(response => response.json())
   .then(data => {
-    products = data.productos.map(p => ({
-      name: p.nombre,
-      category: p.categoria,
-      img: p.imagen.split('/').pop(),
-      id: p.id,
-      alt: p.alt,
-      desc: p.descripcion || ''
-    }));
+    products = data.productos
+      .filter(p => p.activo !== false)
+      .map(p => ({
+        name: p.nombre,
+        category: p.categoria,
+        img: p.imagen.split('/').pop(),
+        id: p.id,
+        alt: p.alt,
+        desc: p.descripcion || ''
+      }));
 
     // Inicializar galería cuando carguen los datos
     initGallery();
