@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar sesión — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">🏠</div>
+      <h1>Mundo Hogar</h1>
+      <p>Panel de Administración</p>
+    </div>
+
+    <div class="login-err" id="login-error"></div>
+
+    <form class="login-form" id="login-form" novalidate>
+      <div class="form-group">
+        <label for="email">Correo electrónico</label>
+        <input type="email" id="email" name="email"
+               placeholder="admin@mundohogar.com" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" name="password"
+               placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg" id="login-btn" style="width:100%;justify-content:center;">
+        Ingresar
+      </button>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script>
+(async function () {
+  // Si ya hay sesión activa, redirigir al dashboard
+  const { data: { session } } = await db.auth.getSession();
+  if (session) { window.location.href = '/admin/dashboard.html'; return; }
+
+  const form = document.getElementById('login-form');
+  const btn  = document.getElementById('login-btn');
+  const err  = document.getElementById('login-error');
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const email    = form.email.value.trim();
+    const password = form.password.value;
+
+    if (!email || !password) {
+      showError('Completá todos los campos.');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Ingresando...';
+    err.style.display = 'none';
+
+    const { data, error } = await db.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      showError(mapError(error.message));
+      btn.disabled = false;
+      btn.textContent = 'Ingresar';
+      return;
+    }
+
+    // Verificar que el perfil exista y esté activo
+    const { data: profile } = await db.from('profiles')
+      .select('activo, rol')
+      .eq('id', data.user.id)
+      .single();
+
+    if (!profile?.activo) {
+      await db.auth.signOut();
+      showError('Tu cuenta está desactivada. Contactá al administrador.');
+      btn.disabled = false;
+      btn.textContent = 'Ingresar';
+      return;
+    }
+
+    window.location.href = '/admin/dashboard.html';
+  });
+
+  function showError(msg) {
+    err.textContent = msg;
+    err.style.display = 'block';
+  }
+
+  function mapError(msg) {
+    if (msg.includes('Invalid login credentials')) return 'Email o contraseña incorrectos.';
+    if (msg.includes('Email not confirmed'))       return 'Debés confirmar tu email primero.';
+    if (msg.includes('Too many requests'))         return 'Demasiados intentos. Esperá unos minutos.';
+    return 'Error al iniciar sesión. Intentá de nuevo.';
+  }
+})();
+</script>
+</body>
+</html>

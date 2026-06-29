@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /sql/
+Disallow: /scripts/
+Disallow: /src/
+
+Sitemap: https://mundo-hogar-tan.vercel.app/sitemap.xml

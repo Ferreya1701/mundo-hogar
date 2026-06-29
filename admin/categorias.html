@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Categorías — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><div class="sidebar-brand-icon">🏠</div><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/" target="_blank" class="btn btn-ghost btn-sm">🌐 Ver Tienda</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1>Categorías</h1><p>Organizá el catálogo de productos</p></div>
+        <div class="page-header-actions">
+          <button class="btn btn-primary" id="btn-nueva">+ Nueva Categoría</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+        <!-- Lista -->
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Categoría</th><th>Slug</th><th style="text-align:center">Productos</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="tabla-cats">
+              <tr><td colspan="5" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Formulario -->
+        <div class="card">
+          <div class="card-header"><span class="card-title" id="form-cat-title">Nueva Categoría</span></div>
+          <div class="card-body">
+            <form id="cat-form" class="form-grid" style="gap:14px" novalidate>
+              <input type="hidden" id="cat-id">
+              <div class="form-group">
+                <label>Nombre <span class="req">*</span></label>
+                <input type="text" id="cat-nombre" placeholder="Ej: Electrodomésticos" required>
+              </div>
+              <div class="form-group">
+                <label>Slug (URL)</label>
+                <input type="text" id="cat-slug" placeholder="electrodomesticos" readonly style="background:var(--bg)">
+                <span class="form-hint">Generado automáticamente desde el nombre</span>
+              </div>
+              <div class="form-group">
+                <label>Descripción</label>
+                <textarea id="cat-descripcion" placeholder="Breve descripción de la categoría"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Orden de visualización</label>
+                <input type="number" id="cat-orden" placeholder="1" min="0" step="1">
+              </div>
+              <div class="form-group">
+                <label class="toggle-wrap">
+                  <div class="toggle"><input type="checkbox" id="cat-activo" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></div>
+                  <span class="toggle-label">Categoría activa</span>
+                </label>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:4px">
+                <button type="button" class="btn btn-outline" id="btn-cat-reset">Limpiar</button>
+                <button type="submit" class="btn btn-primary" style="flex:1" id="btn-cat-guardar">Guardar categoría</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script>
+let cats = [];
+let prodCount = {};
+
+async function loadData() {
+  const [{ data: catData }, { data: prodData }] = await Promise.all([
+    db.from('categorias').select('*').order('orden'),
+    db.from('productos').select('categoria_id,estado')
+  ]);
+  cats = catData || [];
+  prodCount = {};
+  (prodData||[]).forEach(p => {
+    if (!prodCount[p.categoria_id]) prodCount[p.categoria_id] = { total:0, activos:0 };
+    prodCount[p.categoria_id].total++;
+    if (p.estado==='activo') prodCount[p.categoria_id].activos++;
+  });
+  renderTable();
+}
+
+function renderTable() {
+  if (!cats.length) {
+    document.getElementById('tabla-cats').innerHTML =
+      `<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">🏷️</div><h3>Sin categorías</h3><p>Creá la primera categoría</p></div></td></tr>`;
+    return;
+  }
+  document.getElementById('tabla-cats').innerHTML = cats.map(c => {
+    const cnt = prodCount[c.id] || {total:0,activos:0};
+    return `<tr>
+      <td><div style="font-weight:500">${c.nombre}</div></td>
+      <td><code style="font-size:11px;background:var(--bg);padding:2px 6px;border-radius:4px">${c.slug}</code></td>
+      <td style="text-align:center">
+        <span style="font-weight:600">${cnt.total}</span>
+        <span style="color:var(--muted);font-size:11px"> (${cnt.activos} act.)</span>
+      </td>
+      <td>${c.activo?'<span class="badge badge-success">Activa</span>':'<span class="badge badge-muted">Inactiva</span>'}</td>
+      <td>
+        <div class="d-flex gap-2">
+          <button class="btn btn-ghost btn-sm" onclick="editarCat(${c.id})" title="Editar">✏️</button>
+          <button class="btn btn-ghost btn-sm" onclick="eliminarCat(${c.id},'${c.nombre.replace(/'/g,"\\'")}')" title="Eliminar">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function editarCat(id) {
+  const c = cats.find(x=>x.id===id);
+  if (!c) return;
+  document.getElementById('cat-id').value = id;
+  document.getElementById('cat-nombre').value = c.nombre;
+  document.getElementById('cat-slug').value = c.slug;
+  document.getElementById('cat-descripcion').value = c.descripcion||'';
+  document.getElementById('cat-orden').value = c.orden||0;
+  document.getElementById('cat-activo').checked = c.activo;
+  document.getElementById('form-cat-title').textContent = 'Editar Categoría';
+  document.getElementById('btn-cat-guardar').textContent = 'Actualizar categoría';
+  document.getElementById('cat-nombre').focus();
+}
+
+async function eliminarCat(id, nombre) {
+  const cnt = prodCount[id]?.total || 0;
+  if (cnt > 0) {
+    Utils.toast(`No se puede eliminar: tiene ${cnt} productos asociados. Reasignalos primero.`, 'warning');
+    return;
+  }
+  const ok = await Utils.confirm(`¿Eliminar la categoría <b>${nombre}</b>?`, 'Eliminar categoría');
+  if (!ok) return;
+  const { error } = await db.from('categorias').delete().eq('id',id);
+  if (error) { Utils.toast('Error: ' + error.message,'error'); return; }
+  cats = cats.filter(c=>c.id!==id);
+  renderTable();
+  Utils.toast('Categoría eliminada','success');
+  resetForm();
+}
+
+function resetForm() {
+  document.getElementById('cat-id').value = '';
+  document.getElementById('cat-form').reset();
+  document.getElementById('cat-activo').checked = true;
+  document.getElementById('form-cat-title').textContent = 'Nueva Categoría';
+  document.getElementById('btn-cat-guardar').textContent = 'Guardar categoría';
+}
+
+// Auto-slug
+document.getElementById('cat-nombre')?.addEventListener('input', function() {
+  document.getElementById('cat-slug').value = Utils.slug(this.value);
+});
+
+document.getElementById('btn-cat-reset')?.addEventListener('click', resetForm);
+document.getElementById('btn-nueva')?.addEventListener('click', resetForm);
+
+document.getElementById('cat-form')?.addEventListener('submit', async e => {
+  e.preventDefault();
+  const id    = document.getElementById('cat-id').value;
+  const nombre = document.getElementById('cat-nombre').value.trim();
+  if (!nombre) { Utils.toast('El nombre es obligatorio','warning'); return; }
+  const payload = {
+    nombre,
+    slug: Utils.slug(nombre),
+    descripcion: document.getElementById('cat-descripcion').value||null,
+    orden: parseInt(document.getElementById('cat-orden').value)||0,
+    activo: document.getElementById('cat-activo').checked
+  };
+  const btn = document.getElementById('btn-cat-guardar');
+  btn.disabled = true;
+  let error;
+  if (id) {
+    ({ error } = await db.from('categorias').update(payload).eq('id',id));
+  } else {
+    ({ error } = await db.from('categorias').insert(payload));
+  }
+  btn.disabled = false;
+  if (error) {
+    Utils.toast(error.message.includes('unique') ? 'Ya existe una categoría con ese nombre.' : error.message, 'error');
+    return;
+  }
+  Utils.toast(id ? 'Categoría actualizada' : 'Categoría creada', 'success');
+  resetForm();
+  await loadData();
+});
+
+async function initPage() {
+  const profile = await Auth.init();
+  if (!profile) return;
+  await Auth.requireRole(['administrador']);
+  await Layout.init('categorias','Categorías');
+  await loadData();
+}
+initPage();
+</script>
+</body>
+</html>

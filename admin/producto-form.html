@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Producto — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><div class="sidebar-brand-icon">🏠</div><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/admin/productos.html" class="btn btn-ghost btn-sm">← Volver</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1 id="form-title">Nuevo Producto</h1><p id="form-subtitle">Completá los datos del producto</p></div>
+        <div class="page-header-actions">
+          <button class="btn btn-outline" id="btn-cancelar" onclick="history.back()">Cancelar</button>
+          <button class="btn btn-primary" id="btn-guardar">Guardar producto</button>
+        </div>
+      </div>
+
+      <form id="producto-form" novalidate>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;align-items:start">
+
+          <!-- COLUMNA IZQUIERDA -->
+          <div style="display:flex;flex-direction:column;gap:20px">
+
+            <!-- Info básica -->
+            <div class="card">
+              <div class="card-header"><span class="card-title">Información básica</span></div>
+              <div class="card-body">
+                <div class="form-grid">
+                  <div class="form-group col-span-2">
+                    <label>Nombre del producto <span class="req">*</span></label>
+                    <input type="text" id="nombre" placeholder="Ej: Cafetera de filtro 12 tazas" required>
+                    <span class="form-hint">Este nombre aparece en la tienda pública</span>
+                  </div>
+                  <div class="form-group">
+                    <label>Categoría <span class="req">*</span></label>
+                    <select id="categoria_id" required>
+                      <option value="">Seleccioná una categoría</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Marca</label>
+                    <input type="text" id="marca" placeholder="Ej: Philips">
+                  </div>
+                  <div class="form-group">
+                    <label>SKU</label>
+                    <div style="display:flex;gap:8px">
+                      <input type="text" id="sku" placeholder="Ej: ELEC-CAFE-1234" style="flex:1">
+                      <button type="button" class="btn btn-outline btn-sm" id="btn-gen-sku" title="Generar SKU">🎲</button>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Código de barras</label>
+                    <input type="text" id="codigo_barras" placeholder="Ej: 7798051420017">
+                  </div>
+                  <div class="form-group col-span-2">
+                    <label>Descripción corta</label>
+                    <input type="text" id="descripcion_corta" placeholder="Una línea descriptiva (se muestra en cards)" maxlength="120">
+                  </div>
+                  <div class="form-group col-span-2">
+                    <label>Descripción completa</label>
+                    <textarea id="descripcion" placeholder="Características, especificaciones, usos..."></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Precios -->
+            <div class="card">
+              <div class="card-header"><span class="card-title">Precios</span></div>
+              <div class="card-body">
+                <div class="form-grid form-grid-3">
+                  <div class="form-group">
+                    <label>Precio de costo</label>
+                    <input type="number" id="precio_costo" placeholder="0" min="0" step="0.01">
+                  </div>
+                  <div class="form-group">
+                    <label>Precio minorista</label>
+                    <input type="number" id="precio_minorista" placeholder="0" min="0" step="0.01">
+                  </div>
+                  <div class="form-group">
+                    <label>Precio mayorista</label>
+                    <input type="number" id="precio_mayorista" placeholder="0" min="0" step="0.01">
+                  </div>
+                  <div class="form-group">
+                    <label>Precio oferta</label>
+                    <input type="number" id="precio_oferta" placeholder="0" min="0" step="0.01">
+                  </div>
+                  <div class="form-group" style="padding-top:20px">
+                    <label class="toggle-wrap">
+                      <div class="toggle"><input type="checkbox" id="en_oferta"><div class="toggle-track"></div><div class="toggle-thumb"></div></div>
+                      <span class="toggle-label">En oferta</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Especificaciones -->
+            <div class="card">
+              <div class="card-header"><span class="card-title">Especificaciones (opcional)</span></div>
+              <div class="card-body">
+                <div class="form-grid form-grid-3">
+                  <div class="form-group"><label>Material</label><input type="text" id="material" placeholder="Ej: Acero inoxidable"></div>
+                  <div class="form-group"><label>Color</label><input type="text" id="color" placeholder="Ej: Negro/Rojo"></div>
+                  <div class="form-group"><label>Garantía</label><input type="text" id="garantia" placeholder="Ej: 12 meses"></div>
+                  <div class="form-group"><label>Peso (kg)</label><input type="number" id="peso" placeholder="0.0" step="0.001" min="0"></div>
+                  <div class="form-group"><label>Alto (cm)</label><input type="number" id="alto" placeholder="0" step="0.01" min="0"></div>
+                  <div class="form-group"><label>Ancho (cm)</label><input type="number" id="ancho" placeholder="0" step="0.01" min="0"></div>
+                  <div class="form-group"><label>Profundidad (cm)</label><input type="number" id="profundidad" placeholder="0" step="0.01" min="0"></div>
+                  <div class="form-group"><label>Proveedor</label><input type="text" id="proveedor" placeholder="Nombre proveedor"></div>
+                  <div class="form-group"><label>Ubicación en depósito</label><input type="text" id="ubicacion" placeholder="Ej: Estante A-3"></div>
+                  <div class="form-group col-span-3"><label>Observaciones internas</label><textarea id="observaciones" placeholder="Notas de uso interno (no visible en tienda)"></textarea></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- COLUMNA DERECHA -->
+          <div style="display:flex;flex-direction:column;gap:20px">
+
+            <!-- Estado -->
+            <div class="card">
+              <div class="card-header"><span class="card-title">Estado y visibilidad</span></div>
+              <div class="card-body">
+                <div class="form-grid" style="gap:14px">
+                  <div class="form-group">
+                    <label>Estado</label>
+                    <select id="estado">
+                      <option value="activo">Activo (visible en tienda)</option>
+                      <option value="inactivo">Inactivo (oculto)</option>
+                      <option value="archivado">Archivado</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="toggle-wrap">
+                      <div class="toggle"><input type="checkbox" id="destacado"><div class="toggle-track"></div><div class="toggle-thumb"></div></div>
+                      <span class="toggle-label">Destacado</span>
+                    </label>
+                  </div>
+                  <div class="form-group">
+                    <label class="toggle-wrap">
+                      <div class="toggle"><input type="checkbox" id="es_nuevo"><div class="toggle-track"></div><div class="toggle-thumb"></div></div>
+                      <span class="toggle-label">Marcar como "Nuevo"</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stock -->
+            <div class="card">
+              <div class="card-header"><span class="card-title">Inventario</span></div>
+              <div class="card-body">
+                <div class="form-grid" style="gap:14px">
+                  <div class="form-group">
+                    <label class="toggle-wrap">
+                      <div class="toggle"><input type="checkbox" id="seguimiento_inventario" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></div>
+                      <span class="toggle-label">Controlar stock</span>
+                    </label>
+                  </div>
+                  <div class="form-group" id="stock-fields">
+                    <label>Stock inicial <span class="req" id="stock-inicial-label" style="display:none">*</span></label>
+                    <input type="number" id="stock_actual" placeholder="0" min="0" step="1">
+                    <span class="form-hint">Solo para nuevo producto. Los movimientos posteriores se hacen desde "Inventario"</span>
+                  </div>
+                  <div class="form-group">
+                    <label>Stock mínimo (alerta)</label>
+                    <input type="number" id="stock_minimo" placeholder="0" min="0" step="1">
+                    <span class="form-hint">Se mostrará alerta cuando el stock sea ≤ a este valor</span>
+                  </div>
+                  <div class="form-group">
+                    <label>Unidad de medida</label>
+                    <select id="unidad">
+                      <option value="unidad">Unidad</option>
+                      <option value="par">Par</option>
+                      <option value="set">Set</option>
+                      <option value="caja">Caja</option>
+                      <option value="kg">Kilogramo</option>
+                      <option value="litro">Litro</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="toggle-wrap">
+                      <div class="toggle"><input type="checkbox" id="permite_venta_sin_stock"><div class="toggle-track"></div><div class="toggle-thumb"></div></div>
+                      <span class="toggle-label">Vender sin stock</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Imagen -->
+            <div class="card">
+              <div class="card-header"><span class="card-title">Imagen principal</span></div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label>URL de imagen existente</label>
+                  <input type="url" id="imagen_principal_url" placeholder="/images/productos/categoria/foto.jpg">
+                  <span class="form-hint">Ruta de imagen ya subida (ej: imágenes existentes del catálogo)</span>
+                </div>
+                <div style="margin:12px 0;text-align:center;color:var(--muted);font-size:12px">— o subir nueva imagen —</div>
+                <div class="upload-area" id="upload-area">
+                  <div class="upload-icon">🖼️</div>
+                  <div class="upload-text">Hacé clic o arrastrá una imagen</div>
+                  <div class="upload-sub">JPG, PNG, WEBP · Máx. 5 MB</div>
+                  <input type="file" id="imagen-file" accept="image/jpeg,image/png,image/webp" style="display:none">
+                </div>
+                <div id="img-preview" style="margin-top:10px"></div>
+                <div id="upload-status" style="font-size:12px;margin-top:6px"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </form>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const editId    = urlParams.get('id');
+let isEdit      = !!editId;
+let currentProfile = null;
+let uploadedImageUrl = null;
+
+function val(id) { return document.getElementById(id)?.value || ''; }
+function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = v ?? ''; }
+function setCheck(id, v) { const el = document.getElementById(id); if (el) el.checked = !!v; }
+function num(v) { const n = parseFloat(v); return isNaN(n) ? null : n; }
+function int(v) { const n = parseInt(v); return isNaN(n) ? 0 : n; }
+
+async function cargarCategorias() {
+  const { data } = await db.from('categorias').select('id,nombre').eq('activo',true).order('orden');
+  const sel = document.getElementById('categoria_id');
+  (data||[]).forEach(c => sel.innerHTML += `<option value="${c.id}">${c.nombre}</option>`);
+}
+
+async function cargarProducto() {
+  if (!isEdit) return;
+  const { data, error } = await db.from('productos').select('*').eq('id',editId).single();
+  if (error || !data) { Utils.toast('Producto no encontrado','error'); return; }
+
+  document.getElementById('form-title').textContent = 'Editar Producto';
+  document.getElementById('form-subtitle').textContent = data.nombre;
+  document.getElementById('stock-fields').style.opacity = '0.5';
+  document.getElementById('stock-fields').title = 'Para modificar el stock usá el módulo Inventario';
+
+  setVal('nombre', data.nombre); setVal('categoria_id', data.categoria_id);
+  setVal('marca', data.marca); setVal('sku', data.sku); setVal('codigo_barras', data.codigo_barras);
+  setVal('descripcion_corta', data.descripcion_corta); setVal('descripcion', data.descripcion);
+  setVal('precio_costo', data.precio_costo); setVal('precio_minorista', data.precio_minorista);
+  setVal('precio_mayorista', data.precio_mayorista); setVal('precio_oferta', data.precio_oferta);
+  setCheck('en_oferta', data.en_oferta);
+  setVal('stock_actual', data.stock_actual); setVal('stock_minimo', data.stock_minimo);
+  setVal('unidad', data.unidad); setVal('ubicacion', data.ubicacion); setVal('proveedor', data.proveedor);
+  setCheck('seguimiento_inventario', data.seguimiento_inventario);
+  setCheck('permite_venta_sin_stock', data.permite_venta_sin_stock);
+  setVal('estado', data.estado);
+  setCheck('destacado', data.destacado); setCheck('es_nuevo', data.es_nuevo);
+  setVal('material', data.material); setVal('color', data.color); setVal('garantia', data.garantia);
+  setVal('peso', data.peso); setVal('alto', data.alto); setVal('ancho', data.ancho); setVal('profundidad', data.profundidad);
+  setVal('observaciones', data.observaciones);
+  setVal('imagen_principal_url', data.imagen_principal_url);
+  if (data.imagen_principal_url) {
+    document.getElementById('img-preview').innerHTML =
+      `<img src="${data.imagen_principal_url}" style="width:100%;max-height:180px;object-fit:contain;background:var(--bg);border-radius:var(--r);border:1px solid var(--border)" onerror="this.style.display='none'">`;
+  }
+}
+
+document.getElementById('btn-gen-sku')?.addEventListener('click', () => {
+  const cat = document.getElementById('categoria_id');
+  const catText = cat.options[cat.selectedIndex]?.text || '';
+  const nombre = val('nombre');
+  setVal('sku', Utils.generateSKU(catText, nombre));
+});
+
+// Preview imagen URL
+document.getElementById('imagen_principal_url')?.addEventListener('input', function() {
+  const url = this.value.trim();
+  if (url) {
+    document.getElementById('img-preview').innerHTML =
+      `<img src="${url}" style="width:100%;max-height:160px;object-fit:contain;background:var(--bg);border-radius:var(--r);border:1px solid var(--border)" onerror="this.style.display='none'">`;
+  }
+});
+
+// Upload imagen a Supabase Storage
+const uploadArea = document.getElementById('upload-area');
+const fileInput  = document.getElementById('imagen-file');
+uploadArea?.addEventListener('click', () => fileInput.click());
+uploadArea?.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+uploadArea?.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+uploadArea?.addEventListener('drop', e => { e.preventDefault(); uploadArea.classList.remove('drag-over'); handleFile(e.dataTransfer.files[0]); });
+fileInput?.addEventListener('change', () => handleFile(fileInput.files[0]));
+
+async function handleFile(file) {
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { Utils.toast('La imagen debe ser menor a 5 MB','warning'); return; }
+  const status = document.getElementById('upload-status');
+  status.innerHTML = '<span class="spinner"></span> Subiendo imagen...';
+  const ext  = file.name.split('.').pop().toLowerCase();
+  const name = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const path = `productos/${name}`;
+  const { data, error } = await db.storage.from('producto-imagenes').upload(path, file);
+  if (error) {
+    status.textContent = '❌ Error al subir imagen: ' + error.message;
+    return;
+  }
+  const { data: urlData } = db.storage.from('producto-imagenes').getPublicUrl(path);
+  uploadedImageUrl = urlData.publicUrl;
+  setVal('imagen_principal_url', uploadedImageUrl);
+  document.getElementById('img-preview').innerHTML =
+    `<img src="${uploadedImageUrl}" style="width:100%;max-height:160px;object-fit:contain;background:var(--bg);border-radius:var(--r);border:1px solid var(--border)">`;
+  status.textContent = '✅ Imagen subida correctamente';
+}
+
+// Guardar
+document.getElementById('btn-guardar')?.addEventListener('click', async () => {
+  const nombre = val('nombre').trim();
+  if (!nombre) { Utils.toast('El nombre es obligatorio','warning'); document.getElementById('nombre').focus(); return; }
+  const cat = val('categoria_id');
+  if (!cat) { Utils.toast('Seleccioná una categoría','warning'); document.getElementById('categoria_id').focus(); return; }
+
+  const payload = {
+    nombre, slug: Utils.slug(nombre),
+    categoria_id: parseInt(cat),
+    marca: val('marca')||null,
+    sku: val('sku')||null,
+    codigo_barras: val('codigo_barras')||null,
+    descripcion_corta: val('descripcion_corta')||null,
+    descripcion: val('descripcion')||null,
+    precio_costo: num(val('precio_costo')),
+    precio_minorista: num(val('precio_minorista')),
+    precio_mayorista: num(val('precio_mayorista')),
+    precio_oferta: num(val('precio_oferta')),
+    en_oferta: document.getElementById('en_oferta').checked,
+    stock_minimo: int(val('stock_minimo')),
+    unidad: val('unidad')||'unidad',
+    ubicacion: val('ubicacion')||null,
+    proveedor: val('proveedor')||null,
+    seguimiento_inventario: document.getElementById('seguimiento_inventario').checked,
+    permite_venta_sin_stock: document.getElementById('permite_venta_sin_stock').checked,
+    estado: val('estado')||'activo',
+    destacado: document.getElementById('destacado').checked,
+    es_nuevo: document.getElementById('es_nuevo').checked,
+    material: val('material')||null, color: val('color')||null, garantia: val('garantia')||null,
+    peso: num(val('peso')), alto: num(val('alto')), ancho: num(val('ancho')), profundidad: num(val('profundidad')),
+    observaciones: val('observaciones')||null,
+    imagen_principal_url: val('imagen_principal_url')||null,
+    updated_by: currentProfile?.id
+  };
+
+  const btn = document.getElementById('btn-guardar');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Guardando...';
+
+  let error, data;
+  if (isEdit) {
+    ({ error, data } = await db.from('productos').update(payload).eq('id',editId).select().single());
+  } else {
+    payload.stock_actual = int(val('stock_actual'));
+    payload.created_by = currentProfile?.id;
+    ({ error, data } = await db.from('productos').insert(payload).select().single());
+
+    // Registrar movimiento inicial si tiene stock
+    if (!error && data && payload.stock_actual > 0) {
+      await db.rpc('fn_registrar_movimiento', {
+        p_producto_id: data.id, p_tipo: 'carga_inicial',
+        p_cantidad: payload.stock_actual, p_motivo: 'Carga inicial al crear producto'
+      });
+    }
+  }
+
+  btn.disabled = false; btn.textContent = 'Guardar producto';
+
+  if (error) {
+    const msg = error.message.includes('slug') ? 'Ya existe un producto con ese nombre/slug.' : error.message;
+    Utils.toast('Error: ' + msg, 'error');
+    return;
+  }
+
+  Utils.toast(isEdit ? 'Producto actualizado ✅' : 'Producto creado ✅', 'success');
+  await Utils.log(isEdit?'update':'create','productos',data?.id||editId,`Producto ${isEdit?'actualizado':'creado'}: ${nombre}`);
+  setTimeout(() => window.location.href='/admin/productos.html', 900);
+});
+
+async function initPage() {
+  const profile = await Auth.init();
+  if (!profile) return;
+  currentProfile = profile;
+  if (!['administrador','encargado_stock'].includes(profile.rol)) {
+    Utils.toast('Sin permisos para gestionar productos','error');
+    window.location.href='/admin/dashboard.html';
+    return;
+  }
+  await Layout.init('productos', isEdit ? 'Editar Producto' : 'Nuevo Producto');
+  await Promise.all([cargarCategorias(), cargarProducto()]);
+}
+initPage();
+</script>
+</body>
+</html>

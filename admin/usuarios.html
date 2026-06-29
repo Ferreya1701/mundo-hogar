@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usuarios — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><div class="sidebar-brand-icon">🏠</div><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1>Gestión de Usuarios</h1><p>Administrá los accesos al panel</p></div>
+        <div class="page-header-actions">
+          <button class="btn btn-primary" id="btn-nuevo">+ Invitar usuario</button>
+        </div>
+      </div>
+
+      <!-- Info roles -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+        <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px">
+          <div style="font-weight:700;margin-bottom:4px">👑 Administrador</div>
+          <div style="font-size:12px;color:var(--muted)">Acceso completo: productos, stock, categorías, usuarios, configuración</div>
+        </div>
+        <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px">
+          <div style="font-weight:700;margin-bottom:4px">📦 Encargado de Stock</div>
+          <div style="font-size:12px;color:var(--muted)">Puede gestionar productos y registrar movimientos de inventario</div>
+        </div>
+        <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px">
+          <div style="font-weight:700;margin-bottom:4px">👁️ Vendedor</div>
+          <div style="font-size:12px;color:var(--muted)">Solo puede ver productos, stock y alertas (lectura)</div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th>Último acceso</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body">
+            <tr><td colspan="6" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Instrucciones para agregar usuario -->
+      <div class="card mt-3" style="border-left:4px solid var(--info)">
+        <div class="card-body">
+          <div style="font-weight:600;margin-bottom:8px">ℹ️ Cómo agregar un nuevo usuario</div>
+          <ol style="font-size:13px;color:var(--muted);line-height:2;padding-left:18px">
+            <li>Ir a <strong>Supabase Dashboard → Authentication → Users → Add user</strong></li>
+            <li>Crear el usuario con email y contraseña temporal</li>
+            <li>Volver aquí y cambiar su rol desde "Editar"</li>
+            <li>El usuario inicia sesión y cambia su contraseña</li>
+          </ol>
+          <a href="https://supabase.com/dashboard" target="_blank" class="btn btn-outline btn-sm" style="margin-top:12px">
+            Abrir Supabase Dashboard ↗
+          </a>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<!-- Modal editar usuario -->
+<div id="modal-edit" class="modal-backdrop" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Editar Usuario</h3>
+      <button class="modal-close" onclick="document.getElementById('modal-edit').style.display='none'">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id">
+      <div class="form-grid" style="gap:14px">
+        <div class="form-group">
+          <label>Nombre</label>
+          <input type="text" id="edit-nombre" placeholder="Nombre completo">
+        </div>
+        <div class="form-group">
+          <label>Rol</label>
+          <select id="edit-rol">
+            <option value="vendedor">Vendedor</option>
+            <option value="encargado_stock">Encargado de Stock</option>
+            <option value="administrador">Administrador</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="toggle-wrap">
+            <div class="toggle"><input type="checkbox" id="edit-activo"><div class="toggle-track"></div><div class="toggle-thumb"></div></div>
+            <span class="toggle-label">Cuenta activa</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('modal-edit').style.display='none'">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-edit">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script>
+let users = [];
+let currentUserId = null;
+
+async function loadUsers() {
+  const { data, error } = await db.from('profiles').select('*').order('created_at');
+  if (error) { Utils.toast('Error al cargar usuarios','error'); return; }
+  users = data || [];
+  renderTable();
+}
+
+function renderTable() {
+  if (!users.length) {
+    document.getElementById('tabla-body').innerHTML =
+      `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">👥</div><h3>Sin usuarios registrados</h3></div></td></tr>`;
+    return;
+  }
+  document.getElementById('tabla-body').innerHTML = users.map(u => {
+    const initials = (u.nombre||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const esCurrent = u.id === currentUserId;
+    return `<tr>
+      <td>
+        <div class="d-flex align-center gap-2">
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--gold);color:var(--night);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${initials}</div>
+          <div>
+            <div style="font-weight:500">${u.nombre||'—'}</div>
+            ${esCurrent?'<div style="font-size:11px;color:var(--muted)">(vos)</div>':''}
+          </div>
+        </div>
+      </td>
+      <td style="font-size:12.5px;color:var(--muted)">${u.email||'—'}</td>
+      <td>${Utils.rolBadge(u.rol)}</td>
+      <td>${u.activo?'<span class="badge badge-success">Activo</span>':'<span class="badge badge-danger">Inactivo</span>'}</td>
+      <td style="font-size:12px;color:var(--muted)">${Utils.timeAgo(u.ultimo_acceso)}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="abrirEdit('${u.id}')" ${esCurrent?'disabled title="No podés editarte a vos mismo"':''}>✏️ Editar</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function abrirEdit(id) {
+  const u = users.find(x=>x.id===id);
+  if (!u) return;
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-nombre').value = u.nombre||'';
+  document.getElementById('edit-rol').value = u.rol;
+  document.getElementById('edit-activo').checked = u.activo;
+  document.getElementById('modal-edit').style.display = 'flex';
+}
+
+document.getElementById('btn-save-edit')?.addEventListener('click', async () => {
+  const id = document.getElementById('edit-id').value;
+  const nombre = document.getElementById('edit-nombre').value.trim();
+  const rol    = document.getElementById('edit-rol').value;
+  const activo = document.getElementById('edit-activo').checked;
+
+  if (!nombre) { Utils.toast('El nombre es obligatorio','warning'); return; }
+
+  const btn = document.getElementById('btn-save-edit');
+  btn.disabled = true;
+  const { error } = await db.from('profiles').update({ nombre, rol, activo }).eq('id',id);
+  btn.disabled = false;
+  if (error) { Utils.toast('Error: '+error.message,'error'); return; }
+  document.getElementById('modal-edit').style.display = 'none';
+  Utils.toast('Usuario actualizado','success');
+  await loadUsers();
+});
+
+document.getElementById('btn-nuevo')?.addEventListener('click', () => {
+  Utils.toast('Para crear usuarios: Supabase Dashboard → Authentication → Users → Add user','info',6000);
+});
+
+async function initPage() {
+  const profile = await Auth.init();
+  if (!profile) return;
+  await Auth.requireRole(['administrador']);
+  currentUserId = profile.id;
+  await Layout.init('usuarios','Usuarios');
+  await loadUsers();
+}
+initPage();
+</script>
+</body>
+</html>

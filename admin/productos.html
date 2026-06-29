@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Productos — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><div class="sidebar-brand-icon">🏠</div><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/" target="_blank" class="btn btn-ghost btn-sm">🌐 Ver Tienda</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1>Productos</h1><p id="subtitle">Cargando catálogo...</p></div>
+        <div class="page-header-actions">
+          <button class="btn btn-outline btn-sm" id="btn-export">⬇ Exportar CSV</button>
+          <button class="btn btn-outline btn-sm" id="btn-importar">📥 Importar JSON</button>
+          <a href="/admin/producto-form.html" class="btn btn-primary">+ Nuevo Producto</a>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="filters-bar">
+        <div class="search-bar" style="flex:1;min-width:200px;max-width:340px">
+          <span class="search-icon">🔍</span>
+          <input type="search" id="q" placeholder="Buscar por nombre, SKU...">
+        </div>
+        <select id="filtro-cat" style="min-width:160px">
+          <option value="">Todas las categorías</option>
+        </select>
+        <select id="filtro-estado" style="min-width:130px">
+          <option value="">Todos los estados</option>
+          <option value="activo">Activo</option>
+          <option value="inactivo">Inactivo</option>
+          <option value="archivado">Archivado</option>
+        </select>
+        <select id="filtro-stock" style="min-width:130px">
+          <option value="">Cualquier stock</option>
+          <option value="sin">Sin stock (= 0)</option>
+          <option value="bajo">Stock bajo</option>
+          <option value="ok">Stock OK</option>
+        </select>
+        <span class="filter-count" id="filter-count"></span>
+      </div>
+
+      <!-- Tabla -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:42px"></th>
+              <th>Producto</th>
+              <th>Categoría</th>
+              <th>SKU</th>
+              <th style="text-align:center">Stock</th>
+              <th>Estado</th>
+              <th>Precio</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body">
+            <tr><td colspan="8" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+        <div class="pagination" id="paginacion"></div>
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<!-- Modal importar JSON -->
+<div id="modal-import" class="modal-backdrop" style="display:none">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3 class="modal-title">Importar desde productos.json</h3>
+      <button class="modal-close" id="close-import">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--muted);margin-bottom:16px;font-size:13px">
+        Importa los 122 productos del catálogo JSON existente a la base de datos Supabase.
+        Los productos ya existentes (mismo slug) serán actualizados.
+      </p>
+      <div id="import-progress" style="display:none">
+        <div style="background:var(--bg);border-radius:var(--r);height:8px;overflow:hidden;margin-bottom:8px">
+          <div id="import-bar" style="height:100%;background:var(--gold);width:0%;transition:width .3s"></div>
+        </div>
+        <div id="import-status" style="font-size:12px;color:var(--muted)"></div>
+      </div>
+      <div id="import-result"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="close-import2">Cancelar</button>
+      <button class="btn btn-primary" id="btn-do-import">Importar ahora</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script>
+let allProducts = [];
+let cats = {};
+let page = 1;
+const PER = 20;
+
+function getFilters() {
+  return {
+    q:      document.getElementById('q').value.toLowerCase().trim(),
+    cat:    document.getElementById('filtro-cat').value,
+    estado: document.getElementById('filtro-estado').value,
+    stock:  document.getElementById('filtro-stock').value
+  };
+}
+
+function applyFilters() {
+  const f = getFilters();
+  let list = allProducts;
+  if (f.q) list = list.filter(p => (p.nombre||'').toLowerCase().includes(f.q) || (p.sku||'').toLowerCase().includes(f.q));
+  if (f.cat) list = list.filter(p => String(p.categoria_id) === f.cat);
+  if (f.estado) list = list.filter(p => p.estado === f.estado);
+  if (f.stock === 'sin') list = list.filter(p => p.stock_actual <= 0);
+  else if (f.stock === 'bajo') list = list.filter(p => p.stock_actual > 0 && p.stock_minimo > 0 && p.stock_actual <= p.stock_minimo);
+  else if (f.stock === 'ok') list = list.filter(p => p.stock_actual > 0 && (p.stock_minimo === 0 || p.stock_actual > p.stock_minimo));
+  return list;
+}
+
+function renderTable() {
+  const filtered = applyFilters();
+  const total = filtered.length;
+  const slice = filtered.slice((page-1)*PER, page*PER);
+
+  document.getElementById('filter-count').textContent = `${total} producto${total!==1?'s':''}`;
+  document.getElementById('subtitle').textContent = `${allProducts.length} productos en total`;
+
+  if (!slice.length) {
+    document.getElementById('tabla-body').innerHTML =
+      `<tr><td colspan="8"><div class="empty-state">
+        <div class="empty-state-icon">🛍️</div>
+        <h3>Sin resultados</h3>
+        <p>Probá con otros filtros o <a href="/admin/producto-form.html">agregá un nuevo producto</a></p>
+       </div></td></tr>`;
+    document.getElementById('paginacion').innerHTML = '';
+    return;
+  }
+
+  document.getElementById('tabla-body').innerHTML = slice.map(p => {
+    const catNombre = cats[p.categoria_id] || '—';
+    const sc = Utils.stockClass(p.stock_actual, p.stock_minimo);
+    const imgSrc = p.imagen_principal_url || '';
+    return `<tr>
+      <td>${imgSrc
+        ? `<img class="td-img" src="${imgSrc}" alt="${p.nombre}" onerror="this.style.display='none'">`
+        : `<div class="td-img-ph">🛍️</div>`}</td>
+      <td>
+        <div class="td-product" style="flex-direction:column;align-items:flex-start;gap:2px">
+          <div class="td-name">${p.nombre}</div>
+          ${p.marca ? `<div class="td-sku">${p.marca}</div>` : ''}
+        </div>
+      </td>
+      <td style="color:var(--muted);font-size:12.5px">${catNombre}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--muted)">${p.sku||'—'}</td>
+      <td style="text-align:center">
+        <span class="stock-num ${sc}">${p.stock_actual}</span>
+        ${p.stock_minimo>0?`<div style="font-size:10.5px;color:var(--muted)">mín: ${p.stock_minimo}</div>`:''}
+      </td>
+      <td>${Utils.estadoBadge(p.estado)}</td>
+      <td style="font-size:12.5px">${Utils.currency(p.precio_minorista)}</td>
+      <td>
+        <div class="d-flex gap-2">
+          <a href="/admin/producto-form.html?id=${p.id}" class="btn btn-ghost btn-sm" title="Editar">✏️</a>
+          <button class="btn btn-ghost btn-sm" onclick="toggleEstado(${p.id},'${p.estado}')" title="${p.estado==='activo'?'Desactivar':'Activar'}">
+            ${p.estado==='activo'?'⏸️':'▶️'}</button>
+          <button class="btn btn-ghost btn-sm" onclick="confirmarEliminar(${p.id},'${p.nombre.replace(/'/g,"\\'")}',${p.stock_actual})" title="Eliminar">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  Utils.renderPagination(
+    document.getElementById('paginacion'),
+    page, total, PER,
+    p => { page = p; renderTable(); }
+  );
+}
+
+async function toggleEstado(id, estado) {
+  const nuevoEstado = estado === 'activo' ? 'inactivo' : 'activo';
+  const ok = await Utils.confirm(`¿Cambiar estado a "${nuevoEstado}"?`, 'Cambiar estado', 'Confirmar', false);
+  if (!ok) return;
+  const { error } = await db.from('productos').update({ estado: nuevoEstado }).eq('id', id);
+  if (error) { Utils.toast('Error al cambiar estado', 'error'); return; }
+  const prod = allProducts.find(p=>p.id===id);
+  if (prod) { prod.estado = nuevoEstado; }
+  renderTable();
+  Utils.toast('Estado actualizado', 'success');
+  await Utils.log('update', 'productos', id, `Estado cambiado a ${nuevoEstado}`);
+}
+
+async function confirmarEliminar(id, nombre, stock) {
+  const msg = stock > 0
+    ? `<b>${nombre}</b> tiene ${stock} unidades en stock. ¿Seguro que querés eliminarlo permanentemente?`
+    : `¿Eliminar permanentemente <b>${nombre}</b>?`;
+  const ok = await Utils.confirm(msg, 'Eliminar producto');
+  if (!ok) return;
+  const { error } = await db.from('productos').delete().eq('id', id);
+  if (error) { Utils.toast('Error al eliminar: ' + error.message, 'error'); return; }
+  allProducts = allProducts.filter(p => p.id !== id);
+  renderTable();
+  Utils.toast('Producto eliminado', 'success');
+  await Utils.log('delete', 'productos', id, `Producto eliminado: ${nombre}`);
+}
+
+async function cargarCategorias() {
+  const { data } = await db.from('categorias').select('id,nombre').order('orden');
+  const sel = document.getElementById('filtro-cat');
+  (data||[]).forEach(c => {
+    cats[c.id] = c.nombre;
+    sel.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
+  });
+}
+
+async function cargarProductos() {
+  const { data, error } = await db.from('productos')
+    .select('id,nombre,slug,sku,marca,categoria_id,stock_actual,stock_minimo,estado,precio_minorista,imagen_principal_url')
+    .order('nombre');
+  if (error) { Utils.toast('Error al cargar productos: ' + error.message, 'error'); return; }
+  allProducts = data || [];
+  renderTable();
+}
+
+// Export CSV
+document.getElementById('btn-export')?.addEventListener('click', () => {
+  const filtered = applyFilters();
+  Utils.exportCSV(filtered.map(p => ({
+    ID: p.id, Nombre: p.nombre, SKU: p.sku||'', Categoría: cats[p.categoria_id]||'',
+    Stock: p.stock_actual, 'Stock Mínimo': p.stock_minimo,
+    Estado: p.estado, 'Precio Minorista': p.precio_minorista||''
+  })), `productos-mundohogar-${new Date().toISOString().slice(0,10)}.csv`);
+});
+
+// Import JSON
+const modalImport = document.getElementById('modal-import');
+document.getElementById('btn-importar')?.addEventListener('click', () => { modalImport.style.display='flex'; });
+document.getElementById('close-import')?.addEventListener('click', () => { modalImport.style.display='none'; });
+document.getElementById('close-import2')?.addEventListener('click', () => { modalImport.style.display='none'; });
+
+document.getElementById('btn-do-import')?.addEventListener('click', async () => {
+  const btn = document.getElementById('btn-do-import');
+  btn.disabled = true;
+  document.getElementById('import-progress').style.display = 'block';
+  document.getElementById('import-result').innerHTML = '';
+
+  try {
+    const resp = await fetch('/src/data/productos.json');
+    if (!resp.ok) throw new Error('No se pudo cargar productos.json');
+    const json = await resp.json();
+    const { data: catRows } = await db.from('categorias').select('id,slug');
+    const catBySlug = {};
+    (catRows||[]).forEach(c => catBySlug[c.slug] = c.id);
+
+    const prods = (json.productos||[]);
+    let ok=0, skip=0, fail=0;
+    for (let i=0; i<prods.length; i++) {
+      const p = prods[i];
+      const pct = Math.round((i+1)/prods.length*100);
+      document.getElementById('import-bar').style.width = pct + '%';
+      document.getElementById('import-status').textContent = `Procesando ${i+1} de ${prods.length}: ${p.nombre}`;
+      const cat_id = catBySlug[p.categoria] || null;
+      const row = {
+        nombre: p.nombre,
+        slug: p.slug || Utils.slug(p.nombre),
+        categoria_id: cat_id,
+        imagen_principal_url: p.imagen || null,
+        estado: 'activo'
+      };
+      const { error } = await db.from('productos')
+        .upsert(row, { onConflict: 'slug', ignoreDuplicates: false });
+      if (error) { fail++; } else { ok++; }
+    }
+    document.getElementById('import-result').innerHTML =
+      `<div style="margin-top:12px;padding:12px 16px;border-radius:var(--r);background:var(--success-bg);color:#15803D;font-size:13px">
+        ✅ Importación completada: ${ok} productos importados${fail?' | '+fail+' errores':''}
+      </div>`;
+    await cargarProductos();
+  } catch(e) {
+    document.getElementById('import-result').innerHTML =
+      `<div style="margin-top:12px;padding:12px 16px;border-radius:var(--r);background:var(--danger-bg);color:var(--danger);font-size:13px">
+        ❌ Error: ${e.message}
+      </div>`;
+  }
+  btn.disabled = false;
+});
+
+// Filtros con debounce
+let debTimer;
+['q','filtro-cat','filtro-estado','filtro-stock'].forEach(id => {
+  document.getElementById(id)?.addEventListener('input', () => {
+    clearTimeout(debTimer);
+    debTimer = setTimeout(() => { page=1; renderTable(); }, 200);
+  });
+  document.getElementById(id)?.addEventListener('change', () => { page=1; renderTable(); });
+});
+
+async function initPage() {
+  const profile = await Auth.init();
+  if (!profile) return;
+  await Layout.init('productos', 'Productos');
+  await Promise.all([cargarCategorias(), cargarProductos()]);
+}
+initPage();
+</script>
+</body>
+</html>

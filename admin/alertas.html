@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alertas de Stock — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><div class="sidebar-brand-icon">🏠</div><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <button class="btn btn-outline btn-sm" onclick="loadData()">↺ Actualizar</button>
+        <a href="/admin/inventario.html" class="btn btn-primary btn-sm">+ Registrar entrada</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1>Alertas de Stock</h1><p>Productos que requieren reposición</p></div>
+        <div class="page-header-actions">
+          <button class="btn btn-outline btn-sm" id="btn-export">⬇ Exportar</button>
+        </div>
+      </div>
+
+      <!-- KPIs rápidos -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi-card"><div class="kpi-icon red">🚫</div><div class="kpi-label">Sin stock</div><div class="kpi-value" id="kpi-cero">—</div></div>
+        <div class="kpi-card"><div class="kpi-icon gold">⚠️</div><div class="kpi-label">Stock bajo</div><div class="kpi-value" id="kpi-bajo">—</div></div>
+        <div class="kpi-card"><div class="kpi-icon green">✅</div><div class="kpi-label">Stock OK</div><div class="kpi-value" id="kpi-ok">—</div></div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-cero" onclick="setTab('cero')">🚫 Sin stock</button>
+        <button class="tab-btn" id="tab-bajo" onclick="setTab('bajo')">⚠️ Stock bajo</button>
+        <button class="tab-btn" id="tab-todo" onclick="setTab('todo')">📋 Todos los activos</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Categoría</th>
+              <th style="text-align:center">Stock actual</th>
+              <th style="text-align:center">Stock mínimo</th>
+              <th>Estado</th>
+              <th>Acción rápida</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body">
+            <tr><td colspan="6" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script>
+let allData = [];
+let cats = {};
+let currentTab = 'cero';
+
+async function loadData() {
+  const [{ data: prods }, { data: catData }] = await Promise.all([
+    db.from('productos').select('id,nombre,categoria_id,stock_actual,stock_minimo,estado').eq('estado','activo').order('stock_actual'),
+    db.from('categorias').select('id,nombre')
+  ]);
+  allData = prods || [];
+  (catData||[]).forEach(c => cats[c.id]=c.nombre);
+
+  const cero = allData.filter(p=>p.stock_actual<=0).length;
+  const bajo = allData.filter(p=>p.stock_actual>0&&p.stock_minimo>0&&p.stock_actual<=p.stock_minimo).length;
+  const ok   = allData.length - cero - bajo;
+
+  document.getElementById('kpi-cero').textContent = cero;
+  document.getElementById('kpi-bajo').textContent = bajo;
+  document.getElementById('kpi-ok').textContent   = ok;
+
+  renderTable();
+}
+
+function setTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  renderTable();
+}
+
+function getFiltered() {
+  if (currentTab === 'cero') return allData.filter(p=>p.stock_actual<=0);
+  if (currentTab === 'bajo') return allData.filter(p=>p.stock_actual>0&&p.stock_minimo>0&&p.stock_actual<=p.stock_minimo);
+  return allData;
+}
+
+function renderTable() {
+  const list = getFiltered();
+  if (!list.length) {
+    document.getElementById('tabla-body').innerHTML =
+      `<tr><td colspan="6"><div class="empty-state">
+        <div class="empty-state-icon">✅</div>
+        <h3>${currentTab==='todo'?'Sin productos activos':'Sin alertas en esta categoría'}</h3>
+        <p>${currentTab!=='todo'?'¡Todo el stock está en niveles correctos!':''}</p>
+      </div></td></tr>`;
+    return;
+  }
+  document.getElementById('tabla-body').innerHTML = list.map(p => {
+    const sc = Utils.stockClass(p.stock_actual, p.stock_minimo);
+    return `<tr>
+      <td><div style="font-weight:500">${p.nombre}</div></td>
+      <td style="font-size:12.5px;color:var(--muted)">${cats[p.categoria_id]||'—'}</td>
+      <td style="text-align:center"><span class="stock-num ${sc}">${p.stock_actual}</span></td>
+      <td style="text-align:center;color:var(--muted)">${p.stock_minimo||'—'}</td>
+      <td>
+        ${p.stock_actual <= 0
+          ? '<span class="badge badge-danger">Sin stock</span>'
+          : '<span class="badge badge-warning">Stock bajo</span>'}
+      </td>
+      <td>
+        <div class="d-flex gap-2">
+          <a href="/admin/inventario.html" class="btn btn-outline btn-sm" style="font-size:11px">📥 Entrada</a>
+          <a href="/admin/producto-form.html?id=${p.id}" class="btn btn-ghost btn-sm">✏️</a>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+document.getElementById('btn-export')?.addEventListener('click', () => {
+  Utils.exportCSV(getFiltered().map(p=>({
+    Nombre: p.nombre,
+    Categoría: cats[p.categoria_id]||'',
+    'Stock Actual': p.stock_actual,
+    'Stock Mínimo': p.stock_minimo,
+    Alerta: p.stock_actual<=0?'Sin stock':'Stock bajo'
+  })), `alertas-stock-${new Date().toISOString().slice(0,10)}.csv`);
+});
+
+async function initPage() {
+  const profile = await Auth.init();
+  if (!profile) return;
+  await Layout.init('alertas','Alertas de Stock');
+  await loadData();
+}
+initPage();
+</script>
+</body>
+</html>

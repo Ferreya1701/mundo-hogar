@@ -14,3 +14,22 @@ material/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Dependencias (si se agrega Node en el futuro)
+node_modules/
+
+# Variables de entorno locales
+.env
+.env.local
+
+# Config local de Claude Code (no va al repo)
+.claude/
+
+# Imagenes sueltas en la raiz: son duplicados/originales de public/images/
+# El sitio usa /images/ -> public/images/ (rewrite). Estas NO se publican.
+/*.jpg
+/*.JPG
+/*.jpeg
+/*.JPEG
+/*.png
+/*.PNG

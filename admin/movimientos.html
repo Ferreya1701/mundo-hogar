@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Historial de Movimientos — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><div class="sidebar-brand-icon">🏠</div><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/admin/inventario.html" class="btn btn-primary btn-sm">+ Registrar</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1>Historial de Movimientos</h1><p>Registro completo de entradas y salidas de stock</p></div>
+        <div class="page-header-actions">
+          <button class="btn btn-outline btn-sm" id="btn-export">⬇ Exportar CSV</button>
+        </div>
+      </div>
+
+      <div class="filters-bar">
+        <div class="search-bar" style="flex:1;min-width:200px;max-width:300px">
+          <span class="search-icon">🔍</span>
+          <input type="search" id="q" placeholder="Buscar por producto...">
+        </div>
+        <select id="filtro-tipo" style="min-width:175px">
+          <option value="">Todos los tipos</option>
+          <optgroup label="Entradas">
+            <option value="entrada_compra">Entrada Compra</option>
+            <option value="devolucion_cliente">Dev. Cliente</option>
+            <option value="ajuste_positivo">Ajuste +</option>
+            <option value="carga_inicial">Carga Inicial</option>
+          </optgroup>
+          <optgroup label="Salidas">
+            <option value="salida_venta">Salida Venta</option>
+            <option value="devolucion_proveedor">Dev. Proveedor</option>
+            <option value="producto_danado">Dañado</option>
+            <option value="perdida">Pérdida</option>
+            <option value="ajuste_negativo">Ajuste −</option>
+          </optgroup>
+          <optgroup label="Otros">
+            <option value="transferencia">Transferencia</option>
+            <option value="correccion">Corrección</option>
+          </optgroup>
+        </select>
+        <input type="date" id="filtro-desde" style="min-width:140px">
+        <input type="date" id="filtro-hasta" style="min-width:140px">
+        <button class="btn btn-outline btn-sm" id="btn-limpiar">Limpiar filtros</button>
+        <span class="filter-count" id="filter-count"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Producto</th>
+              <th>Tipo</th>
+              <th style="text-align:center">Cantidad</th>
+              <th style="text-align:center">Antes</th>
+              <th style="text-align:center">Después</th>
+              <th>Motivo</th>
+              <th>Ref.</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body">
+            <tr><td colspan="8" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+        <div class="pagination" id="paginacion"></div>
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script>
+let movimientos = [];
+let page = 1;
+const PER = 25;
+
+function getFilters() {
+  return {
+    q:     document.getElementById('q').value.toLowerCase().trim(),
+    tipo:  document.getElementById('filtro-tipo').value,
+    desde: document.getElementById('filtro-desde').value,
+    hasta: document.getElementById('filtro-hasta').value
+  };
+}
+
+function applyFilters() {
+  const f = getFilters();
+  let list = movimientos;
+  if (f.q)     list = list.filter(m => (m.productos?.nombre||'').toLowerCase().includes(f.q));
+  if (f.tipo)  list = list.filter(m => m.tipo === f.tipo);
+  if (f.desde) list = list.filter(m => m.created_at >= f.desde);
+  if (f.hasta) list = list.filter(m => m.created_at <= f.hasta + 'T23:59:59');
+  return list;
+}
+
+function renderTable() {
+  const filtered = applyFilters();
+  const total = filtered.length;
+  const slice = filtered.slice((page-1)*PER, page*PER);
+
+  document.getElementById('filter-count').textContent = `${total} movimiento${total!==1?'s':''}`;
+
+  if (!slice.length) {
+    document.getElementById('tabla-body').innerHTML =
+      `<tr><td colspan="8"><div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <h3>Sin movimientos</h3>
+        <p>No hay movimientos que coincidan con los filtros</p>
+       </div></td></tr>`;
+    document.getElementById('paginacion').innerHTML = '';
+    return;
+  }
+
+  const entradas = ['carga_inicial','entrada_compra','ajuste_positivo','devolucion_cliente'];
+  document.getElementById('tabla-body').innerHTML = slice.map(m => {
+    const esEntrada = entradas.includes(m.tipo);
+    const delta = m.stock_posterior - m.stock_anterior;
+    return `<tr>
+      <td style="white-space:nowrap;color:var(--muted);font-size:12px">${Utils.datetime(m.created_at)}</td>
+      <td>
+        <div style="font-weight:500;font-size:13px">${m.productos?.nombre||'—'}</div>
+      </td>
+      <td>${Utils.tipoMovBadge(m.tipo)}</td>
+      <td style="text-align:center;font-weight:600;font-size:14px;color:${esEntrada?'var(--success)':'var(--danger)'}">
+        ${esEntrada?'+':'−'}${m.cantidad}
+      </td>
+      <td style="text-align:center;color:var(--muted)">${m.stock_anterior}</td>
+      <td style="text-align:center;font-weight:600">${m.stock_posterior}</td>
+      <td style="font-size:12px;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${m.motivo||''}">${m.motivo||'—'}</td>
+      <td style="font-size:11.5px;color:var(--muted);font-family:monospace">${m.referencia||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  Utils.renderPagination(
+    document.getElementById('paginacion'),
+    page, total, PER,
+    p => { page=p; renderTable(); }
+  );
+}
+
+async function cargarMovimientos() {
+  const { data, error } = await db.from('movimientos_inventario')
+    .select('*,productos(nombre)')
+    .order('created_at',{ascending:false})
+    .limit(2000);
+  if (error) { Utils.toast('Error al cargar: '+error.message,'error'); return; }
+  movimientos = data || [];
+  renderTable();
+}
+
+// Export
+document.getElementById('btn-export')?.addEventListener('click', () => {
+  const f = applyFilters();
+  Utils.exportCSV(f.map(m=>({
+    Fecha: Utils.datetime(m.created_at),
+    Producto: m.productos?.nombre||'',
+    Tipo: m.tipo,
+    Cantidad: m.cantidad,
+    'Stock Anterior': m.stock_anterior,
+    'Stock Posterior': m.stock_posterior,
+    Motivo: m.motivo||'',
+    Referencia: m.referencia||''
+  })), `movimientos-${new Date().toISOString().slice(0,10)}.csv`);
+});
+
+// Limpiar filtros
+document.getElementById('btn-limpiar')?.addEventListener('click', () => {
+  ['q','filtro-tipo','filtro-desde','filtro-hasta'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value='';
+  });
+  page=1; renderTable();
+});
+
+['q','filtro-tipo','filtro-desde','filtro-hasta'].forEach(id => {
+  document.getElementById(id)?.addEventListener('input', () => { page=1; renderTable(); });
+  document.getElementById(id)?.addEventListener('change', () => { page=1; renderTable(); });
+});
+
+async function initPage() {
+  const profile = await Auth.init();
+  if (!profile) return;
+  await Layout.init('movimientos','Historial de Movimientos');
+
+  // Default: último mes
+  const hoy   = new Date();
+  const mes   = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  document.getElementById('filtro-desde').value = mes.toISOString().slice(0,10);
+  document.getElementById('filtro-hasta').value = hoy.toISOString().slice(0,10);
+
+  await cargarMovimientos();
+}
+initPage();
+</script>
+</body>
+</html>

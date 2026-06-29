@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon">🏠</div>
+      <div class="sidebar-brand-text">
+        <span class="sidebar-brand-name">Mundo Hogar</span>
+        <span class="sidebar-brand-sub">Panel Admin</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="user-avatar">?</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="user-name">Cargando...</div>
+          <div class="sidebar-user-role" id="user-role"></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/" target="_blank" class="btn btn-ghost btn-sm">🌐 Ver Tienda</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div>
+          <h1 id="welcome-msg">Buen día</h1>
+          <p>Resumen general del negocio</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-outline btn-sm" onclick="loadData()">↺ Actualizar</button>
+          <a href="/admin/inventario.html" class="btn btn-primary btn-sm">+ Registrar movimiento</a>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid" id="kpi-grid">
+        <div class="kpi-card"><div class="kpi-icon gold">🛍️</div><div class="kpi-label">Total productos</div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-sub" id="kpi-activos">activos</div></div>
+        <div class="kpi-card"><div class="kpi-icon red">⚠️</div><div class="kpi-label">Sin stock</div><div class="kpi-value" id="kpi-sin-stock">—</div><div class="kpi-sub">stock = 0</div></div>
+        <div class="kpi-card"><div class="kpi-icon blue">🔔</div><div class="kpi-label">Stock bajo</div><div class="kpi-value" id="kpi-bajo">—</div><div class="kpi-sub">≤ stock mínimo</div></div>
+        <div class="kpi-card"><div class="kpi-icon green">📦</div><div class="kpi-label">Movimientos hoy</div><div class="kpi-value" id="kpi-mov-hoy">—</div><div class="kpi-sub" id="kpi-mov-mes">este mes</div></div>
+      </div>
+
+      <!-- Grid de dos columnas -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+        <!-- Alertas de stock -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">⚠️ Alertas de Stock</span>
+            <a href="/admin/alertas.html" class="btn btn-ghost btn-sm">Ver todas</a>
+          </div>
+          <div id="alertas-body">
+            <div class="page-loading"><div class="spinner"></div></div>
+          </div>
+        </div>
+
+        <!-- Últimos movimientos -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📋 Últimos Movimientos</span>
+            <a href="/admin/movimientos.html" class="btn btn-ghost btn-sm">Ver todos</a>
+          </div>
+          <div id="mov-body">
+            <div class="page-loading"><div class="spinner"></div></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Por categoría -->
+      <div class="card mt-3">
+        <div class="card-header">
+          <span class="card-title">📊 Productos por Categoría</span>
+        </div>
+        <div class="card-body" id="cat-body">
+          <div class="page-loading"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script>
+async function loadData() {
+  const hoy = new Date();
+  hoy.setHours(0,0,0,0);
+  const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString();
+
+  const [
+    { data: productos },
+    { count: movHoy },
+    { count: movMes },
+    { data: movRecientes },
+    { data: catData }
+  ] = await Promise.all([
+    db.from('productos').select('id,nombre,stock_actual,stock_minimo,estado').order('stock_actual'),
+    db.from('movimientos_inventario').select('id', {count:'exact',head:true}).gte('created_at', hoy.toISOString()),
+    db.from('movimientos_inventario').select('id', {count:'exact',head:true}).gte('created_at', inicioMes),
+    db.from('movimientos_inventario')
+      .select('id,tipo,cantidad,stock_posterior,created_at,productos(nombre)')
+      .order('created_at',{ascending:false}).limit(8),
+    db.from('productos')
+      .select('categoria_id,categorias(nombre),estado')
+  ]);
+
+  const activos    = (productos||[]).filter(p=>p.estado==='activo').length;
+  const sinStock   = (productos||[]).filter(p=>p.estado==='activo'&&p.stock_actual<=0).length;
+  const stockBajo  = (productos||[]).filter(p=>p.estado==='activo'&&p.stock_minimo>0&&p.stock_actual<=p.stock_minimo&&p.stock_actual>0).length;
+
+  document.getElementById('kpi-total').textContent   = activos;
+  document.getElementById('kpi-activos').textContent = `${(productos||[]).length} en total`;
+  document.getElementById('kpi-sin-stock').textContent = sinStock;
+  document.getElementById('kpi-bajo').textContent   = stockBajo;
+  document.getElementById('kpi-mov-hoy').textContent = movHoy||0;
+  document.getElementById('kpi-mov-mes').textContent = `${movMes||0} este mes`;
+
+  // Alertas — derivar de la lista ya cargada
+  const alertasEl = document.getElementById('alertas-body');
+  const alertasList = (productos||[])
+    .filter(p => p.estado==='activo' && (p.stock_actual <= 0 || (p.stock_minimo > 0 && p.stock_actual <= p.stock_minimo)))
+    .slice(0, 8);
+  if (!alertasList.length) {
+    alertasEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>Sin alertas de stock</p></div>';
+  } else {
+    alertasEl.innerHTML = '<div>' + alertasList.map(p=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">${p.nombre}</div>
+        <span class="stock-num ${Utils.stockClass(p.stock_actual,p.stock_minimo)}">${p.stock_actual}</span>
+      </div>`).join('') + '</div>';
+  }
+
+  // Movimientos recientes
+  const movEl = document.getElementById('mov-body');
+  if (!(movRecientes||[]).length) {
+    movEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>Sin movimientos registrados</p></div>';
+  } else {
+    movEl.innerHTML = '<div>' + movRecientes.map(m=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border)">
+        <div style="flex:1;overflow:hidden">
+          <div style="font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.productos?.nombre||'—'}</div>
+          <div style="font-size:11px;color:var(--muted)">${Utils.timeAgo(m.created_at)}</div>
+        </div>
+        ${Utils.tipoMovBadge(m.tipo)}
+        <span style="font-weight:600;font-size:13px;min-width:32px;text-align:right">${m.stock_posterior}</span>
+      </div>`).join('') + '</div>';
+  }
+
+  // Por categoría
+  const catMap = {};
+  (catData||[]).forEach(p => {
+    const cat = p.categorias?.nombre || 'Sin categoría';
+    if (!catMap[cat]) catMap[cat] = {total:0,activos:0};
+    catMap[cat].total++;
+    if (p.estado==='activo') catMap[cat].activos++;
+  });
+  const maxTotal = Math.max(...Object.values(catMap).map(c=>c.total),1);
+  document.getElementById('cat-body').innerHTML = Object.entries(catMap)
+    .sort((a,b)=>b[1].total-a[1].total)
+    .map(([cat,c])=>`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <div style="width:140px;font-size:13px;flex-shrink:0">${cat}</div>
+      <div style="flex:1;background:var(--bg);border-radius:99px;height:10px;overflow:hidden">
+        <div style="height:100%;width:${(c.total/maxTotal*100).toFixed(1)}%;background:var(--gold);border-radius:99px"></div>
+      </div>
+      <div style="min-width:40px;text-align:right;font-size:12px;color:var(--muted)">${c.total}</div>
+    </div>`).join('');
+}
+
+async function initPage() {
+  const profile = await Auth.init();
+  if (!profile) return;
+  await Layout.init('dashboard', 'Dashboard');
+
+  const greet = new Date().getHours() < 12 ? 'Buenos días' : new Date().getHours() < 19 ? 'Buenas tardes' : 'Buenas noches';
+  document.getElementById('welcome-msg').textContent = `${greet}, ${profile.nombre.split(' ')[0]}`;
+
+  await loadData();
+}
+initPage();
+</script>
+</body>
+</html>
