@@ -1,20 +1,21 @@
 // ============================================================
 // Mundo Hogar — Configuración de Supabase
-// Completar con los valores de tu proyecto en supabase.com
 // ============================================================
-//
-// DÓNDE ENCONTRAR ESTOS VALORES:
-//   1. Ingresá a https://supabase.com y abrí tu proyecto
-//   2. Ir a: Settings (⚙️) → API
-//   3. Copiar "Project URL" y "anon public" key
 //
 // SOBRE SEGURIDAD:
-//   La "anon key" está diseñada para ser pública (es la key del cliente).
-//   Los datos están protegidos por Row Level Security (RLS) configurado
-//   en la base de datos — no por ocultar esta key.
-//   Nunca uses la "service_role" key en el browser.
+//   SUPABASE_PUBLISHABLE_KEY es una clave PÚBLICA (publishable):
+//   está diseñada para ir en el navegador. Los datos se protegen con
+//   Row Level Security (RLS) en la base de datos, no por ocultar esta clave.
+//   NUNCA pongas acá la clave secreta (sb_secret_...) ni la password de la base.
 //
+//   Para encontrar estos valores: supabase.com → tu proyecto →
+//   Project Settings → API  (Project URL y API Keys → publishable / anon public)
 // ============================================================
 
-const SUPABASE_URL      = 'REEMPLAZAR_CON_TU_URL';   // Ej: https://abcxyz.supabase.co
-const SUPABASE_ANON_KEY = 'REEMPLAZAR_CON_TU_CLAVE'; // Tu anon/public key
+const SUPABASE_URL = 'https://zydotmaolgddwenwywyc.supabase.co';
+
+// Clave PÚBLICA (publishable). Reemplaza a la antigua "anon key".
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_8mXhNbUrp3wiWeHuZBVkVA_mFAihF_t';
+
+// Compatibilidad: el código del panel usa SUPABASE_ANON_KEY como nombre.
+const SUPABASE_ANON_KEY = SUPABASE_PUBLISHABLE_KEY;
