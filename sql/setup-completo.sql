@@ -1,6 +1,6 @@
 -- ============================================================
 -- MUNDO HOGAR — SETUP COMPLETO DE SUPABASE (un solo archivo)
--- Generado: 2026-06-30 02:58:10
+-- Generado: 2026-06-30 02:59:54
 -- Cómo usarlo: Supabase → SQL Editor → New query → pegar TODO → Run.
 -- Es re-ejecutable (no borra ni duplica datos).
 -- Después de correrlo: crear el usuario admin (ver SUPABASE_SETUP.md).
@@ -352,111 +352,111 @@ ALTER TABLE historial_actividad  ENABLE ROW LEVEL SECURITY;
 -- ──────────────────────────────────────────────
 -- PROFILES
 -- ──────────────────────────────────────────────
-CREATE POLICY "profiles_select_own"
-  ON profiles FOR SELECT USING (id = auth.uid());
+DROP POLICY IF EXISTS "profiles_select_own" ON profiles;
+CREATE POLICY "profiles_select_own" ON profiles FOR SELECT USING (id = auth.uid());
 
-CREATE POLICY "profiles_select_admin"
-  ON profiles FOR SELECT USING (fn_get_user_role() = 'administrador');
+DROP POLICY IF EXISTS "profiles_select_admin" ON profiles;
+CREATE POLICY "profiles_select_admin" ON profiles FOR SELECT USING (fn_get_user_role() = 'administrador');
 
-CREATE POLICY "profiles_update_own"
-  ON profiles FOR UPDATE USING (id = auth.uid());
+DROP POLICY IF EXISTS "profiles_update_own" ON profiles;
+CREATE POLICY "profiles_update_own" ON profiles FOR UPDATE USING (id = auth.uid());
 
-CREATE POLICY "profiles_update_admin"
-  ON profiles FOR UPDATE USING (fn_get_user_role() = 'administrador');
+DROP POLICY IF EXISTS "profiles_update_admin" ON profiles;
+CREATE POLICY "profiles_update_admin" ON profiles FOR UPDATE USING (fn_get_user_role() = 'administrador');
 
-CREATE POLICY "profiles_insert_admin"
-  ON profiles FOR INSERT WITH CHECK (fn_get_user_role() = 'administrador');
+DROP POLICY IF EXISTS "profiles_insert_admin" ON profiles;
+CREATE POLICY "profiles_insert_admin" ON profiles FOR INSERT WITH CHECK (fn_get_user_role() = 'administrador');
 
 -- ──────────────────────────────────────────────
 -- CATEGORÍAS — lectura pública
 -- ──────────────────────────────────────────────
-CREATE POLICY "categorias_select_public"
-  ON categorias FOR SELECT USING (true);
+DROP POLICY IF EXISTS "categorias_select_public" ON categorias;
+CREATE POLICY "categorias_select_public" ON categorias FOR SELECT USING (true);
 
-CREATE POLICY "categorias_insert_admin"
-  ON categorias FOR INSERT WITH CHECK (fn_get_user_role() = 'administrador');
+DROP POLICY IF EXISTS "categorias_insert_admin" ON categorias;
+CREATE POLICY "categorias_insert_admin" ON categorias FOR INSERT WITH CHECK (fn_get_user_role() = 'administrador');
 
-CREATE POLICY "categorias_update_admin"
-  ON categorias FOR UPDATE USING (fn_get_user_role() = 'administrador');
+DROP POLICY IF EXISTS "categorias_update_admin" ON categorias;
+CREATE POLICY "categorias_update_admin" ON categorias FOR UPDATE USING (fn_get_user_role() = 'administrador');
 
-CREATE POLICY "categorias_delete_admin"
-  ON categorias FOR DELETE USING (fn_get_user_role() = 'administrador');
+DROP POLICY IF EXISTS "categorias_delete_admin" ON categorias;
+CREATE POLICY "categorias_delete_admin" ON categorias FOR DELETE USING (fn_get_user_role() = 'administrador');
 
 -- ──────────────────────────────────────────────
 -- SUBCATEGORÍAS — lectura pública
 -- ──────────────────────────────────────────────
-CREATE POLICY "subcategorias_select_public"
-  ON subcategorias FOR SELECT USING (true);
+DROP POLICY IF EXISTS "subcategorias_select_public" ON subcategorias;
+CREATE POLICY "subcategorias_select_public" ON subcategorias FOR SELECT USING (true);
 
-CREATE POLICY "subcategorias_insert_admin"
-  ON subcategorias FOR INSERT WITH CHECK (fn_get_user_role() = 'administrador');
+DROP POLICY IF EXISTS "subcategorias_insert_admin" ON subcategorias;
+CREATE POLICY "subcategorias_insert_admin" ON subcategorias FOR INSERT WITH CHECK (fn_get_user_role() = 'administrador');
 
-CREATE POLICY "subcategorias_update_admin"
-  ON subcategorias FOR UPDATE USING (fn_get_user_role() = 'administrador');
+DROP POLICY IF EXISTS "subcategorias_update_admin" ON subcategorias;
+CREATE POLICY "subcategorias_update_admin" ON subcategorias FOR UPDATE USING (fn_get_user_role() = 'administrador');
 
-CREATE POLICY "subcategorias_delete_admin"
-  ON subcategorias FOR DELETE USING (fn_get_user_role() = 'administrador');
+DROP POLICY IF EXISTS "subcategorias_delete_admin" ON subcategorias;
+CREATE POLICY "subcategorias_delete_admin" ON subcategorias FOR DELETE USING (fn_get_user_role() = 'administrador');
 
 -- ──────────────────────────────────────────────
 -- PRODUCTOS
 --   - Público: sólo activos
 --   - Autenticado: todos (admin/encargado pueden modificar)
 -- ──────────────────────────────────────────────
-CREATE POLICY "productos_select_public"
-  ON productos FOR SELECT
+DROP POLICY IF EXISTS "productos_select_public" ON productos;
+CREATE POLICY "productos_select_public" ON productos FOR SELECT
   USING (estado = 'activo' OR auth.uid() IS NOT NULL);
 
-CREATE POLICY "productos_insert_staff"
-  ON productos FOR INSERT
+DROP POLICY IF EXISTS "productos_insert_staff" ON productos;
+CREATE POLICY "productos_insert_staff" ON productos FOR INSERT
   WITH CHECK (fn_get_user_role() IN ('administrador','encargado_stock'));
 
-CREATE POLICY "productos_update_staff"
-  ON productos FOR UPDATE
+DROP POLICY IF EXISTS "productos_update_staff" ON productos;
+CREATE POLICY "productos_update_staff" ON productos FOR UPDATE
   USING (fn_get_user_role() IN ('administrador','encargado_stock'));
 
-CREATE POLICY "productos_delete_admin"
-  ON productos FOR DELETE
+DROP POLICY IF EXISTS "productos_delete_admin" ON productos;
+CREATE POLICY "productos_delete_admin" ON productos FOR DELETE
   USING (fn_get_user_role() = 'administrador');
 
 -- ──────────────────────────────────────────────
 -- IMÁGENES DE PRODUCTOS — lectura pública
 -- ──────────────────────────────────────────────
-CREATE POLICY "imagenes_select_public"
-  ON producto_imagenes FOR SELECT USING (true);
+DROP POLICY IF EXISTS "imagenes_select_public" ON producto_imagenes;
+CREATE POLICY "imagenes_select_public" ON producto_imagenes FOR SELECT USING (true);
 
-CREATE POLICY "imagenes_insert_staff"
-  ON producto_imagenes FOR INSERT
+DROP POLICY IF EXISTS "imagenes_insert_staff" ON producto_imagenes;
+CREATE POLICY "imagenes_insert_staff" ON producto_imagenes FOR INSERT
   WITH CHECK (fn_get_user_role() IN ('administrador','encargado_stock'));
 
-CREATE POLICY "imagenes_update_staff"
-  ON producto_imagenes FOR UPDATE
+DROP POLICY IF EXISTS "imagenes_update_staff" ON producto_imagenes;
+CREATE POLICY "imagenes_update_staff" ON producto_imagenes FOR UPDATE
   USING (fn_get_user_role() IN ('administrador','encargado_stock'));
 
-CREATE POLICY "imagenes_delete_admin"
-  ON producto_imagenes FOR DELETE
+DROP POLICY IF EXISTS "imagenes_delete_admin" ON producto_imagenes;
+CREATE POLICY "imagenes_delete_admin" ON producto_imagenes FOR DELETE
   USING (fn_get_user_role() = 'administrador');
 
 -- ──────────────────────────────────────────────
 -- MOVIMIENTOS — sólo autenticados
 -- (no se permiten UPDATE/DELETE: el historial es inmutable)
 -- ──────────────────────────────────────────────
-CREATE POLICY "movimientos_select_auth"
-  ON movimientos_inventario FOR SELECT
+DROP POLICY IF EXISTS "movimientos_select_auth" ON movimientos_inventario;
+CREATE POLICY "movimientos_select_auth" ON movimientos_inventario FOR SELECT
   USING (auth.uid() IS NOT NULL);
 
-CREATE POLICY "movimientos_insert_staff"
-  ON movimientos_inventario FOR INSERT
+DROP POLICY IF EXISTS "movimientos_insert_staff" ON movimientos_inventario;
+CREATE POLICY "movimientos_insert_staff" ON movimientos_inventario FOR INSERT
   WITH CHECK (fn_get_user_role() IN ('administrador','encargado_stock'));
 
 -- ──────────────────────────────────────────────
 -- HISTORIAL — sólo autenticados
 -- ──────────────────────────────────────────────
-CREATE POLICY "historial_select_auth"
-  ON historial_actividad FOR SELECT
+DROP POLICY IF EXISTS "historial_select_auth" ON historial_actividad;
+CREATE POLICY "historial_select_auth" ON historial_actividad FOR SELECT
   USING (auth.uid() IS NOT NULL);
 
-CREATE POLICY "historial_insert_auth"
-  ON historial_actividad FOR INSERT
+DROP POLICY IF EXISTS "historial_insert_auth" ON historial_actividad;
+CREATE POLICY "historial_insert_auth" ON historial_actividad FOR INSERT
   WITH CHECK (auth.uid() IS NOT NULL);
 
 
@@ -506,13 +506,13 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================
 
 -- Lectura pública (cualquiera puede ver las imágenes)
-CREATE POLICY "imagenes_publicas_lectura"
-  ON storage.objects FOR SELECT
+DROP POLICY IF EXISTS "imagenes_publicas_lectura" ON storage.objects;
+CREATE POLICY "imagenes_publicas_lectura" ON storage.objects FOR SELECT
   USING (bucket_id = 'producto-imagenes');
 
 -- Solo usuarios autenticados con rol staff pueden subir
-CREATE POLICY "imagenes_subida_staff"
-  ON storage.objects FOR INSERT
+DROP POLICY IF EXISTS "imagenes_subida_staff" ON storage.objects;
+CREATE POLICY "imagenes_subida_staff" ON storage.objects FOR INSERT
   WITH CHECK (
     bucket_id = 'producto-imagenes'
     AND auth.uid() IS NOT NULL
@@ -520,8 +520,8 @@ CREATE POLICY "imagenes_subida_staff"
   );
 
 -- Solo admins pueden borrar imágenes
-CREATE POLICY "imagenes_borrar_admin"
-  ON storage.objects FOR DELETE
+DROP POLICY IF EXISTS "imagenes_borrar_admin" ON storage.objects;
+CREATE POLICY "imagenes_borrar_admin" ON storage.objects FOR DELETE
   USING (
     bucket_id = 'producto-imagenes'
     AND fn_get_user_role() = 'administrador'
