@@ -1,11 +1,33 @@
 -- ============================================================
 -- MUNDO HOGAR — SETUP COMPLETO DE SUPABASE (un solo archivo)
--- Generado: 2026-06-30 02:59:54
+-- Generado: 2026-06-30 03:27:17
 -- Cómo usarlo: Supabase → SQL Editor → New query → pegar TODO → Run.
 -- Es re-ejecutable (no borra ni duplica datos).
 -- Después de correrlo: crear el usuario admin (ver SUPABASE_SETUP.md).
 -- ============================================================
 
+
+
+-- ============================================================
+-- LIMPIEZA SEGURA de un intento anterior (esquema en inglés, vacío).
+-- Solo actúa si detecta el 'profiles' viejo (columna full_name).
+-- En un re-run normal (nuestro profiles usa 'nombre') NO hace nada.
+-- ============================================================
+DO $LIMPIEZA$
+DECLARE r RECORD;
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+            WHERE table_schema='public' AND table_name='profiles' AND column_name='full_name') THEN
+    -- quitar disparadores personalizados sobre auth.users del intento anterior
+    FOR r IN SELECT tgname FROM pg_trigger
+             WHERE tgrelid='auth.users'::regclass AND NOT tgisinternal LOOP
+      EXECUTE format('DROP TRIGGER IF EXISTS %I ON auth.users', r.tgname);
+    END LOOP;
+    -- quitar el profiles viejo (estaba vacío) para recrearlo con nuestra estructura
+    DROP TABLE IF EXISTS public.profiles CASCADE;
+  END IF;
+END
+$LIMPIEZA$;
 
 -- ============================================================
 -- Mundo Hogar — Esquema de base de datos v1.0
