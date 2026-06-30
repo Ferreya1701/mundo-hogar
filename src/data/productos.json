@@ -1,5 +1,5 @@
 {
-  "version": "2.2",
+  "version": "2.3",
   "estadisticas": {
     "cuidado-personal": 10,
     "muebles-hogar": 22,
@@ -29,7 +29,8 @@
       "descripcion": "Rizador de pelo doble barril en rosa fucsia. Crea ondas y rulos parejos de forma rápida y sencilla.",
       "categoria": "cuidado-personal",
       "slug": "img_0065",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "cuidado-personal-img_0314",
@@ -40,7 +41,8 @@
       "descripcion": "Secador de pelo Yelmo Thermal Ion en lila. Tecnología iónica para un secado más rápido y con menos frizz.",
       "categoria": "cuidado-personal",
       "slug": "img_0314",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "cuidado-personal-img_0316",
@@ -51,7 +53,8 @@
       "descripcion": "Secador de pelo Yelmo en negro antracita. Potencia y varias temperaturas para un peinado profesional en casa.",
       "categoria": "cuidado-personal",
       "slug": "img_0316",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "cuidado-personal-img_0550",
@@ -62,7 +65,8 @@
       "descripcion": "Cepillo secador y volumizador Westinghouse. Seca y da volumen al mismo tiempo, en un solo paso.",
       "categoria": "cuidado-personal",
       "slug": "img_0550",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "cuidado-personal-img_0624",
@@ -73,7 +77,8 @@
       "descripcion": "Recortadora/trimmer de pelo en acabado dorado. Ideal para barba, patillas y contornos prolijos.",
       "categoria": "cuidado-personal",
       "slug": "img_0624",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "cuidado-personal-img_0629",
@@ -84,7 +89,8 @@
       "descripcion": "Set Westinghouse en negro y dorado: secador de pelo más planchita. Todo para tu peinado en un combo.",
       "categoria": "cuidado-personal",
       "slug": "img_0629",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "cuidado-personal-img_0640",
@@ -95,7 +101,8 @@
       "descripcion": "Planchita de pelo Kanji Home en plateado. Placas que alisan de forma pareja y cuidan el cabello.",
       "categoria": "cuidado-personal",
       "slug": "img_0640",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "cuidado-personal-img_0923",
@@ -106,7 +113,8 @@
       "descripcion": "Onduladora/waver Yelmo en gris y azul. Conseguí ondas marcadas y con estilo en pocos minutos.",
       "categoria": "cuidado-personal",
       "slug": "img_0923",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "cuidado-personal-img_0932",
@@ -117,7 +125,8 @@
       "descripcion": "Kit Ultracomb Devotion: secador de pelo más planchita. El combo completo para peinarte como en la peluquería.",
       "categoria": "cuidado-personal",
       "slug": "img_0932",
-      "activo": true
+      "activo": true,
+      "destacado": true
     },
     {
       "id": "cuidado-personal-img_0967",
@@ -128,7 +137,8 @@
       "descripcion": "Planchita de pelo Yelmo en fucsia. Calienta rápido y alisa con un acabado suave y brillante.",
       "categoria": "cuidado-personal",
       "slug": "img_0967",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-34735970_005_05app",
@@ -139,7 +149,8 @@
       "descripcion": "Tocador con espejo rebatible y espacio de guardado. Tu rincón ideal para maquillarte y organizar accesorios.",
       "categoria": "muebles-hogar",
       "slug": "34735970_005_05app",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-d20c2a9f-4788-44d7-a7bb-54018e918674",
@@ -150,7 +161,8 @@
       "descripcion": "Grifería monocomando para cocina con caño extensible y acabado cromado. Práctica, moderna y resistente.",
       "categoria": "muebles-hogar",
       "slug": "d20c2a9f-4788-44d7-a7bb-54018e918674",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-d6ab70f7-b61f-455b-a1a5-dbaa5d33ac92",
@@ -161,7 +173,8 @@
       "descripcion": "Colchón Deseo Mistyc con sommier. Descanso firme y confortable para tu habitación.",
       "categoria": "muebles-hogar",
       "slug": "d6ab70f7-b61f-455b-a1a5-dbaa5d33ac92",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-img_0036",
@@ -172,7 +185,8 @@
       "descripcion": "Colchón de 1 plaza con sommier en tonos azul y celeste. Ideal para cuartos juveniles o de invitados.",
       "categoria": "muebles-hogar",
       "slug": "img_0036",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-img_0038",
@@ -183,7 +197,8 @@
       "descripcion": "Conjunto de colchón y sommier de 1 plaza en azul y celeste. Confort y soporte para un buen descanso.",
       "categoria": "muebles-hogar",
       "slug": "img_0038",
-      "activo": false
+      "activo": false,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-img_0053",
@@ -194,7 +209,8 @@
       "descripcion": "Sofá de 2 cuerpos en gris oscuro. Comodidad y diseño moderno para tu living.",
       "categoria": "muebles-hogar",
       "slug": "img_0053",
-      "activo": true
+      "activo": true,
+      "destacado": true
     },
     {
       "id": "muebles-hogar-img_0061",
@@ -205,7 +221,8 @@
       "descripcion": "Termo Stanley en verde menta con taza. Mantiene la temperatura por horas, ideal para el mate o el café.",
       "categoria": "muebles-hogar",
       "slug": "img_0061",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-img_0063",
@@ -216,7 +233,8 @@
       "descripcion": "Termo de acero inoxidable con asa negra. Resistente y con excelente conservación de temperatura.",
       "categoria": "muebles-hogar",
       "slug": "img_0063",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-img_0074(1)",
@@ -227,7 +245,8 @@
       "descripcion": "Ropero placard de melamina blanco de 3 puertas, con amplio espacio de guardado.",
       "categoria": "muebles-hogar",
       "slug": "img_0074(1)",
-      "activo": false
+      "activo": false,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-img_0074",
@@ -238,7 +257,8 @@
       "descripcion": "Ropero placard de melamina blanco de 3 puertas. Mucho espacio de guardado con un diseño limpio y prolijo.",
       "categoria": "muebles-hogar",
       "slug": "img_0074",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-img_0076",
@@ -249,7 +269,8 @@
       "descripcion": "Bicicleta mountain bike AZR en negro y azul. Lista para la ciudad o los caminos de tierra.",
       "categoria": "muebles-hogar",
       "slug": "img_0076",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-img_0089",
@@ -260,7 +281,8 @@
       "descripcion": "Canilla de cocina extensible estilo industrial con acabado cromado. Diseño moderno y muy funcional.",
       "categoria": "muebles-hogar",
       "slug": "img_0089",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-img_0395",
@@ -271,7 +293,8 @@
       "descripcion": "Silla de jardín de plástico resistente en negro. Liviana, apilable y fácil de limpiar.",
       "categoria": "muebles-hogar",
       "slug": "img_0395",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-img_0507",
@@ -282,7 +305,8 @@
       "descripcion": "Silla gamer CL en negro y blanco. Respaldo ergonómico y reclinable para largas sesiones de juego o trabajo.",
       "categoria": "muebles-hogar",
       "slug": "img_0507",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-img_0523",
@@ -293,7 +317,8 @@
       "descripcion": "Silla gamer CL en negro con luces RGB. Comodidad ergonómica y estilo gamer para tu setup.",
       "categoria": "muebles-hogar",
       "slug": "img_0523",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-img_0554",
@@ -304,7 +329,8 @@
       "descripcion": "Canilla monomando alta con acabado cromado. Ideal para piletas amplias, con diseño elegante.",
       "categoria": "muebles-hogar",
       "slug": "img_0554",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-img_0682",
@@ -315,7 +341,8 @@
       "descripcion": "Silla estilo Masters en plástico negro. Diseño moderno y versátil para comedor o escritorio.",
       "categoria": "muebles-hogar",
       "slug": "img_0682",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-img_0756",
@@ -326,7 +353,8 @@
       "descripcion": "Conjunto de colchón y sommier en gris, rojo y negro. Soporte firme para un descanso reparador.",
       "categoria": "muebles-hogar",
       "slug": "img_0756",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-img_0778",
@@ -337,7 +365,8 @@
       "descripcion": "Conjunto de colchón y sommier en tono marrón. Confort y prolijidad para tu dormitorio.",
       "categoria": "muebles-hogar",
       "slug": "img_0778",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "salud-e640e3fb-ad86-496c-930f-c7776e358907",
@@ -348,7 +377,8 @@
       "descripcion": "Tensiómetro Ecopower para medir la presión arterial en casa de forma simple y precisa.",
       "categoria": "salud",
       "slug": "e640e3fb-ad86-496c-930f-c7776e358907",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "salud-img_0572",
@@ -359,7 +389,8 @@
       "descripcion": "Tensiómetro digital Ecopower con pantalla de fácil lectura. Controlá tu presión cómodamente en casa.",
       "categoria": "salud",
       "slug": "img_0572",
-      "activo": true
+      "activo": true,
+      "destacado": true
     },
     {
       "id": "salud-img_0581",
@@ -370,7 +401,8 @@
       "descripcion": "Nebulizador de pistón Ecopower. Eficaz y confiable para tratamientos respiratorios de toda la familia.",
       "categoria": "salud",
       "slug": "img_0581",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "salud-img_0609",
@@ -381,7 +413,8 @@
       "descripcion": "Balanza personal digital Kanji con plataforma de vidrio templado. Pesaje preciso y diseño moderno.",
       "categoria": "salud",
       "slug": "img_0609",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-384df2ee-688a-401f-8a67-b1dfaceff21f",
@@ -392,7 +425,8 @@
       "descripcion": "Soldadora inverter NOVA 220V. Compacta y potente para trabajos de soldadura en el hogar o el taller.",
       "categoria": "herramientas",
       "slug": "384df2ee-688a-401f-8a67-b1dfaceff21f",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-78558b38-4ddf-4199-b7c0-a7a48a508cb7",
@@ -403,7 +437,8 @@
       "descripcion": "Juego INGCO de 2 piezas (pinza más alicate) en acero Cr-V. Herramientas resistentes para uso diario.",
       "categoria": "herramientas",
       "slug": "78558b38-4ddf-4199-b7c0-a7a48a508cb7",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-8e761b2d-6a07-4a6d-b46e-0180ee629098",
@@ -414,7 +449,8 @@
       "descripcion": "Combo esencial INGCO: bolso, pinzas, llave y martillo. El kit básico para arrancar tu caja de herramientas.",
       "categoria": "herramientas",
       "slug": "8e761b2d-6a07-4a6d-b46e-0180ee629098",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-95ea78eb-4456-418c-8c45-4577847b008d",
@@ -425,7 +461,8 @@
       "descripcion": "Podadora portátil Kanji Tools 18V a batería. Sin cables y liviana para mantener tu jardín al día.",
       "categoria": "herramientas",
       "slug": "95ea78eb-4456-418c-8c45-4577847b008d",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-ae15c1ee-9816-4df3-bb59-28c7a1c92f1e",
@@ -436,7 +473,8 @@
       "descripcion": "Escalera de aluminio articulada multiposición. Se adapta a varias formas para distintos trabajos en altura.",
       "categoria": "herramientas",
       "slug": "ae15c1ee-9816-4df3-bb59-28c7a1c92f1e",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-atornilladora-21-01",
@@ -447,7 +485,8 @@
       "descripcion": "Taladro atornillador inalámbrico Kanji Tools. Práctico y versátil para perforar y atornillar sin cables.",
       "categoria": "herramientas",
       "slug": "atornilladora-21-01",
-      "activo": true
+      "activo": true,
+      "destacado": true
     },
     {
       "id": "herramientas-b36173e0-6d5a-4b99-a90f-441346e7e1ae",
@@ -458,7 +497,8 @@
       "descripcion": "Escalera de aluminio articulada multiposición. Resistente y segura para distintos trabajos en altura.",
       "categoria": "herramientas",
       "slug": "b36173e0-6d5a-4b99-a90f-441346e7e1ae",
-      "activo": false
+      "activo": false,
+      "destacado": false
     },
     {
       "id": "herramientas-e741a135-0921-4191-90d1-a90ddaf07e36",
@@ -469,7 +509,8 @@
       "descripcion": "Juego de 4 pinzas INGCO. Distintos modelos para cubrir las tareas más comunes con calidad profesional.",
       "categoria": "herramientas",
       "slug": "e741a135-0921-4191-90d1-a90ddaf07e36",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-hpc0442",
@@ -480,7 +521,8 @@
       "descripcion": "Cortatubos de PVC INGCO con apertura automática. Cortes limpios y precisos en caños plásticos.",
       "categoria": "herramientas",
       "slug": "hpc0442",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-img_0178",
@@ -491,7 +533,8 @@
       "descripcion": "Sierra caladora Kanji Tools en negro. Para cortes rectos y curvos en madera, plástico y más.",
       "categoria": "herramientas",
       "slug": "img_0178",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-img_0357",
@@ -502,7 +545,8 @@
       "descripcion": "Amoladora angular Black+Decker. Potencia para cortar y desbastar metal, mampostería y más.",
       "categoria": "herramientas",
       "slug": "img_0357",
-      "activo": true
+      "activo": true,
+      "destacado": true
     },
     {
       "id": "herramientas-img_0363",
@@ -513,7 +557,8 @@
       "descripcion": "Inflador a batería INGCO 20V con bolso. Inflá neumáticos y pelotas donde estés, sin cables.",
       "categoria": "herramientas",
       "slug": "img_0363",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-img_0371",
@@ -524,7 +569,8 @@
       "descripcion": "Cutter/trincheta INGCO HKNS1806. Cuchilla retráctil resistente para cortes precisos y seguros.",
       "categoria": "herramientas",
       "slug": "img_0371",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-img_0372",
@@ -535,7 +581,8 @@
       "descripcion": "Set INGCO de 2 pinzas con pinza diagonal. Herramientas firmes para corte y agarre.",
       "categoria": "herramientas",
       "slug": "img_0372",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-img_0376",
@@ -546,7 +593,8 @@
       "descripcion": "Hidrolavadora a batería INGCO. Limpieza a presión sin depender de un enchufe.",
       "categoria": "herramientas",
       "slug": "img_0376",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-img_0431",
@@ -557,7 +605,8 @@
       "descripcion": "Taladro atornillador Bauen 20V a batería. Potencia y autonomía para tus proyectos.",
       "categoria": "herramientas",
       "slug": "img_0431",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-pistola-de-calor-01",
@@ -568,7 +617,8 @@
       "descripcion": "Pistola de calor Kanji Tools. Ideal para remover pintura, termocontraer y trabajos de bricolaje.",
       "categoria": "herramientas",
       "slug": "pistola-de-calor-01",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-rotomartillo-01",
@@ -579,7 +629,8 @@
       "descripcion": "Rotomartillo Kanji Tools con mango auxiliar. Perforá hormigón y mampostería con potencia y control.",
       "categoria": "herramientas",
       "slug": "rotomartillo-01",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "tecnologia-celulares-43033a6a-9636-4539-814a-bc391b025f34",
@@ -590,7 +641,8 @@
       "descripcion": "Auriculares gamer Kanji Z-32 con micrófono. Sonido envolvente y comodidad para tus partidas.",
       "categoria": "tecnologia-celulares",
       "slug": "43033a6a-9636-4539-814a-bc391b025f34",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "tecnologia-celulares-8a0dec27-0250-431d-b3e5-3824f7986e70",
@@ -601,7 +653,8 @@
       "descripcion": "Cámara IP smart Kanjinet con visión nocturna. Vigilá tu casa o negocio desde el celular.",
       "categoria": "tecnologia-celulares",
       "slug": "8a0dec27-0250-431d-b3e5-3824f7986e70",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "tecnologia-celulares-a4d7066f-1779-475c-8e48-0dcb0372035c",
@@ -612,7 +665,8 @@
       "descripcion": "Cámara IP smart Kanjinet de 2 antenas y lente 3.6 mm. Mejor alcance y nitidez para tu seguridad.",
       "categoria": "tecnologia-celulares",
       "slug": "a4d7066f-1779-475c-8e48-0dcb0372035c",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "tecnologia-celulares-d525e660-8c21-4d90-8575-d0114553e150",
@@ -623,7 +677,8 @@
       "descripcion": "Soporte de pie con ruedas para TV. Movés tu pantalla a cualquier ambiente con facilidad.",
       "categoria": "tecnologia-celulares",
       "slug": "d525e660-8c21-4d90-8575-d0114553e150",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "tecnologia-celulares-img_0127",
@@ -634,7 +689,8 @@
       "descripcion": "Auriculares TWS inalámbricos en negro. Libertad total y buen sonido para el día a día.",
       "categoria": "tecnologia-celulares",
       "slug": "img_0127",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "tecnologia-celulares-img_0429",
@@ -645,7 +701,8 @@
       "descripcion": "Soporte de pared para TV LED, LCD y PDP. Fijación firme y prolija para tu televisor.",
       "categoria": "tecnologia-celulares",
       "slug": "img_0429",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "tecnologia-celulares-img_0618",
@@ -656,7 +713,8 @@
       "descripcion": "Tablet con funda protectora transparente en verde lima. Lista para estudiar, navegar y entretenerte.",
       "categoria": "tecnologia-celulares",
       "slug": "img_0618",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "tecnologia-celulares-img_0619",
@@ -667,7 +725,8 @@
       "descripcion": "Funda tipo origami para tablet en verde lima. Protege la pantalla y sirve de soporte.",
       "categoria": "tecnologia-celulares",
       "slug": "img_0619",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "tecnologia-celulares-img_1431",
@@ -678,7 +737,8 @@
       "descripcion": "Smart TV Enova de 50 pulgadas con Google TV. Todas tus apps y contenidos en una pantalla grande.",
       "categoria": "tecnologia-celulares",
       "slug": "img_1431",
-      "activo": true
+      "activo": true,
+      "destacado": true
     },
     {
       "id": "electrodomesticos-2333683e-52cc-47c3-aa50-483e7519104f",
@@ -689,7 +749,8 @@
       "descripcion": "Máquina de copos de azúcar (algodón de azúcar) Kanji Home. Diversión dulce para cumpleaños y eventos.",
       "categoria": "electrodomesticos",
       "slug": "2333683e-52cc-47c3-aa50-483e7519104f",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-3d218783-8f19-4d43-8b04-17b5cfcf68a4",
@@ -700,7 +761,8 @@
       "descripcion": "Heladera Telefunken de 220 litros con dispenser de agua. Capacidad y practicidad para toda la familia.",
       "categoria": "electrodomesticos",
       "slug": "3d218783-8f19-4d43-8b04-17b5cfcf68a4",
-      "activo": true
+      "activo": true,
+      "destacado": true
     },
     {
       "id": "electrodomesticos-602527a1-d779-4377-bbb3-78d7dd7f6007",
@@ -711,7 +773,8 @@
       "descripcion": "Dispenser de agua frío/calor Telefunken blanco. Agua a la temperatura justa en todo momento.",
       "categoria": "electrodomesticos",
       "slug": "602527a1-d779-4377-bbb3-78d7dd7f6007",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-7d7a06b5-a447-49f1-8110-2a551aeb3e64",
@@ -722,7 +785,8 @@
       "descripcion": "Frigobar retro Kanji Home de 50 litros en negro. Compacto y con estilo para oficina, cuarto o bar.",
       "categoria": "electrodomesticos",
       "slug": "7d7a06b5-a447-49f1-8110-2a551aeb3e64",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-7f7759a6-173d-4ac7-96e2-c00dfe9ecee7",
@@ -733,7 +797,8 @@
       "descripcion": "Lavarropas automático Vitta de 6 kg con motor Inverter, en gris. Lavado eficiente y silencioso.",
       "categoria": "electrodomesticos",
       "slug": "7f7759a6-173d-4ac7-96e2-c00dfe9ecee7",
-      "activo": true
+      "activo": true,
+      "destacado": true
     },
     {
       "id": "electrodomesticos-img_0031",
@@ -744,7 +809,8 @@
       "descripcion": "Cocina a gas Peabody de 4 hornallas en negro. Horno amplio y diseño moderno para tu cocina.",
       "categoria": "electrodomesticos",
       "slug": "img_0031",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0064",
@@ -755,7 +821,8 @@
       "descripcion": "Cafetera de cápsulas Kanji Home en blanco y negro. Tu café listo en segundos.",
       "categoria": "electrodomesticos",
       "slug": "img_0064",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0068",
@@ -766,7 +833,8 @@
       "descripcion": "Balanza comercial Vestax Ecostar de hasta 40 kg. Precisa y robusta para tu negocio.",
       "categoria": "electrodomesticos",
       "slug": "img_0068",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0070",
@@ -777,7 +845,8 @@
       "descripcion": "Percoladora/urna de acero inoxidable con canilla. Ideal para servir café o agua caliente en cantidad.",
       "categoria": "electrodomesticos",
       "slug": "img_0070",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0114",
@@ -788,7 +857,8 @@
       "descripcion": "Freezer horizontal Kanji Home blanco. Gran capacidad de congelado para el hogar o el comercio.",
       "categoria": "electrodomesticos",
       "slug": "img_0114",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0156",
@@ -799,7 +869,8 @@
       "descripcion": "Freidora de aire Westinghouse de doble canasta, en negro. Cociná dos cosas a la vez con poco aceite.",
       "categoria": "electrodomesticos",
       "slug": "img_0156",
-      "activo": true
+      "activo": true,
+      "destacado": true
     },
     {
       "id": "electrodomesticos-img_0159",
@@ -810,7 +881,8 @@
       "descripcion": "Freidora de aire Westinghouse de doble canasta. Dos cestos independientes para preparar comidas completas.",
       "categoria": "electrodomesticos",
       "slug": "img_0159",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0173",
@@ -821,7 +893,8 @@
       "descripcion": "Batidora de pie Kanji Home con bowl, en blanco. Mezclá y batí sin esfuerzo para tus recetas.",
       "categoria": "electrodomesticos",
       "slug": "img_0173",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0180",
@@ -832,7 +905,8 @@
       "descripcion": "Freidora de aire Kanji Home en negro e inox. Frituras más sanas con poco o nada de aceite.",
       "categoria": "electrodomesticos",
       "slug": "img_0180",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0185",
@@ -843,7 +917,8 @@
       "descripcion": "Sandwichera y grill 3 en 1 con placas intercambiables, en negro. Tostados, wafles y grillados en un solo equipo.",
       "categoria": "electrodomesticos",
       "slug": "img_0185",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0190",
@@ -854,7 +929,8 @@
       "descripcion": "Máquina para pasta Kanji Home en rojo. Hacé fideos caseros de forma fácil y divertida.",
       "categoria": "electrodomesticos",
       "slug": "img_0190",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0195",
@@ -865,7 +941,8 @@
       "descripcion": "Pava eléctrica Kanji en acero inoxidable y negro. Agua caliente rápida con apagado automático.",
       "categoria": "electrodomesticos",
       "slug": "img_0195",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0265",
@@ -876,7 +953,8 @@
       "descripcion": "Espumador de leche Ultracomb EL-8501 en inox. Espuma cremosa para tus cafés tipo cafetería.",
       "categoria": "electrodomesticos",
       "slug": "img_0265",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0280",
@@ -887,7 +965,8 @@
       "descripcion": "Aspiradora multiciclónica Yelmo en gris y rosa. Potencia de succión sin perder fuerza.",
       "categoria": "electrodomesticos",
       "slug": "img_0280",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0283",
@@ -898,7 +977,8 @@
       "descripcion": "Cafetera espresso Ultracomb con pantalla táctil. Café de calidad barista en tu casa.",
       "categoria": "electrodomesticos",
       "slug": "img_0283",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0285",
@@ -909,7 +989,8 @@
       "descripcion": "Anafe de inducción Ultracomb de 1 hornalla, en negro. Cocción rápida, segura y eficiente.",
       "categoria": "electrodomesticos",
       "slug": "img_0285",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0289",
@@ -920,7 +1001,8 @@
       "descripcion": "Freidora de aire Yelmo redonda en lila. Color y diseño para una cocina más saludable.",
       "categoria": "electrodomesticos",
       "slug": "img_0289",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0292",
@@ -931,7 +1013,8 @@
       "descripcion": "Freidora de aire Yelmo cuadrada en verde menta. Frituras crocantes con menos aceite.",
       "categoria": "electrodomesticos",
       "slug": "img_0292",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0295",
@@ -942,7 +1025,8 @@
       "descripcion": "Freidora de aire Yelmo cuadrada en violeta. Práctica, moderna y con mucho color.",
       "categoria": "electrodomesticos",
       "slug": "img_0295",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0303",
@@ -953,7 +1037,8 @@
       "descripcion": "Cortadora de fiambres y embutidos Ultracomb en inox. Fetas parejas de fiambres en casa.",
       "categoria": "electrodomesticos",
       "slug": "img_0303",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0306",
@@ -964,7 +1049,8 @@
       "descripcion": "Procesadora y ralladora Ultracomb en blanco y rojo. Picá, rallá y procesá en minutos.",
       "categoria": "electrodomesticos",
       "slug": "img_0306",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0312",
@@ -975,7 +1061,8 @@
       "descripcion": "Yogurtera Ultracomb en inox con 7 frasquitos. Yogur casero y natural para toda la semana.",
       "categoria": "electrodomesticos",
       "slug": "img_0312",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0318",
@@ -986,7 +1073,8 @@
       "descripcion": "Anafe vitrocerámica Ultracomb AN-E604 de 4 hornallas. Superficie elegante y fácil de limpiar.",
       "categoria": "electrodomesticos",
       "slug": "img_0318",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0391",
@@ -997,7 +1085,8 @@
       "descripcion": "Mixer de mano Liliana EasyHome en blanco y negro. Licuá y procesá directo en la olla o el vaso.",
       "categoria": "electrodomesticos",
       "slug": "img_0391",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0595",
@@ -1008,7 +1097,8 @@
       "descripcion": "Microondas Kanji Home en blanco y negro. Calentá y cociná con varias potencias.",
       "categoria": "electrodomesticos",
       "slug": "img_0595",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0596",
@@ -1019,7 +1109,8 @@
       "descripcion": "Microondas Kanji Home con amplio interior. Práctico para el día a día de tu cocina.",
       "categoria": "electrodomesticos",
       "slug": "img_0596",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0599",
@@ -1030,7 +1121,8 @@
       "descripcion": "Plancha a vapor Kanji Home en verde y azul. Vapor potente para prendas sin arrugas.",
       "categoria": "electrodomesticos",
       "slug": "img_0599",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0604",
@@ -1041,7 +1133,8 @@
       "descripcion": "Set de ollas marmoladas en negro con sartén. Antiadherentes y resistentes para cocinar a diario.",
       "categoria": "electrodomesticos",
       "slug": "img_0604",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0606",
@@ -1052,7 +1145,8 @@
       "descripcion": "Set de ollas crema con asas y tapas tipo madera. Diseño cálido y práctico para tu cocina.",
       "categoria": "electrodomesticos",
       "slug": "img_0606",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0754",
@@ -1063,7 +1157,8 @@
       "descripcion": "Secarropas centrífugo Codini de 6,5 kg en blanco. Quita el agua de la ropa en minutos.",
       "categoria": "electrodomesticos",
       "slug": "img_0754",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0759",
@@ -1074,7 +1169,8 @@
       "descripcion": "Dúo Codini: lavarropas más secarropas en blanco. La solución completa para el lavado en poco espacio.",
       "categoria": "electrodomesticos",
       "slug": "img_0759",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0765",
@@ -1085,7 +1181,8 @@
       "descripcion": "Lavarropas de carga superior Codini en blanco. Práctico, resistente y fácil de usar.",
       "categoria": "electrodomesticos",
       "slug": "img_0765",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0817",
@@ -1096,7 +1193,8 @@
       "descripcion": "Anafe vitrocerámica Ultracomb AN-E604. Cocción pareja y superficie fácil de limpiar.",
       "categoria": "electrodomesticos",
       "slug": "img_0817",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0909",
@@ -1107,7 +1205,8 @@
       "descripcion": "Calefactor eléctrico cerámico/cuarzo en negro. Calor rápido para los días más fríos.",
       "categoria": "electrodomesticos",
       "slug": "img_0909",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0922",
@@ -1118,7 +1217,8 @@
       "descripcion": "Batidora de mano Yelmo en celeste. Liviana y práctica para batir y mezclar.",
       "categoria": "electrodomesticos",
       "slug": "img_0922",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0941",
@@ -1129,7 +1229,8 @@
       "descripcion": "Freidora de aire Yelmo en violeta con ventana. Mirá la cocción sin abrir, con menos aceite.",
       "categoria": "electrodomesticos",
       "slug": "img_0941",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0942",
@@ -1140,7 +1241,8 @@
       "descripcion": "Licuadora con jarra de vidrio Yelmo en rosa salmón. Licuados y batidos resistentes y con estilo.",
       "categoria": "electrodomesticos",
       "slug": "img_0942",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0946",
@@ -1151,7 +1253,8 @@
       "descripcion": "Pava eléctrica Ultracomb de 1,7 L en inox. Hierve rápido con apagado automático de seguridad.",
       "categoria": "electrodomesticos",
       "slug": "img_0946",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0951",
@@ -1162,7 +1265,8 @@
       "descripcion": "Panificadora Ultracomb en celeste. Pan casero recién hecho con distintos programas.",
       "categoria": "electrodomesticos",
       "slug": "img_0951",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0954",
@@ -1173,7 +1277,8 @@
       "descripcion": "Extractor de jugos Ultracomb en inox. Jugos naturales aprovechando al máximo la fruta.",
       "categoria": "electrodomesticos",
       "slug": "img_0954",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0958",
@@ -1184,7 +1289,8 @@
       "descripcion": "Molinillo de café y especias Ultracomb en inox. Molido al instante para más aroma y sabor.",
       "categoria": "electrodomesticos",
       "slug": "img_0958",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0959",
@@ -1195,7 +1301,8 @@
       "descripcion": "Mini picadora Ultracomb en naranja. Pica verduras, frutos secos y más en segundos.",
       "categoria": "electrodomesticos",
       "slug": "img_0959",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0962",
@@ -1206,7 +1313,8 @@
       "descripcion": "Tostadora Ultracomb de 2 ranuras en rojo. Tostadas en su punto con varios niveles.",
       "categoria": "electrodomesticos",
       "slug": "img_0962",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0974",
@@ -1217,7 +1325,8 @@
       "descripcion": "Horno eléctrico Yelmo YL-45AN en negro. Capacidad y potencia para hornear y gratinar.",
       "categoria": "electrodomesticos",
       "slug": "img_0974",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_0975",
@@ -1228,7 +1337,8 @@
       "descripcion": "Horno eléctrico Yelmo YL-45AN en gris. Práctico para tortas, pizzas y comidas al horno.",
       "categoria": "electrodomesticos",
       "slug": "img_0975",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_1023",
@@ -1239,7 +1349,8 @@
       "descripcion": "Cafetera de filtro en negro. Prepará varias tazas de café de una sola vez.",
       "categoria": "electrodomesticos",
       "slug": "img_1023",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_1026",
@@ -1250,7 +1361,8 @@
       "descripcion": "Robot de cocina Liliana con vaso licuador. Múltiples funciones para cocinar más fácil.",
       "categoria": "electrodomesticos",
       "slug": "img_1026",
-      "activo": true
+      "activo": true,
+      "destacado": true
     },
     {
       "id": "electrodomesticos-img_1036",
@@ -1261,7 +1373,8 @@
       "descripcion": "Wafflera con forma de corazones, en negro. Wafles caseros listos en minutos.",
       "categoria": "electrodomesticos",
       "slug": "img_1036",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_1043",
@@ -1272,7 +1385,8 @@
       "descripcion": "Grill eléctrico redondo Liliana en dorado. Ideal para grillar carnes y verduras en la mesa.",
       "categoria": "electrodomesticos",
       "slug": "img_1043",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_1046",
@@ -1283,7 +1397,8 @@
       "descripcion": "Pava eléctrica Liliana en acero inoxidable. Herví agua rápido con un diseño elegante.",
       "categoria": "electrodomesticos",
       "slug": "img_1046",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_1051",
@@ -1294,7 +1409,8 @@
       "descripcion": "Panificadora Liliana Breadly en blanco. Pan casero a tu gusto con varios programas.",
       "categoria": "electrodomesticos",
       "slug": "img_1051",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_1053",
@@ -1305,7 +1421,8 @@
       "descripcion": "Panificadora Liliana Breadly con cuba antiadherente. Pan fresco y casero todos los días.",
       "categoria": "electrodomesticos",
       "slug": "img_1053",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_1439",
@@ -1316,7 +1433,8 @@
       "descripcion": "Vitrinas refrigeradas Pioneer Home. Exhibí y conservá productos en frío en tu comercio.",
       "categoria": "electrodomesticos",
       "slug": "img_1439",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-img_1440",
@@ -1327,7 +1445,8 @@
       "descripcion": "Heladera Pioneer Home de 2 puertas en acero inoxidable. Mucho espacio y diseño moderno.",
       "categoria": "electrodomesticos",
       "slug": "img_1440",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "electrodomesticos-pochoclera-electrica",
@@ -1338,7 +1457,8 @@
       "descripcion": "Pochoclera eléctrica Kanji Home. Pochoclo casero sin aceite, ideal para las pelis en familia.",
       "categoria": "electrodomesticos",
       "slug": "pochoclera-electrica",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "seguridad-cerradura-01",
@@ -1349,7 +1469,8 @@
       "descripcion": "Cerradura inteligente digital con teclado numérico y apertura por código. Diseño moderno tipo push-pull para más seguridad en tu puerta.",
       "categoria": "seguridad",
       "slug": "cerradura-01",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "seguridad-cerradura-02",
@@ -1360,7 +1481,8 @@
       "descripcion": "Cerradura inteligente con manija, lector de huella digital y teclado táctil. Varias formas de apertura para controlar el acceso a tu hogar.",
       "categoria": "seguridad",
       "slug": "cerradura-02",
-      "activo": true
+      "activo": true,
+      "destacado": true
     },
     {
       "id": "tecnologia-celulares-parlante-torre-rgb-01",
@@ -1371,7 +1493,8 @@
       "descripcion": "Torre de sonido con iluminación RGB envolvente. Potencia y luces de colores para ambientar cualquier reunión o fiesta.",
       "categoria": "tecnologia-celulares",
       "slug": "parlante-torre-rgb-01",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "tecnologia-celulares-parlante-torre-party-01",
@@ -1382,7 +1505,8 @@
       "descripcion": "Parlante torre tipo party con varios altavoces e iluminación RGB. Mucho volumen y efectos de luz para tus eventos.",
       "categoria": "tecnologia-celulares",
       "slug": "parlante-torre-party-01",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "tecnologia-celulares-parlante-partybox-doble-woofer",
@@ -1393,7 +1517,8 @@
       "descripcion": "Party box con doble woofer y luces RGB. Sonido potente y graves profundos, con asa para llevarlo a todos lados.",
       "categoria": "tecnologia-celulares",
       "slug": "parlante-partybox-doble-woofer",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "tecnologia-celulares-parlante-portatil-cilindrico-rgb",
@@ -1404,7 +1529,8 @@
       "descripcion": "Parlante portátil cilíndrico con conexión Bluetooth y luz RGB. Compacto, resistente y con buena autonomía para llevar.",
       "categoria": "tecnologia-celulares",
       "slug": "parlante-portatil-cilindrico-rgb",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "tecnologia-celulares-motorola-moto-g05",
@@ -1415,7 +1541,8 @@
       "descripcion": "Smartphone Motorola Moto G05 con pantalla amplia, buena batería y cámara para el día a día. Ideal para uso diario.",
       "categoria": "tecnologia-celulares",
       "slug": "motorola-moto-g05",
-      "activo": true
+      "activo": true,
+      "destacado": true
     },
     {
       "id": "tecnologia-celulares-parlante-partybox-portatil-rgb",
@@ -1426,7 +1553,8 @@
       "descripcion": "Party box portátil con luces RGB y manija de transporte. Sonido envolvente para llevar la música donde vayas.",
       "categoria": "tecnologia-celulares",
       "slug": "parlante-partybox-portatil-rgb",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "tecnologia-celulares-celular-redmi-01",
@@ -1437,7 +1565,8 @@
       "descripcion": "Smartphone Xiaomi Redmi con pantalla grande y varias cámaras. Rendimiento fluido y diseño moderno para todos los días.",
       "categoria": "tecnologia-celulares",
       "slug": "celular-redmi-01",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "tecnologia-celulares-xiaomi-redmi-a5",
@@ -1448,7 +1577,8 @@
       "descripcion": "Smartphone Xiaomi Redmi A5 con pantalla amplia, batería de larga duración y diseño moderno. Una gran opción accesible.",
       "categoria": "tecnologia-celulares",
       "slug": "xiaomi-redmi-a5",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "tecnologia-celulares-soporte-tv-articulado",
@@ -1459,7 +1589,8 @@
       "descripcion": "Soporte articulado para TV o monitor. Brazo móvil para ajustar el ángulo de la pantalla y aprovechar mejor el espacio.",
       "categoria": "tecnologia-celulares",
       "slug": "soporte-tv-articulado",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "tecnologia-celulares-parlante-portatil-compacto",
@@ -1470,7 +1601,8 @@
       "descripcion": "Parlante portátil compacto con Bluetooth. Liviano y práctico, con buen volumen para escuchar música en cualquier lado.",
       "categoria": "tecnologia-celulares",
       "slug": "parlante-portatil-compacto",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-ingco-bolso-herramientas",
@@ -1481,7 +1613,8 @@
       "descripcion": "Bolso de lona reforzada INGCO para guardar y transportar tus herramientas. Resistente, con asas firmes y cierre amplio.",
       "categoria": "herramientas",
       "slug": "ingco-bolso-herramientas",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-bordeadora-inalambrica",
@@ -1492,7 +1625,8 @@
       "descripcion": "Bordeadora inalámbrica para el jardín. Liviana y sin cables, ideal para emparejar bordes y pasto con total comodidad.",
       "categoria": "herramientas",
       "slug": "bordeadora-inalambrica",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-inflador-digital-kanji",
@@ -1503,7 +1637,8 @@
       "descripcion": "Mini compresor inflador digital Kanji con display y recargable. Para inflar neumáticos de autos, bicis, motos y pelotas.",
       "categoria": "herramientas",
       "slug": "inflador-digital-kanji",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "herramientas-ingco-juego-llaves-combinadas",
@@ -1514,7 +1649,8 @@
       "descripcion": "Set de llaves combinadas INGCO en distintas medidas. Acero resistente, ideal para tareas de mecánica y mantenimiento.",
       "categoria": "herramientas",
       "slug": "ingco-juego-llaves-combinadas",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-sombrilla-playera-azul",
@@ -1525,7 +1661,8 @@
       "descripcion": "Sombrilla o parasol azul con inclinación regulable. Buena protección del sol para la playa, el patio o la pileta.",
       "categoria": "muebles-hogar",
       "slug": "sombrilla-playera-azul",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-acolchado-juego-sabanas",
@@ -1536,7 +1673,8 @@
       "descripcion": "Acolchado suave y juego de sábanas Cotton Touch. Confort y abrigo para vestir tu cama con buena calidad y estilo.",
       "categoria": "muebles-hogar",
       "slug": "acolchado-juego-sabanas",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "muebles-hogar-mesa-plegable",
@@ -1547,7 +1685,8 @@
       "descripcion": "Mesa plegable resistente, ideal para eventos, jardín o espacios reducidos. Práctica de guardar y fácil de transportar.",
       "categoria": "muebles-hogar",
       "slug": "mesa-plegable",
-      "activo": true
+      "activo": true,
+      "destacado": false
     },
     {
       "id": "salud-nebulizador-portatil-malla",
@@ -1558,8 +1697,9 @@
       "descripcion": "Nebulizador portátil ultrasónico de malla, recargable y silencioso. Incluye máscara: ideal para usar en casa o de viaje.",
       "categoria": "salud",
       "slug": "nebulizador-portatil-malla",
-      "activo": true
+      "activo": true,
+      "destacado": false
     }
   ],
-  "generado": "2026-06-29 06:07:16"
+  "generado": "2026-06-30 01:59:27"
 }

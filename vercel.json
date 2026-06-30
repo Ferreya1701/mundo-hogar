@@ -4,7 +4,9 @@
   "cleanUrls": false,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/images/:path*", "destination": "/public/images/:path*" }
+    { "source": "/images/:path*", "destination": "/public/images/:path*" },
+    { "source": "/categorias", "destination": "/categoria.html" },
+    { "source": "/categorias/:slug", "destination": "/categoria.html" }
   ],
   "headers": [
     {

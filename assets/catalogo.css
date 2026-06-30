@@ -1,0 +1,185 @@
+/* ============================================================
+   Mundo Hogar — Sistema de diseño compartido
+   Paleta: Azul + Naranja + Blanco
+   Usado por: index.html, productos/, categorias/
+   ============================================================ */
+:root{
+  --blue:#1763C6;
+  --blue-dark:#0E4AA0;
+  --navy:#0A2E63;
+  --orange:#F47A1F;
+  --orange-dark:#E0660C;
+  --white:#FFFFFF;
+  --bg:#F4F7FC;
+  --ink:#16243B;
+  --muted:#5A6B85;
+  --border:#E1E8F3;
+  --wa:#25D366;
+  --wa-dark:#1ebe57;
+  --shadow-sm:0 2px 8px rgba(13,42,99,.06);
+  --shadow:0 8px 28px rgba(13,42,99,.10);
+  --shadow-lg:0 18px 48px rgba(13,42,99,.16);
+  --radius:14px;
+  --radius-sm:10px;
+  --maxw:1240px;
+  --t:.22s cubic-bezier(.4,0,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.5}
+.display{font-family:'Plus Jakarta Sans','Inter',sans-serif}
+a{text-decoration:none;color:inherit}
+img{max-width:100%;display:block}
+button{font-family:inherit}
+:focus-visible{outline:3px solid var(--orange);outline-offset:2px;border-radius:4px}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:#c5d2e8;border-radius:8px}
+.container{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+.section{padding:56px 0}
+@media(min-width:768px){.section{padding:76px 0}}
+
+/* ── Tipografía de secciones ── */
+.eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--blue);font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px}
+.eyebrow::before{content:"";width:22px;height:2px;background:var(--orange);border-radius:2px}
+h1,h2,h3{font-family:'Plus Jakarta Sans','Inter',sans-serif;line-height:1.15;letter-spacing:-.02em}
+.section-h2{font-size:clamp(1.5rem,3.5vw,2.3rem);color:var(--navy);font-weight:800}
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:28px;flex-wrap:wrap}
+.section-sub{color:var(--muted);font-size:15px;margin-top:6px;max-width:560px}
+
+/* ── Botones ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:15px;line-height:1;padding:13px 22px;border-radius:10px;border:2px solid transparent;cursor:pointer;transition:transform var(--t),background var(--t),border-color var(--t),box-shadow var(--t);min-height:46px;white-space:nowrap;text-align:center}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-lg{padding:16px 30px;font-size:16px;min-height:54px}
+.btn-sm{padding:9px 14px;font-size:13px;min-height:38px;border-radius:8px}
+.btn-primary{background:var(--orange);color:#fff;box-shadow:0 6px 18px rgba(244,122,31,.32)}
+.btn-primary:hover{background:var(--orange-dark);box-shadow:0 10px 26px rgba(244,122,31,.42)}
+.btn-blue{background:var(--blue);color:#fff;box-shadow:0 6px 18px rgba(23,99,198,.28)}
+.btn-blue:hover{background:var(--blue-dark)}
+.btn-outline{background:#fff;color:var(--blue);border-color:var(--border)}
+.btn-outline:hover{border-color:var(--blue);color:var(--blue-dark);background:#fff}
+.btn-ghost-light{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.28)}
+.btn-ghost-light:hover{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.5)}
+.btn-wa{background:var(--wa);color:#fff}
+.btn-wa:hover{background:var(--wa-dark)}
+.btn-block{width:100%}
+.btn svg{flex-shrink:0}
+.btn-arrow svg{transition:transform var(--t)}
+.btn-arrow:hover svg{transform:translateX(3px)}
+
+.link-more{display:inline-flex;align-items:center;gap:6px;color:var(--blue);font-weight:700;font-size:14px;transition:gap var(--t),color var(--t)}
+.link-more:hover{color:var(--orange);gap:10px}
+
+/* ── Tarjeta de producto ── */
+.grid-products{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px}
+.mh-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:transform var(--t),box-shadow var(--t),border-color var(--t)}
+.mh-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:#cfe0f5}
+.mh-card-imgwrap{position:relative;aspect-ratio:1;background:#fff;overflow:hidden}
+.mh-card-imgwrap img{width:100%;height:100%;object-fit:contain;object-position:center;padding:10px;transition:transform .35s ease}
+.mh-card:hover .mh-card-imgwrap img{transform:scale(1.06)}
+.mh-badges{position:absolute;top:10px;left:10px;display:flex;flex-direction:column;gap:6px;z-index:2}
+.badge{font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:4px 9px;border-radius:999px;color:#fff}
+.badge-dest{background:var(--orange)}
+.badge-new{background:var(--blue)}
+.mh-card-body{padding:14px 15px 16px;display:flex;flex-direction:column;flex:1}
+.mh-card-cat{font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.mh-card-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;color:var(--navy);line-height:1.3;margin-bottom:6px}
+.mh-card-desc{font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mh-card-cta{margin-top:auto}
+.mh-card-cta .btn{width:100%}
+
+/* ── Tarjeta de categoría ── */
+.grid-cats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.cat-card{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-height:200px;border-radius:var(--radius);overflow:hidden;background:var(--navy);color:#fff;box-shadow:var(--shadow-sm);transition:transform var(--t),box-shadow var(--t)}
+.cat-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.cat-card-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55;transition:transform .4s ease,opacity var(--t)}
+.cat-card:hover .cat-card-img{transform:scale(1.07);opacity:.65}
+.cat-card-grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,46,99,.15) 0%,rgba(10,46,99,.55) 55%,rgba(10,46,99,.92) 100%)}
+.cat-card-body{position:relative;z-index:2;padding:18px}
+.cat-card-icon{width:38px;height:38px;border-radius:9px;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;margin-bottom:auto}
+.cat-card-name{font-family:'Plus Jakarta Sans',sans-serif;font-size:1.15rem;font-weight:800;margin-top:14px}
+.cat-card-count{font-size:12.5px;color:rgba(255,255,255,.72);margin-top:2px}
+.cat-card-go{display:inline-flex;align-items:center;gap:6px;margin-top:12px;font-size:13px;font-weight:700;color:#fff;transition:gap var(--t)}
+.cat-card-go svg{transition:transform var(--t)}
+.cat-card:hover .cat-card-go svg{transform:translateX(4px);color:var(--orange)}
+.cat-card-top{display:flex;justify-content:space-between;align-items:flex-start}
+
+/* ── Carrusel horizontal ── */
+.mh-carousel{position:relative}
+.mh-carousel-track{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(240px,1fr);gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;padding:6px 2px 14px;-ms-overflow-style:none;scrollbar-width:none}
+.mh-carousel-track::-webkit-scrollbar{display:none}
+.mh-carousel-track>*{scroll-snap-align:start}
+@media(min-width:640px){.mh-carousel-track{grid-auto-columns:minmax(250px,1fr)}}
+.mh-arrow{position:absolute;top:38%;transform:translateY(-50%);width:44px;height:44px;border-radius:999px;background:#fff;border:1px solid var(--border);box-shadow:var(--shadow);color:var(--navy);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:3;transition:background var(--t),transform var(--t),opacity var(--t)}
+.mh-arrow:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
+.mh-arrow:disabled{opacity:0;pointer-events:none}
+.mh-arrow-prev{left:-10px}
+.mh-arrow-next{right:-10px}
+@media(max-width:720px){.mh-arrow{display:none}}
+
+/* ── Chips / filtros ── */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:#fff;border:1.5px solid var(--border);color:var(--ink);font-size:13px;font-weight:600;padding:8px 15px;border-radius:999px;cursor:pointer;transition:all var(--t)}
+.chip:hover{border-color:var(--blue);color:var(--blue)}
+.chip.active{background:var(--blue);border-color:var(--blue);color:#fff}
+
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.input,.select{background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;font-size:14px;color:var(--ink);min-height:44px;transition:border-color var(--t)}
+.input:focus,.select:focus{border-color:var(--blue);outline:none}
+.searchbar{position:relative;flex:1;min-width:200px}
+.searchbar .input{width:100%;padding-left:42px}
+.searchbar svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)}
+
+/* ── Breadcrumbs ── */
+.breadcrumb{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.breadcrumb a{color:var(--blue);font-weight:600}
+.breadcrumb a:hover{color:var(--orange)}
+.breadcrumb span[aria-current]{color:var(--ink);font-weight:600}
+
+/* ── Skeleton loaders ── */
+.skel{background:linear-gradient(100deg,#eef2f9 30%,#e3eaf5 50%,#eef2f9 70%);background-size:200% 100%;animation:shimmer 1.2s infinite linear;border-radius:var(--radius)}
+.skel-card{height:300px}
+@keyframes shimmer{to{background-position:-200% 0}}
+
+/* ── Estado vacío ── */
+.empty-state{text-align:center;padding:56px 20px;color:var(--muted)}
+.empty-state svg{color:#bcc9de;margin-bottom:14px}
+.empty-state h3{color:var(--navy);font-size:1.2rem;margin-bottom:6px}
+
+/* ── Aparición al hacer scroll ── */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .5s ease,transform .5s ease}
+.reveal.in{opacity:1;transform:none}
+
+/* ── Footer compartido ── */
+.mh-footer{background:var(--navy);color:#fff}
+.mh-footer a{color:rgba(255,255,255,.66)}
+.mh-footer a:hover{color:var(--orange)}
+.mh-footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:36px;padding:48px 0;border-bottom:1px solid rgba(255,255,255,.1)}
+.mh-footer-col h4{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.9);margin-bottom:16px}
+.mh-footer-links{display:flex;flex-direction:column;gap:10px;font-size:14px}
+.mh-footer-bottom{display:flex;justify-content:space-between;gap:10px;padding:18px 0;flex-wrap:wrap;font-size:12.5px;color:rgba(255,255,255,.45)}
+
+/* ── WhatsApp flotante ── */
+#wa-float{position:fixed;right:20px;bottom:20px;z-index:300;display:inline-flex;align-items:center;gap:10px;background:var(--wa);color:#fff;font-weight:700;font-size:14px;padding:13px 18px;border-radius:999px;box-shadow:0 10px 26px rgba(37,211,102,.42);transition:transform var(--t),background var(--t)}
+#wa-float:hover{background:var(--wa-dark);transform:translateY(-2px)}
+#wa-float .wa-txt{max-width:0;overflow:hidden;white-space:nowrap;opacity:0;transition:max-width .3s ease,opacity .3s ease}
+#wa-float:hover .wa-txt{max-width:160px;opacity:1}
+@media(max-width:560px){#wa-float .wa-txt{display:none}#wa-float{padding:14px;border-radius:999px}}
+
+/* ── Responsive grids ── */
+@media(max-width:1024px){.grid-cats{grid-template-columns:repeat(3,1fr)}.mh-footer-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:680px){
+  .grid-cats{grid-template-columns:repeat(2,1fr);gap:12px}
+  .grid-products{grid-template-columns:repeat(2,1fr);gap:12px}
+  .cat-card{min-height:150px}
+  .cat-card-name{font-size:1rem}
+  .section-head{margin-bottom:20px}
+  .mh-footer-grid{grid-template-columns:1fr;gap:24px;padding:36px 0}
+}
+
+/* ── Menos movimiento ── */
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+  .reveal{opacity:1;transform:none}
+}

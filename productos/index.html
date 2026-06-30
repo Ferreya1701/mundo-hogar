@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Productos | Catálogo completo — Mundo Hogar</title>
+<meta name="description" content="Catálogo completo de Mundo Hogar: electrodomésticos, muebles, herramientas, tecnología, cuidado personal, salud y seguridad. Buscá, filtrá y consultá precios por WhatsApp.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0A2E63">
+<link rel="canonical" href="https://mundo-hogar-tan.vercel.app/productos">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230A2E63'/%3E%3Ctext x='16' y='22' font-family='Arial,sans-serif' font-size='15' font-weight='800' fill='%23F47A1F' text-anchor='middle'%3EMH%3C/text%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Catálogo completo — Mundo Hogar">
+<meta property="og:description" content="Todos los productos de Mundo Hogar. Buscá, filtrá por categoría y consultá por WhatsApp.">
+<meta property="og:url" content="https://mundo-hogar-tan.vercel.app/productos">
+<meta property="og:image" content="https://mundo-hogar-tan.vercel.app/images/productos/electrodomesticos/IMG_1440.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/catalogo.css">
+<style>
+#hdr{position:sticky;top:0;z-index:200;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.hdr-inner{max-width:var(--maxw);margin:0 auto;padding:0 20px;height:66px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-badge{width:38px;height:38px;border-radius:9px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans';font-weight:800;color:var(--orange);font-size:15px}
+.logo-txt b{display:block;font-family:'Plus Jakarta Sans';font-weight:800;color:var(--navy);font-size:16px;line-height:1}
+.logo-txt span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.nav{display:flex;align-items:center;gap:4px}
+.nav a{padding:9px 13px;border-radius:8px;font-size:14px;font-weight:600;color:var(--ink);transition:all var(--t)}
+.nav a:hover,.nav a.active{color:var(--blue);background:#eef4fc}
+@media(max-width:760px){.nav{display:none}}
+.page-head{background:linear-gradient(135deg,#0A2E63,#1763C6);color:#fff;padding:30px 0 26px}
+.page-head h1{color:#fff;font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;margin:8px 0 4px}
+.page-head p{color:rgba(255,255,255,.8);font-size:15px}
+.toolbar{position:sticky;top:66px;z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:14px 0}
+.toolbar-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.toolbar-row2{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.results-info{font-size:14px;color:var(--muted);font-weight:600}
+@media(max-width:560px){.toolbar{top:0}}
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <div class="hdr-inner">
+    <a href="/" class="logo" aria-label="Mundo Hogar - Inicio"><span class="logo-badge">MH</span><span class="logo-txt"><b>Mundo Hogar</b><span>Mayorista &amp; Minorista</span></span></a>
+    <nav class="nav" aria-label="Navegación principal">
+      <a href="/">Inicio</a>
+      <a href="/#categorias">Categorías</a>
+      <a href="/productos" class="active" aria-current="page">Productos</a>
+      <a href="/#mayorista">Mayorista</a>
+      <a href="/#contacto">Contacto</a>
+    </nav>
+    <a class="btn btn-wa btn-sm" href="https://wa.me/5493426481326?text=Hola!%20Quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">WhatsApp</a>
+  </div>
+</header>
+
+<div class="page-head">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Ruta" style="color:rgba(255,255,255,.7)">
+      <a href="/" style="color:#fff">Inicio</a><span aria-hidden="true">›</span><span aria-current="page" style="color:#fff">Productos</span>
+    </nav>
+    <h1>Catálogo completo</h1>
+    <p>Buscá entre todos nuestros productos y consultá precio y stock por WhatsApp.</p>
+  </div>
+</div>
+
+<div class="toolbar">
+  <div class="container">
+    <div class="toolbar-row">
+      <div class="searchbar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="input" id="q" type="search" placeholder="Buscar productos…" aria-label="Buscar productos">
+      </div>
+      <select class="select" id="sort" aria-label="Ordenar">
+        <option value="destacados">Destacados primero</option>
+        <option value="nuevos">Más nuevos</option>
+        <option value="az">Nombre: A → Z</option>
+        <option value="za">Nombre: Z → A</option>
+      </select>
+      <button class="btn btn-outline btn-sm" id="clear">Limpiar filtros</button>
+    </div>
+    <div class="toolbar-row2">
+      <div class="chips" id="cat-chips" role="group" aria-label="Filtrar por categoría"></div>
+    </div>
+    <div class="toolbar-row2"><span class="results-info" id="results"></span></div>
+  </div>
+</div>
+
+<main class="section" style="padding-top:26px">
+  <div class="container">
+    <div class="grid-products" id="grid" aria-live="polite"></div>
+    <div id="empty" class="empty-state" hidden>
+      <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <h3>No encontramos productos</h3>
+      <p>Probá con otra palabra o quitá los filtros. También podés consultarnos por WhatsApp.</p>
+      <a class="btn btn-primary btn-sm" style="margin-top:14px" href="https://wa.me/5493426481326?text=Hola!%20Estoy%20buscando%20un%20producto." target="_blank" rel="noopener">Consultar por WhatsApp</a>
+    </div>
+    <div style="text-align:center;margin-top:30px">
+      <button class="btn btn-blue btn-lg" id="more" hidden>Cargar más productos</button>
+    </div>
+  </div>
+</main>
+
+<footer class="mh-footer">
+  <div class="container">
+    <div class="mh-footer-bottom" style="border-top:none;padding:24px 0">
+      <span>© 2026 Mundo Hogar · Santa Fe Capital, Argentina.</span>
+      <span><a href="/">Inicio</a> · <a href="/#mayorista">Mayorista</a> · <a href="https://wa.me/5493426481326" target="_blank" rel="noopener">WhatsApp</a></span>
+    </div>
+  </div>
+</footer>
+
+<a id="wa-float" href="https://wa.me/5493426481326?text=Hola!%20Quiero%20consultar%20por%20un%20producto." target="_blank" rel="noopener" aria-label="Contactar por WhatsApp">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1-.3-.1-.5-.1-.6.2l-.9 1.1c-.2.2-.3.2-.6.1-1.6-.8-2.7-1.5-3.8-3.4-.3-.5.3-.5.8-1.5.1-.2 0-.3 0-.5 0-.1-.6-1.5-.9-2-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.8.8-1 1.8-1 2.9 0 1.5 1.1 2.9 1.2 3.1.2.2 2.1 3.3 5.2 4.6 1.9.8 2.6.9 3.5.7.5-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3z"/><path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7L7 20.4A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>
+  <span class="wa-txt">Escribinos</span>
+</a>
+
+<script src="/assets/catalogo.js"></script>
+<script>
+const PAGE = 24;
+let all = [], filtered = [], shown = 0;
+const $ = s => document.querySelector(s);
+const grid = $('#grid'), moreBtn = $('#more'), empty = $('#empty'), results = $('#results');
+let state = { q: '', cat: 'all', sort: 'destacados' };
+
+function applySort(list) {
+  const a = [...list];
+  if (state.sort === 'az') a.sort((x,y)=>x.nombre.localeCompare(y.nombre,'es'));
+  else if (state.sort === 'za') a.sort((x,y)=>y.nombre.localeCompare(x.nombre,'es'));
+  else if (state.sort === 'nuevos') a.sort((x,y)=>(y.orden||0)-(x.orden||0));
+  else a.sort((x,y)=>(y.destacado?1:0)-(x.destacado?1:0) || (y.orden||0)-(x.orden||0)); // destacados
+  return a;
+}
+function applyFilters() {
+  const q = state.q.trim().toLowerCase();
+  filtered = applySort(all.filter(p => {
+    if (state.cat !== 'all' && p.categoria !== state.cat) return false;
+    if (q) { const hay = (p.nombre + ' ' + (p.descripcion||'')).toLowerCase(); if (!hay.includes(q)) return false; }
+    return true;
+  }));
+  grid.innerHTML = ''; shown = 0;
+  renderMore();
+  empty.hidden = filtered.length > 0;
+  results.textContent = `${filtered.length} producto${filtered.length===1?'':'s'}`;
+}
+function renderMore() {
+  const next = filtered.slice(shown, shown + PAGE);
+  next.forEach(p => grid.appendChild(MH.createCard(p)));
+  shown += next.length;
+  moreBtn.hidden = shown >= filtered.length;
+}
+
+(async function () {
+  // chips de categoría
+  const chips = $('#cat-chips');
+  const cats = [{slug:'all',label:'Todos'}].concat(MH.CATS.map(c=>({slug:c.slug,label:c.label})));
+  chips.innerHTML = cats.map((c,i)=>`<button class="chip${i===0?' active':''}" data-cat="${c.slug}">${c.label}</button>`).join('');
+  chips.addEventListener('click', e => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    chips.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active'); state.cat = b.dataset.cat; syncURL(); applyFilters();
+  });
+  $('#q').addEventListener('input', e => { state.q = e.target.value; applyFilters(); });
+  $('#sort').addEventListener('change', e => { state.sort = e.target.value; applyFilters(); });
+  $('#clear').addEventListener('click', () => {
+    state = { q:'', cat:'all', sort:'destacados' };
+    $('#q').value=''; $('#sort').value='destacados';
+    chips.querySelectorAll('.chip').forEach((x,i)=>x.classList.toggle('active', i===0));
+    syncURL(); applyFilters();
+  });
+  moreBtn.addEventListener('click', renderMore);
+
+  function syncURL(){ const u=new URL(location); if(state.cat==='all')u.searchParams.delete('cat');else u.searchParams.set('cat',state.cat); history.replaceState(null,'',u); }
+
+  // estado de carga
+  grid.innerHTML = MH.skeletons(8);
+  try { all = await MH.loadProducts(); }
+  catch (e) { grid.innerHTML=''; empty.hidden=false; results.textContent=''; return; }
+
+  // categoría inicial desde ?cat=
+  const initCat = new URL(location).searchParams.get('cat');
+  if (initCat && MH.CAT_BY_SLUG[initCat]) {
+    state.cat = initCat;
+    chips.querySelectorAll('.chip').forEach(x=>x.classList.toggle('active', x.dataset.cat===initCat));
+  }
+  applyFilters();
+})();
+</script>
+</body>
+</html>

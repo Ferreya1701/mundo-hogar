@@ -1,4 +1,5 @@
-// Dev server: maps /images/* → public/images/* (same as vercel.json rewrite)
+// Dev server local que replica el routing de vercel.json
+// /images/* -> public/images/*  |  /categorias[/x] -> categoria.html  |  index de carpetas
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -6,24 +7,34 @@ const path = require('path');
 const PORT = 8000;
 const ROOT = path.resolve(__dirname, '..');
 const MIME = {
-  '.html':'text/html;charset=utf-8',
-  '.js':'application/javascript',
-  '.css':'text/css',
-  '.json':'application/json',
-  '.jpg':'image/jpeg','.jpeg':'image/jpeg',
-  '.png':'image/png','.webp':'image/webp',
-  '.ico':'image/x-icon','.svg':'image/svg+xml'
+  '.html':'text/html;charset=utf-8','.js':'application/javascript;charset=utf-8',
+  '.css':'text/css;charset=utf-8','.json':'application/json;charset=utf-8',
+  '.svg':'image/svg+xml','.xml':'application/xml;charset=utf-8','.txt':'text/plain;charset=utf-8',
+  '.jpg':'image/jpeg','.jpeg':'image/jpeg','.png':'image/png','.webp':'image/webp','.ico':'image/x-icon'
 };
 
+function resolveFile(url) {
+  url = decodeURIComponent(url.split('?')[0]);
+  if (url.startsWith('/images/')) return path.join(ROOT, 'public', url);
+  if (url === '/categorias' || url.startsWith('/categorias/')) return path.join(ROOT, 'categoria.html');
+  if (url === '/') return path.join(ROOT, 'index.html');
+  let p = path.join(ROOT, url.replace(/^\//, ''));
+  try { if (fs.statSync(p).isDirectory()) return path.join(p, 'index.html'); } catch (e) {}
+  return p;
+}
+
 http.createServer((req, res) => {
-  let url = req.url.split('?')[0];
-  let filePath = url.startsWith('/images/')
-    ? path.join(ROOT, 'public', url)
-    : path.join(ROOT, url === '/' ? 'index.html' : url.slice(1));
+  const filePath = resolveFile(req.url);
   fs.readFile(filePath, (err, data) => {
-    if (err) { res.writeHead(404); res.end('404: ' + url); return; }
-    const ext = path.extname(filePath).toLowerCase();
-    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
+    if (err) {
+      // fallback 404 page
+      fs.readFile(path.join(ROOT, '404.html'), (e2, d2) => {
+        res.writeHead(404, { 'Content-Type': 'text/html;charset=utf-8' });
+        res.end(e2 ? '404: ' + req.url : d2);
+      });
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': MIME[path.extname(filePath).toLowerCase()] || 'application/octet-stream' });
     res.end(data);
   });
 }).listen(PORT, () => console.log('Dev server: http://localhost:' + PORT));
