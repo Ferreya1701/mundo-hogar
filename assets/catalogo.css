@@ -47,25 +47,30 @@ h1,h2,h3{font-family:'Plus Jakarta Sans','Inter',sans-serif;line-height:1.15;let
 .section-sub{color:var(--muted);font-size:15px;margin-top:6px;max-width:560px}
 
 /* ── Botones ── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:15px;line-height:1;padding:13px 22px;border-radius:10px;border:2px solid transparent;cursor:pointer;transition:transform var(--t),background var(--t),border-color var(--t),box-shadow var(--t);min-height:46px;white-space:nowrap;text-align:center}
-.btn:active{transform:translateY(1px)}
+.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:15px;line-height:1;padding:13px 22px;border-radius:10px;border:2px solid transparent;cursor:pointer;transition:transform var(--t),background var(--t),border-color var(--t),box-shadow var(--t);min-height:46px;white-space:nowrap;text-align:center;overflow:hidden}
+.btn:hover{transform:translateY(-2px)}
+.btn:active{transform:translateY(0)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn-lg{padding:16px 30px;font-size:16px;min-height:54px}
 .btn-sm{padding:9px 14px;font-size:13px;min-height:38px;border-radius:8px}
 .btn-primary{background:var(--orange);color:#fff;box-shadow:0 6px 18px rgba(244,122,31,.32)}
-.btn-primary:hover{background:var(--orange-dark);box-shadow:0 10px 26px rgba(244,122,31,.42)}
+.btn-primary:hover{background:var(--orange-dark);box-shadow:0 14px 30px rgba(244,122,31,.44)}
 .btn-blue{background:var(--blue);color:#fff;box-shadow:0 6px 18px rgba(23,99,198,.28)}
-.btn-blue:hover{background:var(--blue-dark)}
+.btn-blue:hover{background:var(--blue-dark);box-shadow:0 14px 30px rgba(23,99,198,.4)}
 .btn-outline{background:#fff;color:var(--blue);border-color:var(--border)}
-.btn-outline:hover{border-color:var(--blue);color:var(--blue-dark);background:#fff}
+.btn-outline:hover{border-color:var(--blue);color:var(--blue-dark);background:#fff;box-shadow:0 10px 24px rgba(13,42,99,.14)}
 .btn-ghost-light{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.28)}
 .btn-ghost-light:hover{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.5)}
 .btn-wa{background:var(--wa);color:#fff}
-.btn-wa:hover{background:var(--wa-dark)}
+.btn-wa:hover{background:var(--wa-dark);box-shadow:0 14px 30px rgba(37,211,102,.4)}
 .btn-block{width:100%}
-.btn svg{flex-shrink:0}
+.btn svg{flex-shrink:0;position:relative;z-index:1}
+.btn span{position:relative;z-index:1}
 .btn-arrow svg{transition:transform var(--t)}
-.btn-arrow:hover svg{transform:translateX(3px)}
+.btn-arrow:hover svg{transform:translateX(4px)}
+/* brillo que recorre el botón al pasar el mouse */
+.btn-primary::after,.btn-blue::after,.btn-wa::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(115deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);transition:left .55s ease}
+.btn-primary:hover::after,.btn-blue:hover::after,.btn-wa:hover::after{left:130%}
 
 .link-more{display:inline-flex;align-items:center;gap:6px;color:var(--blue);font-weight:700;font-size:14px;transition:gap var(--t),color var(--t)}
 .link-more:hover{color:var(--orange);gap:10px}
@@ -73,7 +78,7 @@ h1,h2,h3{font-family:'Plus Jakarta Sans','Inter',sans-serif;line-height:1.15;let
 /* ── Tarjeta de producto ── */
 .grid-products{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px}
 .mh-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:transform var(--t),box-shadow var(--t),border-color var(--t)}
-.mh-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:#cfe0f5}
+.mh-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg);border-color:#cfe0f5}
 .mh-card-imgwrap{position:relative;aspect-ratio:1;background:#fff;overflow:hidden}
 .mh-card-imgwrap img{width:100%;height:100%;object-fit:contain;object-position:center;padding:10px;transition:transform .35s ease}
 .mh-card:hover .mh-card-imgwrap img{transform:scale(1.06)}
@@ -91,18 +96,30 @@ h1,h2,h3{font-family:'Plus Jakarta Sans','Inter',sans-serif;line-height:1.15;let
 /* ── Tarjeta de categoría ── */
 .grid-cats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
 .cat-card{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-height:200px;border-radius:var(--radius);overflow:hidden;background:var(--navy);color:#fff;box-shadow:var(--shadow-sm);transition:transform var(--t),box-shadow var(--t)}
-.cat-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
-.cat-card-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55;transition:transform .4s ease,opacity var(--t)}
-.cat-card:hover .cat-card-img{transform:scale(1.07);opacity:.65}
-.cat-card-grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,46,99,.15) 0%,rgba(10,46,99,.55) 55%,rgba(10,46,99,.92) 100%)}
+.cat-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg)}
+.cat-card-grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,46,99,.05) 0%,rgba(10,46,99,.45) 55%,rgba(10,46,99,.92) 100%);z-index:1}
 .cat-card-body{position:relative;z-index:2;padding:18px}
-.cat-card-icon{width:38px;height:38px;border-radius:9px;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;margin-bottom:auto}
+.cat-card-icon{width:38px;height:38px;border-radius:9px;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;margin-bottom:auto;transition:background var(--t),transform var(--t)}
+.cat-card:hover .cat-card-icon{background:var(--orange);transform:scale(1.08) rotate(-6deg)}
 .cat-card-name{font-family:'Plus Jakarta Sans',sans-serif;font-size:1.15rem;font-weight:800;margin-top:14px}
 .cat-card-count{font-size:12.5px;color:rgba(255,255,255,.72);margin-top:2px}
 .cat-card-go{display:inline-flex;align-items:center;gap:6px;margin-top:12px;font-size:13px;font-weight:700;color:#fff;transition:gap var(--t)}
 .cat-card-go svg{transition:transform var(--t)}
 .cat-card:hover .cat-card-go svg{transform:translateX(4px);color:var(--orange)}
 .cat-card-top{display:flex;justify-content:space-between;align-items:flex-start}
+
+/* ── Visual profesional de categoría (gradiente de marca + ícono, sin fotos) ── */
+.cat-visual{position:absolute;inset:0;overflow:hidden}
+.cat-visual-blob{position:absolute;top:-40%;right:-30%;width:75%;height:140%;border-radius:50%;background:radial-gradient(circle,rgba(244,122,31,.38),transparent 65%);transition:transform .5s ease}
+.cat-card:hover .cat-visual-blob,.collage-tile:hover .cat-visual-blob{transform:scale(1.15) translate(-4%,4%)}
+.cat-visual-pattern{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.14) 1.4px,transparent 1.4px);background-size:16px 16px;opacity:.5}
+.cat-visual-icon{position:absolute;right:-8%;bottom:-12%;width:62%;aspect-ratio:1;color:rgba(255,255,255,.24);transition:transform .45s ease,color var(--t)}
+.cat-visual-icon svg{width:100%;height:100%}
+.cat-card:hover .cat-visual-icon,.collage-tile:hover .cat-visual-icon{transform:scale(1.08) rotate(-4deg);color:rgba(255,255,255,.34)}
+@media(prefers-reduced-motion:no-preference){
+  .cat-visual-icon{animation:catFloat 5s ease-in-out infinite}
+}
+@keyframes catFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 
 /* ── Carrusel horizontal ── */
 .mh-carousel{position:relative}
@@ -162,10 +179,15 @@ h1,h2,h3{font-family:'Plus Jakarta Sans','Inter',sans-serif;line-height:1.15;let
 
 /* ── WhatsApp flotante ── */
 #wa-float{position:fixed;right:20px;bottom:20px;z-index:300;display:inline-flex;align-items:center;gap:10px;background:var(--wa);color:#fff;font-weight:700;font-size:14px;padding:13px 18px;border-radius:999px;box-shadow:0 10px 26px rgba(37,211,102,.42);transition:transform var(--t),background var(--t)}
-#wa-float:hover{background:var(--wa-dark);transform:translateY(-2px)}
+#wa-float:hover{background:var(--wa-dark);transform:translateY(-3px) scale(1.03)}
 #wa-float .wa-txt{max-width:0;overflow:hidden;white-space:nowrap;opacity:0;transition:max-width .3s ease,opacity .3s ease}
 #wa-float:hover .wa-txt{max-width:160px;opacity:1}
+#wa-float::before{content:"";position:absolute;inset:0;border-radius:999px;background:var(--wa);z-index:-1;animation:waPulse 2.6s ease-out infinite}
+@keyframes waPulse{0%{transform:scale(1);opacity:.55}70%{transform:scale(1.7);opacity:0}100%{opacity:0}}
 @media(max-width:560px){#wa-float .wa-txt{display:none}#wa-float{padding:14px;border-radius:999px}}
+
+/* ── Barra de progreso de lectura ── */
+#mh-scroll-progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--orange),var(--blue));z-index:400;transition:width .1s linear}
 
 /* ── Responsive grids ── */
 @media(max-width:1024px){.grid-cats{grid-template-columns:repeat(3,1fr)}.mh-footer-grid{grid-template-columns:1fr 1fr}}

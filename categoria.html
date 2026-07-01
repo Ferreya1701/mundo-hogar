@@ -28,10 +28,12 @@
 .nav a:hover,.nav a.active{color:var(--blue);background:#eef4fc}
 @media(max-width:760px){.nav{display:none}}
 .cat-banner{position:relative;overflow:hidden;background:linear-gradient(135deg,#0A2E63,#1763C6);color:#fff;padding:34px 0 30px}
-.cat-banner::after{content:"";position:absolute;right:-90px;top:-90px;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(244,122,31,.5),transparent 62%)}
+.cat-banner::after{content:"";position:absolute;right:-90px;top:-90px;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(244,122,31,.5),transparent 62%);animation:heroBlob 9s ease-in-out infinite}
+@keyframes heroBlob{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-4%,4%) scale(1.08)}}
 .cat-banner .inner{position:relative;z-index:2}
-.cat-banner h1{color:#fff;font-size:clamp(1.7rem,4vw,2.6rem);font-weight:800;margin:10px 0 6px}
-.cat-banner p{color:rgba(255,255,255,.85);font-size:15px;max-width:600px}
+.cat-banner h1{color:#fff;font-size:clamp(1.7rem,4vw,2.6rem);font-weight:800;margin:10px 0 6px;opacity:0;animation:heroUp .6s cubic-bezier(.2,.7,.3,1) forwards .1s}
+.cat-banner p{color:rgba(255,255,255,.85);font-size:15px;max-width:600px;opacity:0;animation:heroUp .6s cubic-bezier(.2,.7,.3,1) forwards .2s}
+@keyframes heroUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .toolbar{position:sticky;top:66px;z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:14px 0}
 .toolbar-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .results-info{font-size:14px;color:var(--muted);font-weight:600;margin-left:auto}
@@ -121,6 +123,7 @@
   <span class="wa-txt">Escribinos</span>
 </a>
 
+<script src="/supabase-config.js"></script>
 <script src="/assets/catalogo.js"></script>
 <script>
 const PAGE = 24;
@@ -155,7 +158,13 @@ function applyFilters(){
 }
 function renderMore(){
   const next=filtered.slice(shown,shown+PAGE);
+  const startIdx = shown;
   next.forEach(p=>$('#grid').appendChild(MH.createCard(p)));
+  Array.from($('#grid').children).slice(startIdx).forEach((el,i)=>{
+    el.classList.add('reveal');
+    el.style.transitionDelay = Math.min(i*40,480)+'ms';
+  });
+  MH.initReveal($('#grid'));
   shown+=next.length;
   $('#more').hidden=shown>=filtered.length;
 }
@@ -164,17 +173,19 @@ function showHub(){
   $('#hub-grid').innerHTML = MH.CATS.map(c=>{
     const n = all.filter(p=>p.categoria===c.slug).length;
     return `<a class="cat-card" href="/categorias/${c.slug}">
-      <img class="cat-card-img" src="${c.img}" alt="${c.label}" loading="lazy" decoding="async" onerror="this.style.display='none'">
+      ${MH.catVisual(c.slug)}
       <div class="cat-card-grad"></div>
       <div class="cat-card-body"><div class="cat-card-top"><div class="cat-card-icon">${MH.catIcon(c.slug)}</div></div>
         <div class="cat-card-name">${c.label}</div><div class="cat-card-count">${n} productos</div>
         <span class="cat-card-go">Ver categoría <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div></a>`;
   }).join('');
+  MH.stagger($('#hub-grid'), 70);
   MH.initReveal();
 }
 
 (async function(){
+  MH.initScrollProgress();
   try { all = await MH.loadProducts(); }
   catch(e){ $('#cat-desc').textContent='No se pudo cargar el catálogo. Probá recargar la página.'; return; }
 

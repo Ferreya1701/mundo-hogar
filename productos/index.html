@@ -29,9 +29,13 @@
 .nav a{padding:9px 13px;border-radius:8px;font-size:14px;font-weight:600;color:var(--ink);transition:all var(--t)}
 .nav a:hover,.nav a.active{color:var(--blue);background:#eef4fc}
 @media(max-width:760px){.nav{display:none}}
-.page-head{background:linear-gradient(135deg,#0A2E63,#1763C6);color:#fff;padding:30px 0 26px}
-.page-head h1{color:#fff;font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;margin:8px 0 4px}
-.page-head p{color:rgba(255,255,255,.8);font-size:15px}
+.page-head{position:relative;overflow:hidden;background:linear-gradient(135deg,#0A2E63,#1763C6);color:#fff;padding:30px 0 26px}
+.page-head::after{content:"";position:absolute;right:-90px;top:-90px;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(244,122,31,.5),transparent 62%);animation:heroBlob 9s ease-in-out infinite}
+@keyframes heroBlob{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-4%,4%) scale(1.08)}}
+.page-head .container{position:relative;z-index:2}
+.page-head h1{color:#fff;font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;margin:8px 0 4px;opacity:0;animation:headUp .6s cubic-bezier(.2,.7,.3,1) forwards .1s}
+.page-head p{color:rgba(255,255,255,.8);font-size:15px;opacity:0;animation:headUp .6s cubic-bezier(.2,.7,.3,1) forwards .2s}
+@keyframes headUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .toolbar{position:sticky;top:66px;z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:14px 0}
 .toolbar-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .toolbar-row2{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
@@ -116,6 +120,7 @@
   <span class="wa-txt">Escribinos</span>
 </a>
 
+<script src="/supabase-config.js"></script>
 <script src="/assets/catalogo.js"></script>
 <script>
 const PAGE = 24;
@@ -146,12 +151,19 @@ function applyFilters() {
 }
 function renderMore() {
   const next = filtered.slice(shown, shown + PAGE);
+  const startIdx = shown;
   next.forEach(p => grid.appendChild(MH.createCard(p)));
+  Array.from(grid.children).slice(startIdx).forEach((el,i) => {
+    el.classList.add('reveal');
+    el.style.transitionDelay = Math.min(i*40,480)+'ms';
+  });
+  MH.initReveal(grid);
   shown += next.length;
   moreBtn.hidden = shown >= filtered.length;
 }
 
 (async function () {
+  MH.initScrollProgress();
   // chips de categoría
   const chips = $('#cat-chips');
   const cats = [{slug:'all',label:'Todos'}].concat(MH.CATS.map(c=>({slug:c.slug,label:c.label})));

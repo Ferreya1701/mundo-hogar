@@ -52,7 +52,9 @@
 
 /* ── Hero ── */
 .hero{position:relative;overflow:hidden;background:linear-gradient(135deg,#0A2E63 0%,#13509E 52%,#1763C6 100%)}
-.hero::after{content:"";position:absolute;right:-120px;top:-120px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(244,122,31,.55),transparent 62%);pointer-events:none}
+.hero::after{content:"";position:absolute;right:-120px;top:-120px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(244,122,31,.55),transparent 62%);pointer-events:none;animation:heroBlob 9s ease-in-out infinite}
+.hero::before{content:"";position:absolute;left:-160px;bottom:-160px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.08),transparent 65%);pointer-events:none;animation:heroBlob 11s ease-in-out infinite reverse}
+@keyframes heroBlob{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-4%,4%) scale(1.08)}}
 .hero-inner{position:relative;z-index:2;max-width:var(--maxw);margin:0 auto;padding:54px 20px 60px;display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center}
 .hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#fff;font-size:12.5px;font-weight:700;padding:7px 14px;border-radius:999px;margin-bottom:18px}
 .hero-eyebrow b{color:var(--orange)}
@@ -64,14 +66,27 @@
 .hero-trust-item{display:flex;align-items:center;gap:9px;color:#fff;font-size:13px;font-weight:600}
 .hero-trust-item svg{color:var(--orange);flex-shrink:0}
 .hero-collage{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:14px}
-.collage-tile{position:relative;border-radius:16px;overflow:hidden;background:#fff;min-height:135px;box-shadow:0 16px 40px rgba(5,20,50,.35);display:flex;flex-direction:column;justify-content:flex-end;transition:transform var(--t)}
-.collage-tile:hover{transform:translateY(-4px)}
-.collage-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .4s ease}
-.collage-tile:hover img{transform:scale(1.07)}
+.collage-tile{position:relative;border-radius:16px;overflow:hidden;background:#fff;min-height:135px;box-shadow:0 16px 40px rgba(5,20,50,.35);display:flex;flex-direction:column;justify-content:flex-end;transition:transform .35s ease,box-shadow .35s ease;animation:tileFloat 6s ease-in-out infinite}
+.collage-tile:nth-child(2){animation-delay:.4s}
+.collage-tile:nth-child(3){animation-delay:.8s}
+.collage-tile:nth-child(4){animation-delay:1.2s}
+.collage-tile:hover{transform:translateY(-6px) scale(1.015);box-shadow:0 22px 50px rgba(5,20,50,.42)}
+@keyframes tileFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.collage-tile:hover{animation-play-state:paused}
 .collage-tile span{position:relative;z-index:2;color:#fff;font-weight:700;font-size:13.5px;padding:10px 12px;background:linear-gradient(180deg,transparent,rgba(8,28,66,.86))}
 .collage-tile:nth-child(1){grid-row:span 2;min-height:284px}
 @media(max-width:980px){.hero-inner{grid-template-columns:1fr;gap:30px}.hero-collage{max-width:480px}}
 @media(max-width:520px){.collage-tile:nth-child(1){grid-row:auto;min-height:135px}}
+
+/* ── Entrada animada del hero (una sola vez, al cargar) ── */
+.hero-eyebrow,.hero h1,.hero-p,.hero-ctas,.hero-trust,.hero-collage{opacity:0;animation:heroUp .7s cubic-bezier(.2,.7,.3,1) forwards}
+.hero-eyebrow{animation-delay:.05s}
+.hero h1{animation-delay:.15s}
+.hero-p{animation-delay:.28s}
+.hero-ctas{animation-delay:.4s}
+.hero-trust{animation-delay:.52s}
+.hero-collage{animation-delay:.3s}
+@keyframes heroUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── Beneficios ── */
 .benefits{background:#fff;border-bottom:1px solid var(--border)}
@@ -251,7 +266,7 @@
         <a class="btn btn-primary btn-lg" href="https://wa.me/5493426481326?text=Hola!%20Quiero%20consultar%20precios%20mayoristas." target="_blank" rel="noopener">Consultar precios mayoristas</a>
       </div>
       <div class="mayorista-side reveal">
-        <div class="big">+10</div>
+        <div class="big" data-count="10" data-prefix="+">0</div>
         <p style="margin:6px 0 0">años abasteciendo hogares y comercios de Santa Fe y la región.</p>
       </div>
     </div>
@@ -335,6 +350,7 @@
   <span class="wa-txt">Escribinos</span>
 </a>
 
+<script src="/supabase-config.js"></script>
 <script src="/assets/catalogo.js"></script>
 <script>
 // Menú móvil
@@ -348,13 +364,14 @@ mnav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mnav.c
 
 // Render de la vidriera
 (async function () {
-  // Collage del hero = 4 categorías destacadas
+  MH.initScrollProgress();
+
+  // Collage del hero = 4 categorías destacadas (visual de marca, no fotos de producto)
   const heroCats = ['electrodomesticos','herramientas','tecnologia-celulares','muebles-hogar'];
-  document.getElementById('hero-collage').innerHTML = heroCats.map((s,i) => {
+  document.getElementById('hero-collage').innerHTML = heroCats.map((s) => {
     const c = MH.CAT_BY_SLUG[s];
-    return `<a class="collage-tile" href="/categorias/${s}" aria-hidden="false">
-      <img src="${c.img}" alt="${c.label}" loading="${i===0?'eager':'lazy'}" decoding="async"
-        onerror="this.onerror=null;this.src='${MH.PLACEHOLDER}'"><span>${c.label}</span></a>`;
+    return `<a class="collage-tile" href="/categorias/${s}">
+      ${MH.catVisual(s)}<span>${c.label}</span></a>`;
   }).join('');
 
   // Categorías con conteo real
@@ -364,7 +381,7 @@ mnav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mnav.c
   products.forEach(p => counts[p.categoria] = (counts[p.categoria] || 0) + 1);
   document.getElementById('cats-grid').innerHTML = MH.CATS.map(c => `
     <a class="cat-card" href="/categorias/${c.slug}">
-      <img class="cat-card-img" src="${c.img}" alt="${c.label}" loading="lazy" decoding="async" onerror="this.style.display='none'">
+      ${MH.catVisual(c.slug)}
       <div class="cat-card-grad"></div>
       <div class="cat-card-body">
         <div class="cat-card-top"><div class="cat-card-icon">${MH.catIcon(c.slug)}</div></div>
@@ -373,21 +390,25 @@ mnav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mnav.c
         <span class="cat-card-go">Ver categoría <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
     </a>`).join('');
+  MH.stagger(document.getElementById('cats-grid'), 70);
 
   // Carrusel destacados
   const dest = products.filter(p => p.destacado).slice(0, 12);
   const tD = document.getElementById('track-destacados');
   if (dest.length) { dest.forEach(p => tD.appendChild(MH.createCard(p))); }
   else { tD.innerHTML = '<p style="color:var(--muted)">Pronto vas a ver acá nuestros destacados.</p>'; }
+  MH.stagger(tD, 60);
 
   // Carrusel novedades (más recientes por orden)
   const noved = [...products].sort((a,b) => (b.orden||0)-(a.orden||0)).slice(0, 12);
   const tN = document.getElementById('track-novedades');
   noved.forEach(p => tN.appendChild(MH.createCard(p)));
+  MH.stagger(tN, 60);
 
   // Inicializar carruseles e interacciones
   document.querySelectorAll('.mh-carousel').forEach(c => MH.initCarousel(c));
   MH.initReveal();
+  MH.initCounters();
 })();
 </script>
 </body>
