@@ -65,27 +65,40 @@
 .hero-trust{display:flex;flex-wrap:wrap;gap:18px}
 .hero-trust-item{display:flex;align-items:center;gap:9px;color:#fff;font-size:13px;font-weight:600}
 .hero-trust-item svg{color:var(--orange);flex-shrink:0}
-.hero-collage{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:14px}
-.collage-tile{position:relative;border-radius:16px;overflow:hidden;background:#fff;min-height:135px;box-shadow:0 16px 40px rgba(5,20,50,.35);display:flex;flex-direction:column;justify-content:flex-end;transition:transform .35s ease,box-shadow .35s ease;animation:tileFloat 6s ease-in-out infinite}
-.collage-tile:nth-child(2){animation-delay:.4s}
-.collage-tile:nth-child(3){animation-delay:.8s}
-.collage-tile:nth-child(4){animation-delay:1.2s}
-.collage-tile:hover{transform:translateY(-6px) scale(1.015);box-shadow:0 22px 50px rgba(5,20,50,.42)}
-@keyframes tileFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-.collage-tile:hover{animation-play-state:paused}
-.collage-tile span{position:relative;z-index:2;color:#fff;font-weight:700;font-size:13.5px;padding:10px 12px;background:linear-gradient(180deg,transparent,rgba(8,28,66,.86))}
-.collage-tile:nth-child(1){grid-row:span 2;min-height:284px}
-@media(max-width:980px){.hero-inner{grid-template-columns:1fr;gap:30px}.hero-collage{max-width:480px}}
-@media(max-width:520px){.collage-tile:nth-child(1){grid-row:auto;min-height:135px}}
+/* ── Vidriera de productos reales (reemplaza las tarjetas de categoría) ── */
+.hero-showcase{position:relative;display:grid;grid-template-columns:1.15fr 1fr;grid-template-rows:1.2fr 1fr;gap:14px;min-height:400px}
+.show-item{position:relative;border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 14px 34px rgba(5,20,50,.28);opacity:0;animation:showUp .6s cubic-bezier(.2,.7,.3,1) forwards}
+.show-item img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s ease}
+.show-item:hover img{transform:scale(1.06)}
+.show-a{grid-column:1;grid-row:1}
+.show-b{grid-column:2;grid-row:1}
+.show-c{grid-column:1;grid-row:2}
+.show-d{grid-column:2;grid-row:2}
+.show-a{animation-delay:.32s}
+.show-b{animation-delay:.44s}
+.show-c{animation-delay:.56s}
+.show-d{animation-delay:.68s}
+@keyframes showUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:no-preference){
+  .show-b{animation:showUp .6s cubic-bezier(.2,.7,.3,1) forwards .44s,floatY 5.2s ease-in-out infinite 1.1s}
+  .show-d{animation:showUp .6s cubic-bezier(.2,.7,.3,1) forwards .68s,floatY 5.8s ease-in-out infinite 1.3s}
+}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.hero-trustcard{position:absolute;left:-10px;bottom:-16px;z-index:4;display:flex;align-items:center;gap:10px;background:#fff;border-radius:14px;padding:12px 16px;box-shadow:0 16px 34px rgba(5,20,50,.3);max-width:260px;opacity:0;animation:showUp .6s cubic-bezier(.2,.7,.3,1) forwards .8s;transition:transform var(--t),box-shadow var(--t)}
+.hero-trustcard:hover{transform:translateY(-3px);box-shadow:0 20px 40px rgba(5,20,50,.36)}
+.hero-trustcard-ic{width:36px;height:36px;border-radius:10px;background:#fff4ec;color:var(--orange);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hero-trustcard b{display:block;font-size:13px;color:var(--navy);font-family:'Plus Jakarta Sans';font-weight:800;line-height:1.25}
+.hero-trustcard span{font-size:11.5px;color:var(--muted);line-height:1.3}
+@media(max-width:980px){.hero-inner{grid-template-columns:1fr;gap:30px}.hero-showcase{max-width:480px;margin:0 auto;min-height:340px}}
+@media(max-width:520px){.hero-showcase{min-height:280px}.hero-trustcard{max-width:220px;padding:10px 13px;left:-6px;bottom:-12px}}
 
 /* ── Entrada animada del hero (una sola vez, al cargar) ── */
-.hero-eyebrow,.hero h1,.hero-p,.hero-ctas,.hero-trust,.hero-collage{opacity:0;animation:heroUp .7s cubic-bezier(.2,.7,.3,1) forwards}
+.hero-eyebrow,.hero h1,.hero-p,.hero-ctas,.hero-trust{opacity:0;animation:heroUp .7s cubic-bezier(.2,.7,.3,1) forwards}
 .hero-eyebrow{animation-delay:.05s}
 .hero h1{animation-delay:.15s}
 .hero-p{animation-delay:.28s}
 .hero-ctas{animation-delay:.4s}
 .hero-trust{animation-delay:.52s}
-.hero-collage{animation-delay:.3s}
 @keyframes heroUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── Beneficios ── */
@@ -171,14 +184,13 @@
 <section class="hero">
   <div class="hero-inner">
     <div>
-      <span class="hero-eyebrow">🏠 Mayorista &amp; minorista · <b>Santa Fe Capital</b></span>
-      <h1>Todo para tu hogar,<br><em>en un solo lugar.</em></h1>
-      <p class="hero-p">Electrodomésticos, muebles, herramientas, tecnología y mucho más. Precios competitivos para mayoristas y minoristas, con atención personalizada por WhatsApp.</p>
+      <span class="hero-eyebrow">🏠 Mayorista y minorista · <b>Santa Fe Capital</b></span>
+      <h1>Todo lo que necesitás para tu hogar,<br><em>en un solo lugar.</em></h1>
+      <p class="hero-p">Encontrá electrodomésticos, muebles, herramientas y tecnología con precios mayoristas y minoristas. Comprá online o recibí atención personalizada por WhatsApp.</p>
       <div class="hero-ctas">
         <a class="btn btn-primary btn-lg btn-arrow" href="/productos">Ver productos
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </a>
-        <a class="btn btn-ghost-light btn-lg" href="#categorias">Explorar categorías</a>
         <a class="btn btn-wa btn-lg" href="https://wa.me/5493426481326?text=Hola!%20Quiero%20consultar%20por%20un%20producto." target="_blank" rel="noopener">Comprar por WhatsApp</a>
       </div>
       <div class="hero-trust">
@@ -187,7 +199,24 @@
         <div class="hero-trust-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Compra segura</div>
       </div>
     </div>
-    <div class="hero-collage" id="hero-collage" aria-hidden="true"><!-- tiles por JS --></div>
+    <div class="hero-showcase" aria-hidden="true">
+      <div class="show-item show-a">
+        <img src="/images/productos/electrodomesticos/IMG_1440.jpg" alt="Heladera Pioneer Home 2 puertas inox" loading="eager" decoding="async">
+      </div>
+      <div class="show-item show-b">
+        <img src="/images/productos/muebles-hogar/IMG_0053.jpg" alt="Sofá 2 cuerpos gris oscuro" loading="lazy" decoding="async">
+      </div>
+      <div class="show-item show-c">
+        <img src="/images/productos/herramientas/atornilladora-21-01.jpg" alt="Taladro atornillador inalámbrico Kanji Tools" loading="lazy" decoding="async">
+      </div>
+      <div class="show-item show-d">
+        <img src="/images/productos/tecnologia-celulares/motorola-moto-g05.jpg" alt="Celular Motorola Moto G05" loading="lazy" decoding="async">
+      </div>
+      <div class="hero-trustcard">
+        <span class="hero-trustcard-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6 4.5 2.3 7.1L12 16.6 5.7 21l2.3-7.1-6-4.5h7.6z"/></svg></span>
+        <div><b>Más de 10 años</b><span>acompañando hogares · envíos a todo el país</span></div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -365,14 +394,6 @@ mnav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mnav.c
 // Render de la vidriera
 (async function () {
   MH.initScrollProgress();
-
-  // Collage del hero = 4 categorías destacadas (visual de marca, no fotos de producto)
-  const heroCats = ['electrodomesticos','herramientas','tecnologia-celulares','muebles-hogar'];
-  document.getElementById('hero-collage').innerHTML = heroCats.map((s) => {
-    const c = MH.CAT_BY_SLUG[s];
-    return `<a class="collage-tile" href="/categorias/${s}">
-      ${MH.catVisual(s)}<span>${c.label}</span></a>`;
-  }).join('');
 
   // Categorías con conteo real
   let products = [];
