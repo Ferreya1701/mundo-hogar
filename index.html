@@ -12,7 +12,7 @@
 <meta name="geo.region" content="AR-S">
 <meta name="geo.placename" content="Santa Fe">
 <link rel="canonical" href="https://mundo-hogar-tan.vercel.app/">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230A2E63'/%3E%3Ctext x='16' y='22' font-family='Arial,sans-serif' font-size='15' font-weight='800' fill='%23F47A1F' text-anchor='middle'%3EMH%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="/images/marca/favicon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Mundo Hogar">
 <meta property="og:locale" content="es_AR">
@@ -36,7 +36,7 @@
 #hdr{position:sticky;top:0;z-index:200;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
 .hdr-inner{max-width:var(--maxw);margin:0 auto;padding:0 20px;height:66px;display:flex;align-items:center;justify-content:space-between;gap:16px}
 .logo{display:flex;align-items:center;gap:10px}
-.logo-badge{width:38px;height:38px;border-radius:9px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans';font-weight:800;color:var(--orange);font-size:15px}
+.logo-badge{width:38px;height:38px;border-radius:50%;object-fit:contain;flex-shrink:0}
 .logo-txt b{display:block;font-family:'Plus Jakarta Sans';font-weight:800;color:var(--navy);font-size:16px;line-height:1}
 .logo-txt span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .nav{display:flex;align-items:center;gap:4px}
@@ -137,7 +137,7 @@
 <header id="hdr">
   <div class="hdr-inner">
     <a href="/" class="logo" aria-label="Mundo Hogar - Inicio">
-      <span class="logo-badge">MH</span>
+      <img class="logo-badge" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="38" height="38">
       <span class="logo-txt"><b>Mundo Hogar</b><span>Mayorista &amp; Minorista</span></span>
     </a>
     <nav class="nav" aria-label="Navegación principal">
@@ -315,7 +315,7 @@
   <div class="container">
     <div class="mh-footer-grid">
       <div class="mh-footer-col">
-        <a href="/" class="logo" style="margin-bottom:14px"><span class="logo-badge">MH</span><span class="logo-txt"><b style="color:#fff">Mundo Hogar</b><span style="color:rgba(255,255,255,.5)">Mayorista &amp; Minorista</span></span></a>
+        <a href="/" class="logo" style="margin-bottom:14px"><img class="logo-badge" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="38" height="38"><span class="logo-txt"><b style="color:#fff">Mundo Hogar</b><span style="color:rgba(255,255,255,.5)">Mayorista &amp; Minorista</span></span></a>
         <p style="color:rgba(255,255,255,.6);font-size:14px;line-height:1.7;max-width:330px">Equipamos hogares y comercios de Santa Fe y la región con electrodomésticos, muebles, herramientas y más, desde 2014.</p>
         <a class="btn btn-wa btn-sm" style="margin-top:16px" href="https://wa.me/5493426481326" target="_blank" rel="noopener">+54 9 3426 481326</a>
       </div>
