@@ -6,17 +6,6 @@ window.MH = (function () {
   const DATA_URL = '/src/data/productos.json';
   const PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23F4F7FC'/%3E%3Ctext x='200' y='190' font-family='Plus Jakarta Sans,Arial,sans-serif' font-size='52' font-weight='800' fill='%231763C6' text-anchor='middle'%3EMH%3C/text%3E%3Ctext x='200' y='230' font-family='Arial,sans-serif' font-size='15' fill='%235A6B85' text-anchor='middle'%3EImagen no disponible%3C/text%3E%3C/svg%3E";
 
-  // Iconos de categoría (line icons)
-  const ICONS = {
-    electrodomesticos:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="8" y1="5.5" x2="8" y2="6"/><line x1="8" y1="13" x2="8" y2="16"/></svg>',
-    herramientas:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.3L3 18v3h3l6.4-6.4a4 4 0 0 0 5.3-5.4l-2.6 2.6-2.3-.6-.6-2.3 2.5-2.6z"/></svg>',
-    'tecnologia-celulares':'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><line x1="11" y1="18" x2="13" y2="18"/></svg>',
-    'muebles-hogar':'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M3 12a2 2 0 0 1 2 2v3h14v-3a2 2 0 0 1 2-2"/><line x1="5" y1="20" x2="5" y2="17"/><line x1="19" y1="20" x2="19" y2="17"/></svg>',
-    'cuidado-personal':'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>',
-    salud:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
-    seguridad:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
-  };
-
   // Categorías reales (orden de visualización)
   const CATS = [
     { slug:'electrodomesticos',     label:'Electrodomésticos',     desc:'Heladeras, cocinas, lavarropas, freidoras de aire y más.' },
@@ -29,38 +18,46 @@ window.MH = (function () {
   ];
   const CAT_BY_SLUG = Object.fromEntries(CATS.map(c => [c.slug, c]));
   const catLabel = s => (CAT_BY_SLUG[s] && CAT_BY_SLUG[s].label) || s;
-  const catIcon = s => ICONS[s] || '';
 
-  // Gradientes de marca por categoría (todos dentro de la paleta azul/naranja)
+  // Gradientes de marca por categoría (variados a propósito para que cada
+  // categoría se distinga de un vistazo, siempre dentro de azul/naranja/blanco)
   const CAT_GRAD = {
-    electrodomesticos:    'linear-gradient(135deg,#0A2E63 0%,#1763C6 100%)',
-    herramientas:         'linear-gradient(135deg,#0E4AA0 0%,#0A2E63 100%)',
-    'tecnologia-celulares':'linear-gradient(135deg,#0A2E63 0%,#2472DB 100%)',
-    'muebles-hogar':      'linear-gradient(135deg,#0E4AA0 0%,#123B7D 100%)',
-    'cuidado-personal':   'linear-gradient(135deg,#123B7D 0%,#1763C6 100%)',
-    salud:                'linear-gradient(135deg,#0A2E63 0%,#0E4AA0 100%)',
-    seguridad:            'linear-gradient(135deg,#081F45 0%,#123B7D 100%)'
+    electrodomesticos:     'linear-gradient(135deg,#0A2E63 0%,#2472DB 100%)',
+    herramientas:          'linear-gradient(135deg,#12213F 0%,#0E4AA0 100%)',
+    'tecnologia-celulares':'linear-gradient(135deg,#0A2E63 0%,#3B8CE0 100%)',
+    'muebles-hogar':       'linear-gradient(135deg,#123B7D 0%,#0A2E63 100%)',
+    'cuidado-personal':    'linear-gradient(135deg,#1763C6 0%,#0A2E63 100%)',
+    salud:                 'linear-gradient(135deg,#0A2E63 0%,#1D7A9C 100%)',
+    seguridad:             'linear-gradient(135deg,#081226 0%,#12213F 100%)'
+  };
+  // Color de acento (resplandor + insignia) por categoría, para reforzar la distinción
+  const CAT_ACCENT = {
+    electrodomesticos:'#F47A1F', herramientas:'#F47A1F', 'tecnologia-celulares':'#3FD0E8',
+    'muebles-hogar':'#F47A1F', 'cuidado-personal':'#FF9F5A', salud:'#3FE0B0', seguridad:'#F47A1F'
   };
 
-  // Íconos grandes tipo "marca de agua" — representan el rubro, no un producto puntual
+  // Íconos grandes y protagonistas — representan el rubro, no un producto puntual
   const BIG_ICONS = {
-    electrodomesticos:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="4" width="36" height="56" rx="4"/><line x1="14" y1="24" x2="50" y2="24"/><line x1="21" y1="12" x2="21" y2="15"/><line x1="21" y1="34" x2="21" y2="40"/><circle cx="43" cy="37" r="6"/><line x1="43" y1="33" x2="43" y2="37" transform="rotate(40 43 37)"/></svg>',
-    herramientas:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M40 12a10 10 0 0 0-13.8 12.7L7 44v9h9l19.3-19.3A10 10 0 0 0 48 24l-6.5 6.5-5.8-1.4-1.4-5.8L40 17z"/><circle cx="15" cy="49" r="2.4"/></svg>',
-    'tecnologia-celulares':'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="20" y="5" width="24" height="54" rx="5"/><line x1="29" y1="50" x2="35" y2="50"/><path d="M12 22a24 24 0 0 1 6-9M52 22a24 24 0 0 0-6-9" stroke-dasharray="1 6.5"/></svg>',
-    'muebles-hogar':'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 30v-8a6 6 0 0 1 6-6h32a6 6 0 0 1 6 6v8"/><path d="M6 32a4 4 0 0 1 4 4v10h44V36a4 4 0 0 1 4-4"/><line x1="10" y1="46" x2="10" y2="54"/><line x1="54" y1="46" x2="54" y2="54"/><line x1="20" y1="16" x2="20" y2="30"/><line x1="44" y1="16" x2="44" y2="30"/></svg>',
-    'cuidado-personal':'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 14c8-6 20-8 30-2 10 6 14 18 10 26-3 6-10 8-15 4"/><ellipse cx="46" cy="34" rx="9" ry="7" transform="rotate(28 46 34)"/><line x1="14" y1="12" x2="8" y2="6"/><line x1="10" y1="20" x2="4" y2="18"/></svg>',
-    salud:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 34h9l5-12 8 22 6-16 4 6h12"/><path d="M32 54S12 43 12 27a11 11 0 0 1 20-6 11 11 0 0 1 20 6c0 16-20 27-20 27z" stroke-dasharray="0"/></svg>',
-    seguridad:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M32 6l20 8v14c0 15-9 24-20 30C21 52 12 43 12 28V14z"/><path d="M24 32a8 8 0 0 1 16 0v4"/><rect x="21" y="32" width="22" height="16" rx="3"/></svg>'
+    electrodomesticos:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="4" width="36" height="56" rx="5"/><line x1="14" y1="25" x2="50" y2="25"/><line x1="21" y1="12" x2="21" y2="16"/><line x1="21" y1="34" x2="21" y2="41"/></svg>',
+    herramientas:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M41 11a10.5 10.5 0 0 0-14.4 13.3L7 44v9h9l19.7-19.7A10.5 10.5 0 0 0 49 23.4l-7 7-6-1.4-1.4-6z"/></svg>',
+    'tecnologia-celulares':'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><rect x="19" y="5" width="26" height="54" rx="5.5"/><line x1="28" y1="50" x2="36" y2="50"/></svg>',
+    'muebles-hogar':'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 30v-8a6 6 0 0 1 6-6h32a6 6 0 0 1 6 6v8"/><path d="M6 32a4 4 0 0 1 4 4v11h44V36a4 4 0 0 1 4-4"/><line x1="10" y1="47" x2="10" y2="55"/><line x1="54" y1="47" x2="54" y2="55"/></svg>',
+    'cuidado-personal':'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15c8-7 21-9 31-2 10 7 13 19 8 27-4 6-11 7-16 3" stroke-width="3.2"/><ellipse cx="45" cy="34" rx="10" ry="7.5" transform="rotate(30 45 34)"/></svg>',
+    salud:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M32 53S11 41 11 26a11 11 0 0 1 21-4.6A11 11 0 0 1 53 26c0 15-21 27-21 27z"/><path d="M17 30h6l4-8 6 16 4-11 3 3h8" stroke-width="2.6"/></svg>',
+    seguridad:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M32 6l19 7v15c0 14-8.5 22.5-19 27C21.5 50.5 13 42 13 28V13z"/><rect x="23" y="30" width="18" height="14" rx="3"/><path d="M26 30v-4a6 6 0 0 1 12 0v4"/></svg>'
   };
 
-  // Visual profesional de categoría: gradiente de marca + ícono grande (sin fotos de productos)
+  // Visual profesional de categoría: gradiente de marca + insignia con ícono grande (sin fotos de productos)
   function catVisual(slug) {
     const grad = CAT_GRAD[slug] || CAT_GRAD.electrodomesticos;
+    const accent = CAT_ACCENT[slug] || '#F47A1F';
     const icon = BIG_ICONS[slug] || '';
     return `<div class="cat-visual" style="background:${grad}">
-      <span class="cat-visual-blob" aria-hidden="true"></span>
+      <span class="cat-visual-blob" style="background:radial-gradient(circle,${accent}66,transparent 65%)" aria-hidden="true"></span>
       <span class="cat-visual-pattern" aria-hidden="true"></span>
-      <span class="cat-visual-icon" aria-hidden="true">${icon}</span>
+      <span class="cat-visual-badge" style="background:${accent}26;border-color:${accent}66" aria-hidden="true">
+        <span class="cat-visual-icon">${icon}</span>
+      </span>
     </div>`;
   }
 
@@ -250,7 +247,7 @@ window.MH = (function () {
   }
 
   return {
-    WA_NUMBER, PLACEHOLDER, CATS, CAT_BY_SLUG, catLabel, catIcon, catVisual, waLink,
+    WA_NUMBER, PLACEHOLDER, CATS, CAT_BY_SLUG, catLabel, catVisual, waLink,
     loadProducts, createCard, skeletons, initCarousel, initReveal, stagger,
     initCounters, animateCount, initScrollProgress
   };

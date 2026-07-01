@@ -99,27 +99,25 @@ h1,h2,h3{font-family:'Plus Jakarta Sans','Inter',sans-serif;line-height:1.15;let
 .cat-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg)}
 .cat-card-grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,46,99,.05) 0%,rgba(10,46,99,.45) 55%,rgba(10,46,99,.92) 100%);z-index:1}
 .cat-card-body{position:relative;z-index:2;padding:18px}
-.cat-card-icon{width:38px;height:38px;border-radius:9px;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;margin-bottom:auto;transition:background var(--t),transform var(--t)}
-.cat-card:hover .cat-card-icon{background:var(--orange);transform:scale(1.08) rotate(-6deg)}
-.cat-card-name{font-family:'Plus Jakarta Sans',sans-serif;font-size:1.15rem;font-weight:800;margin-top:14px}
+.cat-card-name{font-family:'Plus Jakarta Sans',sans-serif;font-size:1.15rem;font-weight:800}
 .cat-card-count{font-size:12.5px;color:rgba(255,255,255,.72);margin-top:2px}
 .cat-card-go{display:inline-flex;align-items:center;gap:6px;margin-top:12px;font-size:13px;font-weight:700;color:#fff;transition:gap var(--t)}
 .cat-card-go svg{transition:transform var(--t)}
 .cat-card:hover .cat-card-go svg{transform:translateX(4px);color:var(--orange)}
-.cat-card-top{display:flex;justify-content:space-between;align-items:flex-start}
 
-/* ── Visual profesional de categoría (gradiente de marca + ícono, sin fotos) ── */
+/* ── Visual profesional de categoría (gradiente de marca + insignia con ícono, sin fotos) ── */
 .cat-visual{position:absolute;inset:0;overflow:hidden}
-.cat-visual-blob{position:absolute;top:-40%;right:-30%;width:75%;height:140%;border-radius:50%;background:radial-gradient(circle,rgba(244,122,31,.38),transparent 65%);transition:transform .5s ease}
+.cat-visual-blob{position:absolute;top:-35%;right:-25%;width:85%;height:150%;border-radius:50%;transition:transform .5s ease}
 .cat-card:hover .cat-visual-blob,.collage-tile:hover .cat-visual-blob{transform:scale(1.15) translate(-4%,4%)}
-.cat-visual-pattern{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.14) 1.4px,transparent 1.4px);background-size:16px 16px;opacity:.5}
-.cat-visual-icon{position:absolute;right:-8%;bottom:-12%;width:62%;aspect-ratio:1;color:rgba(255,255,255,.24);transition:transform .45s ease,color var(--t)}
+.cat-visual-pattern{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.16) 1.4px,transparent 1.4px);background-size:15px 15px;opacity:.4}
+.cat-visual-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-62%);width:42%;aspect-ratio:1;min-width:58px;max-width:118px;border-radius:26%;background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.35);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;box-shadow:0 14px 30px rgba(3,12,32,.32);transition:transform .4s cubic-bezier(.2,.8,.3,1.2),background .3s ease}
+.cat-visual-icon{width:56%;height:56%;color:#fff;filter:drop-shadow(0 2px 5px rgba(0,0,0,.3))}
 .cat-visual-icon svg{width:100%;height:100%}
-.cat-card:hover .cat-visual-icon,.collage-tile:hover .cat-visual-icon{transform:scale(1.08) rotate(-4deg);color:rgba(255,255,255,.34)}
+.cat-card:hover .cat-visual-badge,.collage-tile:hover .cat-visual-badge{transform:translate(-50%,-62%) scale(1.12) rotate(-4deg);animation-play-state:paused}
 @media(prefers-reduced-motion:no-preference){
-  .cat-visual-icon{animation:catFloat 5s ease-in-out infinite}
+  .cat-visual-badge{animation:catFloat 5s ease-in-out infinite}
 }
-@keyframes catFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes catFloat{0%,100%{transform:translate(-50%,-62%)}50%{transform:translate(-50%,calc(-62% - 7px))}}
 
 /* ── Carrusel horizontal ── */
 .mh-carousel{position:relative}
