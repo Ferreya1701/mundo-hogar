@@ -151,7 +151,7 @@ function applySort(list){
 }
 function applyFilters(){
   const q=state.q.trim().toLowerCase();
-  filtered=applySort(catProducts.filter(p=>!q||(p.nombre+' '+(p.descripcion||'')).toLowerCase().includes(q)));
+  filtered=applySort(catProducts.filter(p=>!q||[p.nombre,p.descripcion,p.marca,p.sku].filter(Boolean).join(' ').toLowerCase().includes(q)));
   $('#grid').innerHTML='';shown=0;renderMore();
   $('#empty').hidden=filtered.length>0;
   $('#results').textContent=`${filtered.length} producto${filtered.length===1?'':'s'}`;

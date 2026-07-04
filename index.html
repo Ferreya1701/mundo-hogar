@@ -299,6 +299,42 @@
         <p style="margin:6px 0 0">años abasteciendo hogares y comercios de Santa Fe y la región.</p>
       </div>
     </div>
+
+    <!-- Formulario de consulta mayorista -->
+    <div class="reveal" style="background:#fff;border-radius:18px;padding:28px;margin-top:26px;box-shadow:0 18px 44px rgba(5,20,50,.25)">
+      <h3 style="font-size:19px;font-weight:800;color:var(--navy);margin-bottom:4px">Dejanos tu consulta mayorista</h3>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:18px">Completá tus datos y te contactamos por WhatsApp con una propuesta a tu medida.</p>
+      <form id="form-mayorista" novalidate>
+        <div class="form-grid">
+          <div class="field">
+            <label for="m-nombre">Nombre y apellido <span class="req">*</span></label>
+            <input id="m-nombre" type="text" autocomplete="name" maxlength="80" required>
+            <div class="field-error">Ingresá tu nombre.</div>
+          </div>
+          <div class="field">
+            <label for="m-comercio">Nombre del comercio</label>
+            <input id="m-comercio" type="text" maxlength="100">
+          </div>
+          <div class="field">
+            <label for="m-telefono">Teléfono <span class="req">*</span></label>
+            <input id="m-telefono" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ej: 342 5 123456" maxlength="25" required>
+            <div class="field-error">Ingresá un teléfono válido.</div>
+          </div>
+          <div class="field">
+            <label for="m-localidad">Localidad <span class="req">*</span></label>
+            <input id="m-localidad" type="text" autocomplete="address-level2" maxlength="80" required>
+            <div class="field-error">Ingresá tu localidad.</div>
+          </div>
+          <div class="field full">
+            <label for="m-interes">¿Qué productos te interesan y en qué cantidad aproximada?</label>
+            <textarea id="m-interes" maxlength="600" placeholder="Ej: 20 freidoras de aire, 10 colchones de 2 plazas…"></textarea>
+          </div>
+          <div class="hp-field" aria-hidden="true"><label>No completar<input type="text" id="m-web" tabindex="-1" autocomplete="off"></label></div>
+        </div>
+        <button class="btn btn-wa btn-lg" type="submit" id="m-enviar" style="margin-top:16px">Enviar consulta por WhatsApp</button>
+        <div class="form-fail" id="m-fail" hidden></div>
+      </form>
+    </div>
   </div>
 </section>
 
@@ -429,6 +465,69 @@ mnav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mnav.c
   document.querySelectorAll('.mh-carousel').forEach(c => MH.initCarousel(c));
   MH.initReveal();
   MH.initCounters();
+})();
+
+// ── Formulario de consulta mayorista: guarda la solicitud y abre WhatsApp ──
+(function () {
+  const form = document.getElementById('form-mayorista');
+  if (!form) return;
+  const $ = id => document.getElementById(id);
+  const invalid = (id, bad) => { $(id).closest('.field').classList.toggle('invalid', bad); return bad; };
+  let enviando = false;
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (enviando || $('m-web').value) return; // honeypot
+    $('m-fail').hidden = true;
+
+    const datos = {
+      nombre: $('m-nombre').value.trim(),
+      comercio: $('m-comercio').value.trim(),
+      telefono: $('m-telefono').value.trim(),
+      localidad: $('m-localidad').value.trim(),
+      interes: $('m-interes').value.trim()
+    };
+    let bad = false;
+    bad = invalid('m-nombre', datos.nombre.length < 2) || bad;
+    bad = invalid('m-telefono', datos.telefono.replace(/\D/g, '').length < 6) || bad;
+    bad = invalid('m-localidad', !datos.localidad) || bad;
+    if (bad) return;
+
+    enviando = true;
+    const btn = $('m-enviar');
+    btn.disabled = true; btn.textContent = 'Enviando…';
+
+    // Registrar la consulta (si la base todavía no tiene la tabla, sigue por WhatsApp igual)
+    let codigo = null;
+    try {
+      const url = window.SUPABASE_URL, key = window.SUPABASE_PUBLISHABLE_KEY || window.SUPABASE_ANON_KEY;
+      const r = await fetch(`${url}/rest/v1/rpc/crear_solicitud`, {
+        method: 'POST',
+        headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p: {
+          nombre: datos.nombre, telefono: datos.telefono, localidad: datos.localidad,
+          comercio: datos.comercio, es_mayorista: true, canal: 'mayorista',
+          observaciones: datos.interes ? ('Interés mayorista: ' + datos.interes) : 'Consulta mayorista',
+          items: []
+        }})
+      });
+      if (r.ok) codigo = (await r.json()).codigo;
+    } catch (err) { /* continúa por WhatsApp */ }
+
+    const L = ['Hola, quiero hacer una consulta MAYORISTA en Mundo Hogar.', ''];
+    L.push(`Cliente: ${datos.nombre}`);
+    if (datos.comercio) L.push(`Comercio: ${datos.comercio}`);
+    L.push(`Teléfono: ${datos.telefono}`);
+    L.push(`Localidad: ${datos.localidad}`);
+    if (datos.interes) { L.push(''); L.push('Productos de interés:'); L.push(datos.interes); }
+    if (codigo) { L.push(''); L.push(`Código de solicitud: ${codigo}`); }
+    MH.track('mayorista_enviado', {});
+    window.open(MH.waLink(L.join('\n')), '_blank', 'noopener');
+
+    btn.disabled = false; btn.textContent = 'Enviar consulta por WhatsApp';
+    form.reset();
+    enviando = false;
+  });
 })();
 </script>
 </body>

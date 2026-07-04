@@ -6,7 +6,9 @@
   "rewrites": [
     { "source": "/images/:path*", "destination": "/public/images/:path*" },
     { "source": "/categorias", "destination": "/categoria.html" },
-    { "source": "/categorias/:slug", "destination": "/categoria.html" }
+    { "source": "/categorias/:slug", "destination": "/categoria.html" },
+    { "source": "/producto/:slug", "destination": "/producto.html" },
+    { "source": "/carrito", "destination": "/carrito.html" }
   ],
   "headers": [
     {

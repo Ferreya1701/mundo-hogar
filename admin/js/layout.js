@@ -2,6 +2,7 @@
 const Layout = {
   NAV: [
     { id:'dashboard',  label:'Dashboard',           icon:'📊', href:'/admin/dashboard.html',      section:'Principal' },
+    { id:'solicitudes',label:'Solicitudes WhatsApp', icon:'💬', href:'/admin/solicitudes.html',    section:'Ventas' },
     { id:'productos',  label:'Productos',            icon:'🛍️', href:'/admin/productos.html',      section:'Catálogo' },
     { id:'categorias', label:'Categorías',           icon:'🏷️', href:'/admin/categorias.html',     section:'Catálogo' },
     { id:'inventario', label:'Registrar Movimiento', icon:'📦', href:'/admin/inventario.html',     section:'Stock' },

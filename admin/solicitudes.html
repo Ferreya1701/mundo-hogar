@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solicitudes WhatsApp — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+  <style>
+    .estado-select{padding:5px 8px;border-radius:6px;border:1px solid var(--border,#ddd);font-size:12px;font-weight:600;cursor:pointer}
+    .est-nueva{background:#FFF4E8;color:#8A4B12}
+    .est-contactado{background:#EAF2FD;color:#1763C6}
+    .est-cotizacion_enviada{background:#F3EDFD;color:#6B3FC0}
+    .est-confirmado{background:#E9F9EF;color:#14663A}
+    .est-en_preparacion{background:#FDF8E4;color:#8A6D0B}
+    .est-entregado{background:#EDF6EF;color:#2F6B3D}
+    .est-cancelado{background:#FDEEED;color:#8A241C}
+    .sol-modal-bg{position:fixed;inset:0;background:rgba(10,20,40,.45);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px}
+    .sol-modal{background:#fff;border-radius:14px;max-width:640px;width:100%;max-height:88vh;overflow:auto;padding:26px}
+    .sol-modal h3{margin-bottom:4px}
+    .sol-modal .cod{font-family:monospace;font-size:13px;color:#666}
+    .sol-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;margin:14px 0;font-size:13.5px}
+    .sol-grid b{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:#888;font-weight:600;margin-bottom:1px}
+    .sol-items{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
+    .sol-items th{text-align:left;font-size:11px;text-transform:uppercase;color:#888;padding:6px 8px;border-bottom:2px solid #eee}
+    .sol-items td{padding:7px 8px;border-bottom:1px solid #f0f0f0}
+    .sol-obs{background:#F7F8FA;border-radius:8px;padding:10px 12px;font-size:13px;margin-top:10px;white-space:pre-wrap}
+    .pend-tag{background:#FFF4E8;color:#8A4B12;font-size:11px;font-weight:700;border-radius:5px;padding:2px 6px}
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><div class="sidebar-brand-icon">🏠</div><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/" target="_blank" class="btn btn-ghost btn-sm">🌐 Ver Tienda</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1>Solicitudes de WhatsApp</h1><p id="subtitle">Pedidos y cotizaciones enviados desde la tienda</p></div>
+        <div class="page-header-actions">
+          <button class="btn btn-outline btn-sm" id="btn-export">⬇ Exportar CSV</button>
+          <button class="btn btn-outline btn-sm" id="btn-refrescar">↻ Actualizar</button>
+        </div>
+      </div>
+
+      <div class="filters-bar">
+        <div class="search-bar" style="flex:1;min-width:200px;max-width:340px">
+          <span class="search-icon">🔍</span>
+          <input type="search" id="q" placeholder="Buscar por código, cliente, teléfono...">
+        </div>
+        <select id="filtro-estado" style="min-width:170px">
+          <option value="">Todos los estados</option>
+          <option value="nueva">Nueva</option>
+          <option value="contactado">Contactado</option>
+          <option value="cotizacion_enviada">Cotización enviada</option>
+          <option value="confirmado">Confirmado</option>
+          <option value="en_preparacion">En preparación</option>
+          <option value="entregado">Entregado</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+        <select id="filtro-canal" style="min-width:130px">
+          <option value="">Todos los canales</option>
+          <option value="web">Tienda web</option>
+          <option value="mayorista">Mayorista</option>
+        </select>
+        <span id="filter-count" style="font-size:13px;color:var(--muted,#888);font-weight:600"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Código</th><th>Fecha</th><th>Cliente</th><th>Teléfono</th>
+            <th style="text-align:center">Items</th><th>Total est.</th><th>Entrega</th><th>Estado</th><th></th>
+          </tr></thead>
+          <tbody id="tabla-body"></tbody>
+        </table>
+        <div class="pagination" id="paginacion"></div>
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+<div id="modal-slot"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script>
+let solicitudes = [];
+let page = 1;
+const PER = 25;
+const ESTADOS = {
+  nueva: 'Nueva', contactado: 'Contactado', cotizacion_enviada: 'Cotización enviada',
+  confirmado: 'Confirmado', en_preparacion: 'En preparación', entregado: 'Entregado', cancelado: 'Cancelado'
+};
+const ENTREGA = { envio: 'Envío', retiro: 'Retiro', a_confirmar: 'A confirmar' };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const money = n => n == null ? 'A confirmar' : Number(n).toLocaleString('es-AR', { style:'currency', currency:'ARS', minimumFractionDigits:0, maximumFractionDigits:2 });
+
+function applyFilters() {
+  const q = document.getElementById('q').value.toLowerCase().trim();
+  const est = document.getElementById('filtro-estado').value;
+  const canal = document.getElementById('filtro-canal').value;
+  let list = solicitudes;
+  if (q) list = list.filter(s =>
+    (s.codigo||'').toLowerCase().includes(q) ||
+    (s.cliente_nombre||'').toLowerCase().includes(q) ||
+    (s.telefono||'').toLowerCase().includes(q));
+  if (est) list = list.filter(s => s.estado === est);
+  if (canal) list = list.filter(s => s.canal === canal);
+  return list;
+}
+
+function estadoSelect(s) {
+  return `<select class="estado-select est-${s.estado}" data-id="${s.id}">
+    ${Object.entries(ESTADOS).map(([v,l]) => `<option value="${v}"${v===s.estado?' selected':''}>${l}</option>`).join('')}
+  </select>`;
+}
+
+function renderTable() {
+  const filtered = applyFilters();
+  const slice = filtered.slice((page-1)*PER, page*PER);
+  document.getElementById('filter-count').textContent = `${filtered.length} solicitud${filtered.length!==1?'es':''}`;
+
+  if (!slice.length) {
+    document.getElementById('tabla-body').innerHTML =
+      `<tr><td colspan="9"><div class="empty-state">
+        <div class="empty-state-icon">💬</div>
+        <h3>Sin solicitudes</h3>
+        <p>Cuando un cliente envíe un pedido desde la tienda, va a aparecer acá.</p>
+       </div></td></tr>`;
+    document.getElementById('paginacion').innerHTML = '';
+    return;
+  }
+
+  document.getElementById('tabla-body').innerHTML = slice.map(s => `<tr>
+    <td style="font-family:monospace;font-size:12px;white-space:nowrap">${esc(s.codigo)}${s.canal==='mayorista'?' <span class="pend-tag">Mayorista</span>':''}</td>
+    <td style="white-space:nowrap;color:var(--muted,#888);font-size:12px">${Utils.datetime(s.created_at)}</td>
+    <td style="font-weight:500">${esc(s.cliente_nombre)}${s.comercio?`<div style="font-size:11.5px;color:#888">${esc(s.comercio)}</div>`:''}</td>
+    <td style="white-space:nowrap"><a href="https://wa.me/${esc((s.telefono||'').replace(/\D/g,''))}" target="_blank" rel="noopener">${esc(s.telefono)}</a></td>
+    <td style="text-align:center">${(s.solicitud_items||[]).length}${s.tiene_pendientes?' <span class="pend-tag" title="Tiene productos sin precio">a cotizar</span>':''}</td>
+    <td style="white-space:nowrap;font-weight:600">${money(s.total_estimado)}</td>
+    <td style="font-size:12.5px">${ENTREGA[s.tipo_entrega]||s.tipo_entrega}</td>
+    <td>${estadoSelect(s)}</td>
+    <td><button class="btn btn-ghost btn-sm" data-ver="${s.id}">Ver</button></td>
+  </tr>`).join('');
+
+  Utils.renderPagination(document.getElementById('paginacion'), page, filtered.length, PER,
+    p => { page = p; renderTable(); });
+}
+
+function verDetalle(id) {
+  const s = solicitudes.find(x => x.id === id); if (!s) return;
+  const items = s.solicitud_items || [];
+  const slot = document.getElementById('modal-slot');
+  slot.innerHTML = `<div class="sol-modal-bg" id="modal-bg">
+    <div class="sol-modal" role="dialog" aria-modal="true">
+      <h3>${esc(s.cliente_nombre)}</h3>
+      <div class="cod">${esc(s.codigo)} · ${Utils.datetime(s.created_at)} · ${s.canal==='mayorista'?'Consulta mayorista':'Tienda web'}</div>
+      <div class="sol-grid">
+        <div><b>Teléfono</b>${esc(s.telefono)||'—'}</div>
+        <div><b>Localidad</b>${esc(s.localidad)||'—'}</div>
+        <div><b>Entrega</b>${ENTREGA[s.tipo_entrega]||'—'}${s.direccion?` — ${esc(s.direccion)}`:''}</div>
+        <div><b>Estado</b>${ESTADOS[s.estado]||s.estado}</div>
+        ${s.es_mayorista?`<div><b>Comercio</b>${esc(s.comercio)||'—'}</div><div><b>CUIT</b>${esc(s.cuit)||'—'}</div>`:''}
+      </div>
+      ${items.length ? `<table class="sol-items">
+        <thead><tr><th>Producto</th><th>Código</th><th style="text-align:center">Cant.</th><th style="text-align:right">Precio</th><th style="text-align:right">Subtotal</th></tr></thead>
+        <tbody>${items.map(i => `<tr>
+          <td>${esc(i.nombre)}</td><td style="font-size:11.5px;color:#888">${esc(i.sku)||'—'}</td>
+          <td style="text-align:center">${i.cantidad}</td>
+          <td style="text-align:right">${i.precio_unitario==null?'<span class="pend-tag">a cotizar</span>':money(i.precio_unitario)}</td>
+          <td style="text-align:right">${i.subtotal==null?'—':money(i.subtotal)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+      <div style="text-align:right;font-weight:700;margin-top:6px">Total estimado: ${money(s.total_estimado)}</div>` : '<p style="color:#888;font-size:13px;margin:12px 0">Sin productos (consulta general).</p>'}
+      ${s.observaciones ? `<div class="sol-obs"><b>Observaciones del cliente:</b><br>${esc(s.observaciones)}</div>` : ''}
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+        <a class="btn btn-primary btn-sm" target="_blank" rel="noopener"
+           href="https://wa.me/${esc((s.telefono||'').replace(/\D/g,''))}?text=${encodeURIComponent(`Hola ${s.cliente_nombre}! Te escribimos de Mundo Hogar por tu solicitud ${s.codigo}.`)}">Responder por WhatsApp</a>
+        <button class="btn btn-ghost btn-sm" id="modal-cerrar">Cerrar</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('modal-cerrar').onclick = () => slot.innerHTML = '';
+  document.getElementById('modal-bg').addEventListener('click', e => { if (e.target.id === 'modal-bg') slot.innerHTML = ''; });
+}
+
+async function cambiarEstado(id, estado, sel) {
+  const { error } = await db.from('solicitudes').update({ estado }).eq('id', id);
+  if (error) { Utils.toast('No se pudo actualizar: ' + error.message, 'error'); renderTable(); return; }
+  const s = solicitudes.find(x => x.id === id);
+  if (s) s.estado = estado;
+  sel.className = 'estado-select est-' + estado;
+  Utils.toast('Estado actualizado', 'success');
+}
+
+async function cargar() {
+  const { data, error } = await db.from('solicitudes')
+    .select('*, solicitud_items(*)')
+    .order('created_at', { ascending: false })
+    .limit(1000);
+  if (error) {
+    if ((error.message||'').includes('does not exist') || error.code === '42P01') {
+      document.getElementById('subtitle').textContent = 'Falta ejecutar sql/005-solicitudes.sql en Supabase (SQL Editor).';
+      Utils.toast('La tabla de solicitudes todavía no existe. Ejecutá sql/005-solicitudes.sql.', 'error');
+    } else {
+      Utils.toast('Error al cargar: ' + error.message, 'error');
+    }
+    return;
+  }
+  solicitudes = data || [];
+  const nuevas = solicitudes.filter(s => s.estado === 'nueva').length;
+  document.getElementById('subtitle').textContent =
+    `${solicitudes.length} solicitudes` + (nuevas ? ` · ${nuevas} sin atender` : '');
+  renderTable();
+}
+
+document.getElementById('tabla-body').addEventListener('change', e => {
+  const sel = e.target.closest('.estado-select'); if (!sel) return;
+  cambiarEstado(Number(sel.dataset.id), sel.value, sel);
+});
+document.getElementById('tabla-body').addEventListener('click', e => {
+  const b = e.target.closest('[data-ver]'); if (!b) return;
+  verDetalle(Number(b.dataset.ver));
+});
+document.getElementById('btn-refrescar').addEventListener('click', cargar);
+document.getElementById('btn-export').addEventListener('click', () => {
+  Utils.exportCSV(applyFilters().map(s => ({
+    Codigo: s.codigo, Fecha: Utils.datetime(s.created_at), Cliente: s.cliente_nombre,
+    Telefono: s.telefono, Localidad: s.localidad||'', Canal: s.canal,
+    Items: (s.solicitud_items||[]).map(i => `${i.cantidad}x ${i.nombre}`).join(' | '),
+    'Total estimado': s.total_estimado==null?'a confirmar':s.total_estimado,
+    Entrega: ENTREGA[s.tipo_entrega]||'', Estado: ESTADOS[s.estado]||s.estado,
+    Observaciones: s.observaciones||''
+  })), `solicitudes-${new Date().toISOString().slice(0,10)}.csv`);
+});
+['q','filtro-estado','filtro-canal'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => { page = 1; renderTable(); });
+  document.getElementById(id).addEventListener('change', () => { page = 1; renderTable(); });
+});
+
+(async function () {
+  const profile = await Auth.init();
+  if (!profile) return;
+  await Layout.init('solicitudes', 'Solicitudes de WhatsApp');
+  await cargar();
+})();
+</script>
+</body>
+</html>

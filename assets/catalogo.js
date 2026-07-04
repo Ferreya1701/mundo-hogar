@@ -2,7 +2,13 @@
    Mundo Hogar — Lógica compartida del catálogo
    ============================================================ */
 window.MH = (function () {
-  const WA_NUMBER = '5493426481326';
+  // Feature flag: el checkout online (Mercado Pago u otro) queda DESACTIVADO en esta fase.
+  // Cuando se integre un pago online, activar desde acá; ninguna UI de pago debe
+  // renderizarse mientras sea false.
+  const ONLINE_PAYMENTS_ENABLED = false;
+
+  // Número de respaldo; el vigente se lee de site_settings (editable desde el panel)
+  let WA_NUMBER = '5493426481326';
   const DATA_URL = '/src/data/productos.json';
   const PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23F4F7FC'/%3E%3Ctext x='200' y='190' font-family='Plus Jakarta Sans,Arial,sans-serif' font-size='52' font-weight='800' fill='%231763C6' text-anchor='middle'%3EMH%3C/text%3E%3Ctext x='200' y='230' font-family='Arial,sans-serif' font-size='15' fill='%235A6B85' text-anchor='middle'%3EImagen no disponible%3C/text%3E%3C/svg%3E";
 
@@ -92,6 +98,71 @@ window.MH = (function () {
 
   const waLink = (text) => `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`;
 
+  // ── Configuración del sitio (site_settings, editable desde el panel) ──
+  // Trae el número de WhatsApp y textos; si falla, quedan los valores de respaldo.
+  let _settings = null;
+  async function loadSettings() {
+    if (_settings) return _settings;
+    try {
+      const url = window.SUPABASE_URL;
+      const key = window.SUPABASE_PUBLISHABLE_KEY || window.SUPABASE_ANON_KEY;
+      if (!url || !key) return null;
+      const res = await fetch(`${url}/rest/v1/site_settings?id=eq.1&select=whatsapp,envio_info,mensaje_promo,nombre_tienda`,
+        { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+      if (!res.ok) return null;
+      const rows = await res.json();
+      _settings = rows[0] || null;
+      if (_settings && _settings.whatsapp) {
+        const num = String(_settings.whatsapp).replace(/\D/g, '');
+        if (num.length >= 10) { WA_NUMBER = num; syncWaLinks(); }
+      }
+    } catch (e) { /* respaldo local */ }
+    return _settings;
+  }
+
+  // Reescribe todos los links wa.me del documento con el número configurado,
+  // conservando el texto precargado de cada uno (el número vive en un solo lugar).
+  function syncWaLinks() {
+    document.querySelectorAll('a[href*="wa.me/"]').forEach(a => {
+      try {
+        const u = new URL(a.href);
+        const text = u.searchParams.get('text');
+        a.href = `https://wa.me/${WA_NUMBER}` + (text ? `?text=${encodeURIComponent(text)}` : '');
+      } catch (e) { /* href inválido: se deja como está */ }
+    });
+  }
+
+  // ── Precios ──
+  // Un precio es válido solo si es un número mayor a 0. Nunca mostrar $0/NaN.
+  const isValidPrice = (n) => typeof n === 'number' && isFinite(n) && n > 0;
+  function effectivePrice(p) {
+    if (p.enOferta && isValidPrice(p.precioOferta)) return p.precioOferta;
+    if (isValidPrice(p.precio)) return p.precio;
+    return null;
+  }
+  const hasPrice = (p) => effectivePrice(p) !== null;
+  const _fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const fmtPrice = (n) => isValidPrice(n) ? _fmt.format(n) : null;
+
+  // Disponibilidad: el bloqueo por stock solo aplica a productos con precio
+  // cargado (ficha gestionada). Sin precio, el flujo es consulta/cotización y
+  // no se afirma disponibilidad (el stock aún no se cargó en esta fase).
+  function isAvailable(p) {
+    if (!hasPrice(p)) return true;
+    if (p.seguimiento === false || p.permiteSinStock === true) return true;
+    if (typeof p.stock === 'number' && p.stock <= 0) return false;
+    return true;
+  }
+
+  // ── Analítica (no-op si GA4/Meta no están instalados) ──
+  // Nunca enviar datos personales (nombre, teléfono, dirección) en estos eventos.
+  function track(evento, params) {
+    try {
+      if (window.gtag) window.gtag('event', evento, params || {});
+      if (window.fbq) window.fbq('trackCustom', evento, params || {});
+    } catch (e) { /* la analítica nunca debe romper la tienda */ }
+  }
+
   let _cache = null;
 
   // Trae los productos desde Supabase (fuente en vivo, editable desde el panel).
@@ -100,19 +171,29 @@ window.MH = (function () {
     const url = window.SUPABASE_URL;
     const key = window.SUPABASE_PUBLISHABLE_KEY || window.SUPABASE_ANON_KEY;
     if (!url || !key) return null;
-    const endpoint = `${url}/rest/v1/productos?select=id,nombre,slug,descripcion,imagen_principal_url,destacado,es_nuevo,orden,categorias(slug)&estado=eq.activo&order=orden.asc`;
+    const endpoint = `${url}/rest/v1/productos?select=id,nombre,slug,descripcion,descripcion_corta,imagen_principal_url,destacado,es_nuevo,orden,sku,marca,precio_minorista,precio_oferta,en_oferta,stock_actual,permite_venta_sin_stock,seguimiento_inventario,categorias(slug)&estado=eq.activo&order=orden.asc`;
     const res = await fetch(endpoint, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
     if (!res.ok) throw new Error('Supabase respondió ' + res.status);
     const rows = await res.json();
     return rows.map(p => ({
       id: p.slug,
+      pid: p.id,
       orden: p.orden,
       nombre: p.nombre,
       imagen: p.imagen_principal_url,
       alt: p.nombre,
       descripcion: p.descripcion,
+      descripcionCorta: p.descripcion_corta,
       categoria: p.categorias ? p.categorias.slug : null,
       slug: p.slug,
+      sku: p.sku,
+      marca: p.marca,
+      precio: p.precio_minorista != null ? Number(p.precio_minorista) : null,
+      precioOferta: p.precio_oferta != null ? Number(p.precio_oferta) : null,
+      enOferta: !!p.en_oferta,
+      stock: typeof p.stock_actual === 'number' ? p.stock_actual : null,
+      permiteSinStock: !!p.permite_venta_sin_stock,
+      seguimiento: p.seguimiento_inventario !== false,
       activo: true,
       destacado: !!p.destacado,
       _nuevo: !!p.es_nuevo
@@ -143,38 +224,128 @@ window.MH = (function () {
     return _cache;
   }
 
-  // Crea la tarjeta de producto (DOM) con fallback de imagen y CTA WhatsApp
+  // Crea la tarjeta de producto (DOM). Dos estados: con precio (agregar al carrito)
+  // y sin precio ("Consultar precio" + cotización). Nunca muestra $0/NaN.
   function createCard(p) {
-    const file = p.imagen ? p.imagen.split('/').pop() : '';
     const url = p.imagen || PLACEHOLDER;
     const card = document.createElement('article');
     card.className = 'mh-card';
     card.dataset.category = p.categoria;
+    const ficha = p.slug ? `/producto/${p.slug}` : null;
     const badges = [];
+    const precio = effectivePrice(p);
+    const conOferta = precio !== null && p.enOferta && isValidPrice(p.precioOferta) && isValidPrice(p.precio) && p.precioOferta < p.precio;
+    if (conOferta) badges.push('<span class="badge badge-oferta">Oferta</span>');
     if (p.destacado) badges.push('<span class="badge badge-dest">Destacado</span>');
     if (p._nuevo) badges.push('<span class="badge badge-new">Nuevo</span>');
+    const disponible = isAvailable(p);
+    if (!disponible) badges.push('<span class="badge badge-nostock">Sin stock</span>');
+    const nombreAttr = (p.nombre || '').replace(/"/g, '&quot;');
     const wa = waLink(`Hola! Me interesa ${p.nombre}. ¿Tienen stock y precio?`);
+
+    const precioHTML = precio !== null
+      ? `<div class="mh-price">${conOferta ? `<s class="mh-price-old">${fmtPrice(p.precio)}</s>` : ''}<b>${fmtPrice(precio)}</b></div>`
+      : `<div class="mh-price mh-price-ask">Consultar precio</div>`;
+
+    let ctaHTML;
+    if (!disponible) {
+      ctaHTML = `<a class="btn btn-wa btn-sm" href="${wa}" target="_blank" rel="noopener" aria-label="Consultar disponibilidad de ${nombreAttr}">Consultar</a>`;
+    } else if (precio !== null) {
+      ctaHTML = `<button class="btn btn-primary btn-sm mh-add" type="button" aria-label="Agregar ${nombreAttr} al carrito">Agregar</button>
+        <a class="btn btn-wa btn-sm btn-icon" href="${wa}" target="_blank" rel="noopener" aria-label="Consultar ${nombreAttr} por WhatsApp">WA</a>`;
+    } else {
+      ctaHTML = `<button class="btn btn-outline btn-sm mh-add" type="button" aria-label="Agregar ${nombreAttr} a la cotización">Cotizar</button>
+        <a class="btn btn-wa btn-sm btn-icon" href="${wa}" target="_blank" rel="noopener" aria-label="Consultar ${nombreAttr} por WhatsApp">WA</a>`;
+    }
+
     card.innerHTML = `
       <div class="mh-card-imgwrap">
         ${badges.length ? `<div class="mh-badges">${badges.join('')}</div>` : ''}
+        ${ficha ? `<a href="${ficha}" class="mh-card-imglink" aria-hidden="true" tabindex="-1">` : ''}
         <img alt="${(p.alt || p.nombre || '').replace(/"/g,'&quot;')}" loading="lazy" decoding="async">
+        ${ficha ? `</a>` : ''}
       </div>
       <div class="mh-card-body">
         <div class="mh-card-cat">${catLabel(p.categoria)}</div>
-        <h3 class="mh-card-title">${p.nombre || ''}</h3>
+        <h3 class="mh-card-title">${ficha ? `<a href="${ficha}">${p.nombre || ''}</a>` : (p.nombre || '')}</h3>
         ${p.descripcion ? `<p class="mh-card-desc">${p.descripcion}</p>` : ''}
-        <div class="mh-card-cta">
-          <a class="btn btn-primary btn-sm" href="${wa}" target="_blank" rel="noopener"
-             aria-label="Consultar precio de ${(p.nombre||'').replace(/"/g,'&quot;')} por WhatsApp">
-            Consultar precio
-          </a>
-        </div>
+        ${precioHTML}
+        <div class="mh-card-cta">${ctaHTML}</div>
       </div>`;
     const img = card.querySelector('img');
     img.onerror = function () { this.onerror = null; this.src = PLACEHOLDER; };
     img.src = url;
+    const addBtn = card.querySelector('.mh-add');
+    if (addBtn) addBtn.addEventListener('click', () => { Cart.add(p, 1); Cart.flash(addBtn); });
     return card;
   }
+
+  // ── Carrito (persistente en localStorage; los precios finales los valida el servidor) ──
+  const Cart = (function () {
+    const KEY = 'mh_cart_v1';
+    let items = [];
+    try { items = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { items = []; }
+    if (!Array.isArray(items)) items = [];
+
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(items)); } catch (e) {} renderFab(); };
+    const count = () => items.reduce((n, it) => n + (it.cant || 0), 0);
+
+    function add(p, cant) {
+      if (!p || (p.pid == null && !p.slug)) return;
+      const key = p.pid != null ? String(p.pid) : p.slug;
+      const found = items.find(it => String(it.pid) === key || it.slug === key);
+      if (found) found.cant = Math.min((found.cant || 1) + (cant || 1), 99);
+      else items.push({
+        pid: p.pid != null ? p.pid : null, slug: p.slug || null,
+        nombre: p.nombre || '', sku: p.sku || null, imagen: p.imagen || null,
+        precio: effectivePrice(p),      // referencia visual; el server lo recalcula
+        cant: Math.min(Math.max(cant || 1, 1), 99)
+      });
+      save();
+      track('add_to_cart', { item_name: p.nombre });
+    }
+    function setQty(key, cant) {
+      const it = items.find(i => String(i.pid) === String(key) || i.slug === key);
+      if (!it) return;
+      cant = Math.max(1, Math.min(99, parseInt(cant, 10) || 1));
+      it.cant = cant; save();
+    }
+    function remove(key) {
+      items = items.filter(i => !(String(i.pid) === String(key) || i.slug === key));
+      save();
+      track('remove_from_cart', {});
+    }
+    function clear() { items = []; save(); }
+
+    // Botón flotante con contador (aparece en todas las páginas, arriba del de WhatsApp)
+    let _fab = null;
+    function renderFab() {
+      if (!_fab) return;
+      const n = count();
+      _fab.querySelector('.mh-cart-count').textContent = n;
+      _fab.classList.toggle('has-items', n > 0);
+    }
+    function initFab() {
+      if (_fab || document.getElementById('mh-cart-fab')) return;
+      _fab = document.createElement('a');
+      _fab.id = 'mh-cart-fab';
+      _fab.href = '/carrito';
+      _fab.setAttribute('aria-label', 'Ver carrito');
+      _fab.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg><span class="mh-cart-count">0</span>`;
+      document.body.appendChild(_fab);
+      renderFab();
+    }
+    // Mini-feedback al agregar
+    function flash(btn) {
+      if (!btn) return;
+      const prev = btn.textContent;
+      btn.textContent = '✓ Agregado';
+      btn.disabled = true;
+      setTimeout(() => { btn.textContent = prev; btn.disabled = false; }, 1200);
+      if (_fab) { _fab.classList.add('bump'); setTimeout(() => _fab.classList.remove('bump'), 400); }
+    }
+    return { get items() { return items; }, add, setQty, remove, clear, count, initFab, flash };
+  })();
 
   function skeletons(n) {
     let h = '';
@@ -246,9 +417,22 @@ window.MH = (function () {
     update();
   }
 
+  // Inicialización común a todas las páginas: settings (número de WhatsApp
+  // configurable) + botón flotante del carrito.
+  function boot() {
+    Cart.initFab();
+    loadSettings();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+
   return {
-    WA_NUMBER, PLACEHOLDER, CATS, CAT_BY_SLUG, catLabel, catVisual, waLink,
+    ONLINE_PAYMENTS_ENABLED,
+    get WA_NUMBER() { return WA_NUMBER; },
+    PLACEHOLDER, CATS, CAT_BY_SLUG, catLabel, catVisual, waLink,
     loadProducts, createCard, skeletons, initCarousel, initReveal, stagger,
-    initCounters, animateCount, initScrollProgress
+    initCounters, animateCount, initScrollProgress,
+    loadSettings, syncWaLinks, isValidPrice, effectivePrice, hasPrice, fmtPrice,
+    isAvailable, track, Cart
   };
 })();

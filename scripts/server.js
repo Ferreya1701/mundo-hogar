@@ -17,6 +17,8 @@ function resolveFile(url) {
   url = decodeURIComponent(url.split('?')[0]);
   if (url.startsWith('/images/')) return path.join(ROOT, 'public', url);
   if (url === '/categorias' || url.startsWith('/categorias/')) return path.join(ROOT, 'categoria.html');
+  if (url.startsWith('/producto/')) return path.join(ROOT, 'producto.html');
+  if (url === '/carrito') return path.join(ROOT, 'carrito.html');
   if (url === '/') return path.join(ROOT, 'index.html');
   let p = path.join(ROOT, url.replace(/^\//, ''));
   try { if (fs.statSync(p).isDirectory()) return path.join(p, 'index.html'); } catch (e) {}

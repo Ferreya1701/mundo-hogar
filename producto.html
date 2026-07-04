@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Producto — Mundo Hogar</title>
+<meta name="description" content="Ficha de producto de Mundo Hogar. Consultá precio, stock y comprá por WhatsApp.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0A2E63">
+<link rel="icon" type="image/png" href="/images/marca/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/catalogo.css">
+<style>
+#hdr{position:sticky;top:0;z-index:200;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.hdr-inner{max-width:var(--maxw);margin:0 auto;padding:0 20px;height:66px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-badge{width:38px;height:38px;border-radius:50%;object-fit:contain;flex-shrink:0}
+.logo-txt b{display:block;font-family:'Plus Jakarta Sans';font-weight:800;color:var(--navy);font-size:16px;line-height:1}
+.logo-txt span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.nav{display:flex;align-items:center;gap:4px}
+.nav a{padding:9px 13px;border-radius:8px;font-size:14px;font-weight:600;color:var(--ink);transition:all var(--t)}
+.nav a:hover,.nav a.active{color:var(--blue);background:#eef4fc}
+@media(max-width:760px){.nav{display:none}}
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <div class="hdr-inner">
+    <a href="/" class="logo" aria-label="Mundo Hogar - Inicio"><img class="logo-badge" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="38" height="38"><span class="logo-txt"><b>Mundo Hogar</b><span>Mayorista &amp; Minorista</span></span></a>
+    <nav class="nav" aria-label="Navegación principal">
+      <a href="/">Inicio</a>
+      <a href="/#categorias">Categorías</a>
+      <a href="/productos" class="active">Productos</a>
+      <a href="/#mayorista">Mayorista</a>
+      <a href="/#contacto">Contacto</a>
+    </nav>
+    <a class="btn btn-wa btn-sm" href="https://wa.me/5493426481326?text=Hola!%20Quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">WhatsApp</a>
+  </div>
+</header>
+
+<main class="section" style="padding-top:26px">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Ruta" id="crumbs">
+      <a href="/">Inicio</a><span aria-hidden="true">›</span><a href="/productos">Productos</a>
+    </nav>
+
+    <div id="loading"><div class="grid-products" style="grid-template-columns:1fr 1fr"><div class="skel skel-card"></div><div class="skel skel-card"></div></div></div>
+
+    <div id="notfound" class="empty-state" hidden>
+      <h3>Producto no encontrado</h3>
+      <p>Puede que ya no esté disponible. Mirá el catálogo completo o consultanos.</p>
+      <a class="btn btn-blue btn-sm" style="margin-top:14px" href="/productos">Ver catálogo</a>
+    </div>
+
+    <article class="pd-wrap" id="pd" hidden>
+      <div class="pd-gallery">
+        <img class="pd-main-img" id="pd-img" alt="">
+        <div class="pd-thumbs" id="pd-thumbs" hidden></div>
+      </div>
+      <div>
+        <div class="mh-badges" id="pd-badges" style="position:static;margin-bottom:4px;display:inline-flex;flex-direction:row;gap:6px"></div>
+        <h1 class="pd-title" id="pd-title"></h1>
+        <div class="pd-meta" id="pd-meta"></div>
+        <div id="pd-price-block"></div>
+        <div class="pd-stock" id="pd-stock" hidden></div>
+        <div class="pd-ctas" id="pd-ctas"></div>
+        <p class="pd-desc" id="pd-desc"></p>
+        <table class="pd-specs" id="pd-specs" hidden></table>
+        <div class="pd-info-box" id="pd-envio" hidden>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" style="flex-shrink:0;margin-top:1px"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 4v4h-7z"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="18.5" cy="18.5" r="2"/></svg>
+          <span id="pd-envio-txt"></span>
+        </div>
+      </div>
+    </article>
+
+    <section id="related-sec" hidden style="margin-top:56px">
+      <h2 style="font-size:22px;font-weight:800;color:var(--navy);margin-bottom:18px">También te puede interesar</h2>
+      <div class="grid-products" id="related"></div>
+    </section>
+  </div>
+</main>
+
+<footer class="mh-footer">
+  <div class="container">
+    <div class="mh-footer-bottom" style="border-top:none;padding:24px 0">
+      <span>© 2026 Mundo Hogar · Santa Fe Capital, Argentina.</span>
+      <span><a href="/">Inicio</a> · <a href="/productos">Productos</a> · <a href="https://wa.me/5493426481326" target="_blank" rel="noopener">WhatsApp</a></span>
+    </div>
+  </div>
+</footer>
+
+<a id="wa-float" href="https://wa.me/5493426481326?text=Hola!%20Quiero%20consultar%20por%20un%20producto." target="_blank" rel="noopener" aria-label="Contactar por WhatsApp">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1-.3-.1-.5-.1-.6.2l-.9 1.1c-.2.2-.3.2-.6.1-1.6-.8-2.7-1.5-3.8-3.4-.3-.5.3-.5.8-1.5.1-.2 0-.3 0-.5 0-.1-.6-1.5-.9-2-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.8.8-1 1.8-1 2.9 0 1.5 1.1 2.9 1.2 3.1.2.2 2.1 3.3 5.2 4.6 1.9.8 2.6.9 3.5.7.5-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3z"/><path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7L7 20.4A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>
+  <span class="wa-txt">Escribinos</span>
+</a>
+
+<script src="/supabase-config.js"></script>
+<script src="/assets/catalogo.js"></script>
+<script>
+(async function () {
+  MH.initScrollProgress();
+  const $ = s => document.querySelector(s);
+  const slug = decodeURIComponent(location.pathname.replace(/^\/producto\//, '').replace(/\/$/, ''));
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  if (!slug) { location.replace('/productos'); return; }
+
+  // Trae el producto completo (con galería) desde Supabase; si falla usa el catálogo en caché
+  async function fetchFull() {
+    const url = window.SUPABASE_URL, key = window.SUPABASE_PUBLISHABLE_KEY || window.SUPABASE_ANON_KEY;
+    if (!url || !key) return null;
+    const sel = 'id,nombre,slug,descripcion,descripcion_corta,imagen_principal_url,destacado,es_nuevo,sku,marca,precio_minorista,precio_oferta,en_oferta,stock_actual,permite_venta_sin_stock,seguimiento_inventario,material,color,garantia,peso,alto,ancho,profundidad,unidad,categorias(slug),producto_imagenes(url,alt,orden,es_principal)';
+    const res = await fetch(`${url}/rest/v1/productos?select=${encodeURIComponent(sel)}&slug=eq.${encodeURIComponent(slug)}&estado=eq.activo&limit=1`,
+      { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+    if (!res.ok) return null;
+    const rows = await res.json();
+    if (!rows.length) return null;
+    const r = rows[0];
+    return {
+      pid: r.id, slug: r.slug, nombre: r.nombre, descripcion: r.descripcion,
+      descripcionCorta: r.descripcion_corta, imagen: r.imagen_principal_url,
+      destacado: !!r.destacado, _nuevo: !!r.es_nuevo, sku: r.sku, marca: r.marca,
+      precio: r.precio_minorista != null ? Number(r.precio_minorista) : null,
+      precioOferta: r.precio_oferta != null ? Number(r.precio_oferta) : null,
+      enOferta: !!r.en_oferta,
+      stock: typeof r.stock_actual === 'number' ? r.stock_actual : null,
+      permiteSinStock: !!r.permite_venta_sin_stock,
+      seguimiento: r.seguimiento_inventario !== false,
+      material: r.material, color: r.color, garantia: r.garantia,
+      peso: r.peso, alto: r.alto, ancho: r.ancho, profundidad: r.profundidad,
+      unidad: r.unidad, categoria: r.categorias ? r.categorias.slug : null,
+      imagenes: (r.producto_imagenes || []).sort((a,b) => (b.es_principal?1:0)-(a.es_principal?1:0) || (a.orden||0)-(b.orden||0))
+    };
+  }
+
+  let p = null;
+  try { p = await fetchFull(); } catch (e) { p = null; }
+  if (!p) {
+    try { p = (await MH.loadProducts()).find(x => x.slug === slug) || null; } catch (e) {}
+  }
+  $('#loading').hidden = true;
+  if (!p) { $('#notfound').hidden = false; document.title = 'Producto no encontrado — Mundo Hogar'; return; }
+
+  // ── Metadatos ──
+  document.title = `${p.nombre} — Mundo Hogar`;
+  const catSlug = p.categoria;
+  document.querySelector('meta[name="description"]').content =
+    (p.descripcionCorta || p.descripcion || p.nombre).slice(0, 155);
+  const canon = document.createElement('link');
+  canon.rel = 'canonical'; canon.href = `https://mundo-hogar-tan.vercel.app/producto/${p.slug}`;
+  document.head.appendChild(canon);
+
+  // ── Breadcrumb ──
+  if (catSlug) $('#crumbs').innerHTML =
+    `<a href="/">Inicio</a><span aria-hidden="true">›</span><a href="/categorias/${esc(catSlug)}">${esc(MH.catLabel(catSlug))}</a><span aria-hidden="true">›</span><span aria-current="page">${esc(p.nombre)}</span>`;
+
+  // ── Galería ──
+  const imgs = (p.imagenes && p.imagenes.length ? p.imagenes.map(i => ({url: i.url, alt: i.alt || p.nombre})) : [{url: p.imagen, alt: p.nombre}])
+    .filter(i => i.url);
+  const main = $('#pd-img');
+  main.alt = p.nombre;
+  main.onerror = function(){ this.onerror = null; this.src = MH.PLACEHOLDER; };
+  main.src = imgs.length ? imgs[0].url : MH.PLACEHOLDER;
+  if (imgs.length > 1) {
+    const th = $('#pd-thumbs');
+    th.hidden = false;
+    th.innerHTML = imgs.map((i, idx) => `<img src="${esc(i.url)}" alt="${esc(i.alt)}" class="${idx===0?'active':''}" data-i="${idx}" loading="lazy">`).join('');
+    th.addEventListener('click', e => {
+      const t = e.target.closest('img[data-i]'); if (!t) return;
+      main.src = imgs[+t.dataset.i].url;
+      th.querySelectorAll('img').forEach(x => x.classList.toggle('active', x === t));
+    });
+  }
+
+  // ── Datos ──
+  $('#pd-title').textContent = p.nombre;
+  const badges = [];
+  const precio = MH.effectivePrice(p);
+  const conOferta = precio !== null && p.enOferta && MH.isValidPrice(p.precioOferta) && MH.isValidPrice(p.precio) && p.precioOferta < p.precio;
+  if (conOferta) badges.push('<span class="badge badge-oferta">Oferta</span>');
+  if (p.destacado) badges.push('<span class="badge badge-dest">Destacado</span>');
+  if (p._nuevo) badges.push('<span class="badge badge-new">Nuevo</span>');
+  $('#pd-badges').innerHTML = badges.join('');
+
+  const meta = [];
+  if (catSlug) meta.push(`<span>${esc(MH.catLabel(catSlug))}</span>`);
+  if (p.marca) meta.push(`<span>Marca: ${esc(p.marca)}</span>`);
+  if (p.sku) meta.push(`<span>Código: ${esc(p.sku)}</span>`);
+  $('#pd-meta').innerHTML = meta.join('');
+
+  // ── Precio (o "Consultar precio") ──
+  if (precio !== null) {
+    $('#pd-price-block').innerHTML =
+      `<div class="mh-price pd-price">${conOferta ? `<s class="mh-price-old">${MH.fmtPrice(p.precio)}</s>` : ''}<b>${MH.fmtPrice(precio)}</b></div>
+       <div class="pd-price-note">El pedido se confirma por WhatsApp. Precio sujeto a confirmación final.</div>`;
+  } else {
+    $('#pd-price-block').innerHTML =
+      `<div class="pd-price-ask">Consultar precio</div>
+       <div class="pd-price-note">Escribinos por WhatsApp o agregalo a tu solicitud de cotización.</div>`;
+  }
+
+  // ── Stock ──
+  const disponible = MH.isAvailable(p);
+  const st = $('#pd-stock');
+  if (!disponible) { st.hidden = false; st.className = 'pd-stock out'; st.textContent = 'Sin stock por el momento — consultá disponibilidad'; }
+  else if (p.seguimiento && typeof p.stock === 'number' && p.stock > 0) { st.hidden = false; st.className = 'pd-stock ok'; st.textContent = 'Disponible'; }
+
+  // ── CTAs: cantidad + carrito + WhatsApp ──
+  const wa = MH.waLink(`Hola! Me interesa ${p.nombre}${p.sku ? ` (código ${p.sku})` : ''}. ¿Tienen stock y precio?`);
+  let ctas = '';
+  if (disponible) {
+    ctas += `<div class="qty" aria-label="Cantidad">
+        <button type="button" id="q-menos" aria-label="Menos">−</button>
+        <input id="q-cant" type="number" inputmode="numeric" min="1" max="99" value="1" aria-label="Cantidad">
+        <button type="button" id="q-mas" aria-label="Más">+</button>
+      </div>
+      <button class="btn ${precio !== null ? 'btn-primary' : 'btn-outline'}" id="btn-add" type="button">${precio !== null ? 'Agregar al carrito' : 'Agregar a cotización'}</button>`;
+  }
+  ctas += `<a class="btn btn-wa" href="${wa}" target="_blank" rel="noopener" id="btn-wa-pd">${precio !== null ? 'Comprar por WhatsApp' : 'Consultar por WhatsApp'}</a>`;
+  $('#pd-ctas').innerHTML = ctas;
+  const cant = $('#q-cant');
+  if (cant) {
+    const clamp = () => { cant.value = Math.max(1, Math.min(99, parseInt(cant.value, 10) || 1)); };
+    $('#q-menos').addEventListener('click', () => { cant.value = (parseInt(cant.value,10)||1) - 1; clamp(); });
+    $('#q-mas').addEventListener('click', () => { cant.value = (parseInt(cant.value,10)||1) + 1; clamp(); });
+    cant.addEventListener('change', clamp);
+    $('#btn-add').addEventListener('click', function () {
+      MH.Cart.add(p, parseInt(cant.value, 10) || 1);
+      MH.Cart.flash(this);
+    });
+  }
+  document.getElementById('btn-wa-pd').addEventListener('click', () => MH.track('whatsapp_click', { origen: 'ficha' }));
+
+  $('#pd-desc').textContent = p.descripcion || '';
+
+  // ── Características (solo datos reales) ──
+  const specs = [];
+  if (p.marca) specs.push(['Marca', p.marca]);
+  if (p.sku) specs.push(['Código', p.sku]);
+  if (p.material) specs.push(['Material', p.material]);
+  if (p.color) specs.push(['Color', p.color]);
+  if (p.garantia) specs.push(['Garantía', p.garantia]);
+  if (p.peso) specs.push(['Peso', p.peso + ' kg']);
+  if (p.alto && p.ancho && p.profundidad) specs.push(['Medidas', `${p.alto} × ${p.ancho} × ${p.profundidad} cm`]);
+  if (specs.length) {
+    const t = $('#pd-specs');
+    t.hidden = false;
+    t.innerHTML = specs.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('');
+  }
+
+  // ── Envío/retiro desde configuración ──
+  MH.loadSettings().then(s => {
+    if (s && s.envio_info) { $('#pd-envio').hidden = false; $('#pd-envio-txt').textContent = s.envio_info; }
+  });
+
+  // ── JSON-LD ──
+  const ld = { '@context': 'https://schema.org', '@type': 'Product', name: p.nombre,
+    image: imgs.map(i => i.url), description: p.descripcion || undefined,
+    sku: p.sku || undefined, brand: p.marca ? { '@type': 'Brand', name: p.marca } : undefined };
+  if (precio !== null) ld.offers = { '@type': 'Offer', priceCurrency: 'ARS', price: precio,
+    availability: disponible ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock' };
+  const s = document.createElement('script'); s.type = 'application/ld+json';
+  s.textContent = JSON.stringify(ld); document.head.appendChild(s);
+
+  MH.track('view_item', { item_name: p.nombre, item_category: catSlug || undefined });
+
+  // ── Relacionados (misma categoría) ──
+  try {
+    const all = await MH.loadProducts();
+    const rel = all.filter(x => x.categoria === catSlug && x.slug !== p.slug).slice(0, 8);
+    if (rel.length) {
+      const grid = $('#related');
+      rel.forEach(r => grid.appendChild(MH.createCard(r)));
+      MH.stagger(grid, 40); MH.initReveal(grid);
+      $('#related-sec').hidden = false;
+    }
+  } catch (e) {}
+
+  $('#pd').hidden = false;
+})();
+</script>
+</body>
+</html>

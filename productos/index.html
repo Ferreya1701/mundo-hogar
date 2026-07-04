@@ -81,6 +81,8 @@
         <option value="nuevos">Más nuevos</option>
         <option value="az">Nombre: A → Z</option>
         <option value="za">Nombre: Z → A</option>
+        <option value="precio-asc" hidden>Precio: menor a mayor</option>
+        <option value="precio-desc" hidden>Precio: mayor a menor</option>
       </select>
       <button class="btn btn-outline btn-sm" id="clear">Limpiar filtros</button>
     </div>
@@ -127,13 +129,16 @@ const PAGE = 24;
 let all = [], filtered = [], shown = 0;
 const $ = s => document.querySelector(s);
 const grid = $('#grid'), moreBtn = $('#more'), empty = $('#empty'), results = $('#results');
-let state = { q: '', cat: 'all', sort: 'destacados' };
+let state = { q: '', cat: 'all', sort: 'destacados', solo: '' };
 
 function applySort(list) {
   const a = [...list];
+  const precio = p => MH.effectivePrice(p);
   if (state.sort === 'az') a.sort((x,y)=>x.nombre.localeCompare(y.nombre,'es'));
   else if (state.sort === 'za') a.sort((x,y)=>y.nombre.localeCompare(x.nombre,'es'));
   else if (state.sort === 'nuevos') a.sort((x,y)=>(y.orden||0)-(x.orden||0));
+  else if (state.sort === 'precio-asc') a.sort((x,y)=>(precio(x)??Infinity)-(precio(y)??Infinity));
+  else if (state.sort === 'precio-desc') a.sort((x,y)=>(precio(y)??-1)-(precio(x)??-1));
   else a.sort((x,y)=>(y.destacado?1:0)-(x.destacado?1:0) || (y.orden||0)-(x.orden||0)); // destacados
   return a;
 }
@@ -141,7 +146,13 @@ function applyFilters() {
   const q = state.q.trim().toLowerCase();
   filtered = applySort(all.filter(p => {
     if (state.cat !== 'all' && p.categoria !== state.cat) return false;
-    if (q) { const hay = (p.nombre + ' ' + (p.descripcion||'')).toLowerCase(); if (!hay.includes(q)) return false; }
+    if (state.solo === 'ofertas' && !(p.enOferta && MH.isValidPrice(p.precioOferta))) return false;
+    if (state.solo === 'conprecio' && !MH.hasPrice(p)) return false;
+    if (q) {
+      const hay = [p.nombre, p.descripcion, p.marca, p.sku, MH.catLabel(p.categoria)]
+        .filter(Boolean).join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
     return true;
   }));
   grid.innerHTML = ''; shown = 0;
@@ -169,14 +180,14 @@ function renderMore() {
   const cats = [{slug:'all',label:'Todos'}].concat(MH.CATS.map(c=>({slug:c.slug,label:c.label})));
   chips.innerHTML = cats.map((c,i)=>`<button class="chip${i===0?' active':''}" data-cat="${c.slug}">${c.label}</button>`).join('');
   chips.addEventListener('click', e => {
-    const b = e.target.closest('.chip'); if (!b) return;
-    chips.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+    const b = e.target.closest('.chip[data-cat]'); if (!b) return;
+    chips.querySelectorAll('.chip[data-cat]').forEach(x=>x.classList.remove('active'));
     b.classList.add('active'); state.cat = b.dataset.cat; syncURL(); applyFilters();
   });
   $('#q').addEventListener('input', e => { state.q = e.target.value; applyFilters(); });
   $('#sort').addEventListener('change', e => { state.sort = e.target.value; applyFilters(); });
   $('#clear').addEventListener('click', () => {
-    state = { q:'', cat:'all', sort:'destacados' };
+    state = { q:'', cat:'all', sort:'destacados', solo:'' };
     $('#q').value=''; $('#sort').value='destacados';
     chips.querySelectorAll('.chip').forEach((x,i)=>x.classList.toggle('active', i===0));
     syncURL(); applyFilters();
@@ -189,6 +200,30 @@ function renderMore() {
   grid.innerHTML = MH.skeletons(8);
   try { all = await MH.loadProducts(); }
   catch (e) { grid.innerHTML=''; empty.hidden=false; results.textContent=''; return; }
+
+  // Filtros/orden por precio: solo se muestran si hay datos reales que los sustenten
+  const hayPrecios = all.some(p => MH.hasPrice(p));
+  const hayOfertas = all.some(p => p.enOferta && MH.isValidPrice(p.precioOferta));
+  if (hayPrecios) {
+    document.querySelectorAll('#sort option[hidden]').forEach(o => o.hidden = false);
+    if (all.some(p => !MH.hasPrice(p))) {
+      const b = document.createElement('button');
+      b.className = 'chip'; b.dataset.solo = 'conprecio'; b.textContent = 'Con precio';
+      chips.appendChild(b);
+    }
+  }
+  if (hayOfertas) {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.dataset.solo = 'ofertas'; b.textContent = 'Ofertas';
+    chips.appendChild(b);
+  }
+  chips.addEventListener('click', e => {
+    const b = e.target.closest('.chip[data-solo]'); if (!b) return;
+    const activo = b.classList.toggle('active');
+    chips.querySelectorAll('.chip[data-solo]').forEach(x => { if (x !== b) x.classList.remove('active'); });
+    state.solo = activo ? b.dataset.solo : '';
+    applyFilters();
+  });
 
   // categoría inicial desde ?cat=
   const initCat = new URL(location).searchParams.get('cat');

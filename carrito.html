@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tu carrito — Mundo Hogar</title>
+<meta name="description" content="Revisá tu carrito y enviá tu pedido o cotización por WhatsApp a Mundo Hogar.">
+<meta name="robots" content="noindex, follow">
+<meta name="theme-color" content="#0A2E63">
+<link rel="icon" type="image/png" href="/images/marca/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/catalogo.css">
+<style>
+#hdr{position:sticky;top:0;z-index:200;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.hdr-inner{max-width:var(--maxw);margin:0 auto;padding:0 20px;height:66px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-badge{width:38px;height:38px;border-radius:50%;object-fit:contain;flex-shrink:0}
+.logo-txt b{display:block;font-family:'Plus Jakarta Sans';font-weight:800;color:var(--navy);font-size:16px;line-height:1}
+.logo-txt span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.nav{display:flex;align-items:center;gap:4px}
+.nav a{padding:9px 13px;border-radius:8px;font-size:14px;font-weight:600;color:var(--ink);transition:all var(--t)}
+.nav a:hover,.nav a.active{color:var(--blue);background:#eef4fc}
+@media(max-width:760px){.nav{display:none}}
+.cart-items{display:flex;flex-direction:column;gap:12px}
+h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy);margin:4px 0 22px}
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <div class="hdr-inner">
+    <a href="/" class="logo" aria-label="Mundo Hogar - Inicio"><img class="logo-badge" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="38" height="38"><span class="logo-txt"><b>Mundo Hogar</b><span>Mayorista &amp; Minorista</span></span></a>
+    <nav class="nav" aria-label="Navegación principal">
+      <a href="/">Inicio</a>
+      <a href="/#categorias">Categorías</a>
+      <a href="/productos">Productos</a>
+      <a href="/#mayorista">Mayorista</a>
+      <a href="/#contacto">Contacto</a>
+    </nav>
+    <a class="btn btn-wa btn-sm" href="https://wa.me/5493426481326?text=Hola!%20Quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">WhatsApp</a>
+  </div>
+</header>
+
+<main class="section" style="padding-top:26px">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Ruta">
+      <a href="/">Inicio</a><span aria-hidden="true">›</span><span aria-current="page">Carrito</span>
+    </nav>
+    <h1 class="page-t">Tu carrito</h1>
+
+    <div id="cart-empty" class="empty-state" hidden>
+      <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <h3>Tu carrito está vacío</h3>
+      <p>Agregá productos desde el catálogo. Si un producto no tiene precio publicado, podés sumarlo igual y te lo cotizamos por WhatsApp.</p>
+      <a class="btn btn-blue" style="margin-top:14px" href="/productos">Ver productos</a>
+    </div>
+
+    <div id="cart-ok" hidden>
+      <div class="form-ok">
+        <b>¡Solicitud generada!</b> Tu código es <b id="ok-codigo"></b>.<br>
+        Se abrió WhatsApp con tu pedido listo para enviar. Si no se abrió,
+        <a id="ok-wa-link" href="#" target="_blank" rel="noopener" style="font-weight:700;text-decoration:underline">tocá acá para abrirlo</a>.<br>
+        Mundo Hogar te va a responder para confirmar precios, stock y entrega.
+      </div>
+      <a class="btn btn-outline" style="margin-top:16px" href="/productos">Seguir viendo productos</a>
+    </div>
+
+    <div class="cart-layout" id="cart-layout" hidden>
+      <div>
+        <div class="cart-items" id="cart-items" aria-live="polite"></div>
+        <div class="cart-pending" id="cart-pending" hidden>
+          Algunos productos no tienen precio publicado: van como <b>“precio a confirmar”</b> y te los cotizamos por WhatsApp.
+        </div>
+      </div>
+
+      <div class="cart-box">
+        <h2>Resumen</h2>
+        <div id="cart-totals"></div>
+        <p class="cart-note">El pedido se confirma por WhatsApp con un asesor de Mundo Hogar. Los importes son estimados y no incluyen costo de envío.</p>
+
+        <form id="form" style="margin-top:18px" novalidate>
+          <h2 style="margin-top:4px">Tus datos</h2>
+          <div class="form-grid">
+            <div class="field full">
+              <label for="f-nombre">Nombre y apellido <span class="req">*</span></label>
+              <input id="f-nombre" name="nombre" type="text" autocomplete="name" maxlength="80" required>
+              <div class="field-error">Ingresá tu nombre y apellido.</div>
+            </div>
+            <div class="field">
+              <label for="f-telefono">Teléfono <span class="req">*</span></label>
+              <input id="f-telefono" name="telefono" type="tel" autocomplete="tel" inputmode="tel" placeholder="Ej: 342 5 123456" maxlength="25" required>
+              <div class="field-error">Ingresá un teléfono válido.</div>
+            </div>
+            <div class="field">
+              <label for="f-localidad">Localidad <span class="req">*</span></label>
+              <input id="f-localidad" name="localidad" type="text" autocomplete="address-level2" placeholder="Ej: Santa Fe Capital" maxlength="80" required>
+              <div class="field-error">Ingresá tu localidad.</div>
+            </div>
+            <div class="field full">
+              <label>Tipo de entrega <span class="req">*</span></label>
+              <div class="radio-cards">
+                <label><input type="radio" name="entrega" value="retiro" checked> Retiro</label>
+                <label><input type="radio" name="entrega" value="envio"> Envío</label>
+              </div>
+            </div>
+            <div class="field full" id="f-dir-wrap" hidden>
+              <label for="f-direccion">Dirección de entrega <span class="req">*</span></label>
+              <input id="f-direccion" name="direccion" type="text" autocomplete="street-address" maxlength="160">
+              <div class="field-error">Ingresá la dirección para el envío.</div>
+            </div>
+            <div class="field full">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:0">
+                <input type="checkbox" id="f-mayorista" style="width:auto;accent-color:var(--blue)"> Soy cliente mayorista / compro para mi comercio
+              </label>
+            </div>
+            <div class="field" id="f-com-wrap" hidden>
+              <label for="f-comercio">Nombre del comercio</label>
+              <input id="f-comercio" name="comercio" type="text" maxlength="100">
+            </div>
+            <div class="field" id="f-cuit-wrap" hidden>
+              <label for="f-cuit">CUIT (opcional)</label>
+              <input id="f-cuit" name="cuit" type="text" inputmode="numeric" placeholder="30-12345678-9" maxlength="15">
+            </div>
+            <div class="field full">
+              <label for="f-obs">Observaciones (opcional)</label>
+              <textarea id="f-obs" name="observaciones" maxlength="600" placeholder="Horarios, aclaraciones, consultas…"></textarea>
+            </div>
+            <div class="hp-field" aria-hidden="true">
+              <label>No completar este campo<input type="text" id="f-web" name="website" tabindex="-1" autocomplete="off"></label>
+            </div>
+          </div>
+          <button class="btn btn-wa btn-lg" id="btn-enviar" type="submit" style="width:100%;margin-top:16px">
+            Enviar pedido por WhatsApp
+          </button>
+          <div class="form-fail" id="form-fail" hidden></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="mh-footer">
+  <div class="container">
+    <div class="mh-footer-bottom" style="border-top:none;padding:24px 0">
+      <span>© 2026 Mundo Hogar · Santa Fe Capital, Argentina.</span>
+      <span><a href="/">Inicio</a> · <a href="/productos">Productos</a> · <a href="https://wa.me/5493426481326" target="_blank" rel="noopener">WhatsApp</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="/supabase-config.js"></script>
+<script src="/assets/catalogo.js"></script>
+<script>
+(async function () {
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const Cart = MH.Cart;
+  let fresh = {}; // datos vivos por pid, releídos de la base
+
+  // Relee de Supabase los productos del carrito (precio/estado actual = fuente de verdad visual)
+  async function refreshItems() {
+    const ids = Cart.items.map(i => i.pid).filter(v => v != null);
+    if (!ids.length) return;
+    try {
+      const url = window.SUPABASE_URL, key = window.SUPABASE_PUBLISHABLE_KEY || window.SUPABASE_ANON_KEY;
+      const res = await fetch(`${url}/rest/v1/productos?select=id,nombre,slug,sku,imagen_principal_url,precio_minorista,precio_oferta,en_oferta,estado&id=in.(${ids.join(',')})`,
+        { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+      if (!res.ok) return;
+      (await res.json()).forEach(r => {
+        fresh[r.id] = {
+          nombre: r.nombre, slug: r.slug, sku: r.sku, imagen: r.imagen_principal_url,
+          activo: r.estado === 'activo',
+          precio: (r.en_oferta && Number(r.precio_oferta) > 0) ? Number(r.precio_oferta)
+                : (Number(r.precio_minorista) > 0 ? Number(r.precio_minorista) : null)
+        };
+      });
+      // quita del carrito productos que ya no existen o fueron pausados
+      Cart.items.slice().forEach(it => {
+        if (it.pid != null && (!fresh[it.pid] || !fresh[it.pid].activo)) Cart.remove(it.pid);
+      });
+    } catch (e) { /* si falla, se usan los datos guardados */ }
+  }
+
+  function itemPrice(it) {
+    if (it.pid != null && fresh[it.pid]) return fresh[it.pid].precio;
+    return MH.isValidPrice(it.precio) ? it.precio : null;
+  }
+
+  function render() {
+    const items = Cart.items;
+    const hay = items.length > 0;
+    $('#cart-empty').hidden = hay;
+    $('#cart-layout').hidden = !hay;
+    if (!hay) return;
+
+    $('#cart-items').innerHTML = items.map(it => {
+      const f = (it.pid != null && fresh[it.pid]) || {};
+      const nombre = f.nombre || it.nombre;
+      const img = f.imagen || it.imagen;
+      const sku = f.sku || it.sku;
+      const slug = f.slug || it.slug;
+      const precio = itemPrice(it);
+      const key = it.pid != null ? it.pid : it.slug;
+      return `<div class="cart-item" data-key="${esc(key)}">
+        <img src="${esc(img || MH.PLACEHOLDER)}" alt="${esc(nombre)}" onerror="this.onerror=null;this.src=MH.PLACEHOLDER">
+        <div>
+          <div class="cart-item-name">${slug ? `<a href="/producto/${esc(slug)}">${esc(nombre)}</a>` : esc(nombre)}</div>
+          ${sku ? `<div class="cart-item-sku">Código: ${esc(sku)}</div>` : ''}
+          <div class="cart-item-price ${precio === null ? 'ask' : ''}">${precio === null ? 'Precio a confirmar' : MH.fmtPrice(precio) + ' c/u'}</div>
+        </div>
+        <div class="cart-item-right">
+          <div class="qty qty-sm">
+            <button type="button" data-act="menos" aria-label="Menos">−</button>
+            <input type="number" inputmode="numeric" min="1" max="99" value="${it.cant}" data-act="cant" aria-label="Cantidad de ${esc(nombre)}">
+            <button type="button" data-act="mas" aria-label="Más">+</button>
+          </div>
+          <button type="button" class="cart-remove" data-act="quitar">Quitar</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Totales: nunca calcular un total falso
+    const sinPrecio = items.filter(it => itemPrice(it) === null);
+    const conPrecio = items.filter(it => itemPrice(it) !== null);
+    const subtotal = conPrecio.reduce((s, it) => s + itemPrice(it) * it.cant, 0);
+    let t = '';
+    if (conPrecio.length) t += `<div class="cart-row"><span>Subtotal (${conPrecio.length} producto${conPrecio.length===1?'':'s'} con precio)</span><b>${MH.fmtPrice(subtotal)}</b></div>`;
+    if (sinPrecio.length) t += `<div class="cart-row"><span>${sinPrecio.length} producto${sinPrecio.length===1?'':'s'} a cotizar</span><b>—</b></div>`;
+    t += `<div class="cart-row total"><span>Total estimado</span><b>${sinPrecio.length ? 'A confirmar' : MH.fmtPrice(subtotal)}</b></div>`;
+    $('#cart-totals').innerHTML = t;
+    $('#cart-pending').hidden = sinPrecio.length === 0;
+  }
+
+  $('#cart-items').addEventListener('click', e => {
+    const btn = e.target.closest('[data-act]'); if (!btn) return;
+    const key = btn.closest('.cart-item').dataset.key;
+    const it = Cart.items.find(i => String(i.pid) === key || i.slug === key); if (!it) return;
+    if (btn.dataset.act === 'menos') Cart.setQty(key, it.cant - 1);
+    if (btn.dataset.act === 'mas') Cart.setQty(key, it.cant + 1);
+    if (btn.dataset.act === 'quitar') Cart.remove(key);
+    render();
+  });
+  $('#cart-items').addEventListener('change', e => {
+    if (e.target.dataset.act !== 'cant') return;
+    Cart.setQty(e.target.closest('.cart-item').dataset.key, e.target.value);
+    render();
+  });
+
+  // ── Campos condicionales ──
+  document.querySelectorAll('input[name="entrega"]').forEach(r =>
+    r.addEventListener('change', () => { $('#f-dir-wrap').hidden = getEntrega() !== 'envio'; }));
+  const getEntrega = () => (document.querySelector('input[name="entrega"]:checked') || {}).value || 'retiro';
+  $('#f-mayorista').addEventListener('change', e => {
+    $('#f-com-wrap').hidden = !e.target.checked;
+    $('#f-cuit-wrap').hidden = !e.target.checked;
+  });
+
+  function invalid(id, bad) {
+    const wrap = $(id).closest('.field');
+    wrap.classList.toggle('invalid', bad);
+    return bad;
+  }
+
+  // ── Mensaje de WhatsApp (siempre a partir de datos validados) ──
+  function buildMessage(datos, items, total, tienePendientes, codigo) {
+    const L = [];
+    L.push('Hola, quiero realizar una consulta/pedido en Mundo Hogar.');
+    L.push('');
+    L.push(`Cliente: ${datos.nombre}`);
+    L.push(`Teléfono: ${datos.telefono}`);
+    L.push(`Localidad: ${datos.localidad}`);
+    L.push(`Entrega: ${datos.tipo_entrega === 'envio' ? 'Envío a domicilio' : 'Retiro'}`);
+    if (datos.tipo_entrega === 'envio' && datos.direccion) L.push(`Dirección: ${datos.direccion}`);
+    if (datos.es_mayorista) {
+      L.push('Cliente mayorista: Sí' + (datos.comercio ? ` — ${datos.comercio}` : '') + (datos.cuit ? ` — CUIT ${datos.cuit}` : ''));
+    }
+    L.push('');
+    L.push('Productos:');
+    items.forEach((it, i) => {
+      L.push(`${i + 1}. ${it.nombre}`);
+      if (it.sku) L.push(`   Código: ${it.sku}`);
+      L.push(`   Cantidad: ${it.cantidad}`);
+      L.push(`   Precio: ${MH.isValidPrice(it.precio) ? MH.fmtPrice(it.precio) : 'a confirmar'}`);
+    });
+    L.push('');
+    L.push(`Total estimado: ${tienePendientes || !MH.isValidPrice(total) ? 'a confirmar' : MH.fmtPrice(total)}`);
+    if (datos.observaciones) { L.push(''); L.push('Observaciones:'); L.push(datos.observaciones); }
+    L.push('');
+    L.push(`Código de solicitud: ${codigo}`);
+    return L.join('\n');
+  }
+
+  // ── Envío ──
+  let enviando = false;
+  $('#form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (enviando) return;
+    $('#form-fail').hidden = true;
+
+    if ($('#f-web').value) return; // honeypot: bots fuera
+
+    const datos = {
+      nombre: $('#f-nombre').value.trim(),
+      telefono: $('#f-telefono').value.trim(),
+      localidad: $('#f-localidad').value.trim(),
+      tipo_entrega: getEntrega(),
+      direccion: $('#f-direccion').value.trim(),
+      es_mayorista: $('#f-mayorista').checked,
+      comercio: $('#f-comercio').value.trim(),
+      cuit: $('#f-cuit').value.trim(),
+      observaciones: $('#f-obs').value.trim(),
+      canal: 'web'
+    };
+    let bad = false;
+    bad = invalid('#f-nombre', datos.nombre.length < 2) || bad;
+    bad = invalid('#f-telefono', datos.telefono.replace(/\D/g, '').length < 6) || bad;
+    bad = invalid('#f-localidad', !datos.localidad) || bad;
+    bad = invalid('#f-direccion', datos.tipo_entrega === 'envio' && !datos.direccion) || bad;
+    if (bad) { document.querySelector('.field.invalid input')?.focus(); return; }
+    if (!Cart.items.length) return;
+
+    enviando = true;
+    const btn = $('#btn-enviar');
+    btn.disabled = true; btn.textContent = 'Generando solicitud…';
+    MH.track('begin_checkout', { items: Cart.count() });
+
+    datos.items = Cart.items.filter(i => i.pid != null).map(i => ({ id: i.pid, cantidad: i.cant }));
+
+    // 1) Guardar en la base vía RPC (el servidor revalida productos y precios).
+    //    Si la RPC aún no está desplegada o falla, el pedido sale igual por WhatsApp.
+    let resp = null;
+    try {
+      const url = window.SUPABASE_URL, key = window.SUPABASE_PUBLISHABLE_KEY || window.SUPABASE_ANON_KEY;
+      const r = await fetch(`${url}/rest/v1/rpc/crear_solicitud`, {
+        method: 'POST',
+        headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p: datos })
+      });
+      if (r.ok) resp = await r.json();
+      else {
+        const err = await r.json().catch(() => ({}));
+        // errores de validación del servidor: mostrar y no continuar
+        const msg = err && err.hint;
+        if (r.status === 400 && msg && /Ingresá|Agregá|solicitudes|minutos|disponibles/.test(msg)) {
+          $('#form-fail').textContent = msg;
+          $('#form-fail').hidden = false;
+          enviando = false; btn.disabled = false; btn.textContent = 'Enviar pedido por WhatsApp';
+          return;
+        }
+      }
+    } catch (e) { /* sin conexión con la base: continuar por WhatsApp */ }
+
+    // 2) Armar mensaje con datos validados por el servidor (o locales como respaldo)
+    let codigo, itemsMsg, total, pendientes;
+    if (resp && resp.codigo) {
+      codigo = resp.codigo;
+      itemsMsg = resp.items;
+      total = resp.total;
+      pendientes = !!resp.tiene_pendientes;
+    } else {
+      codigo = 'MH-' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+      itemsMsg = Cart.items.map(i => ({ nombre: (i.pid != null && fresh[i.pid] && fresh[i.pid].nombre) || i.nombre, sku: (i.pid != null && fresh[i.pid] && fresh[i.pid].sku) || i.sku, cantidad: i.cant, precio: itemPrice(i) }));
+      pendientes = itemsMsg.some(i => !MH.isValidPrice(i.precio));
+      total = pendientes ? null : itemsMsg.reduce((s, i) => s + i.precio * i.cantidad, 0);
+    }
+
+    const msg = buildMessage(datos, itemsMsg, total, pendientes, codigo);
+    const waUrl = MH.waLink(msg);
+
+    // 3) Abrir WhatsApp y mostrar confirmación
+    MH.track('solicitud_enviada', { items: itemsMsg.length });
+    window.open(waUrl, '_blank', 'noopener');
+    Cart.clear();
+    $('#cart-layout').hidden = true;
+    $('#ok-codigo').textContent = codigo;
+    $('#ok-wa-link').href = waUrl;
+    $('#cart-ok').hidden = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // ── Inicio ──
+  render();               // primero con datos guardados (rápido)
+  await refreshItems();   // luego con datos vivos de la base
+  render();
+})();
+</script>
+</body>
+</html>
