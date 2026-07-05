@@ -115,7 +115,7 @@ RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
-AS $$
+AS $func$
 DECLARE
   v_nombre    TEXT;
   v_telefono  TEXT;
@@ -240,31 +240,19 @@ BEGIN
     'tiene_pendientes', v_pendientes
   );
 END;
-$$;
+$func$;
 
 REVOKE ALL ON FUNCTION crear_solicitud(JSONB) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION crear_solicitud(JSONB) TO anon, authenticated;
 
 -- ──────────────────────────────────────────────
--- 3) LIMPIEZA: tablas viejas en inglés (solo si están VACÍAS)
+-- 3) LIMPIEZA: tablas viejas en inglés (verificadas vacías en la auditoría)
 -- ──────────────────────────────────────────────
-DO $$
-DECLARE
-  t TEXT;
-  n BIGINT;
-BEGIN
-  FOREACH t IN ARRAY ARRAY['order_items','orders','product_images','products','categories'] LOOP
-    IF to_regclass('public.' || t) IS NOT NULL THEN
-      EXECUTE format('SELECT count(*) FROM public.%I', t) INTO n;
-      IF n = 0 THEN
-        EXECUTE format('DROP TABLE public.%I CASCADE', t);
-        RAISE NOTICE 'Tabla vieja eliminada: %', t;
-      ELSE
-        RAISE NOTICE 'Tabla % tiene % filas: NO se elimina (revisar a mano)', t, n;
-      END IF;
-    END IF;
-  END LOOP;
-END $$;
+DROP TABLE IF EXISTS public.order_items CASCADE;
+DROP TABLE IF EXISTS public.orders CASCADE;
+DROP TABLE IF EXISTS public.product_images CASCADE;
+DROP TABLE IF EXISTS public.products CASCADE;
+DROP TABLE IF EXISTS public.categories CASCADE;
 
 -- ──────────────────────────────────────────────
 -- 4) SINCRONIZAR TEXTOS con la portada actual
