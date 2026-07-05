@@ -5,41 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Página no encontrada | Mundo Hogar</title>
 <meta name="robots" content="noindex, follow">
-<meta name="theme-color" content="#1A1A2E">
+<meta name="theme-color" content="#0A2E63">
 <link rel="icon" type="image/png" href="/images/marca/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Inter',system-ui,sans-serif;background:#1A1A2E;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;overflow:hidden;position:relative}
-  .texture{position:absolute;inset:0;opacity:.03;background-image:repeating-linear-gradient(45deg,#C8A96A,#C8A96A 1px,transparent 1px,transparent 72px);pointer-events:none}
-  .wm{position:absolute;right:-2rem;bottom:-6rem;font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(220px,40vw,520px);color:rgba(255,255,255,.025);line-height:1;pointer-events:none;user-select:none}
+  body{font-family:'Inter',system-ui,sans-serif;background:linear-gradient(135deg,#0A2E63 0%,#13509E 52%,#1763C6 100%);color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;overflow:hidden;position:relative}
+  body::after{content:"";position:absolute;right:-120px;top:-120px;width:480px;height:480px;border-radius:50%;background:radial-gradient(circle,rgba(244,122,31,.5),transparent 62%);pointer-events:none}
+  .wm{position:absolute;right:-1rem;bottom:-7rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:clamp(220px,40vw,520px);color:rgba(255,255,255,.05);line-height:1;pointer-events:none;user-select:none}
   .box{position:relative;z-index:1;max-width:520px}
-  .badge{width:52px;height:52px;background:#1A1A2E;border:1px solid rgba(200,169,106,.3);border-radius:4px;display:flex;align-items:center;justify-content:center;margin:0 auto 28px}
-  .badge span{font-family:'Playfair Display',serif;color:#C8A96A;font-weight:700;font-size:18px}
-  .code{color:#C8A96A;font-size:13px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;margin-bottom:16px}
-  h1{font-family:'Playfair Display',serif;font-size:clamp(1.8rem,5vw,2.8rem);line-height:1.1;margin-bottom:16px}
-  h1 em{color:#C8A96A;font-style:normal}
-  p{color:rgba(255,255,255,.55);font-size:15px;line-height:1.7;margin-bottom:32px}
+  .logo{width:74px;height:74px;border-radius:50%;margin:0 auto 24px;display:block;background:#fff;padding:4px}
+  .code{color:#F47A1F;font-size:13px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;margin-bottom:14px}
+  h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(1.8rem,5vw,2.8rem);line-height:1.12;margin-bottom:14px;font-weight:800}
+  h1 em{color:#F47A1F;font-style:normal}
+  p{color:rgba(255,255,255,.75);font-size:15px;line-height:1.7;margin-bottom:30px}
   .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-  .btn-primary{display:inline-flex;align-items:center;gap:8px;background:#C8A96A;color:#1A1A2E;font-weight:700;font-size:14px;padding:14px 28px;border-radius:3px;text-decoration:none;transition:background .2s}
-  .btn-primary:hover{background:#D4B97A}
-  .btn-outline{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);font-size:14px;font-weight:500;padding:14px 28px;border-radius:3px;text-decoration:none;transition:all .2s}
-  .btn-outline:hover{border-color:rgba(255,255,255,.4);color:#fff}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:14px;padding:14px 26px;border-radius:10px;text-decoration:none;transition:transform .2s,background .2s,box-shadow .2s}
+  .btn:hover{transform:translateY(-2px)}
+  .btn-primary{background:#F47A1F;color:#fff;box-shadow:0 8px 22px rgba(244,122,31,.4)}
+  .btn-primary:hover{background:#E0660C}
+  .btn-outline{border:2px solid rgba(255,255,255,.35);color:#fff}
+  .btn-outline:hover{border-color:rgba(255,255,255,.7)}
+  .btn-wa{background:#25D366;color:#fff}
+  .btn-wa:hover{background:#1ebe57}
+  @media(prefers-reduced-motion:no-preference){
+    .box{animation:up .6s cubic-bezier(.2,.7,.3,1)}
+    @keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  }
 </style>
 </head>
 <body>
-  <div class="texture"></div>
   <div class="wm" aria-hidden="true">404</div>
   <div class="box">
-    <div class="badge"><span>MH</span></div>
+    <img class="logo" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="74" height="74">
     <div class="code">Error 404</div>
     <h1>Esta página<br><em>no existe.</em></h1>
-    <p>Puede que el enlace esté roto o que la página se haya movido. Volvé al inicio o escribinos por WhatsApp y te ayudamos.</p>
+    <p>Puede que el enlace esté roto o que la página se haya movido. Volvé al inicio, mirá el catálogo o escribinos por WhatsApp y te ayudamos.</p>
     <div class="ctas">
-      <a href="/" class="btn-primary">Volver al inicio</a>
-      <a href="https://wa.me/5493426481326?text=Hola!%20Tuve%20un%20problema%20en%20la%20web%20de%20Mundo%20Hogar." target="_blank" rel="noopener" class="btn-outline">Consultar por WhatsApp</a>
+      <a class="btn btn-primary" href="/">Ir al inicio</a>
+      <a class="btn btn-outline" href="/productos">Ver productos</a>
+      <a class="btn btn-wa" href="https://wa.me/5493426481326?text=Hola!%20Estaba%20navegando%20la%20web%20y%20tengo%20una%20consulta." target="_blank" rel="noopener">WhatsApp</a>
     </div>
   </div>
 </body>
