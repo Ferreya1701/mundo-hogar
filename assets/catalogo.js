@@ -120,6 +120,46 @@ window.MH = (function () {
     return _settings;
   }
 
+  // ── Textos del sitio (site_content, editables desde el panel) ──
+  // Devuelve un mapa clave→valor. Si falla, {} y la página usa sus textos fijos.
+  let _content = null;
+  async function loadContent() {
+    if (_content) return _content;
+    try {
+      const url = window.SUPABASE_URL;
+      const key = window.SUPABASE_PUBLISHABLE_KEY || window.SUPABASE_ANON_KEY;
+      if (!url || !key) return {};
+      const res = await fetch(`${url}/rest/v1/site_content?select=clave,valor`,
+        { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+      if (!res.ok) return {};
+      const rows = await res.json();
+      _content = {};
+      rows.forEach(r => { if (r.valor) _content[r.clave] = r.valor; });
+    } catch (e) { _content = {}; }
+    return _content;
+  }
+
+  // Aplica un texto de site_content a un elemento si existe valor cargado.
+  // Para títulos (conEnfasis), "|" separa la parte final resaltada en naranja;
+  // si el valor no trae "|" se conserva el texto original de la página
+  // (evita perder el resaltado si el dato de la base quedó desactualizado).
+  function applyContent(map, clave, el, conEnfasis) {
+    const v = map[clave];
+    if (!v || !el) return;
+    if (conEnfasis) {
+      if (!v.includes('|')) return;
+      const [a, b] = v.split('|');
+      el.innerHTML = '';
+      el.append(a.trim());
+      el.appendChild(document.createElement('br'));
+      const em = document.createElement('em');
+      em.textContent = b.trim();
+      el.appendChild(em);
+    } else {
+      el.textContent = v;
+    }
+  }
+
   // Reescribe todos los links wa.me del documento con el número configurado,
   // conservando el texto precargado de cada uno (el número vive en un solo lugar).
   function syncWaLinks() {
@@ -432,7 +472,7 @@ window.MH = (function () {
     PLACEHOLDER, CATS, CAT_BY_SLUG, catLabel, catVisual, waLink,
     loadProducts, createCard, skeletons, initCarousel, initReveal, stagger,
     initCounters, animateCount, initScrollProgress,
-    loadSettings, syncWaLinks, isValidPrice, effectivePrice, hasPrice, fmtPrice,
+    loadSettings, loadContent, applyContent, syncWaLinks, isValidPrice, effectivePrice, hasPrice, fmtPrice,
     isAvailable, track, Cart
   };
 })();
