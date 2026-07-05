@@ -9,6 +9,7 @@ const Layout = {
     { id:'movimientos',label:'Historial',            icon:'📋', href:'/admin/movimientos.html',    section:'Stock' },
     { id:'alertas',    label:'Alertas de Stock',     icon:'🔔', href:'/admin/alertas.html',        section:'Stock' },
     { id:'usuarios',   label:'Usuarios',             icon:'👥', href:'/admin/usuarios.html',       section:'Admin', adminOnly:true },
+    { id:'configuracion', label:'Configuración',     icon:'⚙️', href:'/admin/configuracion.html',  section:'Admin', adminOnly:true },
   ],
 
   render(pageId, pageTitle, profile) {

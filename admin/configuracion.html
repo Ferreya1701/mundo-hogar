@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuración — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><div class="sidebar-brand-icon">🏠</div><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/" target="_blank" class="btn btn-ghost btn-sm">🌐 Ver Tienda</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1>Configuración del sitio</h1><p>Datos de contacto y textos de la tienda. Los cambios se ven en la web al instante.</p></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start" class="config-grid">
+
+        <!-- Datos del negocio (site_settings) -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">📞 Datos del negocio</span></div>
+          <div class="card-body">
+            <form id="form-settings" class="form-grid" style="gap:14px" novalidate>
+              <div class="form-group">
+                <label>Nombre de la tienda</label>
+                <input type="text" id="s-nombre_tienda" placeholder="Mundo Hogar">
+              </div>
+              <div class="form-group">
+                <label>WhatsApp (con código de país, solo números)</label>
+                <input type="text" id="s-whatsapp" placeholder="5493426481326" inputmode="numeric">
+                <span class="form-hint">Se usa en TODOS los botones de WhatsApp de la tienda. Ej: 549342…</span>
+              </div>
+              <div class="form-group">
+                <label>Teléfono (para mostrar)</label>
+                <input type="text" id="s-telefono" placeholder="+54 9 342 648-1326">
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="s-email" placeholder="ventas@mundohogar.com.ar">
+              </div>
+              <div class="form-group">
+                <label>Dirección</label>
+                <input type="text" id="s-direccion" placeholder="Santa Fe Capital, Argentina">
+              </div>
+              <div class="form-group">
+                <label>Horarios</label>
+                <input type="text" id="s-horarios" placeholder="Lun–Vie 9 a 18 · Sáb 9 a 13">
+              </div>
+              <div class="form-group">
+                <label>Información de envíos</label>
+                <textarea id="s-envio_info" rows="3" placeholder="Entregas en Santa Fe Capital y alrededores…"></textarea>
+                <span class="form-hint">Aparece en la ficha de producto y el carrito.</span>
+              </div>
+              <div class="form-group">
+                <label>Instagram (URL)</label>
+                <input type="url" id="s-red_instagram" placeholder="https://instagram.com/mundohogar">
+              </div>
+              <div class="form-group">
+                <label>Facebook (URL)</label>
+                <input type="url" id="s-red_facebook" placeholder="https://facebook.com/mundohogar">
+              </div>
+              <button type="submit" class="btn btn-primary" id="btn-settings">Guardar datos del negocio</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Textos del sitio (site_content) -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">📝 Textos de la página</span></div>
+          <div class="card-body">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:14px">
+              Editá los textos que se muestran en la página de inicio. Dejá un texto vacío para volver al texto original.
+            </p>
+            <form id="form-content" class="form-grid" style="gap:14px" novalidate>
+              <div id="content-fields"><div class="spinner" style="margin:20px auto"></div></div>
+              <button type="submit" class="btn btn-primary" id="btn-content">Guardar textos</button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script>
+const $id = s => document.getElementById(s);
+let contentRows = [];
+
+const GRUPO_LABELS = { hero: 'Portada (hero)', mayorista: 'Sección mayorista', info: 'Información', footer: 'Pie de página' };
+
+async function loadAll() {
+  const [{ data: st, error: e1 }, { data: ct, error: e2 }] = await Promise.all([
+    db.from('site_settings').select('*').eq('id', 1).maybeSingle(),
+    db.from('site_content').select('*').order('grupo').order('id')
+  ]);
+  if (e1 || e2) { Utils.toast('Error cargando configuración: ' + (e1 || e2).message, 'error'); return; }
+
+  if (st) {
+    $id('s-nombre_tienda').value = st.nombre_tienda || '';
+    $id('s-whatsapp').value = st.whatsapp || '';
+    $id('s-telefono').value = st.telefono || '';
+    $id('s-email').value = st.email || '';
+    $id('s-direccion').value = st.direccion || '';
+    $id('s-horarios').value = st.horarios || '';
+    $id('s-envio_info').value = st.envio_info || '';
+    const redes = st.redes || {};
+    $id('s-red_instagram').value = redes.instagram || '';
+    $id('s-red_facebook').value = redes.facebook || '';
+  }
+
+  contentRows = ct || [];
+  if (!contentRows.length) {
+    $id('content-fields').innerHTML = '<p style="color:var(--muted);font-size:13px">No hay textos configurables cargados en la base.</p>';
+    return;
+  }
+  let html = '';
+  let lastGrupo = null;
+  contentRows.forEach(r => {
+    if (r.grupo !== lastGrupo) {
+      html += `<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:${lastGrupo ? '10px' : '0'}">${GRUPO_LABELS[r.grupo] || r.grupo || 'Otros'}</div>`;
+      lastGrupo = r.grupo;
+    }
+    const multiline = (r.valor || '').length > 60 || /texto|descripcion|subtitulo/.test(r.clave);
+    html += `<div class="form-group">
+      <label>${r.etiqueta || r.clave}</label>
+      ${multiline
+        ? `<textarea data-clave="${r.clave}" rows="2">${(r.valor || '').replace(/</g, '&lt;')}</textarea>`
+        : `<input type="text" data-clave="${r.clave}" value="${(r.valor || '').replace(/"/g, '&quot;')}">`}
+    </div>`;
+  });
+  $id('content-fields').innerHTML = html;
+}
+
+$id('form-settings').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = $id('btn-settings');
+  const wa = $id('s-whatsapp').value.replace(/\D/g, '');
+  if (wa && (wa.length < 10 || wa.length > 15)) {
+    Utils.toast('El WhatsApp debe tener entre 10 y 15 dígitos (con código de país).', 'warning');
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  const payload = {
+    id: 1,
+    nombre_tienda: $id('s-nombre_tienda').value.trim() || null,
+    whatsapp: wa || null,
+    telefono: $id('s-telefono').value.trim() || null,
+    email: $id('s-email').value.trim() || null,
+    direccion: $id('s-direccion').value.trim() || null,
+    horarios: $id('s-horarios').value.trim() || null,
+    envio_info: $id('s-envio_info').value.trim() || null,
+    redes: {
+      instagram: $id('s-red_instagram').value.trim() || undefined,
+      facebook: $id('s-red_facebook').value.trim() || undefined
+    }
+  };
+  const { error } = await db.from('site_settings').upsert(payload);
+  btn.disabled = false; btn.textContent = 'Guardar datos del negocio';
+  if (error) { Utils.toast('Error: ' + error.message, 'error'); return; }
+  Utils.toast('Datos del negocio guardados', 'success');
+  Utils.log('editar', 'site_settings', 1, 'Actualizó datos del negocio');
+});
+
+$id('form-content').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = $id('btn-content');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  const campos = document.querySelectorAll('#content-fields [data-clave]');
+  const cambios = [];
+  campos.forEach(el => {
+    const original = contentRows.find(r => r.clave === el.dataset.clave);
+    const nuevo = el.value.trim();
+    if (original && (original.valor || '') !== nuevo) {
+      cambios.push({ clave: el.dataset.clave, valor: nuevo || null });
+    }
+  });
+  if (!cambios.length) {
+    btn.disabled = false; btn.textContent = 'Guardar textos';
+    Utils.toast('No hay cambios para guardar', 'info');
+    return;
+  }
+  let fallo = null;
+  for (const c of cambios) {
+    const { error } = await db.from('site_content').update({ valor: c.valor }).eq('clave', c.clave);
+    if (error) { fallo = error; break; }
+  }
+  btn.disabled = false; btn.textContent = 'Guardar textos';
+  if (fallo) { Utils.toast('Error: ' + fallo.message, 'error'); return; }
+  Utils.toast(`${cambios.length} texto${cambios.length > 1 ? 's' : ''} guardado${cambios.length > 1 ? 's' : ''}`, 'success');
+  Utils.log('editar', 'site_content', '-', `Actualizó ${cambios.length} textos del sitio`);
+  await loadAll();
+});
+
+async function initPage() {
+  const profile = await Auth.init();
+  if (!profile) return;
+  await Auth.requireRole(['administrador']);
+  await Layout.init('configuracion', 'Configuración');
+  await loadAll();
+}
+initPage();
+</script>
+<style>
+@media (max-width: 900px) { .config-grid { grid-template-columns: 1fr !important; } }
+</style>
+</body>
+</html>
