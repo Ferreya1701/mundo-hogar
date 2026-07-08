@@ -62,6 +62,23 @@
           <option value="bajo">Stock bajo</option>
           <option value="ok">Stock OK</option>
         </select>
+        <select id="filtro-extra" style="min-width:150px">
+          <option value="">Más filtros</option>
+          <option value="sin-precio">💲 Sin precio</option>
+          <option value="sin-imagen">🖼️ Sin imagen</option>
+          <option value="sin-cat">🏷️ Sin categoría</option>
+          <option value="destacados">⭐ Destacados</option>
+          <option value="oferta">🔥 En oferta</option>
+          <option value="incompletos">⚠️ Incompletos</option>
+        </select>
+        <select id="orden" style="min-width:150px">
+          <option value="nombre">Nombre A→Z</option>
+          <option value="precio-desc">Precio: mayor a menor</option>
+          <option value="precio-asc">Precio: menor a mayor</option>
+          <option value="stock-asc">Stock: menor a mayor</option>
+          <option value="stock-desc">Stock: mayor a menor</option>
+          <option value="recientes">Más recientes</option>
+        </select>
         <span class="filter-count" id="filter-count"></span>
       </div>
 
@@ -135,20 +152,53 @@ function getFilters() {
     q:      document.getElementById('q').value.toLowerCase().trim(),
     cat:    document.getElementById('filtro-cat').value,
     estado: document.getElementById('filtro-estado').value,
-    stock:  document.getElementById('filtro-stock').value
+    stock:  document.getElementById('filtro-stock').value,
+    extra:  document.getElementById('filtro-extra').value,
+    orden:  document.getElementById('orden').value
   };
 }
+
+const esIncompleto = p => !(p.precio_minorista > 0) || !p.imagen_principal_url || !p.categoria_id;
 
 function applyFilters() {
   const f = getFilters();
   let list = allProducts;
   if (f.q) list = list.filter(p => (p.nombre||'').toLowerCase().includes(f.q) || (p.sku||'').toLowerCase().includes(f.q));
-  if (f.cat) list = list.filter(p => String(p.categoria_id) === f.cat);
+  if (f.cat === 'sin') list = list.filter(p => !p.categoria_id);
+  else if (f.cat) list = list.filter(p => String(p.categoria_id) === f.cat);
   if (f.estado) list = list.filter(p => p.estado === f.estado);
   if (f.stock === 'sin') list = list.filter(p => p.stock_actual <= 0);
   else if (f.stock === 'bajo') list = list.filter(p => p.stock_actual > 0 && p.stock_minimo > 0 && p.stock_actual <= p.stock_minimo);
   else if (f.stock === 'ok') list = list.filter(p => p.stock_actual > 0 && (p.stock_minimo === 0 || p.stock_actual > p.stock_minimo));
+  if (f.extra === 'sin-precio')  list = list.filter(p => !(p.precio_minorista > 0));
+  else if (f.extra === 'sin-imagen') list = list.filter(p => !p.imagen_principal_url);
+  else if (f.extra === 'sin-cat') list = list.filter(p => !p.categoria_id);
+  else if (f.extra === 'destacados') list = list.filter(p => p.destacado);
+  else if (f.extra === 'oferta') list = list.filter(p => p.en_oferta);
+  else if (f.extra === 'incompletos') list = list.filter(esIncompleto);
+
+  list = [...list];
+  const precio = p => p.en_oferta && p.precio_oferta > 0 ? p.precio_oferta : (p.precio_minorista || 0);
+  if (f.orden === 'precio-desc') list.sort((a,b) => precio(b) - precio(a));
+  else if (f.orden === 'precio-asc') list.sort((a,b) => precio(a) - precio(b));
+  else if (f.orden === 'stock-asc') list.sort((a,b) => a.stock_actual - b.stock_actual);
+  else if (f.orden === 'stock-desc') list.sort((a,b) => b.stock_actual - a.stock_actual);
+  else if (f.orden === 'recientes') list.sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0));
+  else list.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'', 'es'));
   return list;
+}
+
+// Filtros iniciales por URL (los usa el dashboard: ?precio=sin, ?imagen=sin, ?cat=sin, ?destacados=1, ?stock=sin)
+function aplicarParamsURL() {
+  const u = new URLSearchParams(location.search);
+  if (u.get('precio') === 'sin') document.getElementById('filtro-extra').value = 'sin-precio';
+  if (u.get('imagen') === 'sin') document.getElementById('filtro-extra').value = 'sin-imagen';
+  if (u.get('destacados')) document.getElementById('filtro-extra').value = 'destacados';
+  if (u.get('incompletos')) document.getElementById('filtro-extra').value = 'incompletos';
+  if (u.get('stock')) document.getElementById('filtro-stock').value = u.get('stock');
+  if (u.get('estado')) document.getElementById('filtro-estado').value = u.get('estado');
+  if (u.get('cat')) document.getElementById('filtro-cat').value = u.get('cat');
+  if (u.get('q')) document.getElementById('q').value = u.get('q');
 }
 
 function renderTable() {
@@ -174,14 +224,21 @@ function renderTable() {
     const catNombre = cats[p.categoria_id] || '—';
     const sc = Utils.stockClass(p.stock_actual, p.stock_minimo);
     const imgSrc = p.imagen_principal_url || '';
+    const badges = [];
+    if (!(p.precio_minorista > 0)) badges.push('<span class="badge badge-warning">Sin precio</span>');
+    if (!p.imagen_principal_url) badges.push('<span class="badge badge-warning">Sin imagen</span>');
+    if (!p.categoria_id) badges.push('<span class="badge badge-warning">Sin categoría</span>');
+    if (p.en_oferta && p.precio_oferta > 0) badges.push('<span class="badge badge-gold">Oferta</span>');
+    if (!badges.length && p.estado === 'activo') badges.push('<span class="badge badge-success">Completo</span>');
+    const conOferta = p.en_oferta && p.precio_oferta > 0 && p.precio_minorista > 0;
     return `<tr>
       <td>${imgSrc
         ? `<img class="td-img" src="${imgSrc}" alt="${p.nombre}" onerror="this.style.display='none'">`
         : `<div class="td-img-ph">🛍️</div>`}</td>
       <td>
-        <div class="td-product" style="flex-direction:column;align-items:flex-start;gap:2px">
+        <div class="td-product" style="flex-direction:column;align-items:flex-start;gap:3px">
           <div class="td-name">${p.nombre}</div>
-          ${p.marca ? `<div class="td-sku">${p.marca}</div>` : ''}
+          <div class="d-flex gap-2" style="flex-wrap:wrap">${p.marca ? `<span class="td-sku">${p.marca}</span>` : ''}${badges.join('')}</div>
         </div>
       </td>
       <td style="color:var(--muted);font-size:12.5px">${catNombre}</td>
@@ -191,13 +248,18 @@ function renderTable() {
         ${p.stock_minimo>0?`<div style="font-size:10.5px;color:var(--muted)">mín: ${p.stock_minimo}</div>`:''}
       </td>
       <td>${Utils.estadoBadge(p.estado)}</td>
-      <td style="font-size:12.5px">${Utils.currency(p.precio_minorista)}</td>
+      <td style="font-size:12.5px;white-space:nowrap">
+        ${conOferta
+          ? `<s style="color:var(--muted);font-size:11px">${Utils.currency(p.precio_minorista)}</s><br><b style="color:var(--gold-dark)">${Utils.currency(p.precio_oferta)}</b>`
+          : Utils.currency(p.precio_minorista)}
+      </td>
       <td>
         <div class="d-flex gap-2">
-          <a href="/admin/producto-form.html?id=${p.id}" class="btn btn-ghost btn-sm" title="Editar">✏️</a>
-          <button class="btn btn-ghost btn-sm" onclick="toggleEstado(${p.id},'${p.estado}')" title="${p.estado==='activo'?'Desactivar':'Activar'}">
+          <button class="btn btn-ghost btn-sm" onclick="toggleDestacado(${p.id})" data-tip="${p.destacado?'Quitar de destacados':'Destacar en portada'}" style="${p.destacado?'':'filter:grayscale(1);opacity:.55'}">⭐</button>
+          <a href="/admin/producto-form.html?id=${p.id}" class="btn btn-ghost btn-sm" data-tip="Editar">✏️</a>
+          <button class="btn btn-ghost btn-sm" onclick="toggleEstado(${p.id},'${p.estado}')" data-tip="${p.estado==='activo'?'Ocultar de la tienda':'Publicar en la tienda'}">
             ${p.estado==='activo'?'⏸️':'▶️'}</button>
-          <button class="btn btn-ghost btn-sm" onclick="confirmarEliminar(${p.id},'${p.nombre.replace(/'/g,"\\'")}',${p.stock_actual})" title="Eliminar">🗑️</button>
+          <button class="btn btn-ghost btn-sm" onclick="confirmarEliminar(${p.id},'${p.nombre.replace(/'/g,"\\'")}',${p.stock_actual})" data-tip="Eliminar">🗑️</button>
         </div>
       </td>
     </tr>`;
@@ -208,6 +270,18 @@ function renderTable() {
     page, total, PER,
     p => { page = p; renderTable(); }
   );
+}
+
+async function toggleDestacado(id) {
+  const prod = allProducts.find(p => p.id === id);
+  if (!prod) return;
+  const nuevo = !prod.destacado;
+  const { error } = await db.from('productos').update({ destacado: nuevo }).eq('id', id);
+  if (error) { Utils.toast('Error: ' + error.message, 'error'); return; }
+  prod.destacado = nuevo;
+  renderTable();
+  Utils.toast(nuevo ? '⭐ Producto destacado: ya aparece en la portada' : 'Quitado de destacados', 'success');
+  await Utils.log('update', 'productos', id, nuevo ? 'Marcado destacado' : 'Quitado de destacados');
 }
 
 async function toggleEstado(id, estado) {
@@ -248,7 +322,7 @@ async function cargarCategorias() {
 
 async function cargarProductos() {
   const { data, error } = await db.from('productos')
-    .select('id,nombre,slug,sku,marca,categoria_id,stock_actual,stock_minimo,estado,precio_minorista,imagen_principal_url')
+    .select('id,nombre,slug,sku,marca,categoria_id,stock_actual,stock_minimo,estado,precio_minorista,precio_oferta,en_oferta,destacado,imagen_principal_url,created_at')
     .order('nombre');
   if (error) { Utils.toast('Error al cargar productos: ' + error.message, 'error'); return; }
   allProducts = data || [];
@@ -320,7 +394,7 @@ document.getElementById('btn-do-import')?.addEventListener('click', async () => 
 
 // Filtros con debounce
 let debTimer;
-['q','filtro-cat','filtro-estado','filtro-stock'].forEach(id => {
+['q','filtro-cat','filtro-estado','filtro-stock','filtro-extra','orden'].forEach(id => {
   document.getElementById(id)?.addEventListener('input', () => {
     clearTimeout(debTimer);
     debTimer = setTimeout(() => { page=1; renderTable(); }, 200);
@@ -333,6 +407,8 @@ async function initPage() {
   if (!profile) return;
   await Layout.init('productos', 'Productos');
   await Promise.all([cargarCategorias(), cargarProductos()]);
+  aplicarParamsURL();
+  renderTable();
 }
 initPage();
 </script>

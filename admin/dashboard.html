@@ -49,58 +49,94 @@
       <div class="page-header">
         <div>
           <h1 id="welcome-msg">Buen día</h1>
-          <p>Resumen general del negocio</p>
+          <p>Centro de control de Mundo Hogar</p>
         </div>
         <div class="page-header-actions">
           <button class="btn btn-outline btn-sm" onclick="loadData()">↺ Actualizar</button>
-          <a href="/admin/inventario.html" class="btn btn-primary btn-sm">+ Registrar movimiento</a>
+          <a href="/admin/producto-form.html" class="btn btn-primary btn-sm">+ Nuevo producto</a>
         </div>
       </div>
 
       <!-- KPIs -->
       <div class="kpi-grid" id="kpi-grid">
-        <div class="kpi-card"><div class="kpi-icon gold">🛍️</div><div class="kpi-label">Total productos</div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-sub" id="kpi-activos">activos</div></div>
-        <div class="kpi-card"><div class="kpi-icon red">⚠️</div><div class="kpi-label">Sin stock</div><div class="kpi-value" id="kpi-sin-stock">—</div><div class="kpi-sub">stock = 0</div></div>
-        <div class="kpi-card"><div class="kpi-icon blue">🔔</div><div class="kpi-label">Stock bajo</div><div class="kpi-value" id="kpi-bajo">—</div><div class="kpi-sub">≤ stock mínimo</div></div>
-        <div class="kpi-card"><div class="kpi-icon green">📦</div><div class="kpi-label">Movimientos hoy</div><div class="kpi-value" id="kpi-mov-hoy">—</div><div class="kpi-sub" id="kpi-mov-mes">este mes</div></div>
+        <div class="kpi-card" data-href="/admin/productos.html"><div class="kpi-icon gold">🛍️</div><div class="kpi-label">Productos activos</div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-sub" id="kpi-activos">—</div></div>
+        <div class="kpi-card" data-href="/admin/productos.html?precio=sin"><div class="kpi-icon amber">💲</div><div class="kpi-label">Sin precio</div><div class="kpi-value" id="kpi-sin-precio">—</div><div class="kpi-sub">clic para cargarlos</div></div>
+        <div class="kpi-card" data-href="/admin/productos.html?destacados=1"><div class="kpi-icon violet">⭐</div><div class="kpi-label">Destacados</div><div class="kpi-value" id="kpi-destacados">—</div><div class="kpi-sub">visibles en portada</div></div>
+        <div class="kpi-card" data-href="/admin/alertas.html"><div class="kpi-icon red">⚠️</div><div class="kpi-label">Sin stock</div><div class="kpi-value" id="kpi-sin-stock">—</div><div class="kpi-sub" id="kpi-bajo-sub">—</div></div>
+        <div class="kpi-card" data-href="/admin/solicitudes.html?estado=nueva"><div class="kpi-icon blue">💬</div><div class="kpi-label">Solicitudes nuevas</div><div class="kpi-value" id="kpi-solicitudes">—</div><div class="kpi-sub" id="kpi-sol-sub">—</div></div>
+        <div class="kpi-card" data-href="/admin/movimientos.html"><div class="kpi-icon green">📦</div><div class="kpi-label">Movimientos hoy</div><div class="kpi-value" id="kpi-mov-hoy">—</div><div class="kpi-sub" id="kpi-mov-mes">—</div></div>
       </div>
 
-      <!-- Grid de dos columnas -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <!-- Acciones rápidas -->
+      <div class="card mb-4">
+        <div class="card-header"><span class="card-title">⚡ Acciones rápidas</span></div>
+        <div class="card-body">
+          <div class="quick-actions">
+            <a class="quick-action" href="/admin/producto-form.html"><span class="qa-ic">🛍️</span>Agregar producto</a>
+            <a class="quick-action" href="/admin/inventario.html"><span class="qa-ic">📦</span>Registrar movimiento</a>
+            <a class="quick-action" href="/admin/solicitudes.html"><span class="qa-ic">💬</span>Ver solicitudes</a>
+            <a class="quick-action" href="/admin/alertas.html"><span class="qa-ic">🔔</span>Alertas de stock</a>
+            <a class="quick-action" href="/admin/categorias.html"><span class="qa-ic">🏷️</span>Categorías</a>
+            <button class="quick-action" type="button" onclick="window.MHAssistant&&MHAssistant.open()"><span class="qa-ic">✨</span>Asistente MH</button>
+          </div>
+        </div>
+      </div>
 
-        <!-- Alertas de stock -->
+      <!-- Salud del catálogo + Recomendaciones -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" class="dash-2col">
         <div class="card">
           <div class="card-header">
-            <span class="card-title">⚠️ Alertas de Stock</span>
-            <a href="/admin/alertas.html" class="btn btn-ghost btn-sm">Ver todas</a>
+            <span class="card-title">🩺 Salud del catálogo</span>
+            <span class="badge badge-muted" id="salud-score">—</span>
           </div>
-          <div id="alertas-body">
-            <div class="page-loading"><div class="spinner"></div></div>
+          <div class="card-body">
+            <div class="salud-bar-wrap mb-3"><div class="salud-bar" id="salud-bar" style="width:0%;background:var(--success)"></div></div>
+            <div id="salud-items">${'<div class="skel skel-row"></div>'.repeat(4)}</div>
           </div>
         </div>
 
-        <!-- Últimos movimientos -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">💡 Recomendaciones</span></div>
+          <div class="card-body" id="recs-body">
+            <div class="skel skel-row"></div><div class="skel skel-row"></div><div class="skel skel-row"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actividad + Alertas -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px" class="dash-2col">
         <div class="card">
           <div class="card-header">
-            <span class="card-title">📋 Últimos Movimientos</span>
-            <a href="/admin/movimientos.html" class="btn btn-ghost btn-sm">Ver todos</a>
+            <span class="card-title">🕑 Actividad reciente</span>
+            <a href="/admin/movimientos.html" class="btn btn-ghost btn-sm">Ver historial</a>
           </div>
           <div id="mov-body">
             <div class="page-loading"><div class="spinner"></div></div>
           </div>
         </div>
 
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">⚠️ Alertas de stock</span>
+            <a href="/admin/alertas.html" class="btn btn-ghost btn-sm">Ver todas</a>
+          </div>
+          <div id="alertas-body">
+            <div class="page-loading"><div class="spinner"></div></div>
+          </div>
+        </div>
       </div>
 
       <!-- Por categoría -->
       <div class="card mt-3">
         <div class="card-header">
-          <span class="card-title">📊 Productos por Categoría</span>
+          <span class="card-title">📊 Productos por categoría</span>
+          <a href="/admin/categorias.html" class="btn btn-ghost btn-sm">Administrar</a>
         </div>
         <div class="card-body" id="cat-body">
           <div class="page-loading"><div class="spinner"></div></div>
         </div>
       </div>
+      <style>@media(max-width:900px){.dash-2col{grid-template-columns:1fr !important}}</style>
     </main>
   </div>
 </div>
@@ -123,63 +159,118 @@ async function loadData() {
     { count: movHoy },
     { count: movMes },
     { data: movRecientes },
-    { data: catData }
+    solicitudesRes
   ] = await Promise.all([
-    db.from('productos').select('id,nombre,stock_actual,stock_minimo,estado').order('stock_actual'),
+    db.from('productos').select('id,nombre,stock_actual,stock_minimo,estado,precio_minorista,imagen_principal_url,categoria_id,destacado,categorias(nombre)').order('stock_actual'),
     db.from('movimientos_inventario').select('id', {count:'exact',head:true}).gte('created_at', hoy.toISOString()),
     db.from('movimientos_inventario').select('id', {count:'exact',head:true}).gte('created_at', inicioMes),
     db.from('movimientos_inventario')
       .select('id,tipo,cantidad,stock_posterior,created_at,productos(nombre)')
-      .order('created_at',{ascending:false}).limit(8),
-    db.from('productos')
-      .select('categoria_id,categorias(nombre),estado')
+      .order('created_at',{ascending:false}).limit(6),
+    db.from('solicitudes').select('id,estado,cliente_nombre,codigo,created_at').order('created_at',{ascending:false}).limit(200)
   ]);
 
-  const activos    = (productos||[]).filter(p=>p.estado==='activo').length;
-  const sinStock   = (productos||[]).filter(p=>p.estado==='activo'&&p.stock_actual<=0).length;
-  const stockBajo  = (productos||[]).filter(p=>p.estado==='activo'&&p.stock_minimo>0&&p.stock_actual<=p.stock_minimo&&p.stock_actual>0).length;
+  const solicitudes = solicitudesRes.error ? [] : (solicitudesRes.data || []);
+  const activosList = (productos||[]).filter(p=>p.estado==='activo');
+  const activos     = activosList.length;
+  const sinPrecio   = activosList.filter(p=>!(p.precio_minorista>0)).length;
+  const sinImagen   = activosList.filter(p=>!p.imagen_principal_url).length;
+  const sinCat      = activosList.filter(p=>!p.categoria_id).length;
+  const destacados  = activosList.filter(p=>p.destacado).length;
+  const sinStock    = activosList.filter(p=>p.stock_actual<=0).length;
+  const stockBajo   = activosList.filter(p=>p.stock_minimo>0&&p.stock_actual<=p.stock_minimo&&p.stock_actual>0).length;
+  const solNuevas   = solicitudes.filter(s=>s.estado==='nueva').length;
 
-  document.getElementById('kpi-total').textContent   = activos;
-  document.getElementById('kpi-activos').textContent = `${(productos||[]).length} en total`;
-  document.getElementById('kpi-sin-stock').textContent = sinStock;
-  document.getElementById('kpi-bajo').textContent   = stockBajo;
-  document.getElementById('kpi-mov-hoy').textContent = movHoy||0;
-  document.getElementById('kpi-mov-mes').textContent = `${movMes||0} este mes`;
+  document.getElementById('kpi-total').textContent      = activos;
+  document.getElementById('kpi-activos').textContent    = `${(productos||[]).length} en total`;
+  document.getElementById('kpi-sin-precio').textContent = sinPrecio;
+  document.getElementById('kpi-destacados').textContent = destacados;
+  document.getElementById('kpi-sin-stock').textContent  = sinStock;
+  document.getElementById('kpi-bajo-sub').textContent   = stockBajo ? `+ ${stockBajo} con stock bajo` : 'stock = 0';
+  document.getElementById('kpi-solicitudes').textContent = solNuevas;
+  document.getElementById('kpi-sol-sub').textContent    = `${solicitudes.length} en total`;
+  document.getElementById('kpi-mov-hoy').textContent    = movHoy||0;
+  document.getElementById('kpi-mov-mes').textContent    = `${movMes||0} este mes`;
 
-  // Alertas — derivar de la lista ya cargada
-  const alertasEl = document.getElementById('alertas-body');
-  const alertasList = (productos||[])
-    .filter(p => p.estado==='activo' && (p.stock_actual <= 0 || (p.stock_minimo > 0 && p.stock_actual <= p.stock_minimo)))
-    .slice(0, 8);
-  if (!alertasList.length) {
-    alertasEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>Sin alertas de stock</p></div>';
-  } else {
-    alertasEl.innerHTML = '<div>' + alertasList.map(p=>`
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border)">
-        <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">${p.nombre}</div>
-        <span class="stock-num ${Utils.stockClass(p.stock_actual,p.stock_minimo)}">${p.stock_actual}</span>
-      </div>`).join('') + '</div>';
-  }
+  // ── Salud del catálogo ──
+  const problemas = [
+    { n: sinPrecio, crit: sinPrecio > activos*0.4, txt: `producto${sinPrecio!==1?'s':''} sin precio`, btn: 'Cargar precios', href: '/admin/productos.html?precio=sin' },
+    { n: sinImagen, crit: false, txt: `producto${sinImagen!==1?'s':''} sin imagen`, btn: 'Ver', href: '/admin/productos.html?imagen=sin' },
+    { n: sinCat, crit: false, txt: `producto${sinCat!==1?'s':''} sin categoría`, btn: 'Ver', href: '/admin/productos.html?cat=sin' },
+    { n: sinStock, crit: sinStock > 0, txt: `producto${sinStock!==1?'s':''} sin stock cargado`, btn: 'Ver alertas', href: '/admin/alertas.html' },
+    { n: solNuevas, crit: solNuevas > 3, txt: `solicitud${solNuevas!==1?'es':''} sin atender`, btn: 'Responder', href: '/admin/solicitudes.html?estado=nueva' }
+  ];
+  const conProblema = problemas.filter(p=>p.n>0);
+  const completos = activosList.filter(p=>p.precio_minorista>0&&p.imagen_principal_url&&p.categoria_id).length;
+  const pct = activos ? Math.round(completos/activos*100) : 100;
+  const scoreEl = document.getElementById('salud-score');
+  const barEl = document.getElementById('salud-bar');
+  barEl.style.width = pct + '%';
+  barEl.style.background = pct >= 80 ? 'var(--success)' : pct >= 45 ? 'var(--warning)' : 'var(--danger)';
+  scoreEl.textContent = `${pct}% completo`;
+  scoreEl.className = 'badge ' + (pct >= 80 ? 'badge-success' : pct >= 45 ? 'badge-warning' : 'badge-danger');
 
-  // Movimientos recientes
+  document.getElementById('salud-items').innerHTML = conProblema.length
+    ? conProblema.map(p => `
+      <div class="salud-item">
+        <span class="salud-dot ${p.crit?'crit':'warn'}"></span>
+        <span style="flex:1"><b>${p.n}</b> ${p.txt}</span>
+        <a href="${p.href}" class="btn btn-outline btn-sm">${p.btn}</a>
+      </div>`).join('')
+    : '<div class="salud-item"><span class="salud-dot ok"></span><span style="flex:1">Todo en orden: los productos activos tienen precio, imagen y categoría.</span></div>';
+
+  // ── Recomendaciones (basadas en los datos reales) ──
+  const recs = [];
+  if (sinPrecio > 0) recs.push(`Cargá los <b>${sinPrecio} precios que faltan</b>: un precio visible vende más que "Consultar precio".`);
+  if (sinStock === activos) recs.push(`Todavía no hay <b>stock cargado</b>. Registrá una "carga inicial" desde Inventario para activar las alertas automáticas.`);
+  else if (stockBajo > 0) recs.push(`Hay <b>${stockBajo} producto${stockBajo!==1?'s':''} con stock bajo</b>: revisalos antes de quedarte sin mercadería.`);
+  if (solNuevas > 0) recs.push(`Respondé las <b>${solNuevas} solicitud${solNuevas!==1?'es':''} nueva${solNuevas!==1?'s':''}</b>: contestar rápido cierra más ventas.`);
+  if (destacados < 6) recs.push(`Tenés solo <b>${destacados} destacados</b>. Marcá 8–12 productos con buen precio para llenar la portada.`);
+  const conPrecioNoDest = activosList.filter(p=>p.precio_minorista>0 && !p.destacado).length;
+  if (conPrecioNoDest > 0 && destacados < 12) recs.push(`Hay <b>${conPrecioNoDest} productos con precio</b> que podrías destacar en la portada.`);
+  if (!recs.length) recs.push('¡Excelente! No hay pendientes urgentes. Revisá las solicitudes y el stock regularmente.');
+  document.getElementById('recs-body').innerHTML = recs.slice(0,5).map(r =>
+    `<div class="salud-item"><span style="flex-shrink:0">💡</span><span style="flex:1">${r}</span></div>`).join('');
+
+  // ── Actividad reciente: movimientos + solicitudes mezclados ──
+  const actividad = [
+    ...(movRecientes||[]).map(m => ({ fecha: m.created_at, html: `
+      <div style="flex:1;overflow:hidden">
+        <div style="font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.productos?.nombre||'—'}</div>
+        <div style="font-size:11px;color:var(--muted)">${Utils.timeAgo(m.created_at)}</div>
+      </div>
+      ${Utils.tipoMovBadge(m.tipo)}
+      <span style="font-weight:600;font-size:13px;min-width:32px;text-align:right">${m.stock_posterior}</span>` })),
+    ...solicitudes.slice(0,5).map(s => ({ fecha: s.created_at, html: `
+      <div style="flex:1;overflow:hidden">
+        <div style="font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">💬 ${s.cliente_nombre||'Cliente'} <span style="color:var(--muted);font-weight:400">(${s.codigo})</span></div>
+        <div style="font-size:11px;color:var(--muted)">${Utils.timeAgo(s.created_at)}</div>
+      </div>
+      <span class="badge ${s.estado==='nueva'?'badge-warning':'badge-info'}">${s.estado==='nueva'?'Nueva':'Solicitud'}</span>` }))
+  ].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).slice(0,8);
+
   const movEl = document.getElementById('mov-body');
-  if (!(movRecientes||[]).length) {
-    movEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>Sin movimientos registrados</p></div>';
-  } else {
-    movEl.innerHTML = '<div>' + movRecientes.map(m=>`
-      <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border)">
-        <div style="flex:1;overflow:hidden">
-          <div style="font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.productos?.nombre||'—'}</div>
-          <div style="font-size:11px;color:var(--muted)">${Utils.timeAgo(m.created_at)}</div>
-        </div>
-        ${Utils.tipoMovBadge(m.tipo)}
-        <span style="font-weight:600;font-size:13px;min-width:32px;text-align:right">${m.stock_posterior}</span>
-      </div>`).join('') + '</div>';
-  }
+  movEl.innerHTML = actividad.length
+    ? '<div>' + actividad.map(a=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border)">${a.html}</div>`).join('') + '</div>'
+    : '<div class="empty-state"><div class="empty-state-icon">🕑</div><h3>Sin actividad todavía</h3><p>Los movimientos de stock y las solicitudes de clientes van a aparecer acá.</p></div>';
 
-  // Por categoría
+  // ── Alertas de stock ──
+  const alertasEl = document.getElementById('alertas-body');
+  const alertasList = activosList
+    .filter(p => p.stock_actual <= 0 || (p.stock_minimo > 0 && p.stock_actual <= p.stock_minimo))
+    .slice(0, 8);
+  alertasEl.innerHTML = alertasList.length
+    ? '<div>' + alertasList.map(p=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${p.nombre}</div>
+        <span class="stock-num ${Utils.stockClass(p.stock_actual,p.stock_minimo)}">${p.stock_actual}</span>
+        <a href="/admin/inventario.html?producto=${p.id}" class="btn btn-outline btn-sm" data-tip="Registrar entrada">📥</a>
+      </div>`).join('') + '</div>'
+    : '<div class="empty-state"><div class="empty-state-icon">✅</div><p>Sin alertas de stock</p></div>';
+
+  // ── Por categoría ──
   const catMap = {};
-  (catData||[]).forEach(p => {
+  (productos||[]).forEach(p => {
     const cat = p.categorias?.nombre || 'Sin categoría';
     if (!catMap[cat]) catMap[cat] = {total:0,activos:0};
     catMap[cat].total++;
@@ -190,13 +281,19 @@ async function loadData() {
     .sort((a,b)=>b[1].total-a[1].total)
     .map(([cat,c])=>`
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-      <div style="width:140px;font-size:13px;flex-shrink:0">${cat}</div>
+      <div style="width:150px;font-size:13px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cat}</div>
       <div style="flex:1;background:var(--bg);border-radius:99px;height:10px;overflow:hidden">
-        <div style="height:100%;width:${(c.total/maxTotal*100).toFixed(1)}%;background:var(--gold);border-radius:99px"></div>
+        <div style="height:100%;width:${(c.total/maxTotal*100).toFixed(1)}%;background:linear-gradient(90deg,var(--blue),var(--gold));border-radius:99px"></div>
       </div>
       <div style="min-width:40px;text-align:right;font-size:12px;color:var(--muted)">${c.total}</div>
     </div>`).join('');
 }
+
+// KPI cards clickeables
+document.getElementById('kpi-grid').addEventListener('click', e => {
+  const card = e.target.closest('.kpi-card[data-href]');
+  if (card) window.location.href = card.dataset.href;
+});
 
 async function initPage() {
   const profile = await Auth.init();

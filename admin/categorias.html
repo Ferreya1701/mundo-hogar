@@ -127,14 +127,17 @@ function renderTable() {
       <td><div style="font-weight:500">${c.nombre}</div></td>
       <td><code style="font-size:11px;background:var(--bg);padding:2px 6px;border-radius:4px">${c.slug}</code></td>
       <td style="text-align:center">
-        <span style="font-weight:600">${cnt.total}</span>
-        <span style="color:var(--muted);font-size:11px"> (${cnt.activos} act.)</span>
+        ${cnt.total === 0
+          ? '<span class="badge badge-warning" data-tip="Sin productos: no aparece con contenido en la tienda">Vacía</span>'
+          : `<span style="font-weight:600">${cnt.total}</span>
+             <span style="color:var(--muted);font-size:11px"> (${cnt.activos} act.)</span>`}
       </td>
       <td>${c.activo?'<span class="badge badge-success">Activa</span>':'<span class="badge badge-muted">Inactiva</span>'}</td>
       <td>
         <div class="d-flex gap-2">
-          <button class="btn btn-ghost btn-sm" onclick="editarCat(${c.id})" title="Editar">✏️</button>
-          <button class="btn btn-ghost btn-sm" onclick="eliminarCat(${c.id},'${c.nombre.replace(/'/g,"\\'")}')" title="Eliminar">🗑️</button>
+          ${cnt.total > 0 ? `<a href="/admin/productos.html?cat=${c.id}" class="btn btn-ghost btn-sm" data-tip="Ver sus productos">👁️</a>` : ''}
+          <button class="btn btn-ghost btn-sm" onclick="editarCat(${c.id})" data-tip="Editar">✏️</button>
+          <button class="btn btn-ghost btn-sm" onclick="eliminarCat(${c.id},'${c.nombre.replace(/'/g,"\\'")}')" data-tip="Eliminar">🗑️</button>
         </div>
       </td>
     </tr>`;

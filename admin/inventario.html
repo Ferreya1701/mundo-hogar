@@ -164,6 +164,14 @@ async function cargarProductos() {
     .order('nombre');
   allProds = data || [];
   filtrarProductos('');
+
+  // Si venimos desde Alertas/Dashboard con ?producto=ID, preseleccionarlo
+  const preId = new URLSearchParams(location.search).get('producto');
+  if (preId && allProds.some(p => p.id === parseInt(preId))) {
+    document.getElementById('producto_id').value = preId;
+    updateProdInfo();
+    document.getElementById('cantidad').focus();
+  }
 }
 
 function filtrarProductos(q) {
