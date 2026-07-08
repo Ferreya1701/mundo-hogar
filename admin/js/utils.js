@@ -168,6 +168,30 @@ const Utils = {
     return `${cat}-${nom}-${num}`;
   },
 
+  /* ── Skeleton loaders ───────────────────────── */
+  skelRows(n = 5) {
+    let h = '';
+    for (let i = 0; i < n; i++) h += '<div class="skel skel-row"></div>';
+    return `<div style="padding:12px 16px">${h}</div>`;
+  },
+  skelKpis(n = 4) {
+    let h = '';
+    for (let i = 0; i < n; i++) h += '<div class="skel skel-kpi"></div>';
+    return h;
+  },
+
+  /* ── Copiar al portapapeles ─────────────────── */
+  async copy(text, okMsg = 'Copiado al portapapeles') {
+    try {
+      await navigator.clipboard.writeText(text);
+      this.toast(okMsg, 'success', 2200);
+      return true;
+    } catch (e) {
+      this.toast('No se pudo copiar. Seleccioná el texto manualmente.', 'warning');
+      return false;
+    }
+  },
+
   /* ── Paginación ─────────────────────────────── */
   renderPagination(containerEl, page, total, perPage, onPage) {
     const pages = Math.ceil(total / perPage);
