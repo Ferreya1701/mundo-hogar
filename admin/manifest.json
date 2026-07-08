@@ -1,0 +1,17 @@
+{
+  "name": "Mundo Hogar — Administrador",
+  "short_name": "MH Admin",
+  "description": "Panel de administración de Mundo Hogar: productos, categorías, stock, pedidos y configuración del sitio.",
+  "start_url": "/admin/",
+  "scope": "/admin/",
+  "display": "standalone",
+  "background_color": "#0A2E63",
+  "theme_color": "#0A2E63",
+  "lang": "es-AR",
+  "icons": [
+    { "src": "/images/marca/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/images/marca/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/images/marca/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/images/marca/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

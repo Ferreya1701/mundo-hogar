@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/admin/manifest.json">
+  <meta name="theme-color" content="#0A2E63">
+  <link rel="icon" type="image/png" href="/images/marca/favicon.png">
+  <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
   <title>Usuarios — Mundo Hogar Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -11,7 +15,7 @@
 <body>
 <div class="admin-layout">
   <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand"><div class="sidebar-brand-icon">🏠</div><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <div class="sidebar-brand"><img class="sidebar-brand-icon" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="32" height="32"><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
     <nav class="sidebar-nav" id="sidebar-nav"></nav>
     <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
   </aside>
@@ -212,5 +216,6 @@ async function initPage() {
 }
 initPage();
 </script>
+  <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/admin/sw.js').catch(()=>{}); }</script>
 </body>
 </html>
