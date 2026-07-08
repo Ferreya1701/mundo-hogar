@@ -61,6 +61,9 @@
         </div>
       </div>
 
+      <!-- Vista rápida por estado -->
+      <div class="chips" id="estado-chips" style="margin-bottom:14px"></div>
+
       <div class="filters-bar">
         <div class="search-bar" style="flex:1;min-width:200px;max-width:340px">
           <span class="search-icon">🔍</span>
@@ -170,10 +173,37 @@ function renderTable() {
     p => { page = p; renderTable(); });
 }
 
+// ── Generador de respuestas (plantillas con los datos reales del pedido) ──
+function armarRespuesta(s, tipo) {
+  const items = s.solicitud_items || [];
+  const nombre = (s.cliente_nombre || '').split(' ')[0] || 'Hola';
+  const listado = items.map(i =>
+    `• ${i.cantidad}x ${i.nombre}${i.precio_unitario != null ? ` — ${money(i.precio_unitario)} c/u` : ' — a cotizar'}`
+  ).join('\n');
+  const totalTxt = s.total_estimado != null
+    ? `Total estimado: ${money(s.total_estimado)}${s.tiene_pendientes ? ' (+ los productos a cotizar)' : ''}`
+    : 'Te pasamos la cotización completa a la brevedad.';
+  const entregaTxt = s.tipo_entrega === 'envio'
+    ? `Coordinamos el envío${s.localidad ? ` a ${s.localidad}` : ''} y te confirmamos el costo.`
+    : s.tipo_entrega === 'retiro'
+      ? 'Podés retirarlo por nuestro local cuando esté confirmado.'
+      : 'Decinos si preferís envío o retiro y lo coordinamos.';
+
+  if (tipo === 'contacto') {
+    return `¡Hola ${nombre}! 😊 Te escribimos de Mundo Hogar por tu pedido *${s.codigo}*.\n\n${listado ? 'Recibimos tu solicitud:\n' + listado + '\n\n' : ''}${totalTxt}\n\n${entregaTxt}\n\nAceptamos Mercado Pago, transferencia y efectivo. ¿Avanzamos?`;
+  }
+  if (tipo === 'cotizacion') {
+    return `¡Hola ${nombre}! Te pasamos la cotización de tu pedido *${s.codigo}*:\n\n${listado || '(completar productos y precios)'}\n\n${totalTxt}\n\n${entregaTxt}\n\nCualquier duda estamos a disposición. ¡Gracias por elegir Mundo Hogar!`;
+  }
+  // seguimiento
+  return `¡Hola ${nombre}! ¿Cómo estás? Te escribimos de Mundo Hogar por tu consulta *${s.codigo}*. ¿Pudiste verla? Si te quedó alguna duda o querés que te reservemos los productos, avisanos. ¡Seguimos en contacto! 😊`;
+}
+
 function verDetalle(id) {
   const s = solicitudes.find(x => x.id === id); if (!s) return;
   const items = s.solicitud_items || [];
   const slot = document.getElementById('modal-slot');
+  const tel = esc((s.telefono||'').replace(/\D/g,''));
   slot.innerHTML = `<div class="sol-modal-bg" id="modal-bg">
     <div class="sol-modal" role="dialog" aria-modal="true">
       <h3>${esc(s.cliente_nombre)}</h3>
@@ -196,13 +226,39 @@ function verDetalle(id) {
       </table>
       <div style="text-align:right;font-weight:700;margin-top:6px">Total estimado: ${money(s.total_estimado)}</div>` : '<p style="color:#888;font-size:13px;margin:12px 0">Sin productos (consulta general).</p>'}
       ${s.observaciones ? `<div class="sol-obs"><b>Observaciones del cliente:</b><br>${esc(s.observaciones)}</div>` : ''}
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
-        <a class="btn btn-primary btn-sm" target="_blank" rel="noopener"
-           href="https://wa.me/${esc((s.telefono||'').replace(/\D/g,''))}?text=${encodeURIComponent(`Hola ${s.cliente_nombre}! Te escribimos de Mundo Hogar por tu solicitud ${s.codigo}.`)}">Responder por WhatsApp</a>
+
+      <!-- Generador de respuesta -->
+      <div style="background:var(--violet-bg,#F3F0FF);border-radius:10px;padding:14px;margin-top:16px">
+        <div style="font-size:12px;font-weight:700;color:var(--violet-dark,#6244E0);margin-bottom:8px">✨ Respuesta sugerida (editala antes de enviar)</div>
+        <div class="d-flex gap-2" style="flex-wrap:wrap;margin-bottom:8px">
+          <button class="chip" data-plantilla="contacto">👋 Primer contacto</button>
+          <button class="chip" data-plantilla="cotizacion">💲 Enviar cotización</button>
+          <button class="chip" data-plantilla="seguimiento">🔄 Seguimiento</button>
+        </div>
+        <textarea id="respuesta-txt" rows="6" style="font-size:12.5px;background:#fff"></textarea>
+        <div class="d-flex gap-2" style="justify-content:flex-end;margin-top:8px">
+          <button class="btn btn-outline btn-sm" id="btn-copiar-resp">📋 Copiar</button>
+          <a class="btn btn-primary btn-sm" id="btn-wa-resp" target="_blank" rel="noopener" href="#">Abrir WhatsApp con este mensaje</a>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
         <button class="btn btn-ghost btn-sm" id="modal-cerrar">Cerrar</button>
       </div>
     </div>
   </div>`;
+
+  const txtEl = document.getElementById('respuesta-txt');
+  const waBtn = document.getElementById('btn-wa-resp');
+  const setPlantilla = (tipo) => {
+    txtEl.value = armarRespuesta(s, tipo);
+    waBtn.href = `https://wa.me/${tel}?text=${encodeURIComponent(txtEl.value)}`;
+    document.querySelectorAll('[data-plantilla]').forEach(b => b.classList.toggle('active', b.dataset.plantilla === tipo));
+  };
+  setPlantilla(s.estado === 'nueva' ? 'contacto' : s.estado === 'contactado' ? 'cotizacion' : 'seguimiento');
+  txtEl.addEventListener('input', () => { waBtn.href = `https://wa.me/${tel}?text=${encodeURIComponent(txtEl.value)}`; });
+  document.querySelectorAll('[data-plantilla]').forEach(b => b.addEventListener('click', () => setPlantilla(b.dataset.plantilla)));
+  document.getElementById('btn-copiar-resp').addEventListener('click', () => Utils.copy(txtEl.value, 'Respuesta copiada: pegala en WhatsApp'));
   document.getElementById('modal-cerrar').onclick = () => slot.innerHTML = '';
   document.getElementById('modal-bg').addEventListener('click', e => { if (e.target.id === 'modal-bg') slot.innerHTML = ''; });
 }
@@ -215,6 +271,23 @@ async function cambiarEstado(id, estado, sel) {
   sel.className = 'estado-select est-' + estado;
   Utils.toast('Estado actualizado', 'success');
 }
+
+function renderChips() {
+  const actual = document.getElementById('filtro-estado').value;
+  const counts = { '': solicitudes.length };
+  solicitudes.forEach(s => { counts[s.estado] = (counts[s.estado] || 0) + 1; });
+  const chips = [['', 'Todas'], ...Object.entries(ESTADOS)];
+  document.getElementById('estado-chips').innerHTML = chips
+    .filter(([v]) => v === '' || counts[v])
+    .map(([v, l]) => `<button class="chip${v === actual ? ' active' : ''}" data-estado="${v}">${l} <span class="chip-n">${counts[v] || 0}</span></button>`)
+    .join('');
+}
+
+document.getElementById('estado-chips').addEventListener('click', e => {
+  const chip = e.target.closest('[data-estado]'); if (!chip) return;
+  document.getElementById('filtro-estado').value = chip.dataset.estado;
+  page = 1; renderChips(); renderTable();
+});
 
 async function cargar() {
   const { data, error } = await db.from('solicitudes')
@@ -234,6 +307,7 @@ async function cargar() {
   const nuevas = solicitudes.filter(s => s.estado === 'nueva').length;
   document.getElementById('subtitle').textContent =
     `${solicitudes.length} solicitudes` + (nuevas ? ` · ${nuevas} sin atender` : '');
+  renderChips();
   renderTable();
 }
 
@@ -257,14 +331,17 @@ document.getElementById('btn-export').addEventListener('click', () => {
   })), `solicitudes-${new Date().toISOString().slice(0,10)}.csv`);
 });
 ['q','filtro-estado','filtro-canal'].forEach(id => {
-  document.getElementById(id).addEventListener('input', () => { page = 1; renderTable(); });
-  document.getElementById(id).addEventListener('change', () => { page = 1; renderTable(); });
+  document.getElementById(id).addEventListener('input', () => { page = 1; renderChips(); renderTable(); });
+  document.getElementById(id).addEventListener('change', () => { page = 1; renderChips(); renderTable(); });
 });
 
 (async function () {
   const profile = await Auth.init();
   if (!profile) return;
   await Layout.init('solicitudes', 'Solicitudes de WhatsApp');
+  // Filtro inicial por URL (lo usa el dashboard: ?estado=nueva)
+  const estadoURL = new URLSearchParams(location.search).get('estado');
+  if (estadoURL && ESTADOS[estadoURL]) document.getElementById('filtro-estado').value = estadoURL;
   await cargar();
 })();
 </script>
