@@ -390,15 +390,17 @@ document.getElementById('btn-guardar')?.addEventListener('click', async () => {
   if (isEdit) {
     ({ error, data } = await db.from('productos').update(payload).eq('id',editId).select().single());
   } else {
-    payload.stock_actual = int(val('stock_actual'));
+    // stock_actual arranca en 0: la carga inicial se asienta SOLO por fn_registrar_movimiento
+    // (si se precargaba acá y el RPC volvía a sumarla, el stock quedaba duplicado — bug corregido 2026-07-13).
+    const stockInicial = int(val('stock_actual'));
+    payload.stock_actual = 0;
     payload.created_by = currentProfile?.id;
     ({ error, data } = await db.from('productos').insert(payload).select().single());
 
-    // Registrar movimiento inicial si tiene stock
-    if (!error && data && payload.stock_actual > 0) {
+    if (!error && data && stockInicial > 0) {
       await db.rpc('fn_registrar_movimiento', {
         p_producto_id: data.id, p_tipo: 'carga_inicial',
-        p_cantidad: payload.stock_actual, p_motivo: 'Carga inicial al crear producto'
+        p_cantidad: stockInicial, p_motivo: 'Carga inicial al crear producto'
       });
     }
   }

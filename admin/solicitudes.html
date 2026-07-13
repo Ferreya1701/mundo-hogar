@@ -264,12 +264,35 @@ function verDetalle(id) {
 }
 
 async function cambiarEstado(id, estado, sel) {
-  const { error } = await db.from('solicitudes').update({ estado }).eq('id', id);
-  if (error) { Utils.toast('No se pudo actualizar: ' + error.message, 'error'); renderTable(); return; }
+  // Vía correcta: RPC con máquina de estados + stock (sql/007-nucleo-stock.sql).
+  let { data, error } = await db.rpc('cambiar_estado_solicitud', { p_solicitud_id: id, p_nuevo_estado: estado });
+  if (error && (error.code === 'PGRST202' || (error.message || '').includes('cambiar_estado_solicitud'))) {
+    // La RPC todavía no está desplegada: degradar al UPDATE directo (comportamiento previo, sin stock).
+    Utils.toast('Aviso: falta ejecutar sql/007-nucleo-stock.sql — este cambio NO mueve stock.', 'error');
+    ({ error } = await db.from('solicitudes').update({ estado }).eq('id', id));
+    data = null;
+  }
+  if (error) {
+    const msg = (error.message || '');
+    if (msg.includes('stock_insuficiente')) {
+      let det = '';
+      try { det = (JSON.parse(error.details || '[]'))
+        .map(f => `• ${f.nombre}: pedido ${f.pedido}, disponible ${f.disponible}`).join('\n'); } catch (_) {}
+      Utils.toast('Stock insuficiente para confirmar:\n' + (det || msg) + '\nAjustá el stock en Inventario o cancelá.', 'error');
+    } else if (msg.includes('transicion_invalida')) {
+      Utils.toast(error.hint || 'Esa transición de estado no está permitida.', 'error');
+    } else if (msg.includes('sin_permiso')) {
+      Utils.toast('Tu rol no puede cambiar estados de solicitudes.', 'error');
+    } else {
+      Utils.toast('No se pudo actualizar: ' + msg, 'error');
+    }
+    renderTable(); return;
+  }
   const s = solicitudes.find(x => x.id === id);
   if (s) s.estado = estado;
   sel.className = 'estado-select est-' + estado;
-  Utils.toast('Estado actualizado', 'success');
+  const movs = data && data.movimientos;
+  Utils.toast(movs ? `Estado actualizado · ${movs} movimiento(s) de stock registrados` : 'Estado actualizado', 'success');
 }
 
 function renderChips() {
