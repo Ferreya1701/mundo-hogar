@@ -3,19 +3,30 @@
 > Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-07-13.
 
 ## Fase actual
-**Núcleo de stock ↔ ventas implementado en local (sin commit/deploy).** Auditoría 2026-07-13 y paquete
-completo de entregables en `..\..\08_ENTREGABLES\` (auditoría, procesos, diseño de stock, modelo de
-datos, roadmap, propuesta ejecutiva, demo HTML).
+**Núcleo de stock ↔ ventas DESPLEGADO Y VERIFICADO en producción (2026-07-13).** `sql/006` y `sql/007`
+ejecutados en Supabase real; fix de `admin/solicitudes.html` y `admin/producto-form.html` commiteados y
+pusheados a `main` (commit `3e9c3dd`), desplegados por Vercel. Paquete completo de entregables en
+`..\..\08_ENTREGABLES\` y `docs\sistema-operativo-mundo-hogar\` (auditoría, procesos, diseño de stock,
+modelo de datos, roadmap, propuesta ejecutiva, demo HTML).
 
 ## Hecho en esta sesión (2026-07-13)
-- **`sql/007-nucleo-stock.sql` (NUEVO)**: (1) cierra hallazgo crítico H1 — `fn_registrar_movimiento` era
-  ejecutable por anónimos vía REST (SECURITY DEFINER sin REVOKE ni chequeo de rol); ahora exige rol
-  staff + REVOKE de PUBLIC/anon. (2) RPC `cambiar_estado_solicitud`: máquina de estados, confirmar
-  descuenta stock (`salida_venta`, referencia = código MH), cancelar repone (`devolucion_cliente`),
-  idempotente vía `solicitudes.stock_descontado`. (3) Tabla `solicitud_eventos` (bitácora inmutable).
-  (4) Trigger que bloquea UPDATE directo de `estado`. Idempotente; pendiente de ejecutar en Supabase.
-- **`admin/solicitudes.html`**: `cambiarEstado` usa la RPC; degrada al UPDATE directo con aviso si el
-  007 no está ejecutado; errores amigables (faltantes por producto, transición inválida, permisos).
+- **`sql/007-nucleo-stock.sql` — EJECUTADO EN PRODUCCIÓN**: (1) cierra hallazgo crítico H1 —
+  `fn_registrar_movimiento` era ejecutable por anónimos vía REST; verificado en vivo con una llamada
+  REST anónima real → **401 `permission denied`** (antes habría funcionado). (2) RPC
+  `cambiar_estado_solicitud`: máquina de estados, confirmar descuenta stock (`salida_venta`, referencia =
+  código MH), cancelar repone (`devolucion_cliente`), idempotente vía `solicitudes.stock_descontado`.
+  (3) Tabla `solicitud_eventos` (bitácora inmutable). (4) Trigger que bloquea UPDATE directo de `estado`
+  — funcionando: bloqueó correctamente los primeros intentos hechos con el frontend viejo (ver abajo).
+- **`admin/solicitudes.html`**: `cambiarEstado` usa la RPC; degrada al UPDATE directo con aviso si la
+  RPC no está desplegada; errores amigables (faltantes por producto, transición inválida, permisos).
+  **Desplegado a producción** — antes de este deploy, el trigger de arriba bloqueaba TODO cambio de
+  estado en el panel en vivo (correcto: protegía contra el UPDATE directo del código viejo).
+- **`admin/producto-form.html`**: fix del bug de stock duplicado al crear producto, desplegado.
+- **Corrección de dato**: el plan FREE de Supabase **NO tiene backups automáticos** (se creía que sí,
+  por un informe previo sin verificar). Si se necesita backup real, hay que hacerlo manual o subir a Pro.
+- **Ciclo completo verificado en producción**: solicitud de prueba `MH-260713-E57F` creada, confirmada
+  (bloqueada correctamente por falta de stock del producto de prueba, y luego por el trigger mientras el
+  frontend viejo seguía desplegado), y tras el deploy del fix, el flujo confirmar/cancelar quedó operativo.
 
 ## Fase 2 (previa) — resumen
 
@@ -37,11 +48,12 @@ datos, roadmap, propuesta ejecutiva, demo HTML).
 137 productos vivos; agregar/quitar/cantidades/persistencia OK; ficha OK (galería, relacionados, JSON-LD); carrito mixto y totales "a confirmar" OK; validación de formulario OK; mensaje WhatsApp sin undefined/null OK; RPC 404 → fallback OK; estados con precio/oferta/sin stock/precio-0 OK; categoría y 404 OK; móvil OK.
 
 ## Bloqueos
-1. **Ejecutar `sql/006-puesta-a-punto.sql` y luego `sql/007-nucleo-stock.sql` en Supabase → SQL Editor**
-   (dueño/TIAF). El 006 habilita solicitudes+imágenes; el 007 cierra el agujero de seguridad y conecta
-   stock↔ventas. Los cambios locales de esta sesión están SIN commitear (revisar y commitear).
+1. ~~Ejecutar `sql/006` y `sql/007` en Supabase~~ — **HECHO 2026-07-13**, verificado en producción.
 2. Precios: se cargan desde /admin cuando el dueño quiera (catálogo externo en Drive; NO automatizar).
+   **0 de 137 productos con precio/stock al 2026-07-05** — sigue pendiente de carga real.
 3. Confirmar usuario admin creado en Supabase.
+4. La rama `research/sistema-operativo-mundo-hogar` (docs del sistema operativo integral completo,
+   `sql/borradores-no-ejecutados/`) sigue sin mergear a `main` — pendiente de revisión.
 
 ## Archivos importantes
 - `assets/catalogo.js` — MH: catálogo, precios, Cart, settings, track, flag pagos.
