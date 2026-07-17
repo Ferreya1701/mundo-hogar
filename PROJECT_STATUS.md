@@ -27,6 +27,12 @@ modelo de datos, roadmap, propuesta ejecutiva, demo HTML).
 - **Ciclo completo verificado en producción**: solicitud de prueba `MH-260713-E57F` creada, confirmada
   (bloqueada correctamente por falta de stock del producto de prueba, y luego por el trigger mientras el
   frontend viejo seguía desplegado), y tras el deploy del fix, el flujo confirmar/cancelar quedó operativo.
+- **`sql/008-blindaje-stock.sql` — EJECUTADO EN PRODUCCIÓN** (mismo día, más tarde): cierra el ítem C3 —
+  `stock_actual` ya no se puede editar directo (ni por REST con sesión staff ni por SQL a mano): el trigger
+  `tr_productos_guard_stock` exige que todo cambio de stock pase por `fn_registrar_movimiento` (flag
+  transaccional `mh.stock`). El alta de producto debe nacer con stock 0. Sin CHECK >= 0 duro a propósito
+  (backorder explícito con `permite_venta_sin_stock` sigue permitido). Escape de emergencia documentado
+  en el propio script (DISABLE TRIGGER).
 
 ## Fase 2 (previa) — resumen
 
