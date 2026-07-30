@@ -101,6 +101,7 @@
         <span class="barra-masiva-n"><b id="sel-n">0</b> seleccionados</span>
         <button type="button" class="btn btn-outline btn-sm" data-masiva="activo">▶️ Publicar</button>
         <button type="button" class="btn btn-outline btn-sm" data-masiva="inactivo">⏸️ Ocultar</button>
+        <button type="button" class="btn btn-outline btn-sm" data-masiva="precios">💲 Ajustar precios</button>
         <button type="button" class="btn btn-outline btn-sm" data-masiva="destacar">⭐ Destacar</button>
         <button type="button" class="btn btn-outline btn-sm" data-masiva="no-destacar">☆ Quitar destacado</button>
         <button type="button" class="btn btn-outline btn-sm" data-masiva="exportar">⬇ Exportar selección</button>
@@ -157,6 +158,69 @@
     <div class="modal-footer">
       <button class="btn btn-outline" id="close-import2">Cancelar</button>
       <button class="btn btn-primary" id="btn-do-import">Importar ahora</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal ajuste masivo de precios -->
+<div id="modal-precios" class="modal-backdrop" style="display:none">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3 class="modal-title">Ajustar precios</h3>
+      <button class="modal-close" data-cerrar-precios>✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid grid-3" style="margin-bottom:16px">
+        <div class="form-group">
+          <label for="pr-tipo">Tipo de ajuste</label>
+          <select id="pr-tipo">
+            <option value="pct">Porcentaje (%)</option>
+            <option value="fijo">Monto fijo ($)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="pr-valor">Valor</label>
+          <input type="number" id="pr-valor" inputmode="decimal" step="0.01" placeholder="Ej: 15">
+          <span class="form-hint">Negativo para descontar (ej: -10)</span>
+        </div>
+        <div class="form-group">
+          <label for="pr-redondeo">Redondear a</label>
+          <select id="pr-redondeo">
+            <option value="0">Sin redondear</option>
+            <option value="10">$ 10</option>
+            <option value="100" selected>$ 100</option>
+            <option value="1000">$ 1.000</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px">
+        <label for="pr-campo">Aplicar sobre</label>
+        <select id="pr-campo">
+          <option value="precio_minorista">Precio minorista</option>
+          <option value="precio_mayorista">Precio mayorista</option>
+        </select>
+      </div>
+
+      <div class="section-divider">Vista previa</div>
+      <div id="pr-aviso"></div>
+      <div class="table-wrap" style="max-height:260px;overflow-y:auto">
+        <table>
+          <thead><tr><th>Producto</th><th style="text-align:right">Ahora</th><th style="text-align:right">Queda en</th></tr></thead>
+          <tbody id="pr-preview"></tbody>
+        </table>
+      </div>
+
+      <div id="pr-progreso" style="display:none;margin-top:14px">
+        <div style="background:var(--bg);border-radius:var(--r);height:8px;overflow:hidden;margin-bottom:8px">
+          <div id="pr-barra" style="height:100%;background:var(--gold);width:0%;transition:width .3s"></div>
+        </div>
+        <div id="pr-estado" style="font-size:12px;color:var(--muted)"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" data-cerrar-precios>Cancelar</button>
+      <button class="btn btn-primary" id="pr-aplicar" disabled>Aplicar</button>
     </div>
   </div>
 </div>
@@ -654,6 +718,8 @@ document.getElementById('barra-masiva')?.addEventListener('click', async e => {
     return;
   }
 
+  if (accion === 'precios') { abrirModalPrecios(); return; }
+
   const cfg = MASIVAS[accion];
   if (!cfg) return;
 
@@ -704,6 +770,130 @@ document.getElementById('barra-masiva')?.addEventListener('click', async e => {
     Utils.toast('No se pudo aplicar el cambio. No se modificó ningún producto.', 'error', 7000);
   }
   renderTable();
+});
+
+/* ── Ajuste masivo de precios ───────────────────────────────────
+   Con inflación, retocar 80 precios de a uno no es viable. Toca plata,
+   así que muestra el antes→después antes de confirmar y deja asiento
+   por producto con el valor viejo y el nuevo. */
+const modalPrecios = document.getElementById('modal-precios');
+
+/* Calcula el precio nuevo. Devuelve null si el producto no tiene precio
+   de partida: un porcentaje sobre "sin precio" no significa nada. */
+function precioAjustado(actual, tipo, valor, redondeo) {
+  if (!(actual > 0)) return null;
+  let nuevo = tipo === 'pct' ? actual * (1 + valor / 100) : actual + valor;
+  if (nuevo < 0) nuevo = 0;
+  if (redondeo > 0) nuevo = Math.round(nuevo / redondeo) * redondeo;
+  return Math.round(nuevo * 100) / 100;
+}
+
+function leerAjuste() {
+  return {
+    tipo:     document.getElementById('pr-tipo').value,
+    valor:    Number(document.getElementById('pr-valor').value),
+    redondeo: Number(document.getElementById('pr-redondeo').value),
+    campo:    document.getElementById('pr-campo').value
+  };
+}
+
+/* Devuelve solo los que efectivamente cambian de precio. */
+function calcularAfectados() {
+  const { tipo, valor, redondeo, campo } = leerAjuste();
+  if (!isFinite(valor) || valor === 0) return { cambian: [], sinPrecio: [] };
+  const sel = allProducts.filter(p => seleccion.has(p.id));
+  const cambian = [], sinPrecio = [];
+  sel.forEach(p => {
+    const actual = p[campo];
+    const nuevo = precioAjustado(actual, tipo, valor, redondeo);
+    if (nuevo === null) sinPrecio.push(p);
+    else if (nuevo !== actual) cambian.push({ p, actual, nuevo });
+  });
+  return { cambian, sinPrecio };
+}
+
+function pintarPreview() {
+  const { campo } = leerAjuste();
+  const { cambian, sinPrecio } = calcularAfectados();
+  const etiqueta = campo === 'precio_minorista' ? 'minorista' : 'mayorista';
+
+  const avisos = [];
+  if (sinPrecio.length) avisos.push(
+    `<div class="pr-aviso warn">⚠️ ${sinPrecio.length} producto${sinPrecio.length!==1?'s':''} sin precio ${etiqueta} cargado: se ${sinPrecio.length!==1?'saltan':'salta'}.</div>`);
+  if (!cambian.length) avisos.push(
+    `<div class="pr-aviso">Ningún precio cambia con estos valores.</div>`);
+  document.getElementById('pr-aviso').innerHTML = avisos.join('');
+
+  document.getElementById('pr-preview').innerHTML = cambian.slice(0, 40).map(({p, actual, nuevo}) => `
+    <tr>
+      <td>${esc(p.nombre)}</td>
+      <td style="text-align:right;color:var(--muted)">${Utils.currency(actual)}</td>
+      <td style="text-align:right;font-weight:600;color:${nuevo>actual?'var(--success)':'var(--danger)'}">
+        ${Utils.currency(nuevo)}</td>
+    </tr>`).join('') +
+    (cambian.length > 40 ? `<tr><td colspan="3" style="color:var(--muted);font-size:12px">…y ${cambian.length-40} más</td></tr>` : '');
+
+  const btn = document.getElementById('pr-aplicar');
+  btn.disabled = cambian.length === 0;
+  btn.textContent = cambian.length ? `Aplicar a ${cambian.length} producto${cambian.length!==1?'s':''}` : 'Aplicar';
+}
+
+function abrirModalPrecios() {
+  document.getElementById('pr-valor').value = '';
+  document.getElementById('pr-progreso').style.display = 'none';
+  modalPrecios.style.display = 'flex';
+  pintarPreview();
+  document.getElementById('pr-valor').focus();
+}
+
+['pr-tipo','pr-valor','pr-redondeo','pr-campo'].forEach(id =>
+  document.getElementById(id)?.addEventListener('input', pintarPreview));
+document.querySelectorAll('[data-cerrar-precios]').forEach(b =>
+  b.addEventListener('click', () => { modalPrecios.style.display = 'none'; }));
+
+document.getElementById('pr-aplicar')?.addEventListener('click', async () => {
+  const { cambian } = calcularAfectados();
+  if (!cambian.length) return;
+  const { campo, tipo, valor } = leerAjuste();
+  const resumen = `${tipo === 'pct' ? valor + '%' : Utils.currency(valor)} sobre el precio ${campo === 'precio_minorista' ? 'minorista' : 'mayorista'}`;
+
+  const ok = await Utils.confirm(
+    `Se van a cambiar los precios de <b>${cambian.length} producto${cambian.length!==1?'s':''}</b> (${esc(resumen)}).
+     <br><br>Los precios nuevos se ven en la tienda apenas se guarden.`,
+    'Confirmar cambio de precios', 'Aplicar', false);
+  if (!ok) return;
+
+  const botones = modalPrecios.querySelectorAll('button');
+  botones.forEach(b => b.disabled = true);
+  document.getElementById('pr-progreso').style.display = 'block';
+
+  let listos = 0; const fallidos = [];
+  for (let i = 0; i < cambian.length; i++) {
+    const { p, actual, nuevo } = cambian[i];
+    const { error } = await db.from('productos').update({ [campo]: nuevo }).eq('id', p.id);
+    if (error) { console.error('[precios]', error); fallidos.push(p.nombre); }
+    else {
+      p[campo] = nuevo; listos++;
+      // Asiento individual: sin esto no se puede reconstruir quién cambió qué
+      await Utils.log('update', 'productos', p.id,
+        `Ajuste masivo de precio (${resumen})`, { [campo]: actual }, { [campo]: nuevo });
+    }
+    const pct = Math.round((i + 1) / cambian.length * 100);
+    document.getElementById('pr-barra').style.width = pct + '%';
+    document.getElementById('pr-estado').textContent = `Actualizando ${i + 1} de ${cambian.length}...`;
+  }
+
+  botones.forEach(b => b.disabled = false);
+  modalPrecios.style.display = 'none';
+  renderTable();
+
+  if (!fallidos.length) {
+    Utils.toast(`${listos} precio${listos!==1?'s':''} actualizado${listos!==1?'s':''}`, 'success');
+    limpiarSeleccion(); renderTable();
+  } else {
+    Utils.toast(`${listos} actualizados, ${fallidos.length} fallaron. La selección queda para reintentar.`,
+                'warning', 8000);
+  }
 });
 
 async function cargarCategorias() {

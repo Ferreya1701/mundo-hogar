@@ -311,6 +311,13 @@ tbody tr.fila-sel td { background:var(--info-bg); }
 }
 
 .chips-filtro { margin:-4px 0 14px; }
+
+/* Avisos de la vista previa del ajuste de precios */
+.pr-aviso {
+  font-size:12.5px; color:var(--muted); background:var(--bg);
+  border-radius:var(--r); padding:8px 12px; margin-bottom:10px;
+}
+.pr-aviso.warn { background:var(--warning-bg); color:#92400E; }
 /* El destacado no se comunica solo por color: aria-pressed lo dice
    y de paso maneja el estilo, sin style inline. */
 .act-destacar[aria-pressed="false"] { filter:grayscale(1); opacity:.55; }
@@ -498,14 +505,20 @@ select {
 .modal {
   background:#fff; border-radius:var(--r-lg); width:100%;
   max-width:480px; box-shadow:var(--shadow-lg); animation:slideUp .2s ease;
+  /* Sin tope de alto, un modal largo (ej. ajuste de precios con su vista
+     previa) se salía de la pantalla en celular y el botón de aplicar
+     quedaba inalcanzable. El cuerpo scrollea; cabecera y pie no. */
+  max-height:calc(100vh - 32px);
+  display:flex; flex-direction:column;
 }
 .modal-lg { max-width:680px; }
 .modal-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px 0; }
 .modal-title  { font-size:15px; font-weight:700; color:var(--night); }
 .modal-close  { background:none; border:none; cursor:pointer; color:var(--muted); font-size:20px; padding:4px; border-radius:4px; line-height:1; }
 .modal-close:hover { background:var(--bg); color:var(--night); }
-.modal-body   { padding:20px 24px; }
-.modal-footer { padding:0 24px 20px; display:flex; justify-content:flex-end; gap:8px; }
+.modal-body   { padding:20px 24px; overflow-y:auto; flex:1; }
+.modal-header, .modal-footer { flex-shrink:0; }
+.modal-footer { padding:16px 24px 20px; display:flex; justify-content:flex-end; gap:8px; }
 
 /* ── Toasts ─────────────────────────────────────────────────── */
 #toast-container { position:fixed; top:16px; right:16px; z-index:999; display:flex; flex-direction:column; gap:8px; pointer-events:none; }
