@@ -5,6 +5,7 @@ const Layout = {
     { id:'solicitudes',label:'Solicitudes WhatsApp', icon:'💬', href:'/admin/solicitudes.html',    section:'Ventas' },
     { id:'productos',  label:'Productos',            icon:'🛍️', href:'/admin/productos.html',      section:'Catálogo' },
     { id:'categorias', label:'Categorías',           icon:'🏷️', href:'/admin/categorias.html',     section:'Catálogo' },
+    { id:'carga-stock',label:'Carga de Stock',       icon:'📥', href:'/admin/carga-stock.html',    section:'Stock' },
     { id:'inventario', label:'Registrar Movimiento', icon:'📦', href:'/admin/inventario.html',     section:'Stock' },
     { id:'movimientos',label:'Historial',            icon:'📋', href:'/admin/movimientos.html',    section:'Stock' },
     { id:'alertas',    label:'Alertas de Stock',     icon:'🔔', href:'/admin/alertas.html',        section:'Stock' },

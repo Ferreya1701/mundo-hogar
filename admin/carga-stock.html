@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/admin/manifest.json">
+  <meta name="theme-color" content="#0A2E63">
+  <link rel="icon" type="image/png" href="/images/marca/favicon.png">
+  <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
+  <title>Carga de stock — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body class="carga-stock">
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><img class="sidebar-brand-icon" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="32" height="32"><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/admin/inventario.html" class="btn btn-ghost btn-sm">📦 Movimiento suelto</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div>
+          <h1>Carga de stock</h1>
+          <p id="subtitle">Cargando catálogo...</p>
+        </div>
+      </div>
+
+      <div class="card mb-3" style="border-left:4px solid var(--info)">
+        <div class="card-body" style="font-size:13px;color:var(--muted)">
+          Escribí la cantidad de cada producto que tengas en depósito y guardá todo junto.
+          Cada carga queda asentada como un movimiento con tu usuario, fecha y motivo:
+          el stock nunca se sobrescribe a mano.
+          <br><br>
+          El <b>mínimo</b> es opcional y sirve para que el sistema te avise cuando quede poco.
+          Si lo dejás en cero, ese producto no genera alerta.
+        </div>
+      </div>
+
+      <div class="filters-bar">
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input type="search" id="q" placeholder="Buscar por nombre o SKU..." aria-label="Buscar productos">
+        </div>
+        <select id="filtro-cat" aria-label="Filtrar por categoría">
+          <option value="">Todas las categorías</option>
+        </select>
+        <label class="toggle-wrap">
+          <div class="toggle"><input type="checkbox" id="solo-sin-stock" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></div>
+          <span class="toggle-label">Solo los que están en cero</span>
+        </label>
+        <span class="filter-count" id="filter-count" role="status"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>SKU</th>
+              <th style="text-align:right">Stock hoy</th>
+              <th style="text-align:right;width:120px">Cantidad</th>
+              <th style="text-align:right;width:110px">Mínimo</th>
+              <th style="text-align:right">Queda en</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body">
+            <tr class="fila-plana"><td colspan="6" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Barra de guardado: acompaña siempre, como en el formulario de producto -->
+      <div class="barra-guardado barra-carga" id="barra-carga" hidden>
+        <span class="dirty-flag" id="resumen-carga"></span>
+        <button type="button" class="btn btn-outline" id="btn-descartar">Descartar</button>
+        <button type="button" class="btn btn-primary" id="btn-cargar">Guardar carga</button>
+      </div>
+
+      <!-- Resultado de la última carga -->
+      <div class="card mt-3" id="card-resultado" hidden>
+        <div class="card-header"><span class="card-title">Resultado de la carga</span></div>
+        <div class="card-body" id="resultado-body"></div>
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script>
+let productos = [];
+let cats = {};
+
+/* Lo tipeado vive acá y no en el DOM: al filtrar se re-renderiza la tabla
+   y si no, se perdería lo cargado en los productos que dejan de verse. */
+const pendientes = new Map();   // id → { cantidad, minimo }
+
+function esc(v) {
+  return String(v ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function msgError(error, accion = 'guardar') {
+  console.error('[carga-stock]', error);
+  const m = (error?.message || '').toLowerCase();
+  if (!navigator.onLine || m.includes('failed to fetch') || m.includes('networkerror'))
+    return 'Sin conexión. Lo que escribiste sigue acá: reintentá cuando vuelva internet.';
+  if (m.includes('jwt') || m.includes('expired'))
+    return 'Tu sesión venció. Iniciá sesión de nuevo y volvé a intentar.';
+  if (m.includes('sin_permiso') || m.includes('row-level security') || m.includes('policy'))
+    return 'No tenés permisos para mover stock.';
+  if (m.includes('stock insuficiente'))
+    return 'La cantidad dejaría el stock en negativo.';
+  return `No se pudo ${accion}. Probá de nuevo.`;
+}
+
+const entrada = id => pendientes.get(id) || { cantidad:null, minimo:null };
+
+/* Cuánto se va a cargar y sobre cuántos productos. */
+function resumen() {
+  let items = 0, unidades = 0, minimos = 0;
+  pendientes.forEach((v, id) => {
+    const p = productos.find(x => x.id === id);
+    if (!p) return;
+    if (v.cantidad > 0) { items++; unidades += v.cantidad; }
+    if (v.minimo !== null && v.minimo !== p.stock_minimo) minimos++;
+  });
+  return { items, unidades, minimos };
+}
+
+function visibles() {
+  const q = document.getElementById('q').value.toLowerCase().trim();
+  const cat = document.getElementById('filtro-cat').value;
+  const soloCero = document.getElementById('solo-sin-stock').checked;
+  return productos.filter(p => {
+    if (q && !(p.nombre||'').toLowerCase().includes(q) && !(p.sku||'').toLowerCase().includes(q)) return false;
+    if (cat && String(p.categoria_id) !== cat) return false;
+    // Lo ya tipeado se sigue viendo aunque el filtro lo dejaría afuera
+    if (soloCero && p.stock_actual > 0 && !pendientes.has(p.id)) return false;
+    return true;
+  });
+}
+
+function render() {
+  const lista = visibles();
+  const enCero = productos.filter(p => p.stock_actual <= 0).length;
+  document.getElementById('filter-count').textContent =
+    `${lista.length} en pantalla · ${enCero} sin stock de ${productos.length}`;
+
+  if (!lista.length) {
+    document.getElementById('tabla-body').innerHTML =
+      `<tr class="fila-plana"><td colspan="6"><div class="empty-state">
+        <div class="empty-state-icon">📦</div><h3>Sin resultados</h3>
+        <p>Ningún producto coincide con la búsqueda.</p></div></td></tr>`;
+    pintarBarra();
+    return;
+  }
+
+  document.getElementById('tabla-body').innerHTML = lista.map(p => {
+    const v = entrada(p.id);
+    const minimo = v.minimo !== null ? v.minimo : p.stock_minimo;
+    const queda = p.stock_actual + (v.cantidad || 0);
+    const cambia = (v.cantidad || 0) > 0;
+    return `<tr${cambia ? ' class="fila-sel"' : ''}>
+      <td class="c-prod">
+        <div class="td-name">${esc(p.nombre)}</div>
+        <div class="td-sku">${esc(cats[p.categoria_id] || 'Sin categoría')}</div>
+      </td>
+      <td class="c-sku" data-l="SKU">${esc(p.sku || '—')}</td>
+      <td class="c-stock" data-l="Stock hoy">
+        <span class="stock-num ${Utils.stockClass(p.stock_actual, p.stock_minimo)}">${p.stock_actual}</span>
+      </td>
+      <td class="c-cant" data-l="Cantidad">
+        <input type="number" class="in-cant" inputmode="numeric" min="0" step="1"
+               data-id="${p.id}" value="${v.cantidad ?? ''}" placeholder="0"
+               aria-label="Cantidad a cargar de ${esc(p.nombre)}">
+      </td>
+      <td class="c-min" data-l="Mínimo">
+        <input type="number" class="in-min" inputmode="numeric" min="0" step="1"
+               data-id="${p.id}" value="${minimo || ''}" placeholder="0"
+               aria-label="Stock mínimo de ${esc(p.nombre)}">
+      </td>
+      <td class="c-queda" data-l="Queda en">
+        <span class="stock-num ${cambia ? 'stock-ok' : ''}">${queda}</span>
+      </td>
+    </tr>`;
+  }).join('');
+
+  pintarBarra();
+}
+
+function pintarBarra() {
+  const { items, unidades, minimos } = resumen();
+  const barra = document.getElementById('barra-carga');
+  barra.hidden = items === 0 && minimos === 0;
+  const partes = [];
+  if (items)   partes.push(`${unidades} unidad${unidades!==1?'es':''} en ${items} producto${items!==1?'s':''}`);
+  if (minimos) partes.push(`${minimos} mínimo${minimos!==1?'s':''}`);
+  document.getElementById('resumen-carga').textContent = '● ' + partes.join(' · ') + ' sin guardar';
+}
+
+/* Se escucha en el tbody y no en cada input: la tabla se re-renderiza y los
+   listeners individuales se perderían en cada filtrado. */
+document.getElementById('tabla-body').addEventListener('input', e => {
+  const el = e.target;
+  if (!el.matches('.in-cant, .in-min')) return;
+  const id = Number(el.dataset.id);
+  const p  = productos.find(x => x.id === id);
+  if (!p) return;
+
+  const v = { ...entrada(id) };
+  const crudo = el.value.trim();
+  const n = crudo === '' ? null : Math.max(0, Math.floor(Number(crudo)));
+
+  if (el.classList.contains('in-cant')) v.cantidad = (n && isFinite(n)) ? n : null;
+  else                                  v.minimo   = (crudo === '' || !isFinite(n)) ? null : n;
+
+  const sinCambios = (v.cantidad === null || v.cantidad === 0) &&
+                     (v.minimo === null || v.minimo === p.stock_minimo);
+  if (sinCambios) pendientes.delete(id); else pendientes.set(id, v);
+
+  // Se actualiza solo lo que depende del valor, sin re-renderizar (perdería el foco)
+  const fila = el.closest('tr');
+  const queda = p.stock_actual + (v.cantidad || 0);
+  const cel = fila.querySelector('.c-queda .stock-num');
+  cel.textContent = queda;
+  cel.className = 'stock-num' + ((v.cantidad || 0) > 0 ? ' stock-ok' : '');
+  fila.classList.toggle('fila-sel', (v.cantidad || 0) > 0);
+  pintarBarra();
+});
+
+['q','filtro-cat','solo-sin-stock'].forEach(id =>
+  document.getElementById(id)?.addEventListener('input', render));
+
+document.getElementById('btn-descartar')?.addEventListener('click', async () => {
+  const { items, minimos } = resumen();
+  const ok = await Utils.confirm(
+    `Se van a descartar ${items ? `${items} cantidad${items!==1?'es':''}` : ''}${items&&minimos?' y ':''}${minimos ? `${minimos} mínimo${minimos!==1?'s':''}` : ''} sin guardar.`,
+    'Descartar lo cargado', 'Descartar');
+  if (!ok) return;
+  pendientes.clear();
+  render();
+});
+
+// Aviso del navegador si se va con trabajo sin guardar
+window.addEventListener('beforeunload', e => {
+  if (!pendientes.size) return;
+  e.preventDefault(); e.returnValue = '';
+});
+
+document.getElementById('btn-cargar')?.addEventListener('click', async () => {
+  const { items, unidades, minimos } = resumen();
+  if (!items && !minimos) return;
+
+  const ok = await Utils.confirm(
+    `Se van a cargar <b>${unidades} unidad${unidades!==1?'es':''}</b> en <b>${items} producto${items!==1?'s':''}</b>` +
+    (minimos ? `, y actualizar ${minimos} mínimo${minimos!==1?'s':''}` : '') +
+    `.<br><br>Cada carga queda registrada como movimiento con tu usuario.`,
+    'Confirmar carga de stock', 'Guardar carga', false);
+  if (!ok) return;
+
+  const botones = document.querySelectorAll('#barra-carga button');
+  botones.forEach(b => b.disabled = true);
+  Utils.showLoading('Registrando movimientos...');
+
+  const okItems = [], fallidos = [];
+  const trabajo = [...pendientes.entries()];
+
+  for (const [id, v] of trabajo) {
+    const p = productos.find(x => x.id === id);
+    if (!p) continue;
+
+    // El mínimo es un campo común: se actualiza con un UPDATE normal.
+    // El stock NO: la base lo blinda y solo se mueve por el RPC (sql/008).
+    if (v.minimo !== null && v.minimo !== p.stock_minimo) {
+      const { error } = await db.from('productos').update({ stock_minimo: v.minimo }).eq('id', id);
+      if (error) console.error('[carga-stock] minimo', error);
+      else p.stock_minimo = v.minimo;
+    }
+
+    if (!(v.cantidad > 0)) continue;
+
+    // carga_inicial solo si arranca en cero; si ya tenía stock es un ajuste.
+    const tipo = p.stock_actual <= 0 ? 'carga_inicial' : 'ajuste_positivo';
+    const { error } = await db.rpc('fn_registrar_movimiento', {
+      p_producto_id: id,
+      p_tipo: tipo,
+      p_cantidad: v.cantidad,
+      p_motivo: 'Carga asistida de stock',
+      p_observacion: null,
+      p_referencia: null
+    });
+
+    if (error) { console.error('[carga-stock]', error); fallidos.push({ p, v, error }); }
+    else {
+      p.stock_actual += v.cantidad;
+      okItems.push({ p, cantidad: v.cantidad, tipo });
+      pendientes.delete(id);
+    }
+  }
+
+  Utils.hideLoading();
+  botones.forEach(b => b.disabled = false);
+  render();
+  mostrarResultado(okItems, fallidos);
+
+  if (!fallidos.length) {
+    Utils.toast(`Stock cargado en ${okItems.length} producto${okItems.length!==1?'s':''}`, 'success');
+    await Utils.log('create', 'movimientos_inventario', okItems.map(x=>x.p.id).join(','),
+                    `Carga asistida de stock: ${okItems.length} producto(s)`);
+  } else if (okItems.length) {
+    Utils.toast(`${okItems.length} cargados, ${fallidos.length} fallaron. Lo que falló sigue en pantalla.`, 'warning', 8000);
+  } else {
+    Utils.toast('No se pudo registrar la carga. No se modificó ningún stock.', 'error', 7000);
+  }
+});
+
+function mostrarResultado(okItems, fallidos) {
+  const card = document.getElementById('card-resultado');
+  if (!okItems.length && !fallidos.length) { card.hidden = true; return; }
+  card.hidden = false;
+  const filas = [
+    ...okItems.map(x => `<div class="res-item ok">✅ <b>${esc(x.p.nombre)}</b> — cargadas ${x.cantidad} u. · queda en ${x.p.stock_actual}
+      ${x.tipo === 'ajuste_positivo' ? '<span class="badge badge-info">ajuste</span>' : ''}</div>`),
+    ...fallidos.map(x => `<div class="res-item err">❌ <b>${esc(x.p.nombre)}</b> — ${esc(msgError(x.error, 'cargar'))}</div>`)
+  ];
+  document.getElementById('resultado-body').innerHTML = filas.join('');
+}
+
+async function cargarDatos() {
+  const [{ data: catData, error: e1 }, { data: prodData, error: e2 }] = await Promise.all([
+    db.from('categorias').select('id,nombre').order('orden'),
+    db.from('productos')
+      .select('id,nombre,sku,categoria_id,stock_actual,stock_minimo')
+      .eq('estado','activo').neq('seguimiento_inventario', false)
+      .order('nombre')
+  ]);
+
+  if (e1 || e2) {
+    Utils.toast(msgError(e1 || e2, 'cargar el catálogo'), 'error');
+    document.getElementById('tabla-body').innerHTML =
+      `<tr class="fila-plana"><td colspan="6"><div class="empty-state">
+        <div class="empty-state-icon">⚠️</div><h3>No se pudo cargar el catálogo</h3>
+        <button type="button" class="btn btn-outline" onclick="location.reload()">↺ Reintentar</button>
+      </div></td></tr>`;
+    return;
+  }
+
+  const sel = document.getElementById('filtro-cat');
+  (catData||[]).forEach(c => {
+    cats[c.id] = c.nombre;
+    sel.insertAdjacentHTML('beforeend', `<option value="${c.id}">${esc(c.nombre)}</option>`);
+  });
+
+  productos = prodData || [];
+  document.getElementById('subtitle').textContent =
+    `${productos.filter(p => p.stock_actual <= 0).length} productos sin stock cargado, de ${productos.length} con seguimiento`;
+  render();
+}
+
+async function initPage() {
+  const profile = await Auth.init();
+  if (!profile) return;
+  if (!['administrador','encargado_stock'].includes(profile.rol)) {
+    Utils.toast('Sin permisos para mover stock', 'error');
+    window.location.href = '/admin/dashboard.html';
+    return;
+  }
+  await Layout.init('carga-stock', 'Carga de stock');
+  await cargarDatos();
+}
+initPage();
+</script>
+  <script src="/admin/js/assistant.js"></script>
+  <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/admin/sw.js').catch(()=>{}); }</script>
+</body>
+</html>

@@ -178,7 +178,10 @@ a:hover { color: var(--blue-dark); }
 
 /* ── Content ─────────────────────────────────────────────────── */
 .page-content { flex:1; padding:24px; animation:pageIn .28s ease; }
-@keyframes pageIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+/* Solo opacidad, a propósito: un transform acá convierte a .page-content en
+   el marco de referencia de sus descendientes position:fixed, y las barras
+   de guardado aparecían corridas durante los primeros 280 ms. */
+@keyframes pageIn { from{opacity:0} to{opacity:1} }
 
 /* ── Page header ─────────────────────────────────────────────── */
 .page-header {
@@ -311,6 +314,26 @@ tbody tr.fila-sel td { background:var(--info-bg); }
 }
 
 .chips-filtro { margin:-4px 0 14px; }
+
+/* ── Carga asistida de stock ──────────────────────────────────── */
+.c-cant input, .c-min input { text-align:right; padding:6px 9px; font-size:13px; }
+.c-cant input { font-weight:600; }
+.c-queda { text-align:right; }
+/* En escritorio acompaña pegada al pie del contenido (la lista es larga);
+   en celular el bloque responsive la vuelve fija a todo el ancho. */
+.barra-carga {
+  display:flex; align-items:center; justify-content:flex-end; gap:10px;
+  position:sticky; bottom:16px; z-index:45;
+  background:#fff; border:1px solid var(--border); border-radius:var(--r-lg);
+  box-shadow:var(--shadow); padding:10px 14px; margin-top:14px;
+}
+.barra-carga .dirty-flag { margin-right:auto; }
+.res-item {
+  font-size:13px; padding:7px 0; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+}
+.res-item:last-child { border-bottom:none; }
+.res-item.err { color:var(--danger); }
 
 /* Avisos de la vista previa del ajuste de precios */
 .pr-aviso {
@@ -875,6 +898,24 @@ kbd {
   .c-prod { padding-right:30px; }
   tbody tr.fila-sel { border-color:var(--blue); box-shadow:0 0 0 2px rgba(23,99,198,.15); }
   tbody tr.fila-sel td { background:transparent; }
+
+  /* La tabla de carga de stock tiene otras columnas que la de productos:
+     necesita su propia distribución de tarjeta. */
+  body.carga-stock .table-wrap tbody tr {
+    grid-template-columns:1fr 1fr;
+    grid-template-areas:
+      "prod  prod"
+      "sku   stock"
+      "cant  min"
+      "queda queda";
+  }
+  .c-cant{grid-area:cant} .c-min{grid-area:min} .c-queda{grid-area:queda}
+  body.carga-stock .c-prod { padding-right:0; }
+  body.carga-stock .c-cant input,
+  body.carga-stock .c-min input { min-height:44px; width:100%; }
+  body.carga-stock .page-content { padding-bottom:96px; }
+  body.carga-stock #mh-asst-fab { bottom:88px; }
+  .barra-carga { position:fixed; left:0; right:0; bottom:0; }
 
   .barra-masiva { position:sticky; top:calc(var(--header-h) + 8px); z-index:40; }
   .barra-masiva .btn { flex:1 1 auto; min-height:40px; justify-content:center; }
