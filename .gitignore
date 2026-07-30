@@ -10,6 +10,11 @@ originales/
 # Material privado del negocio (catalogos, ventas, marca, ads) - SOLO local, NUNCA publico
 material/
 
+# Documentacion de negocio y estrategia (propuestas, KPIs, auditorias internas).
+# Este repo es PUBLICO: nada de esto debe salir. Vive en
+# 01_DOCUMENTACION/ y 08_ENTREGABLES/, fuera del repo.
+docs/
+
 # Archivos del sistema
 .DS_Store
 Thumbs.db
