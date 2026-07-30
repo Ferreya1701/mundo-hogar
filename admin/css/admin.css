@@ -272,6 +272,45 @@ tbody tr:hover td { background:#F0F5FC; }
 .c-precio-oferta { color:var(--gold-dark); }
 
 .row-acciones { display:flex; align-items:center; gap:8px; }
+
+/* ── Selección para acciones masivas ─────────────────────────── */
+.col-sel { width:38px; text-align:center; }
+.col-sel input[type=checkbox] { width:17px; height:17px; cursor:pointer; accent-color:var(--blue); }
+tbody tr.fila-sel td { background:var(--info-bg); }
+
+.barra-masiva {
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  background:var(--night); color:#fff;
+  border-radius:var(--r-lg); padding:10px 14px; margin-bottom:14px;
+  box-shadow:var(--shadow); animation:slideUp .18s ease;
+}
+.barra-masiva-n { font-size:13px; margin-right:6px; }
+.barra-masiva-n b { font-size:15px; }
+.barra-masiva .btn-outline { background:transparent; color:#fff; border-color:rgba(255,255,255,.35); }
+.barra-masiva .btn-outline:hover { background:rgba(255,255,255,.12); border-color:#fff; color:#fff; }
+.barra-masiva .btn-ghost { color:rgba(255,255,255,.75); }
+.barra-masiva .btn-ghost:hover { background:rgba(255,255,255,.12); color:#fff; }
+
+/* ── Edición rápida de precio ─────────────────────────────────── */
+.precio-rapido {
+  background:none; border:1px dashed transparent; border-radius:var(--r-sm);
+  font:inherit; font-size:12.5px; color:var(--ink);
+  padding:4px 7px; cursor:pointer; text-align:left;
+  transition:background var(--t), border-color var(--t);
+}
+.precio-rapido:hover { background:var(--info-bg); border-color:var(--blue); }
+.precio-rapido.sin-cargar { color:var(--warning); font-weight:600; border-color:var(--border); }
+.precio-edit { display:flex; align-items:center; gap:4px; }
+.precio-edit .precio-input { width:110px; padding:6px 8px; font-size:13px; }
+.precio-edit .btn { padding:6px 9px; }
+
+.aviso-lectura {
+  font-size:12.5px; color:var(--blue-dark);
+  background:var(--info-bg); border-radius:var(--r);
+  padding:6px 11px; margin-top:6px; display:inline-block;
+}
+
+.chips-filtro { margin:-4px 0 14px; }
 /* El destacado no se comunica solo por color: aria-pressed lo dice
    y de paso maneja el estilo, sin style inline. */
 .act-destacar[aria-pressed="false"] { filter:grayscale(1); opacity:.55; }
@@ -815,7 +854,25 @@ kbd {
     background:#fff; border:1px solid var(--border);
     border-radius:var(--r-lg); box-shadow:var(--shadow-sm);
     padding:14px; margin-bottom:10px;
+    position:relative;
   }
+  /* La casilla va fuera de la grilla, en la esquina de la tarjeta */
+  .c-sel { position:absolute; top:10px; right:10px; }
+  .c-sel input[type=checkbox] { width:22px; height:22px; }
+  .c-prod { padding-right:30px; }
+  tbody tr.fila-sel { border-color:var(--blue); box-shadow:0 0 0 2px rgba(23,99,198,.15); }
+  tbody tr.fila-sel td { background:transparent; }
+
+  .barra-masiva { position:sticky; top:calc(var(--header-h) + 8px); z-index:40; }
+  .barra-masiva .btn { flex:1 1 auto; min-height:40px; justify-content:center; }
+  .barra-masiva-n { flex:1 1 100%; }
+
+  .chips-filtro { overflow-x:auto; flex-wrap:nowrap; padding-bottom:4px; -webkit-overflow-scrolling:touch; }
+  .chips-filtro .chip { flex:0 0 auto; min-height:38px; }
+
+  .precio-edit .precio-input { width:100%; min-height:44px; }
+  .precio-edit .btn { min-height:44px; min-width:44px; }
+  .precio-rapido { min-height:38px; }
   .c-img{grid-area:img}   .c-prod{grid-area:prod}     .c-cat{grid-area:cat}
   .c-sku{grid-area:sku}   .c-stock{grid-area:stock}   .c-estado{grid-area:estado}
   .c-precio{grid-area:precio} .c-acc{grid-area:acc}

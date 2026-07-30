@@ -71,15 +71,6 @@
             <option value="bajo">Stock bajo</option>
             <option value="ok">Stock OK</option>
           </select>
-          <select id="filtro-extra" aria-label="Más filtros">
-            <option value="">Más filtros</option>
-            <option value="sin-precio">💲 Sin precio</option>
-            <option value="sin-imagen">🖼️ Sin imagen</option>
-            <option value="sin-cat">🏷️ Sin categoría</option>
-            <option value="destacados">⭐ Destacados</option>
-            <option value="oferta">🔥 En oferta</option>
-            <option value="incompletos">⚠️ Incompletos</option>
-          </select>
           <select id="orden" aria-label="Ordenar por">
             <option value="nombre">Nombre A→Z</option>
             <option value="precio-desc">Precio: mayor a menor</option>
@@ -94,11 +85,34 @@
         <span class="filter-count" id="filter-count" role="status"></span>
       </div>
 
+      <!-- Filtros rápidos: se combinan entre sí (antes eran un <select>
+           excluyente y no se podía pedir "sin precio Y destacado"). -->
+      <div class="chips chips-filtro" id="chips-extra">
+        <button type="button" class="chip" data-extra="sin-precio"  aria-pressed="false">💲 Sin precio<span class="chip-n"></span></button>
+        <button type="button" class="chip" data-extra="sin-imagen"  aria-pressed="false">🖼️ Sin imagen<span class="chip-n"></span></button>
+        <button type="button" class="chip" data-extra="sin-cat"     aria-pressed="false">🏷️ Sin categoría<span class="chip-n"></span></button>
+        <button type="button" class="chip" data-extra="incompletos" aria-pressed="false">⚠️ Incompletos<span class="chip-n"></span></button>
+        <button type="button" class="chip" data-extra="destacados"  aria-pressed="false">⭐ Destacados<span class="chip-n"></span></button>
+        <button type="button" class="chip" data-extra="oferta"      aria-pressed="false">🔥 En oferta<span class="chip-n"></span></button>
+      </div>
+
+      <!-- Barra de acciones masivas (aparece al seleccionar) -->
+      <div class="barra-masiva" id="barra-masiva" hidden role="region" aria-label="Acciones sobre la selección">
+        <span class="barra-masiva-n"><b id="sel-n">0</b> seleccionados</span>
+        <button type="button" class="btn btn-outline btn-sm" data-masiva="activo">▶️ Publicar</button>
+        <button type="button" class="btn btn-outline btn-sm" data-masiva="inactivo">⏸️ Ocultar</button>
+        <button type="button" class="btn btn-outline btn-sm" data-masiva="destacar">⭐ Destacar</button>
+        <button type="button" class="btn btn-outline btn-sm" data-masiva="no-destacar">☆ Quitar destacado</button>
+        <button type="button" class="btn btn-outline btn-sm" data-masiva="exportar">⬇ Exportar selección</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-masiva="cancelar">✕ Deseleccionar</button>
+      </div>
+
       <!-- Tabla -->
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
+              <th class="col-sel"><input type="checkbox" id="sel-todos" aria-label="Seleccionar todos los productos de esta página"></th>
               <th style="width:42px"></th>
               <th>Producto</th>
               <th>Categoría</th>
@@ -110,7 +124,7 @@
             </tr>
           </thead>
           <tbody id="tabla-body">
-            <tr class="fila-plana"><td colspan="8" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr>
+            <tr class="fila-plana"><td colspan="9" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr>
           </tbody>
         </table>
         <div class="pagination" id="paginacion"></div>
@@ -158,6 +172,15 @@ let allProducts = [];
 let cats = {};
 const PER = 20;
 
+/* Permisos del usuario. La autoridad real sigue siendo RLS en la base;
+   esto solo evita ofrecer botones que van a terminar en "sin permisos". */
+let puedeEditar = false;    // administrador | encargado_stock
+let puedeBorrar = false;    // administrador
+
+/* Selección para acciones masivas. Vive fuera del render porque
+   renderTable() reconstruye el HTML de la tabla en cada cambio. */
+const seleccion = new Set();
+
 /* ── Estado del listado ─────────────────────────────────────────
    La URL es la única fuente de verdad: filtros, orden y página.
    Gracias a eso el botón atrás funciona, la recarga no pierde nada,
@@ -168,16 +191,39 @@ const DEFAULTS = { q:'', cat:'', estado:'', stock:'', extra:'', orden:'nombre', 
 const VALIDOS = {
   estado: ['', 'activo', 'inactivo', 'archivado'],
   stock:  ['', 'sin', 'bajo', 'ok'],
-  extra:  ['', 'sin-precio', 'sin-imagen', 'sin-cat', 'destacados', 'oferta', 'incompletos'],
   orden:  ['nombre', 'precio-desc', 'precio-asc', 'stock-asc', 'stock-desc', 'recientes']
 };
 
-// campo del estado → id del control que lo edita
-const CONTROL = { q:'q', cat:'filtro-cat', estado:'filtro-estado', stock:'filtro-stock', extra:'filtro-extra', orden:'orden' };
+// Filtros rápidos: se combinan entre sí, por eso viven como lista y no
+// como un único valor. En la URL viajan separados por coma.
+const EXTRAS = ['sin-precio', 'sin-imagen', 'sin-cat', 'destacados', 'oferta', 'incompletos'];
+
+// Cómo decide cada filtro rápido. Tenerlo en un solo lugar evita que la
+// lógica del filtro y la del contador se desincronicen.
+const REGLA_EXTRA = {
+  'sin-precio':  p => !(p.precio_minorista > 0),
+  'sin-imagen':  p => !p.imagen_principal_url,
+  'sin-cat':     p => !p.categoria_id,
+  'destacados':  p => !!p.destacado,
+  'oferta':      p => !!p.en_oferta,
+  'incompletos': p => !(p.precio_minorista > 0) || !p.imagen_principal_url || !p.categoria_id
+};
+
+// campo del estado → id del control que lo edita (extra usa chips, va aparte)
+const CONTROL = { q:'q', cat:'filtro-cat', estado:'filtro-estado', stock:'filtro-stock', orden:'orden' };
 
 let state = { ...DEFAULTS };
 
 const enRango = (campo, v) => VALIDOS[campo].includes(v) ? v : DEFAULTS[campo];
+
+/* Normaliza la lista de filtros rápidos: descarta desconocidos, quita
+   repetidos y ordena, para que la misma selección produzca siempre la
+   misma URL. */
+function normExtras(v) {
+  const vistos = String(v || '').split(',').map(s => s.trim()).filter(Boolean);
+  return [...new Set(vistos)].filter(t => EXTRAS.includes(t)).sort().join(',');
+}
+const extrasActivos = () => state.extra ? state.extra.split(',') : [];
 
 /* Escapa texto antes de meterlo en innerHTML o en un atributo.
    Sin esto un nombre como 'Smart TV 50"' rompe la fila entera. */
@@ -196,8 +242,8 @@ function leerURL() {
   s.q      = (u.get('q') || '').slice(0, 80);
   s.estado = enRango('estado', u.get('estado') || '');
   s.stock  = enRango('stock',  u.get('stock')  || '');
-  s.extra  = enRango('extra',  u.get('extra')  || '');
   s.orden  = enRango('orden',  u.get('orden')  || '');
+  s.extra  = normExtras(u.get('extra'));
 
   // `cat` solo admite id numérico; "sin categoría" se representa en `extra`
   const cat = u.get('cat') || '';
@@ -237,19 +283,24 @@ function escribirURL(push = false) {
   else      history.replaceState(null, '', url);
 }
 
-/* Vuelca el estado a los controles del formulario. */
+/* Vuelca el estado a los controles y a los chips. */
 function pintarControles() {
   Object.entries(CONTROL).forEach(([campo, id]) => {
     const el = document.getElementById(id);
     if (el && el.value !== state[campo]) el.value = state[campo];
   });
+  const puestos = extrasActivos();
+  document.querySelectorAll('#chips-extra .chip').forEach(chip => {
+    const on = puestos.includes(chip.dataset.extra);
+    chip.classList.toggle('active', on);
+    chip.setAttribute('aria-pressed', String(on));
+  });
 }
 
-/* Cuántos filtros hay puestos (el orden y la página no cuentan). */
+/* Cuántos filtros hay puestos (el orden y la página no cuentan).
+   Los rápidos suman de a uno, no todos juntos. */
 const filtrosActivos = () =>
-  ['q','cat','estado','stock','extra'].filter(k => state[k] !== DEFAULTS[k]).length;
-
-const esIncompleto = p => !(p.precio_minorista > 0) || !p.imagen_principal_url || !p.categoria_id;
+  ['q','cat','estado','stock'].filter(k => state[k] !== DEFAULTS[k]).length + extrasActivos().length;
 
 function applyFilters() {
   const f = { ...state, q: state.q.toLowerCase().trim() };
@@ -260,12 +311,9 @@ function applyFilters() {
   if (f.stock === 'sin') list = list.filter(p => p.stock_actual <= 0);
   else if (f.stock === 'bajo') list = list.filter(p => p.stock_actual > 0 && p.stock_minimo > 0 && p.stock_actual <= p.stock_minimo);
   else if (f.stock === 'ok') list = list.filter(p => p.stock_actual > 0 && (p.stock_minimo === 0 || p.stock_actual > p.stock_minimo));
-  if (f.extra === 'sin-precio')  list = list.filter(p => !(p.precio_minorista > 0));
-  else if (f.extra === 'sin-imagen') list = list.filter(p => !p.imagen_principal_url);
-  else if (f.extra === 'sin-cat') list = list.filter(p => !p.categoria_id);
-  else if (f.extra === 'destacados') list = list.filter(p => p.destacado);
-  else if (f.extra === 'oferta') list = list.filter(p => p.en_oferta);
-  else if (f.extra === 'incompletos') list = list.filter(esIncompleto);
+  // Los filtros rápidos se acumulan: pedir "sin precio" + "destacados"
+  // devuelve los que cumplen las dos condiciones.
+  extrasActivos().forEach(t => { list = list.filter(REGLA_EXTRA[t]); });
 
   list = [...list];
   const precio = p => p.en_oferta && p.precio_oferta > 0 ? p.precio_oferta : (p.precio_minorista || 0);
@@ -297,11 +345,17 @@ function renderTable() {
   const badge = document.getElementById('filtros-n');
   badge.hidden = nFiltros === 0;
   badge.textContent = nFiltros;
+
+  // Cada chip muestra cuántos productos del catálogo cumplen su condición,
+  // así se ve de un vistazo dónde está el trabajo pendiente.
+  document.querySelectorAll('#chips-extra .chip').forEach(chip => {
+    chip.querySelector('.chip-n').textContent = allProducts.filter(REGLA_EXTRA[chip.dataset.extra]).length;
+  });
   document.getElementById('subtitle').textContent = `${allProducts.length} productos en total`;
 
   if (!slice.length) {
     document.getElementById('tabla-body').innerHTML =
-      `<tr class="fila-plana"><td colspan="8"><div class="empty-state">
+      `<tr class="fila-plana"><td colspan="9"><div class="empty-state">
         <div class="empty-state-icon">🛍️</div>
         <h3>Sin resultados</h3>
         <p>Ningún producto coincide con los filtros aplicados.</p>
@@ -331,7 +385,11 @@ function renderTable() {
     const conOferta = p.en_oferta && p.precio_oferta > 0 && p.precio_minorista > 0;
     // Las clases c-* le dan nombre a cada celda: en celular el CSS las
     // reacomoda como tarjeta (una fila = un producto legible sin scroll lateral).
-    return `<tr>
+    return `<tr${seleccion.has(p.id) ? ' class="fila-sel"' : ''}>
+      <td class="c-sel col-sel">${puedeEditar
+        ? `<input type="checkbox" data-sel="${p.id}" ${seleccion.has(p.id)?'checked':''}
+                  aria-label="Seleccionar ${nombre}">`
+        : ''}</td>
       <td class="c-img">${imgSrc
         ? `<img class="td-img" src="${imgSrc}" alt="${nombre}" onerror="this.style.display='none'">`
         : `<div class="td-img-ph">🛍️</div>`}</td>
@@ -351,26 +409,40 @@ function renderTable() {
       <td class="c-precio" data-l="Precio">
         ${conOferta
           ? `<s class="c-precio-viejo">${Utils.currency(p.precio_minorista)}</s><br><b class="c-precio-oferta">${Utils.currency(p.precio_oferta)}</b>`
-          : Utils.currency(p.precio_minorista)}
+          : puedeEditar
+            ? `<button type="button" class="precio-rapido${p.precio_minorista > 0 ? '' : ' sin-cargar'}"
+                       data-accion="precio" data-id="${p.id}"
+                       aria-label="Editar precio de ${nombre}"
+                       data-tip="Clic para editar el precio">${
+                 p.precio_minorista > 0 ? Utils.currency(p.precio_minorista) : '+ Cargar precio'}</button>`
+            : Utils.currency(p.precio_minorista)}
       </td>
       <td class="c-acc">
         <div class="row-acciones">
+          ${puedeEditar ? `
           <button type="button" class="btn btn-ghost btn-sm act-destacar" data-accion="destacar" data-id="${p.id}"
                   data-tip="${p.destacado?'Quitar de destacados':'Destacar en portada'}"
                   aria-label="${p.destacado?'Quitar de destacados':'Destacar'} ${nombre}"
-                  aria-pressed="${!!p.destacado}">⭐</button>
+                  aria-pressed="${!!p.destacado}">⭐</button>` : ''}
           <a href="/admin/producto-form.html?id=${p.id}${volverParam}" class="btn btn-ghost btn-sm act-editar"
-             data-tip="Editar" aria-label="Editar ${nombre}">✏️<span class="solo-movil">Editar</span></a>
+             data-tip="${puedeEditar?'Editar':'Ver ficha'}" aria-label="${puedeEditar?'Editar':'Ver'} ${nombre}">
+            ${puedeEditar?'✏️':'👁️'}<span class="solo-movil">${puedeEditar?'Editar':'Ver'}</span></a>
+          ${puedeEditar ? `
           <button type="button" class="btn btn-ghost btn-sm" data-accion="estado" data-id="${p.id}"
                   data-tip="${p.estado==='activo'?'Ocultar de la tienda':'Publicar en la tienda'}"
                   aria-label="${p.estado==='activo'?'Ocultar de la tienda':'Publicar en la tienda'} ${nombre}">
-            ${p.estado==='activo'?'⏸️':'▶️'}</button>
+            ${p.estado==='activo'?'⏸️':'▶️'}</button>` : ''}
+          ${puedeBorrar ? `
           <button type="button" class="btn btn-ghost btn-sm act-eliminar" data-accion="eliminar" data-id="${p.id}"
-                  data-tip="Eliminar" aria-label="Eliminar ${nombre}">🗑️</button>
+                  data-tip="Eliminar" aria-label="Eliminar ${nombre}">🗑️</button>` : ''}
         </div>
       </td>
     </tr>`;
   }).join('');
+
+  // Las casillas se acaban de reconstruir: hay que resincronizar el
+  // "seleccionar todos" y la barra con la selección que ya existía.
+  pintarBarraMasiva();
 
   Utils.renderPagination(
     document.getElementById('paginacion'),
@@ -395,6 +467,104 @@ document.getElementById('tabla-body').addEventListener('click', e => {
   if (accion === 'destacar')      toggleDestacado(prod);
   else if (accion === 'estado')   toggleEstado(prod);
   else if (accion === 'eliminar') confirmarEliminar(prod);
+  else if (accion === 'precio')   abrirEdicionPrecio(el, prod);
+});
+
+/* ── Edición rápida de precio ───────────────────────────────────
+   44 de los 125 productos no tienen precio. Abrir el formulario
+   completo para cargar un número era el cuello de botella real. */
+function abrirEdicionPrecio(boton, prod) {
+  const celda = boton.closest('td');
+  const previo = celda.innerHTML;
+
+  celda.innerHTML = `<div class="precio-edit">
+    <input type="number" class="precio-input" inputmode="decimal" min="0" step="0.01"
+           value="${prod.precio_minorista ?? ''}" aria-label="Precio de ${esc(prod.nombre)}">
+    <button type="button" class="btn btn-primary btn-sm" data-ok title="Guardar">✓</button>
+    <button type="button" class="btn btn-outline btn-sm" data-no title="Cancelar">✕</button>
+  </div>`;
+
+  const input = celda.querySelector('.precio-input');
+  input.focus(); input.select();
+
+  const cerrar = () => { celda.innerHTML = previo; };
+
+  const guardar = async () => {
+    const crudo = input.value.trim();
+    const valor = crudo === '' ? null : Number(crudo);
+    if (valor !== null && (!isFinite(valor) || valor < 0)) {
+      Utils.toast('El precio tiene que ser un número mayor o igual a cero', 'warning');
+      input.focus(); return;
+    }
+    if (valor === (prod.precio_minorista ?? null)) { cerrar(); return; }
+
+    celda.querySelectorAll('button').forEach(b => b.disabled = true);
+    input.disabled = true;
+    const antes = prod.precio_minorista ?? null;
+
+    const { error } = await db.from('productos')
+      .update({ precio_minorista: valor }).eq('id', prod.id);
+
+    if (error) {
+      // El precio escrito no se pierde: se deja el editor abierto.
+      celda.querySelectorAll('button').forEach(b => b.disabled = false);
+      input.disabled = false; input.focus();
+      Utils.toast(msgError(error, 'guardar el precio'), 'error', 6000);
+      return;
+    }
+
+    prod.precio_minorista = valor;
+    renderTable();
+    Utils.toast(valor === null ? 'Precio borrado' : `Precio actualizado: ${Utils.currency(valor)}`, 'success', 2400);
+    await Utils.log('update', 'productos', prod.id, `Precio: ${antes ?? '—'} → ${valor ?? '—'}`,
+                    { precio_minorista: antes }, { precio_minorista: valor });
+  };
+
+  celda.querySelector('[data-ok]').addEventListener('click', guardar);
+  celda.querySelector('[data-no]').addEventListener('click', cerrar);
+  input.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter')  { ev.preventDefault(); guardar(); }
+    if (ev.key === 'Escape') { ev.preventDefault(); cerrar(); }
+  });
+}
+
+/* ── Selección para acciones masivas ────────────────────────────── */
+function limpiarSeleccion() {
+  if (!seleccion.size) return;
+  seleccion.clear();
+  pintarBarraMasiva();
+}
+
+function pintarBarraMasiva() {
+  const barra = document.getElementById('barra-masiva');
+  barra.hidden = seleccion.size === 0;
+  document.getElementById('sel-n').textContent = seleccion.size;
+
+  // La casilla de "todos" refleja el estado de la página visible
+  const todos = document.getElementById('sel-todos');
+  if (!todos) return;                       // en modo consulta no existe
+  const enPagina = [...document.querySelectorAll('[data-sel]')];
+  const marcadas = enPagina.filter(c => c.checked).length;
+  todos.checked = enPagina.length > 0 && marcadas === enPagina.length;
+  todos.indeterminate = marcadas > 0 && marcadas < enPagina.length;
+}
+
+document.getElementById('tabla-body').addEventListener('change', e => {
+  const chk = e.target.closest('[data-sel]');
+  if (!chk) return;
+  const id = Number(chk.dataset.sel);
+  chk.checked ? seleccion.add(id) : seleccion.delete(id);
+  chk.closest('tr')?.classList.toggle('fila-sel', chk.checked);
+  pintarBarraMasiva();
+});
+
+document.getElementById('sel-todos')?.addEventListener('change', e => {
+  document.querySelectorAll('[data-sel]').forEach(chk => {
+    chk.checked = e.target.checked;
+    chk.checked ? seleccion.add(Number(chk.dataset.sel)) : seleccion.delete(Number(chk.dataset.sel));
+    chk.closest('tr')?.classList.toggle('fila-sel', chk.checked);
+  });
+  pintarBarraMasiva();
 });
 
 /* Traduce el error técnico a algo que entienda una persona no técnica.
@@ -453,6 +623,89 @@ async function confirmarEliminar(prod) {
   await Utils.log('delete', 'productos', prod.id, `Producto eliminado: ${prod.nombre}`);
 }
 
+/* ── Acciones masivas ───────────────────────────────────────────
+   Toda acción confirma primero diciendo a cuántos productos afecta, y
+   al terminar informa el resultado real, incluidos los fallos parciales. */
+const MASIVAS = {
+  'activo':      { verbo:'Publicar en la tienda',  campo:{estado:'activo'},   hecho:'publicados' },
+  'inactivo':    { verbo:'Ocultar de la tienda',   campo:{estado:'inactivo'}, hecho:'ocultados' },
+  'destacar':    { verbo:'Marcar como destacados', campo:{destacado:true},    hecho:'destacados' },
+  'no-destacar': { verbo:'Quitar de destacados',   campo:{destacado:false},   hecho:'quitados de destacados' }
+};
+
+document.getElementById('barra-masiva')?.addEventListener('click', async e => {
+  const btn = e.target.closest('[data-masiva]');
+  if (!btn) return;
+  const accion = btn.dataset.masiva;
+
+  if (accion === 'cancelar') { limpiarSeleccion(); renderTable(); return; }
+
+  const ids = [...seleccion];
+  if (!ids.length) return;
+
+  if (accion === 'exportar') {
+    const sel = allProducts.filter(p => seleccion.has(p.id));
+    Utils.exportCSV(sel.map(p => ({
+      ID: p.id, Nombre: p.nombre, SKU: p.sku||'', Categoría: cats[p.categoria_id]||'',
+      Stock: p.stock_actual, 'Stock Mínimo': p.stock_minimo,
+      Estado: p.estado, 'Precio Minorista': p.precio_minorista||''
+    })), `seleccion-mundohogar-${new Date().toISOString().slice(0,10)}.csv`);
+    Utils.toast(`${sel.length} producto${sel.length!==1?'s':''} exportado${sel.length!==1?'s':''}`, 'success');
+    return;
+  }
+
+  const cfg = MASIVAS[accion];
+  if (!cfg) return;
+
+  const ok = await Utils.confirm(
+    `<b>${cfg.verbo}</b><br><br>Se van a modificar <b>${ids.length} producto${ids.length!==1?'s':''}</b>.
+     ${accion==='inactivo' ? '<br><br>Los productos ocultos dejan de verse en la tienda pública.' : ''}`,
+    'Confirmar acción masiva', cfg.verbo, false
+  );
+  if (!ok) return;
+
+  document.querySelectorAll('#barra-masiva button').forEach(b => b.disabled = true);
+  Utils.showLoading(`Aplicando a ${ids.length} productos...`);
+
+  // De a lotes: un solo UPDATE con 200 ids puede pasarse del largo de URL
+  // que acepta PostgREST, y así un lote que falla no arrastra a los demás.
+  const LOTE = 25;
+  let listos = 0;
+  const fallidos = [];
+  for (let i = 0; i < ids.length; i += LOTE) {
+    const lote = ids.slice(i, i + LOTE);
+    const { error } = await db.from('productos').update(cfg.campo).in('id', lote);
+    if (error) { console.error('[masiva]', error); fallidos.push(...lote); }
+    else {
+      listos += lote.length;
+      lote.forEach(id => {
+        const p = allProducts.find(x => x.id === id);
+        if (p) Object.assign(p, cfg.campo);
+      });
+    }
+  }
+
+  Utils.hideLoading();
+  document.querySelectorAll('#barra-masiva button').forEach(b => b.disabled = false);
+
+  if (listos) {
+    await Utils.log('update', 'productos', ids.join(','),
+                    `Acción masiva "${cfg.verbo}" sobre ${listos} producto(s)`);
+  }
+
+  if (!fallidos.length) {
+    Utils.toast(`${listos} producto${listos!==1?'s':''} ${cfg.hecho}`, 'success');
+    limpiarSeleccion();
+  } else if (listos) {
+    // Éxito parcial: no se limpia la selección para poder reintentar
+    Utils.toast(`${listos} ${cfg.hecho}, pero ${fallidos.length} no se pudieron cambiar. Revisá la conexión y reintentá.`,
+                'warning', 8000);
+  } else {
+    Utils.toast('No se pudo aplicar el cambio. No se modificó ningún producto.', 'error', 7000);
+  }
+  renderTable();
+});
+
 async function cargarCategorias() {
   const { data, error } = await db.from('categorias').select('id,nombre').order('orden');
   if (error) { Utils.toast(msgError(error, 'cargar las categorías'), 'error'); return; }
@@ -470,7 +723,7 @@ async function cargarProductos() {
   if (error) {
     Utils.toast(msgError(error, 'cargar los productos'), 'error');
     document.getElementById('tabla-body').innerHTML =
-      `<tr class="fila-plana"><td colspan="8"><div class="empty-state">
+      `<tr class="fila-plana"><td colspan="9"><div class="empty-state">
         <div class="empty-state-icon">⚠️</div>
         <h3>No se pudo cargar el catálogo</h3>
         <p>Revisá tu conexión y volvé a intentar.</p>
@@ -483,6 +736,7 @@ async function cargarProductos() {
 
 function limpiarFiltros() {
   state = { ...DEFAULTS, orden: state.orden };
+  limpiarSeleccion();
   pintarControles();
   escribirURL(true);
   renderTable();
@@ -564,6 +818,7 @@ function aplicarCambio(campo, valor) {
   if (state[campo] === nuevo) return;
   state[campo] = nuevo;
   state.page = 1;              // cambiar un filtro siempre vuelve a la página 1
+  if (campo !== 'orden') limpiarSeleccion();  // reordenar no invalida la selección
   escribirURL(false);
   renderTable();
 }
@@ -581,6 +836,21 @@ Object.entries(CONTROL).forEach(([campo, id]) => {
 });
 
 document.getElementById('btn-limpiar')?.addEventListener('click', limpiarFiltros);
+
+// Chips de filtros rápidos: cada uno entra o sale de la lista
+document.getElementById('chips-extra')?.addEventListener('click', e => {
+  const chip = e.target.closest('[data-extra]');
+  if (!chip) return;
+  const t = chip.dataset.extra;
+  const puestos = extrasActivos();
+  const nuevos = puestos.includes(t) ? puestos.filter(x => x !== t) : [...puestos, t];
+  state.extra = normExtras(nuevos.join(','));
+  state.page = 1;
+  limpiarSeleccion();      // la selección deja de tener sentido con otro filtro
+  pintarControles();
+  escribirURL(false);
+  renderTable();
+});
 
 // Plegar/desplegar los filtros en celular
 document.getElementById('btn-filtros')?.addEventListener('click', e => {
@@ -606,6 +876,21 @@ function reconciliarCategoria() {
 async function initPage() {
   const profile = await Auth.init();
   if (!profile) return;
+
+  // La base es la que manda (RLS); esto solo evita mostrar botones que
+  // van a devolver "sin permisos" y aclara el modo de solo lectura.
+  puedeEditar = ['administrador','encargado_stock'].includes(profile.rol);
+  puedeBorrar = profile.rol === 'administrador';
+  if (!puedeEditar) {
+    document.getElementById('btn-importar')?.remove();
+    document.querySelector('.page-header-actions a.btn-primary')?.remove();
+    // Se saca la casilla, no la columna: la fila sigue emitiendo su celda
+    // vacía y quitarla solo del encabezado desalinearía la tabla.
+    document.getElementById('sel-todos')?.remove();
+    document.getElementById('subtitle').insertAdjacentHTML('afterend',
+      '<p class="aviso-lectura">👁️ Estás en modo consulta: podés ver y exportar, pero no modificar.</p>');
+  }
+
   await Layout.init('productos', 'Productos');
   await Promise.all([cargarCategorias(), cargarProductos()]);
 
