@@ -79,6 +79,7 @@
           <option value="stock-desc">Stock: mayor a menor</option>
           <option value="recientes">Más recientes</option>
         </select>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-limpiar" hidden>✕ Limpiar filtros</button>
         <span class="filter-count" id="filter-count"></span>
       </div>
 
@@ -144,28 +145,106 @@
 <script>
 let allProducts = [];
 let cats = {};
-let page = 1;
 const PER = 20;
 
-function getFilters() {
-  return {
-    q:      document.getElementById('q').value.toLowerCase().trim(),
-    cat:    document.getElementById('filtro-cat').value,
-    estado: document.getElementById('filtro-estado').value,
-    stock:  document.getElementById('filtro-stock').value,
-    extra:  document.getElementById('filtro-extra').value,
-    orden:  document.getElementById('orden').value
-  };
+/* ── Estado del listado ─────────────────────────────────────────
+   La URL es la única fuente de verdad: filtros, orden y página.
+   Gracias a eso el botón atrás funciona, la recarga no pierde nada,
+   el link se puede compartir y volver desde la edición devuelve
+   exactamente al mismo contexto. */
+const DEFAULTS = { q:'', cat:'', estado:'', stock:'', extra:'', orden:'nombre', page:1 };
+
+const VALIDOS = {
+  estado: ['', 'activo', 'inactivo', 'archivado'],
+  stock:  ['', 'sin', 'bajo', 'ok'],
+  extra:  ['', 'sin-precio', 'sin-imagen', 'sin-cat', 'destacados', 'oferta', 'incompletos'],
+  orden:  ['nombre', 'precio-desc', 'precio-asc', 'stock-asc', 'stock-desc', 'recientes']
+};
+
+// campo del estado → id del control que lo edita
+const CONTROL = { q:'q', cat:'filtro-cat', estado:'filtro-estado', stock:'filtro-stock', extra:'filtro-extra', orden:'orden' };
+
+let state = { ...DEFAULTS };
+
+const enRango = (campo, v) => VALIDOS[campo].includes(v) ? v : DEFAULTS[campo];
+
+/* Escapa texto antes de meterlo en innerHTML o en un atributo.
+   Sin esto un nombre como 'Smart TV 50"' rompe la fila entera. */
+function esc(v) {
+  return String(v ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
+
+/* Lee el estado desde la URL. Cualquier parámetro inválido o fuera de
+   rango cae a su valor por defecto en vez de romper la pantalla. */
+function leerURL() {
+  const u = new URLSearchParams(location.search);
+  const s = { ...DEFAULTS };
+
+  s.q      = (u.get('q') || '').slice(0, 80);
+  s.estado = enRango('estado', u.get('estado') || '');
+  s.stock  = enRango('stock',  u.get('stock')  || '');
+  s.extra  = enRango('extra',  u.get('extra')  || '');
+  s.orden  = enRango('orden',  u.get('orden')  || '');
+
+  // `cat` solo admite id numérico; "sin categoría" se representa en `extra`
+  const cat = u.get('cat') || '';
+  s.cat = /^\d+$/.test(cat) ? cat : '';
+
+  const page = parseInt(u.get('page'), 10);
+  s.page = Number.isInteger(page) && page > 0 ? page : 1;
+
+  // Compatibilidad con los accesos directos del dashboard y del asistente
+  // (?precio=sin, ?imagen=sin, ?destacados=1, ?incompletos=1, ?cat=sin).
+  if (!s.extra) {
+    if      (u.get('precio') === 'sin') s.extra = 'sin-precio';
+    else if (u.get('imagen') === 'sin') s.extra = 'sin-imagen';
+    else if (u.get('destacados'))       s.extra = 'destacados';
+    else if (u.get('incompletos'))      s.extra = 'incompletos';
+    else if (cat === 'sin')             s.extra = 'sin-cat';
+  }
+  return s;
+}
+
+/* Serializa el estado. Solo se escriben los valores distintos del
+   defecto, para que la URL quede corta y legible. */
+function estadoAQuery(s = state) {
+  const u = new URLSearchParams();
+  Object.keys(DEFAULTS).forEach(k => { if (s[k] !== DEFAULTS[k]) u.set(k, s[k]); });
+  return u.toString();
+}
+
+/* Vuelca el estado a la URL.
+   push = true solo al cambiar de página (así el atrás recorre páginas);
+   replace mientras se tipea o se ajusta un filtro, para no llenar el historial. */
+function escribirURL(push = false) {
+  const qs  = estadoAQuery();
+  const url = location.pathname + (qs ? '?' + qs : '');
+  if (url === location.pathname + location.search) return;
+  if (push) history.pushState(null, '', url);
+  else      history.replaceState(null, '', url);
+}
+
+/* Vuelca el estado a los controles del formulario. */
+function pintarControles() {
+  Object.entries(CONTROL).forEach(([campo, id]) => {
+    const el = document.getElementById(id);
+    if (el && el.value !== state[campo]) el.value = state[campo];
+  });
+}
+
+/* Cuántos filtros hay puestos (el orden y la página no cuentan). */
+const filtrosActivos = () =>
+  ['q','cat','estado','stock','extra'].filter(k => state[k] !== DEFAULTS[k]).length;
 
 const esIncompleto = p => !(p.precio_minorista > 0) || !p.imagen_principal_url || !p.categoria_id;
 
 function applyFilters() {
-  const f = getFilters();
+  const f = { ...state, q: state.q.toLowerCase().trim() };
   let list = allProducts;
   if (f.q) list = list.filter(p => (p.nombre||'').toLowerCase().includes(f.q) || (p.sku||'').toLowerCase().includes(f.q));
-  if (f.cat === 'sin') list = list.filter(p => !p.categoria_id);
-  else if (f.cat) list = list.filter(p => String(p.categoria_id) === f.cat);
+  if (f.cat) list = list.filter(p => String(p.categoria_id) === f.cat);
   if (f.estado) list = list.filter(p => p.estado === f.estado);
   if (f.stock === 'sin') list = list.filter(p => p.stock_actual <= 0);
   else if (f.stock === 'bajo') list = list.filter(p => p.stock_actual > 0 && p.stock_minimo > 0 && p.stock_actual <= p.stock_minimo);
@@ -188,25 +267,21 @@ function applyFilters() {
   return list;
 }
 
-// Filtros iniciales por URL (los usa el dashboard: ?precio=sin, ?imagen=sin, ?cat=sin, ?destacados=1, ?stock=sin)
-function aplicarParamsURL() {
-  const u = new URLSearchParams(location.search);
-  if (u.get('precio') === 'sin') document.getElementById('filtro-extra').value = 'sin-precio';
-  if (u.get('imagen') === 'sin') document.getElementById('filtro-extra').value = 'sin-imagen';
-  if (u.get('destacados')) document.getElementById('filtro-extra').value = 'destacados';
-  if (u.get('incompletos')) document.getElementById('filtro-extra').value = 'incompletos';
-  if (u.get('stock')) document.getElementById('filtro-stock').value = u.get('stock');
-  if (u.get('estado')) document.getElementById('filtro-estado').value = u.get('estado');
-  if (u.get('cat')) document.getElementById('filtro-cat').value = u.get('cat');
-  if (u.get('q')) document.getElementById('q').value = u.get('q');
-}
-
 function renderTable() {
   const filtered = applyFilters();
-  const total = filtered.length;
-  const slice = filtered.slice((page-1)*PER, page*PER);
+  const total    = filtered.length;
+  const maxPage  = Math.max(1, Math.ceil(total / PER));
 
-  document.getElementById('filter-count').textContent = `${total} producto${total!==1?'s':''}`;
+  // Si al filtrar la página actual quedó fuera de rango, se ajusta y se
+  // corrige la URL (replace: no ensucia el historial ni dispara popstate).
+  if (state.page > maxPage) { state.page = maxPage; escribirURL(false); }
+
+  const slice = filtered.slice((state.page-1)*PER, state.page*PER);
+
+  const nFiltros = filtrosActivos();
+  document.getElementById('filter-count').textContent =
+    `${total} producto${total!==1?'s':''}` + (nFiltros ? ` · ${nFiltros} filtro${nFiltros!==1?'s':''}` : '');
+  document.getElementById('btn-limpiar').hidden = nFiltros === 0;
   document.getElementById('subtitle').textContent = `${allProducts.length} productos en total`;
 
   if (!slice.length) {
@@ -214,16 +289,24 @@ function renderTable() {
       `<tr><td colspan="8"><div class="empty-state">
         <div class="empty-state-icon">🛍️</div>
         <h3>Sin resultados</h3>
-        <p>Probá con otros filtros o <a href="/admin/producto-form.html">agregá un nuevo producto</a></p>
+        <p>Ningún producto coincide con los filtros aplicados.</p>
+        ${nFiltros
+          ? `<button type="button" class="btn btn-outline" data-accion="limpiar">✕ Limpiar filtros</button>`
+          : `<a href="/admin/producto-form.html" class="btn btn-primary">+ Agregar un producto</a>`}
        </div></td></tr>`;
     document.getElementById('paginacion').innerHTML = '';
     return;
   }
 
+  // Contexto del listado que viaja al formulario para poder volver acá mismo
+  const volver = estadoAQuery();
+  const volverParam = volver ? `&volver=${encodeURIComponent(volver)}` : '';
+
   document.getElementById('tabla-body').innerHTML = slice.map(p => {
-    const catNombre = cats[p.categoria_id] || '—';
+    const catNombre = esc(cats[p.categoria_id] || '—');
+    const nombre = esc(p.nombre);
     const sc = Utils.stockClass(p.stock_actual, p.stock_minimo);
-    const imgSrc = p.imagen_principal_url || '';
+    const imgSrc = esc(p.imagen_principal_url || '');
     const badges = [];
     if (!(p.precio_minorista > 0)) badges.push('<span class="badge badge-warning">Sin precio</span>');
     if (!p.imagen_principal_url) badges.push('<span class="badge badge-warning">Sin imagen</span>');
@@ -233,16 +316,16 @@ function renderTable() {
     const conOferta = p.en_oferta && p.precio_oferta > 0 && p.precio_minorista > 0;
     return `<tr>
       <td>${imgSrc
-        ? `<img class="td-img" src="${imgSrc}" alt="${p.nombre}" onerror="this.style.display='none'">`
+        ? `<img class="td-img" src="${imgSrc}" alt="${nombre}" onerror="this.style.display='none'">`
         : `<div class="td-img-ph">🛍️</div>`}</td>
       <td>
         <div class="td-product" style="flex-direction:column;align-items:flex-start;gap:3px">
-          <div class="td-name">${p.nombre}</div>
-          <div class="d-flex gap-2" style="flex-wrap:wrap">${p.marca ? `<span class="td-sku">${p.marca}</span>` : ''}${badges.join('')}</div>
+          <div class="td-name">${nombre}</div>
+          <div class="d-flex gap-2" style="flex-wrap:wrap">${p.marca ? `<span class="td-sku">${esc(p.marca)}</span>` : ''}${badges.join('')}</div>
         </div>
       </td>
       <td style="color:var(--muted);font-size:12.5px">${catNombre}</td>
-      <td style="font-family:monospace;font-size:12px;color:var(--muted)">${p.sku||'—'}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--muted)">${esc(p.sku||'—')}</td>
       <td style="text-align:center">
         <span class="stock-num ${sc}">${p.stock_actual}</span>
         ${p.stock_minimo>0?`<div style="font-size:10.5px;color:var(--muted)">mín: ${p.stock_minimo}</div>`:''}
@@ -255,11 +338,18 @@ function renderTable() {
       </td>
       <td>
         <div class="d-flex gap-2">
-          <button class="btn btn-ghost btn-sm" onclick="toggleDestacado(${p.id})" data-tip="${p.destacado?'Quitar de destacados':'Destacar en portada'}" style="${p.destacado?'':'filter:grayscale(1);opacity:.55'}">⭐</button>
-          <a href="/admin/producto-form.html?id=${p.id}" class="btn btn-ghost btn-sm" data-tip="Editar">✏️</a>
-          <button class="btn btn-ghost btn-sm" onclick="toggleEstado(${p.id},'${p.estado}')" data-tip="${p.estado==='activo'?'Ocultar de la tienda':'Publicar en la tienda'}">
+          <button type="button" class="btn btn-ghost btn-sm" data-accion="destacar" data-id="${p.id}"
+                  data-tip="${p.destacado?'Quitar de destacados':'Destacar en portada'}"
+                  aria-label="${p.destacado?'Quitar de destacados':'Destacar'} ${nombre}"
+                  style="${p.destacado?'':'filter:grayscale(1);opacity:.55'}">⭐</button>
+          <a href="/admin/producto-form.html?id=${p.id}${volverParam}" class="btn btn-ghost btn-sm"
+             data-tip="Editar" aria-label="Editar ${nombre}">✏️</a>
+          <button type="button" class="btn btn-ghost btn-sm" data-accion="estado" data-id="${p.id}"
+                  data-tip="${p.estado==='activo'?'Ocultar de la tienda':'Publicar en la tienda'}"
+                  aria-label="${p.estado==='activo'?'Ocultar de la tienda':'Publicar en la tienda'} ${nombre}">
             ${p.estado==='activo'?'⏸️':'▶️'}</button>
-          <button class="btn btn-ghost btn-sm" onclick="confirmarEliminar(${p.id},'${p.nombre.replace(/'/g,"\\'")}',${p.stock_actual})" data-tip="Eliminar">🗑️</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-accion="eliminar" data-id="${p.id}"
+                  data-tip="Eliminar" aria-label="Eliminar ${nombre}">🗑️</button>
         </div>
       </td>
     </tr>`;
@@ -267,56 +357,92 @@ function renderTable() {
 
   Utils.renderPagination(
     document.getElementById('paginacion'),
-    page, total, PER,
-    p => { page = p; renderTable(); }
+    state.page, total, PER,
+    p => { state.page = p; escribirURL(true); renderTable(); window.scrollTo({ top:0, behavior:'smooth' }); }
   );
 }
 
-async function toggleDestacado(id) {
+/* Delegación de eventos: los datos viajan por data-* en vez de
+   interpolarse dentro de un onclick. Un nombre con comillas ya no
+   puede romper la fila (ej. id 93: Smart TV Enova Google TV 50"). */
+document.getElementById('tabla-body').addEventListener('click', e => {
+  const el = e.target.closest('[data-accion]');
+  if (!el) return;
+  const accion = el.dataset.accion;
+  if (accion === 'limpiar') { limpiarFiltros(); return; }
+
+  const id = Number(el.dataset.id);
   const prod = allProducts.find(p => p.id === id);
   if (!prod) return;
+
+  if (accion === 'destacar')      toggleDestacado(prod);
+  else if (accion === 'estado')   toggleEstado(prod);
+  else if (accion === 'eliminar') confirmarEliminar(prod);
+});
+
+/* Traduce el error técnico a algo que entienda una persona no técnica.
+   El detalle crudo queda en consola para diagnóstico, no en pantalla. */
+function msgError(error, accion = 'guardar el cambio') {
+  console.error('[productos]', error);
+  const m = (error?.message || '').toLowerCase();
+  if (!navigator.onLine || m.includes('failed to fetch') || m.includes('networkerror'))
+    return 'Sin conexión. Revisá internet y volvé a intentar: el cambio no se guardó.';
+  if (m.includes('jwt') || m.includes('expired'))
+    return 'Tu sesión venció. Iniciá sesión de nuevo.';
+  if (m.includes('row-level security') || m.includes('permission') || m.includes('policy'))
+    return 'No tenés permisos para hacer esto.';
+  if (m.includes('foreign key') || m.includes('violates'))
+    return 'No se puede completar: el producto está vinculado a otros registros.';
+  return `No se pudo ${accion}. Probá de nuevo en unos segundos.`;
+}
+
+async function toggleDestacado(prod) {
   const nuevo = !prod.destacado;
-  const { error } = await db.from('productos').update({ destacado: nuevo }).eq('id', id);
-  if (error) { Utils.toast('Error: ' + error.message, 'error'); return; }
+  const { error } = await db.from('productos').update({ destacado: nuevo }).eq('id', prod.id);
+  if (error) { Utils.toast(msgError(error, 'cambiar el destacado'), 'error'); return; }
   prod.destacado = nuevo;
   renderTable();
   Utils.toast(nuevo ? '⭐ Producto destacado: ya aparece en la portada' : 'Quitado de destacados', 'success');
-  await Utils.log('update', 'productos', id, nuevo ? 'Marcado destacado' : 'Quitado de destacados');
+  await Utils.log('update', 'productos', prod.id, nuevo ? 'Marcado destacado' : 'Quitado de destacados');
 }
 
-async function toggleEstado(id, estado) {
-  const nuevoEstado = estado === 'activo' ? 'inactivo' : 'activo';
-  const ok = await Utils.confirm(`¿Cambiar estado a "${nuevoEstado}"?`, 'Cambiar estado', 'Confirmar', false);
+async function toggleEstado(prod) {
+  const nuevoEstado = prod.estado === 'activo' ? 'inactivo' : 'activo';
+  const texto = nuevoEstado === 'activo'
+    ? `<b>${esc(prod.nombre)}</b> va a quedar visible en la tienda.`
+    : `<b>${esc(prod.nombre)}</b> va a dejar de mostrarse en la tienda.`;
+  const ok = await Utils.confirm(texto, 'Cambiar visibilidad', 'Confirmar', false);
   if (!ok) return;
-  const { error } = await db.from('productos').update({ estado: nuevoEstado }).eq('id', id);
-  if (error) { Utils.toast('Error al cambiar estado', 'error'); return; }
-  const prod = allProducts.find(p=>p.id===id);
-  if (prod) { prod.estado = nuevoEstado; }
+  const { error } = await db.from('productos').update({ estado: nuevoEstado }).eq('id', prod.id);
+  if (error) { Utils.toast(msgError(error, 'cambiar el estado'), 'error'); return; }
+  prod.estado = nuevoEstado;
   renderTable();
-  Utils.toast('Estado actualizado', 'success');
-  await Utils.log('update', 'productos', id, `Estado cambiado a ${nuevoEstado}`);
+  Utils.toast(nuevoEstado === 'activo' ? 'Producto publicado en la tienda' : 'Producto oculto de la tienda', 'success');
+  await Utils.log('update', 'productos', prod.id, `Estado cambiado a ${nuevoEstado}`);
 }
 
-async function confirmarEliminar(id, nombre, stock) {
-  const msg = stock > 0
-    ? `<b>${nombre}</b> tiene ${stock} unidades en stock. ¿Seguro que querés eliminarlo permanentemente?`
+async function confirmarEliminar(prod) {
+  const nombre = esc(prod.nombre);
+  const msg = prod.stock_actual > 0
+    ? `<b>${nombre}</b> tiene ${prod.stock_actual} unidades en stock. ¿Seguro que querés eliminarlo permanentemente?`
     : `¿Eliminar permanentemente <b>${nombre}</b>?`;
   const ok = await Utils.confirm(msg, 'Eliminar producto');
   if (!ok) return;
-  const { error } = await db.from('productos').delete().eq('id', id);
-  if (error) { Utils.toast('Error al eliminar: ' + error.message, 'error'); return; }
-  allProducts = allProducts.filter(p => p.id !== id);
+  const { error } = await db.from('productos').delete().eq('id', prod.id);
+  if (error) { Utils.toast(msgError(error, 'eliminar el producto'), 'error'); return; }
+  allProducts = allProducts.filter(p => p.id !== prod.id);
   renderTable();
   Utils.toast('Producto eliminado', 'success');
-  await Utils.log('delete', 'productos', id, `Producto eliminado: ${nombre}`);
+  await Utils.log('delete', 'productos', prod.id, `Producto eliminado: ${prod.nombre}`);
 }
 
 async function cargarCategorias() {
-  const { data } = await db.from('categorias').select('id,nombre').order('orden');
+  const { data, error } = await db.from('categorias').select('id,nombre').order('orden');
+  if (error) { Utils.toast(msgError(error, 'cargar las categorías'), 'error'); return; }
   const sel = document.getElementById('filtro-cat');
   (data||[]).forEach(c => {
     cats[c.id] = c.nombre;
-    sel.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
+    sel.insertAdjacentHTML('beforeend', `<option value="${c.id}">${esc(c.nombre)}</option>`);
   });
 }
 
@@ -324,8 +450,24 @@ async function cargarProductos() {
   const { data, error } = await db.from('productos')
     .select('id,nombre,slug,sku,marca,categoria_id,stock_actual,stock_minimo,estado,precio_minorista,precio_oferta,en_oferta,destacado,imagen_principal_url,created_at')
     .order('nombre');
-  if (error) { Utils.toast('Error al cargar productos: ' + error.message, 'error'); return; }
+  if (error) {
+    Utils.toast(msgError(error, 'cargar los productos'), 'error');
+    document.getElementById('tabla-body').innerHTML =
+      `<tr><td colspan="8"><div class="empty-state">
+        <div class="empty-state-icon">⚠️</div>
+        <h3>No se pudo cargar el catálogo</h3>
+        <p>Revisá tu conexión y volvé a intentar.</p>
+        <button type="button" class="btn btn-outline" onclick="location.reload()">↺ Reintentar</button>
+      </div></td></tr>`;
+    return;
+  }
   allProducts = data || [];
+}
+
+function limpiarFiltros() {
+  state = { ...DEFAULTS, orden: state.orden };
+  pintarControles();
+  escribirURL(true);
   renderTable();
 }
 
@@ -392,22 +534,62 @@ document.getElementById('btn-do-import')?.addEventListener('click', async () => 
   btn.disabled = false;
 });
 
-// Filtros con debounce
+/* ── Cambios de filtro ──────────────────────────────────────────
+   Solo el buscador de texto necesita debounce. Los <select> se
+   escuchan únicamente en 'change': antes tenían 'input' + 'change'
+   a la vez y cada elección renderizaba dos veces. */
+function aplicarCambio(campo, valor) {
+  let nuevo;
+  if (campo === 'q')        nuevo = valor.slice(0, 80);
+  else if (campo === 'cat') nuevo = /^\d+$/.test(valor) ? valor : '';  // su dominio vive en la base, no en VALIDOS
+  else                      nuevo = enRango(campo, valor);
+
+  if (state[campo] === nuevo) return;
+  state[campo] = nuevo;
+  state.page = 1;              // cambiar un filtro siempre vuelve a la página 1
+  escribirURL(false);
+  renderTable();
+}
+
 let debTimer;
-['q','filtro-cat','filtro-estado','filtro-stock','filtro-extra','orden'].forEach(id => {
-  document.getElementById(id)?.addEventListener('input', () => {
-    clearTimeout(debTimer);
-    debTimer = setTimeout(() => { page=1; renderTable(); }, 200);
-  });
-  document.getElementById(id)?.addEventListener('change', () => { page=1; renderTable(); });
+document.getElementById('q')?.addEventListener('input', e => {
+  const v = e.target.value;
+  clearTimeout(debTimer);
+  debTimer = setTimeout(() => aplicarCambio('q', v), 250);
 });
+
+Object.entries(CONTROL).forEach(([campo, id]) => {
+  if (campo === 'q') return;
+  document.getElementById(id)?.addEventListener('change', e => aplicarCambio(campo, e.target.value));
+});
+
+document.getElementById('btn-limpiar')?.addEventListener('click', limpiarFiltros);
+
+/* Botón atrás / adelante del navegador: se re-hidrata desde la URL.
+   No se vuelve a escribir la URL acá, así no se genera un bucle. */
+window.addEventListener('popstate', () => {
+  state = leerURL();
+  reconciliarCategoria();
+  pintarControles();
+  renderTable();
+});
+
+/* Si la URL trae una categoría que ya no existe, se descarta en vez de
+   dejar el listado vacío con el filtro mostrando "Todas". */
+function reconciliarCategoria() {
+  if (state.cat && !cats[state.cat]) state.cat = '';
+}
 
 async function initPage() {
   const profile = await Auth.init();
   if (!profile) return;
   await Layout.init('productos', 'Productos');
   await Promise.all([cargarCategorias(), cargarProductos()]);
-  aplicarParamsURL();
+
+  state = leerURL();
+  reconciliarCategoria();
+  pintarControles();
+  escribirURL(false);   // normaliza la URL (limpia parámetros inválidos o heredados)
   renderTable();
 }
 initPage();

@@ -31,6 +31,9 @@
     .sol-items td{padding:7px 8px;border-bottom:1px solid #f0f0f0}
     .sol-obs{background:#F7F8FA;border-radius:8px;padding:10px 12px;font-size:13px;margin-top:10px;white-space:pre-wrap}
     .pend-tag{background:#FFF4E8;color:#8A4B12;font-size:11px;font-weight:700;border-radius:5px;padding:2px 6px}
+    /* En celular los datos del pedido van uno debajo del otro: a dos columnas
+       quedaban ~150px por campo y los teléfonos/direcciones se cortaban. */
+    @media (max-width:768px){ .sol-grid{grid-template-columns:1fr} }
   </style>
 </head>
 <body>

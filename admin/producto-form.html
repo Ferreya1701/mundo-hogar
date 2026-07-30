@@ -26,7 +26,7 @@
       <button class="header-toggle" id="sidebar-toggle">☰</button>
       <span class="header-title" id="page-title"></span>
       <div class="header-actions">
-        <a href="/admin/productos.html" class="btn btn-ghost btn-sm">← Volver</a>
+        <a href="/admin/productos.html" class="btn btn-ghost btn-sm" id="link-volver">← Volver al listado</a>
         <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
       </div>
     </header>
@@ -35,16 +35,18 @@
       <div class="page-header">
         <div><h1 id="form-title">Nuevo Producto</h1><p id="form-subtitle">Completá los datos del producto</p></div>
         <div class="page-header-actions">
-          <button class="btn btn-outline" id="btn-cancelar" onclick="history.back()">Cancelar</button>
-          <button class="btn btn-primary" id="btn-guardar">Guardar producto</button>
+          <span class="dirty-flag" id="dirty-ind" hidden>● Cambios sin guardar</span>
+          <button type="button" class="btn btn-outline" id="btn-cancelar">Cancelar</button>
+          <button type="button" class="btn btn-outline" id="btn-guardar">Guardar</button>
+          <button type="button" class="btn btn-primary" id="btn-guardar-volver">Guardar y volver</button>
         </div>
       </div>
 
       <form id="producto-form" novalidate>
-        <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;align-items:start">
+        <div class="form-layout">
 
           <!-- COLUMNA IZQUIERDA -->
-          <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
 
             <!-- Info básica -->
             <div class="card">
@@ -142,7 +144,7 @@
           </div>
 
           <!-- COLUMNA DERECHA -->
-          <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
 
             <!-- Estado -->
             <div class="card">
@@ -252,10 +254,91 @@
 <script src="/admin/js/layout.js"></script>
 <script>
 const urlParams = new URLSearchParams(window.location.search);
-const editId    = urlParams.get('id');
+let editId      = urlParams.get('id');
 let isEdit      = !!editId;
 let currentProfile = null;
 let uploadedImageUrl = null;
+
+/* ── Contexto de regreso ────────────────────────────────────────
+   El listado nos pasa sus filtros/orden/página en `volver`. Se
+   re-serializa con URLSearchParams para descartar cualquier cosa
+   rara y siempre se antepone la ruta fija del listado. Si no viene
+   (se entró por link directo), se vuelve al listado sin filtros. */
+const volverQS = new URLSearchParams(urlParams.get('volver') || '').toString();
+const URL_LISTADO = '/admin/productos.html' + (volverQS ? '?' + volverQS : '');
+document.getElementById('link-volver').href = URL_LISTADO;
+
+/* ── Detección de cambios sin guardar ───────────────────────── */
+const CAMPOS = ['nombre','categoria_id','marca','sku','codigo_barras','descripcion_corta','descripcion',
+  'precio_costo','precio_minorista','precio_mayorista','precio_oferta','en_oferta',
+  'material','color','garantia','peso','alto','ancho','profundidad','proveedor','ubicacion','observaciones',
+  'estado','destacado','es_nuevo','seguimiento_inventario','stock_actual','stock_minimo','unidad',
+  'permite_venta_sin_stock','imagen_principal_url'];
+
+let baseline = null;      // foto del formulario tal como quedó al cargar/guardar
+let omitirAviso = false;  // true mientras navegamos a propósito
+
+function snapshot() {
+  return JSON.stringify(CAMPOS.map(id => {
+    const el = document.getElementById(id);
+    if (!el) return null;
+    return el.type === 'checkbox' ? el.checked : el.value;
+  }));
+}
+const estaSucio = () => baseline !== null && snapshot() !== baseline;
+
+function marcarLimpio() {
+  baseline = snapshot();
+  document.getElementById('dirty-ind').hidden = true;
+}
+
+function refrescarIndicador() {
+  document.getElementById('dirty-ind').hidden = !estaSucio();
+}
+document.getElementById('producto-form').addEventListener('input',  refrescarIndicador);
+document.getElementById('producto-form').addEventListener('change', refrescarIndicador);
+
+// Red de seguridad del navegador (recarga, cerrar pestaña, cerrar sesión)
+window.addEventListener('beforeunload', e => {
+  if (omitirAviso || !estaSucio()) return;
+  e.preventDefault();
+  e.returnValue = '';
+});
+
+// Navegación interna por links (sidebar, "Volver"): aviso propio, más claro
+document.addEventListener('click', async e => {
+  const a = e.target.closest('a[href]');
+  if (!a || a.target === '_blank' || omitirAviso || !estaSucio()) return;
+  e.preventDefault();
+  if (await confirmarSalida()) irA(a.href);
+}, true);
+
+function confirmarSalida() {
+  return Utils.confirm(
+    'Tenés cambios sin guardar en este producto. Si salís ahora se pierden.',
+    'Salir sin guardar', 'Salir sin guardar'
+  );
+}
+
+function irA(url) { omitirAviso = true; window.location.href = url; }
+
+/* Traduce el error técnico a algo entendible. El detalle crudo va a
+   consola, no a la pantalla del usuario. */
+function msgError(error, accion = 'guardar') {
+  console.error('[producto-form]', error);
+  const m = (error?.message || '').toLowerCase();
+  if (!navigator.onLine || m.includes('failed to fetch') || m.includes('networkerror'))
+    return 'Sin conexión. No se guardó nada; tus datos siguen acá. Reintentá cuando vuelva internet.';
+  if (m.includes('jwt') || m.includes('expired'))
+    return 'Tu sesión venció. Abrí el panel en otra pestaña, iniciá sesión y volvé a guardar.';
+  if (m.includes('row-level security') || m.includes('permission') || m.includes('policy'))
+    return 'No tenés permisos para guardar productos.';
+  if (m.includes('slug') || m.includes('duplicate') || m.includes('unique'))
+    return 'Ya existe un producto con ese nombre. Cambiá el nombre y probá de nuevo.';
+  if (m.includes('stock_solo_por_movimiento'))
+    return 'El stock no se edita desde acá: usá el módulo Inventario para registrar el movimiento.';
+  return `No se pudo ${accion}. Revisá los datos y probá otra vez.`;
+}
 
 function val(id) { return document.getElementById(id)?.value || ''; }
 function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = v ?? ''; }
@@ -269,15 +352,31 @@ async function cargarCategorias() {
   (data||[]).forEach(c => sel.innerHTML += `<option value="${c.id}">${c.nombre}</option>`);
 }
 
+/* En edición el stock no se toca desde acá: la base lo blinda (sql/008)
+   y solo se mueve por Inventario. Se deshabilita de verdad, no solo se
+   atenúa, para que nadie escriba un número que se va a rechazar. */
+function bloquearCamposStock() {
+  const cont = document.getElementById('stock-fields');
+  cont.style.opacity = '0.55';
+  cont.title = 'Para modificar el stock usá el módulo Inventario';
+  const input = document.getElementById('stock_actual');
+  input.disabled = true;
+  input.parentElement.querySelector('.form-hint').textContent =
+    'El stock se modifica desde Inventario, que deja registro del movimiento.';
+}
+
 async function cargarProducto() {
   if (!isEdit) return;
   const { data, error } = await db.from('productos').select('*').eq('id',editId).single();
-  if (error || !data) { Utils.toast('Producto no encontrado','error'); return; }
+  if (error || !data) {
+    Utils.toast('No se encontró ese producto. Puede que lo hayan eliminado.','error');
+    document.getElementById('form-subtitle').textContent = 'Producto no encontrado';
+    return;
+  }
 
   document.getElementById('form-title').textContent = 'Editar Producto';
   document.getElementById('form-subtitle').textContent = data.nombre;
-  document.getElementById('stock-fields').style.opacity = '0.5';
-  document.getElementById('stock-fields').title = 'Para modificar el stock usá el módulo Inventario';
+  bloquearCamposStock();
 
   setVal('nombre', data.nombre); setVal('categoria_id', data.categoria_id);
   setVal('marca', data.marca); setVal('sku', data.sku); setVal('codigo_barras', data.codigo_barras);
@@ -306,6 +405,7 @@ document.getElementById('btn-gen-sku')?.addEventListener('click', () => {
   const catText = cat.options[cat.selectedIndex]?.text || '';
   const nombre = val('nombre');
   setVal('sku', Utils.generateSKU(catText, nombre));
+  refrescarIndicador();
 });
 
 // Preview imagen URL
@@ -334,25 +434,43 @@ async function handleFile(file) {
   const ext  = file.name.split('.').pop().toLowerCase();
   const name = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
   const path = `productos/${name}`;
-  const { data, error } = await db.storage.from('producto-imagenes').upload(path, file);
+  const { error } = await db.storage.from('producto-imagenes').upload(path, file);
   if (error) {
-    status.textContent = '❌ Error al subir imagen: ' + error.message;
+    console.error('[producto-form] upload', error);
+    status.textContent = '❌ No se pudo subir la imagen. Revisá la conexión y probá de nuevo.';
     return;
   }
   const { data: urlData } = db.storage.from('producto-imagenes').getPublicUrl(path);
   uploadedImageUrl = urlData.publicUrl;
   setVal('imagen_principal_url', uploadedImageUrl);
+  refrescarIndicador();   // setVal no dispara eventos: hay que avisar del cambio a mano
   document.getElementById('img-preview').innerHTML =
     `<img src="${uploadedImageUrl}" style="width:100%;max-height:160px;object-fit:contain;background:var(--bg);border-radius:var(--r);border:1px solid var(--border)">`;
   status.textContent = '✅ Imagen subida correctamente';
 }
 
-// Guardar
-document.getElementById('btn-guardar')?.addEventListener('click', async () => {
+// ── Guardar ────────────────────────────────────────────────────
+const BOTONES = ['btn-guardar','btn-guardar-volver','btn-cancelar'];
+
+function bloquearBotones(bloq, textoEnCurso) {
+  BOTONES.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = bloq; });
+  const bg = document.getElementById('btn-guardar');
+  const bv = document.getElementById('btn-guardar-volver');
+  if (bloq) {
+    (textoEnCurso === 'volver' ? bv : bg).innerHTML = '<span class="spinner"></span> Guardando...';
+  } else {
+    bg.textContent = 'Guardar';
+    bv.textContent = 'Guardar y volver';
+  }
+}
+
+/* Devuelve true si el guardado salió bien. Ante cualquier error se
+   informa y NO se navega: los datos escritos quedan intactos. */
+async function guardar(volverAlListado) {
   const nombre = val('nombre').trim();
-  if (!nombre) { Utils.toast('El nombre es obligatorio','warning'); document.getElementById('nombre').focus(); return; }
+  if (!nombre) { Utils.toast('El nombre es obligatorio','warning'); document.getElementById('nombre').focus(); return false; }
   const cat = val('categoria_id');
-  if (!cat) { Utils.toast('Seleccioná una categoría','warning'); document.getElementById('categoria_id').focus(); return; }
+  if (!cat) { Utils.toast('Seleccioná una categoría','warning'); document.getElementById('categoria_id').focus(); return false; }
 
   const payload = {
     nombre, slug: Utils.slug(nombre),
@@ -383,9 +501,9 @@ document.getElementById('btn-guardar')?.addEventListener('click', async () => {
     updated_by: currentProfile?.id
   };
 
-  const btn = document.getElementById('btn-guardar');
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Guardando...';
+  bloquearBotones(true, volverAlListado ? 'volver' : 'quedarse');
 
+  const eraAlta = !isEdit;
   let error, data;
   if (isEdit) {
     ({ error, data } = await db.from('productos').update(payload).eq('id',editId).select().single());
@@ -398,24 +516,50 @@ document.getElementById('btn-guardar')?.addEventListener('click', async () => {
     ({ error, data } = await db.from('productos').insert(payload).select().single());
 
     if (!error && data && stockInicial > 0) {
-      await db.rpc('fn_registrar_movimiento', {
+      const { error: errMov } = await db.rpc('fn_registrar_movimiento', {
         p_producto_id: data.id, p_tipo: 'carga_inicial',
         p_cantidad: stockInicial, p_motivo: 'Carga inicial al crear producto'
       });
+      // El producto quedó creado; solo falló el asiento de stock. Se avisa
+      // en vez de dar por bueno un stock que no se registró.
+      if (errMov) {
+        console.error('[producto-form] carga inicial', errMov);
+        Utils.toast('El producto se creó, pero no se pudo cargar el stock inicial. Registralo desde Inventario.', 'warning', 7000);
+      }
     }
   }
 
-  btn.disabled = false; btn.textContent = 'Guardar producto';
+  bloquearBotones(false);
 
-  if (error) {
-    const msg = error.message.includes('slug') ? 'Ya existe un producto con ese nombre/slug.' : error.message;
-    Utils.toast('Error: ' + msg, 'error');
-    return;
+  if (error) { Utils.toast(msgError(error), 'error', 6000); return false; }
+
+  // Tras un alta se pasa a modo edición: si vuelven a tocar "Guardar"
+  // se actualiza el mismo producto en vez de crear un duplicado.
+  if (eraAlta && data?.id) {
+    editId = String(data.id);
+    isEdit = true;
+    document.getElementById('form-title').textContent = 'Editar Producto';
+    document.getElementById('form-subtitle').textContent = data.nombre;
+    bloquearCamposStock();
+    history.replaceState(null, '',
+      `/admin/producto-form.html?id=${editId}` + (volverQS ? `&volver=${encodeURIComponent(volverQS)}` : ''));
   }
 
-  Utils.toast(isEdit ? 'Producto actualizado ✅' : 'Producto creado ✅', 'success');
-  await Utils.log(isEdit?'update':'create','productos',data?.id||editId,`Producto ${isEdit?'actualizado':'creado'}: ${nombre}`);
-  setTimeout(() => window.location.href='/admin/productos.html', 900);
+  marcarLimpio();
+  Utils.toast(eraAlta ? 'Producto creado ✅' : 'Producto actualizado ✅', 'success');
+  await Utils.log(eraAlta?'create':'update','productos',data?.id||editId,`Producto ${eraAlta?'creado':'actualizado'}: ${nombre}`);
+  return true;
+}
+
+document.getElementById('btn-guardar')?.addEventListener('click', () => guardar(false));
+
+document.getElementById('btn-guardar-volver')?.addEventListener('click', async () => {
+  if (await guardar(true)) irA(URL_LISTADO);
+});
+
+document.getElementById('btn-cancelar')?.addEventListener('click', async () => {
+  if (estaSucio() && !await confirmarSalida()) return;
+  irA(URL_LISTADO);
 });
 
 async function initPage() {
@@ -428,7 +572,9 @@ async function initPage() {
     return;
   }
   await Layout.init('productos', isEdit ? 'Editar Producto' : 'Nuevo Producto');
-  await Promise.all([cargarCategorias(), cargarProducto()]);
+  await cargarCategorias();     // antes del producto: el <select> necesita sus <option>
+  await cargarProducto();
+  marcarLimpio();               // desde acá se empieza a medir "cambios sin guardar"
 }
 initPage();
 </script>

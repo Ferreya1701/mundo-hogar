@@ -151,6 +151,10 @@ a:hover { color: var(--blue-dark); }
   margin-left: var(--sidebar-w);
   flex:1; display:flex; flex-direction:column; min-height:100vh;
   transition: margin-left var(--t);
+  /* min-width:0 es imprescindible: sin esto un hijo ancho (la tabla) no deja
+     encoger al flex item y el scroll horizontal se lo come toda la página en
+     vez de quedar contenido dentro de .table-wrap. */
+  min-width: 0;
 }
 .sidebar.collapsed ~ .main-wrap { margin-left: var(--sidebar-col); }
 
@@ -330,6 +334,29 @@ tbody tr:hover td { background:#F0F5FC; }
 .form-group  { display:flex; flex-direction:column; gap:5px; }
 .form-group.col-span-2 { grid-column:span 2; }
 .form-group.col-span-3 { grid-column:span 3; }
+
+/* Layout del formulario de producto: contenido principal + panel lateral.
+   Vive acá y no en un style inline porque un inline le gana al @media
+   y dejaba el formulario en dos columnas dentro de un celular. */
+.form-layout { display:grid; grid-template-columns:2fr 1fr; gap:20px; align-items:start; }
+.form-layout > * { display:flex; flex-direction:column; gap:20px; min-width:0; }
+
+/* Grillas de página que colapsan a una columna en celular.
+   Viven acá y no en un style inline por el mismo motivo que .form-layout:
+   el inline le gana al @media y dejaba estas pantallas en varias columnas
+   dentro de un teléfono. */
+.split-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+.grid-2  { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.grid-3  { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.kpi-grid.cols-3 { grid-template-columns:repeat(3,1fr); }
+
+/* Aviso de cambios pendientes en el encabezado del formulario */
+.dirty-flag {
+  display:inline-flex; align-items:center;
+  font-size:12px; font-weight:600; color:var(--warning);
+  background:var(--warning-bg); border-radius:99px; padding:4px 10px;
+  white-space:nowrap;
+}
 
 label { font-size:12px; font-weight:600; color:var(--ink); }
 label .req { color:var(--danger); margin-left:3px; }
@@ -703,9 +730,12 @@ kbd {
   .sidebar.mobile-open ~ .mobile-overlay { display:block; }
   .main-wrap { margin-left:0 !important; }
   .page-content { padding:16px; }
+  .form-layout { grid-template-columns:1fr; }
   .form-grid-2,.form-grid-3 { grid-template-columns:1fr; }
   .form-group.col-span-2,.form-group.col-span-3 { grid-column:span 1; }
+  .split-2,.grid-2,.grid-3 { grid-template-columns:1fr; }
   .kpi-grid { grid-template-columns:1fr 1fr; }
+  .kpi-grid.cols-3 { grid-template-columns:1fr 1fr; }
   .page-header { flex-direction:column; }
   [data-tip]:hover::after,[data-tip]:hover::before { display:none; }
 }
