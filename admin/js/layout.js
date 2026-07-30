@@ -48,10 +48,17 @@ const Layout = {
     }
   },
 
-  toggleSidebar() {
-    const sb = document.getElementById('sidebar');
-    if (window.innerWidth <= 768) {
-      sb.classList.toggle('mobile-open');
+  esMovil: () => window.innerWidth <= 768,
+
+  toggleSidebar(forzarCerrado = false) {
+    const sb  = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebar-toggle');
+    if (this.esMovil()) {
+      const abierto = forzarCerrado
+        ? (sb.classList.remove('mobile-open'), false)
+        : sb.classList.toggle('mobile-open');
+      btn?.setAttribute('aria-expanded', String(abierto));
+      btn?.setAttribute('aria-label', abierto ? 'Cerrar menú' : 'Abrir menú');
     } else {
       sb.classList.toggle('collapsed');
       localStorage.setItem('sbCollapsed', sb.classList.contains('collapsed'));
@@ -63,14 +70,26 @@ const Layout = {
     this.render(pageId, pageTitle, profile);
 
     const sb = document.getElementById('sidebar');
-    if (localStorage.getItem('sbCollapsed') === 'true' && window.innerWidth > 768) {
+    if (localStorage.getItem('sbCollapsed') === 'true' && !this.esMovil()) {
       sb.classList.add('collapsed');
     }
 
-    document.getElementById('sidebar-toggle')
-      ?.addEventListener('click', () => this.toggleSidebar());
+    const btn = document.getElementById('sidebar-toggle');
+    if (btn) {
+      btn.setAttribute('aria-controls', 'sidebar');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.setAttribute('aria-label', 'Abrir menú');
+      btn.addEventListener('click', () => this.toggleSidebar());
+    }
     document.getElementById('mobile-overlay')
-      ?.addEventListener('click', () => this.toggleSidebar());
+      ?.addEventListener('click', () => this.toggleSidebar(true));
+
+    // Escape cierra el menú: en celular tapa media pantalla y hay que
+    // poder salir sin buscar el botón.
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && sb.classList.contains('mobile-open')) this.toggleSidebar(true);
+    });
+
     document.getElementById('logout-btn')
       ?.addEventListener('click', () => Auth.logout());
   }

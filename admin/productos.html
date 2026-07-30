@@ -43,44 +43,55 @@
 
       <!-- Filtros -->
       <div class="filters-bar">
-        <div class="search-bar" style="flex:1;min-width:200px;max-width:340px">
+        <div class="search-bar">
           <span class="search-icon">🔍</span>
-          <input type="search" id="q" placeholder="Buscar por nombre, SKU...">
+          <input type="search" id="q" placeholder="Buscar por nombre, SKU..." aria-label="Buscar productos">
         </div>
-        <select id="filtro-cat" style="min-width:160px">
-          <option value="">Todas las categorías</option>
-        </select>
-        <select id="filtro-estado" style="min-width:130px">
-          <option value="">Todos los estados</option>
-          <option value="activo">Activo</option>
-          <option value="inactivo">Inactivo</option>
-          <option value="archivado">Archivado</option>
-        </select>
-        <select id="filtro-stock" style="min-width:130px">
-          <option value="">Cualquier stock</option>
-          <option value="sin">Sin stock (= 0)</option>
-          <option value="bajo">Stock bajo</option>
-          <option value="ok">Stock OK</option>
-        </select>
-        <select id="filtro-extra" style="min-width:150px">
-          <option value="">Más filtros</option>
-          <option value="sin-precio">💲 Sin precio</option>
-          <option value="sin-imagen">🖼️ Sin imagen</option>
-          <option value="sin-cat">🏷️ Sin categoría</option>
-          <option value="destacados">⭐ Destacados</option>
-          <option value="oferta">🔥 En oferta</option>
-          <option value="incompletos">⚠️ Incompletos</option>
-        </select>
-        <select id="orden" style="min-width:150px">
-          <option value="nombre">Nombre A→Z</option>
-          <option value="precio-desc">Precio: mayor a menor</option>
-          <option value="precio-asc">Precio: menor a mayor</option>
-          <option value="stock-asc">Stock: menor a mayor</option>
-          <option value="stock-desc">Stock: mayor a menor</option>
-          <option value="recientes">Más recientes</option>
-        </select>
+
+        <!-- En celular los 5 selectores se pliegan detrás de este botón:
+             sueltos ocupaban ~6 filas y empujaban el listado fuera de pantalla. -->
+        <button type="button" class="btn btn-outline btn-sm" id="btn-filtros"
+                aria-expanded="false" aria-controls="filtros-avanzados">
+          ⚙️ Filtros<span class="chip-n" id="filtros-n" hidden></span>
+        </button>
+
+        <div class="filtros-avanzados" id="filtros-avanzados">
+          <select id="filtro-cat" aria-label="Filtrar por categoría">
+            <option value="">Todas las categorías</option>
+          </select>
+          <select id="filtro-estado" aria-label="Filtrar por estado">
+            <option value="">Todos los estados</option>
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+            <option value="archivado">Archivado</option>
+          </select>
+          <select id="filtro-stock" aria-label="Filtrar por stock">
+            <option value="">Cualquier stock</option>
+            <option value="sin">Sin stock (= 0)</option>
+            <option value="bajo">Stock bajo</option>
+            <option value="ok">Stock OK</option>
+          </select>
+          <select id="filtro-extra" aria-label="Más filtros">
+            <option value="">Más filtros</option>
+            <option value="sin-precio">💲 Sin precio</option>
+            <option value="sin-imagen">🖼️ Sin imagen</option>
+            <option value="sin-cat">🏷️ Sin categoría</option>
+            <option value="destacados">⭐ Destacados</option>
+            <option value="oferta">🔥 En oferta</option>
+            <option value="incompletos">⚠️ Incompletos</option>
+          </select>
+          <select id="orden" aria-label="Ordenar por">
+            <option value="nombre">Nombre A→Z</option>
+            <option value="precio-desc">Precio: mayor a menor</option>
+            <option value="precio-asc">Precio: menor a mayor</option>
+            <option value="stock-asc">Stock: menor a mayor</option>
+            <option value="stock-desc">Stock: mayor a menor</option>
+            <option value="recientes">Más recientes</option>
+          </select>
+        </div>
+
         <button type="button" class="btn btn-ghost btn-sm" id="btn-limpiar" hidden>✕ Limpiar filtros</button>
-        <span class="filter-count" id="filter-count"></span>
+        <span class="filter-count" id="filter-count" role="status"></span>
       </div>
 
       <!-- Tabla -->
@@ -99,7 +110,7 @@
             </tr>
           </thead>
           <tbody id="tabla-body">
-            <tr><td colspan="8" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr>
+            <tr class="fila-plana"><td colspan="8" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr>
           </tbody>
         </table>
         <div class="pagination" id="paginacion"></div>
@@ -282,11 +293,15 @@ function renderTable() {
   document.getElementById('filter-count').textContent =
     `${total} producto${total!==1?'s':''}` + (nFiltros ? ` · ${nFiltros} filtro${nFiltros!==1?'s':''}` : '');
   document.getElementById('btn-limpiar').hidden = nFiltros === 0;
+  // En celular los selectores están plegados: el botón avisa cuántos hay puestos
+  const badge = document.getElementById('filtros-n');
+  badge.hidden = nFiltros === 0;
+  badge.textContent = nFiltros;
   document.getElementById('subtitle').textContent = `${allProducts.length} productos en total`;
 
   if (!slice.length) {
     document.getElementById('tabla-body').innerHTML =
-      `<tr><td colspan="8"><div class="empty-state">
+      `<tr class="fila-plana"><td colspan="8"><div class="empty-state">
         <div class="empty-state-icon">🛍️</div>
         <h3>Sin resultados</h3>
         <p>Ningún producto coincide con los filtros aplicados.</p>
@@ -314,41 +329,43 @@ function renderTable() {
     if (p.en_oferta && p.precio_oferta > 0) badges.push('<span class="badge badge-gold">Oferta</span>');
     if (!badges.length && p.estado === 'activo') badges.push('<span class="badge badge-success">Completo</span>');
     const conOferta = p.en_oferta && p.precio_oferta > 0 && p.precio_minorista > 0;
+    // Las clases c-* le dan nombre a cada celda: en celular el CSS las
+    // reacomoda como tarjeta (una fila = un producto legible sin scroll lateral).
     return `<tr>
-      <td>${imgSrc
+      <td class="c-img">${imgSrc
         ? `<img class="td-img" src="${imgSrc}" alt="${nombre}" onerror="this.style.display='none'">`
         : `<div class="td-img-ph">🛍️</div>`}</td>
-      <td>
+      <td class="c-prod">
         <div class="td-product" style="flex-direction:column;align-items:flex-start;gap:3px">
           <div class="td-name">${nombre}</div>
           <div class="d-flex gap-2" style="flex-wrap:wrap">${p.marca ? `<span class="td-sku">${esc(p.marca)}</span>` : ''}${badges.join('')}</div>
         </div>
       </td>
-      <td style="color:var(--muted);font-size:12.5px">${catNombre}</td>
-      <td style="font-family:monospace;font-size:12px;color:var(--muted)">${esc(p.sku||'—')}</td>
-      <td style="text-align:center">
+      <td class="c-cat" data-l="Categoría">${catNombre}</td>
+      <td class="c-sku" data-l="SKU">${esc(p.sku||'—')}</td>
+      <td class="c-stock" data-l="Stock">
         <span class="stock-num ${sc}">${p.stock_actual}</span>
-        ${p.stock_minimo>0?`<div style="font-size:10.5px;color:var(--muted)">mín: ${p.stock_minimo}</div>`:''}
+        ${p.stock_minimo>0?`<div class="c-stock-min">mín: ${p.stock_minimo}</div>`:''}
       </td>
-      <td>${Utils.estadoBadge(p.estado)}</td>
-      <td style="font-size:12.5px;white-space:nowrap">
+      <td class="c-estado" data-l="Estado">${Utils.estadoBadge(p.estado)}</td>
+      <td class="c-precio" data-l="Precio">
         ${conOferta
-          ? `<s style="color:var(--muted);font-size:11px">${Utils.currency(p.precio_minorista)}</s><br><b style="color:var(--gold-dark)">${Utils.currency(p.precio_oferta)}</b>`
+          ? `<s class="c-precio-viejo">${Utils.currency(p.precio_minorista)}</s><br><b class="c-precio-oferta">${Utils.currency(p.precio_oferta)}</b>`
           : Utils.currency(p.precio_minorista)}
       </td>
-      <td>
-        <div class="d-flex gap-2">
-          <button type="button" class="btn btn-ghost btn-sm" data-accion="destacar" data-id="${p.id}"
+      <td class="c-acc">
+        <div class="row-acciones">
+          <button type="button" class="btn btn-ghost btn-sm act-destacar" data-accion="destacar" data-id="${p.id}"
                   data-tip="${p.destacado?'Quitar de destacados':'Destacar en portada'}"
                   aria-label="${p.destacado?'Quitar de destacados':'Destacar'} ${nombre}"
-                  style="${p.destacado?'':'filter:grayscale(1);opacity:.55'}">⭐</button>
-          <a href="/admin/producto-form.html?id=${p.id}${volverParam}" class="btn btn-ghost btn-sm"
-             data-tip="Editar" aria-label="Editar ${nombre}">✏️</a>
+                  aria-pressed="${!!p.destacado}">⭐</button>
+          <a href="/admin/producto-form.html?id=${p.id}${volverParam}" class="btn btn-ghost btn-sm act-editar"
+             data-tip="Editar" aria-label="Editar ${nombre}">✏️<span class="solo-movil">Editar</span></a>
           <button type="button" class="btn btn-ghost btn-sm" data-accion="estado" data-id="${p.id}"
                   data-tip="${p.estado==='activo'?'Ocultar de la tienda':'Publicar en la tienda'}"
                   aria-label="${p.estado==='activo'?'Ocultar de la tienda':'Publicar en la tienda'} ${nombre}">
             ${p.estado==='activo'?'⏸️':'▶️'}</button>
-          <button type="button" class="btn btn-ghost btn-sm" data-accion="eliminar" data-id="${p.id}"
+          <button type="button" class="btn btn-ghost btn-sm act-eliminar" data-accion="eliminar" data-id="${p.id}"
                   data-tip="Eliminar" aria-label="Eliminar ${nombre}">🗑️</button>
         </div>
       </td>
@@ -453,7 +470,7 @@ async function cargarProductos() {
   if (error) {
     Utils.toast(msgError(error, 'cargar los productos'), 'error');
     document.getElementById('tabla-body').innerHTML =
-      `<tr><td colspan="8"><div class="empty-state">
+      `<tr class="fila-plana"><td colspan="8"><div class="empty-state">
         <div class="empty-state-icon">⚠️</div>
         <h3>No se pudo cargar el catálogo</h3>
         <p>Revisá tu conexión y volvé a intentar.</p>
@@ -564,6 +581,12 @@ Object.entries(CONTROL).forEach(([campo, id]) => {
 });
 
 document.getElementById('btn-limpiar')?.addEventListener('click', limpiarFiltros);
+
+// Plegar/desplegar los filtros en celular
+document.getElementById('btn-filtros')?.addEventListener('click', e => {
+  const abierto = document.getElementById('filtros-avanzados').classList.toggle('abierto');
+  e.currentTarget.setAttribute('aria-expanded', String(abierto));
+});
 
 /* Botón atrás / adelante del navegador: se re-hidrata desde la URL.
    No se vuelve a escribir la URL acá, así no se genera un bucle. */

@@ -260,6 +260,23 @@ tbody tr:hover td { background:#F0F5FC; }
 .td-name { font-weight:500; color:var(--ink); }
 .td-sku  { font-size:11.5px; color:var(--muted); margin-top:1px; }
 
+/* ── Celdas del listado de productos ─────────────────────────────
+   Cada celda tiene nombre propio (c-*) para que el bloque responsive
+   pueda reacomodarlas como tarjeta sin duplicar el markup en JS. */
+.c-cat        { color:var(--muted); font-size:12.5px; }
+.c-sku        { font-family:monospace; font-size:12px; color:var(--muted); }
+.c-stock      { text-align:center; }
+.c-stock-min  { font-size:10.5px; color:var(--muted); }
+.c-precio     { font-size:12.5px; white-space:nowrap; }
+.c-precio-viejo  { color:var(--muted); font-size:11px; }
+.c-precio-oferta { color:var(--gold-dark); }
+
+.row-acciones { display:flex; align-items:center; gap:8px; }
+/* El destacado no se comunica solo por color: aria-pressed lo dice
+   y de paso maneja el estilo, sin style inline. */
+.act-destacar[aria-pressed="false"] { filter:grayscale(1); opacity:.55; }
+.solo-movil { display:none; }
+
 /* ── Badges ─────────────────────────────────────────────────── */
 .badge {
   display:inline-flex; align-items:center; gap:4px;
@@ -412,6 +429,12 @@ select {
 /* ── Filters bar ─────────────────────────────────────────────── */
 .filters-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
 .filter-count { font-size:12px; color:var(--muted); margin-left:auto; }
+.filters-bar .search-bar { flex:1; min-width:200px; max-width:340px; }
+.filters-bar select { min-width:145px; }
+/* display:contents deja los <select> como hijos directos del flex en
+   escritorio; en celular el contenedor se vuelve un panel plegable. */
+.filtros-avanzados { display:contents; }
+#btn-filtros { display:none; }
 
 /* ── Pagination ─────────────────────────────────────────────── */
 .pagination { display:flex; align-items:center; gap:4px; padding:14px 20px; border-top:1px solid var(--border); }
@@ -738,6 +761,95 @@ kbd {
   .kpi-grid.cols-3 { grid-template-columns:1fr 1fr; }
   .page-header { flex-direction:column; }
   [data-tip]:hover::after,[data-tip]:hover::before { display:none; }
+
+  /* ── Barra de guardado fija (formulario de producto) ────────────
+     En celular los botones quedaban arriba de todo y había que subir
+     scrolleando para guardar. Ahora acompañan siempre. */
+  .barra-guardado {
+    position:fixed; left:0; right:0; bottom:0; z-index:60;
+    background:#fff; border-top:1px solid var(--border);
+    box-shadow:0 -3px 12px rgba(13,42,99,.10);
+    padding:10px 14px; gap:8px; flex-wrap:wrap;
+  }
+  .barra-guardado .btn { min-height:46px; flex:1; justify-content:center; }
+  .barra-guardado #btn-cancelar { flex:0 1 90px; }
+  .barra-guardado .dirty-flag { flex:1 1 100%; justify-content:center; }
+  /* Reserva de espacio para que la barra no tape el final del formulario */
+  body.form-producto .page-content { padding-bottom:112px; }
+  /* El botón del Asistente se corre para no pisar la barra */
+  body.form-producto #mh-asst-fab { bottom:104px; }
+
+  /* ── Filtros plegables ──────────────────────────────────────────
+     El buscador queda siempre a la vista; el resto entra y sale con
+     el botón, que muestra cuántos filtros hay puestos. */
+  .filters-bar .search-bar { flex:1 1 100%; max-width:none; min-width:0; }
+  #btn-filtros { display:inline-flex; }
+  .filtros-avanzados { display:none; flex:1 1 100%; grid-template-columns:1fr 1fr; gap:8px; }
+  .filtros-avanzados.abierto { display:grid; }
+  .filtros-avanzados select { min-width:0; width:100%; }
+  .filters-bar select,
+  .filters-bar input[type=search],
+  #btn-filtros, #btn-limpiar { min-height:44px; }
+  .filter-count { margin-left:0; flex:1 1 100%; }
+
+  /* ── El listado deja de ser tabla y pasa a tarjetas ─────────────
+     Una tabla de 8 columnas es ilegible en un teléfono. En vez de
+     duplicar el markup en JS, las mismas celdas se reacomodan con
+     grid: una fila = una tarjeta. */
+  .table-wrap { border:none; background:transparent; box-shadow:none; overflow-x:visible; }
+  .table-wrap table, .table-wrap tbody { display:block; }
+  .table-wrap thead { display:none; }
+  .table-wrap td { display:block; border:none; padding:0; }
+  .table-wrap tbody tr:hover td { background:transparent; }
+
+  .table-wrap tbody tr {
+    display:grid;
+    grid-template-columns:52px 1fr;
+    grid-template-areas:
+      "img    prod"
+      "cat    precio"
+      "sku    stock"
+      "estado estado"
+      "acc    acc";
+    gap:7px 12px; align-items:center;
+    background:#fff; border:1px solid var(--border);
+    border-radius:var(--r-lg); box-shadow:var(--shadow-sm);
+    padding:14px; margin-bottom:10px;
+  }
+  .c-img{grid-area:img}   .c-prod{grid-area:prod}     .c-cat{grid-area:cat}
+  .c-sku{grid-area:sku}   .c-stock{grid-area:stock}   .c-estado{grid-area:estado}
+  .c-precio{grid-area:precio} .c-acc{grid-area:acc}
+
+  /* Sin encabezado de tabla, un número suelto no se entiende: cada
+     dato lleva su etiqueta. En línea y no apilada: apilada duplicaba
+     el alto de cada fila y la tarjeta no entraba en pantalla. */
+  .table-wrap td[data-l]::before {
+    content:attr(data-l); margin-right:6px;
+    font-size:10px; font-weight:600; letter-spacing:.05em;
+    text-transform:uppercase; color:var(--muted);
+  }
+  .c-stock, .c-precio { text-align:right; }
+  .c-stock-min { display:inline; margin-left:5px; }
+  .c-precio { font-size:14px; font-weight:600; }
+
+  /* Acciones cómodas de tocar (44px) y con el borrar lejos del editar */
+  .c-acc { margin-top:4px; padding-top:12px; border-top:1px solid var(--border); }
+  .row-acciones .btn { min-height:44px; min-width:44px; justify-content:center; font-size:16px; }
+  .act-editar { flex:1; background:var(--info-bg); color:var(--blue-dark); gap:7px; }
+  .solo-movil { display:inline; font-size:13.5px; font-weight:600; }
+
+  /* Filas que no son producto (vacío / error) no deben volverse tarjeta */
+  .table-wrap tbody tr.fila-plana {
+    display:block; padding:0; margin:0;
+    background:#fff; border:1px solid var(--border);
+  }
+
+  .pagination {
+    background:#fff; border:1px solid var(--border);
+    border-radius:var(--r-lg); flex-wrap:wrap; gap:6px;
+  }
+  .pagination-info { width:100%; margin-bottom:4px; }
+  .page-btn { width:38px; height:38px; }
 }
 @media (max-width:480px) {
   .kpi-grid { grid-template-columns:1fr 1fr; gap:10px; }
