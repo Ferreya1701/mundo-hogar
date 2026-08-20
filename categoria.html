@@ -7,11 +7,11 @@
 <meta name="description" content="Explorá los productos de Mundo Hogar por categoría: electrodomésticos, muebles, herramientas, tecnología, cuidado personal, salud y seguridad.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#0A2E63">
-<link rel="canonical" href="https://mundo-hogar-tan.vercel.app/categorias">
+<link rel="canonical" href="https://mundohogarstf.com/categorias">
 <link rel="icon" type="image/png" href="/images/marca/favicon.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Categorías — Mundo Hogar">
-<meta property="og:image" content="https://mundo-hogar-tan.vercel.app/images/productos/electrodomesticos/IMG_1440.jpg">
+<meta property="og:image" content="https://mundohogarstf.com/images/productos/electrodomesticos/IMG_1440.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
@@ -201,7 +201,7 @@ function showHub(){
   // Configurar página de la categoría
   document.title = `${cat.label} — Mundo Hogar`;
   document.querySelector('meta[name=description]').setAttribute('content', `${cat.label}: ${cat.desc} Consultá precio y stock por WhatsApp en Mundo Hogar, Santa Fe.`);
-  document.querySelector('link[rel=canonical]').setAttribute('href', `https://mundo-hogar-tan.vercel.app/categorias/${cat.slug}`);
+  document.querySelector('link[rel=canonical]').setAttribute('href', `https://mundohogarstf.com/categorias/${cat.slug}`);
   $('#cat-title').textContent = cat.label;
   $('#cat-desc').textContent = cat.desc;
   $('#crumb').innerHTML = `<a href="/" style="color:#fff">Inicio</a><span aria-hidden="true">›</span><a href="/productos" style="color:#fff">Productos</a><span aria-hidden="true">›</span><span aria-current="page" style="color:#fff">${cat.label}</span>`;
@@ -209,9 +209,9 @@ function showHub(){
   // JSON-LD breadcrumb
   const ld = document.createElement('script'); ld.type='application/ld+json';
   ld.textContent = JSON.stringify({"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
-    {"@type":"ListItem","position":1,"name":"Inicio","item":"https://mundo-hogar-tan.vercel.app/"},
-    {"@type":"ListItem","position":2,"name":"Productos","item":"https://mundo-hogar-tan.vercel.app/productos"},
-    {"@type":"ListItem","position":3,"name":cat.label,"item":`https://mundo-hogar-tan.vercel.app/categorias/${cat.slug}`}]});
+    {"@type":"ListItem","position":1,"name":"Inicio","item":"https://mundohogarstf.com/"},
+    {"@type":"ListItem","position":2,"name":"Productos","item":"https://mundohogarstf.com/productos"},
+    {"@type":"ListItem","position":3,"name":cat.label,"item":`https://mundohogarstf.com/categorias/${cat.slug}`}]});
   document.head.appendChild(ld);
 
   $('#listing').hidden = false;

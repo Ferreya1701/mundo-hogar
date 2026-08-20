@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://mundo-hogar-tan.vercel.app/</loc><lastmod>2026-07-05</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://mundo-hogar-tan.vercel.app/productos</loc><lastmod>2026-07-05</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://mundo-hogar-tan.vercel.app/categorias</loc><lastmod>2026-07-05</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://mundo-hogar-tan.vercel.app/categorias/electrodomesticos</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://mundo-hogar-tan.vercel.app/categorias/herramientas</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://mundo-hogar-tan.vercel.app/categorias/tecnologia-celulares</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://mundo-hogar-tan.vercel.app/categorias/muebles-hogar</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://mundo-hogar-tan.vercel.app/categorias/cuidado-personal</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://mundo-hogar-tan.vercel.app/categorias/salud</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://mundo-hogar-tan.vercel.app/categorias/seguridad</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mundohogarstf.com/</loc><lastmod>2026-07-05</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://mundohogarstf.com/productos</loc><lastmod>2026-07-05</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://mundohogarstf.com/categorias</loc><lastmod>2026-07-05</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mundohogarstf.com/categorias/electrodomesticos</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mundohogarstf.com/categorias/herramientas</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mundohogarstf.com/categorias/tecnologia-celulares</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mundohogarstf.com/categorias/muebles-hogar</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mundohogarstf.com/categorias/cuidado-personal</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mundohogarstf.com/categorias/salud</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mundohogarstf.com/categorias/seguridad</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
 </urlset>
