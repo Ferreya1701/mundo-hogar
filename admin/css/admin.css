@@ -49,6 +49,13 @@
 
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
 
+/* El atributo hidden tiene que ganar siempre. Sin esto, cualquier clase
+   con display propio (.btn, .dirty-flag, .barra-masiva, .chips…) lo
+   ignoraba: el aviso de "cambios sin guardar", el botón de limpiar
+   filtros y la barra de acciones masivas se veían aunque estuvieran
+   ocultos. */
+[hidden] { display:none !important; }
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 14px;

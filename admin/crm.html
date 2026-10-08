@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/admin/manifest.json">
+  <meta name="theme-color" content="#0A2E63">
+  <link rel="icon" type="image/png" href="/images/marca/favicon.png">
+  <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
+  <title>CRM de clientes — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+  <style>
+    /* Campos que admin.css no cubre (tel y fecha) con el mismo estilo */
+    .crm input[type=tel], .crm input[type=date] {
+      width:100%; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--r);
+      font-size:13px; color:var(--ink); background:#fff; font-family:inherit;
+    }
+    .crm input:disabled, .crm textarea:disabled { background:var(--bg); color:var(--muted); }
+    /* admin.css le da width:100% a todo select: en la barra de filtros lo
+       mandaba a una fila propia */
+    .crm .filters-bar select { width:auto; flex:0 0 auto; }
+
+    .crm-aviso { background:#FFF7E8; border:1px solid #F5D9A8; color:#7A4A0C; border-radius:12px; padding:14px 16px; margin-bottom:16px; font-size:13.5px; }
+    .crm-aviso code { background:#fff; padding:1px 6px; border-radius:4px; }
+
+    /* Indicadores: son botones (llevan a la vista que resumen) */
+    .crm-kpi { width:100%; text-align:left; font:inherit; color:inherit; cursor:pointer; }
+    .crm-kpi:focus-visible { outline:3px solid var(--blue); outline-offset:2px; }
+
+    /* Pestañas */
+    .crm-tabs { display:flex; gap:6px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:5px; margin-bottom:14px; box-shadow:var(--shadow-sm); }
+    .crm-tabs button { flex:1; display:flex; align-items:center; justify-content:center; gap:7px; min-height:42px; border:none; background:transparent; border-radius:9px; font:inherit; font-weight:600; color:var(--muted); cursor:pointer; transition:background var(--t),color var(--t); }
+    .crm-tabs button:hover { color:var(--night); background:var(--bg); }
+    .crm-tabs button[aria-selected="true"] { background:var(--night); color:#fff; }
+    .crm-tabs .chip-n { background:rgba(0,0,0,.08); border-radius:99px; font-size:11px; padding:1px 7px; }
+    .crm-tabs button[aria-selected="true"] .chip-n { background:rgba(255,255,255,.22); }
+
+    .crm-etapas { margin:-2px 0 14px; }
+    .crm-grupo-titulo { display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:18px 0 8px; }
+    .crm-grupo-titulo:first-child { margin-top:2px; }
+    .crm-grupo-titulo .chip-n { background:var(--border); color:var(--ink); border-radius:99px; padding:1px 8px; font-size:11px; }
+    .crm-grupo-titulo.vencidos { color:#B42318; }
+
+    /* Tarjeta de oportunidad */
+    .crm-lista { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; }
+    .opp-card { position:relative; background:#fff; border:1px solid var(--border); border-left:4px solid var(--c,var(--border)); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:5px; box-shadow:var(--shadow-sm); cursor:pointer; transition:box-shadow var(--t),transform var(--t); min-width:0; }
+    .opp-card:hover { box-shadow:var(--shadow); transform:translateY(-1px); }
+    .opp-card.b-nueva{--c:#F47A1F} .opp-card.b-contactado{--c:#1763C6} .opp-card.b-cotizado{--c:#7C5CFC} .opp-card.b-ganada{--c:#16A34A} .opp-card.b-perdida{--c:#DC2626}
+    .opp-top { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:11.5px; color:var(--muted); }
+    .opp-nombre { all:unset; display:block; text-align:left; cursor:pointer; font-weight:700; color:var(--night); font-size:14.5px; overflow-wrap:anywhere; }
+    .opp-nombre:focus-visible { outline:3px solid var(--blue); outline-offset:2px; border-radius:4px; }
+    .opp-titulo { font-size:13px; color:var(--ink); overflow-wrap:anywhere; }
+    .opp-meta { display:flex; flex-wrap:wrap; gap:4px 12px; font-size:12px; color:var(--muted); }
+    .opp-monto { font-weight:700; color:var(--ink); }
+    .opp-paso { font-size:12px; color:var(--ink); background:var(--bg); border-radius:6px; padding:4px 8px; overflow-wrap:anywhere; }
+    .opp-acc { display:flex; gap:6px; margin-top:4px; flex-wrap:wrap; }
+    .tag-may { background:rgba(244,122,31,.13); color:#B35208; font-size:10.5px; font-weight:700; border-radius:5px; padding:1px 6px; vertical-align:middle; }
+    .tag-ped { background:var(--info-bg); color:var(--blue-dark); font-size:11px; font-weight:700; border-radius:5px; padding:1px 6px; }
+
+    .etapa-badge { font-weight:700; border-radius:6px; padding:2px 7px; font-size:11px; white-space:nowrap; }
+    .e-nueva{background:#FFF4E8;color:#8A4B12} .e-contactado{background:#EAF2FD;color:#1763C6} .e-cotizado{background:#F3EDFD;color:#6B3FC0} .e-ganada{background:#E9F9EF;color:#14663A} .e-perdida{background:#FDEEED;color:#8A241C}
+    .venc { margin-left:auto; font-weight:700; border-radius:6px; padding:2px 7px; white-space:nowrap; }
+    .venc-vencida{background:#FDEEED;color:#B42318} .venc-hoy{background:#FFF4E8;color:#B45309} .venc-pronto{background:#EAF2FD;color:#1763C6} .venc-futura{color:var(--muted)}
+
+    /* El verde se reserva para WhatsApp (regla de marca). Texto oscuro: con
+       blanco sobre este verde no se lee bien. */
+    .btn-wa { background:#25D366; color:#053B24; font-weight:700; }
+    .btn-wa:hover { background:#1EBE5A; color:#053B24; }
+
+    /* Tablero (pantallas anchas) */
+    .crm-board { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; align-items:start; }
+    .crm-col { background:#EAF0F8; border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:8px; min-width:0; }
+    .crm-col-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; font-weight:700; font-size:13px; color:var(--night); padding:2px 4px; }
+    .crm-col-head small { font-weight:600; color:var(--muted); font-size:11.5px; }
+    .crm-col .opp-card { padding:10px 12px; }
+    .crm-col-vacia { font-size:12px; color:var(--muted); text-align:center; padding:14px 6px; }
+
+    .crm-mas { display:flex; justify-content:center; margin:16px 0 4px; }
+
+    /* Contactos */
+    .ct-card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:4px; box-shadow:var(--shadow-sm); cursor:pointer; transition:box-shadow var(--t); min-width:0; }
+    .ct-card:hover { box-shadow:var(--shadow); }
+    .ct-card.archivado { opacity:.72; }
+
+    /* Modal (ficha) */
+    .crm-modal { max-width:760px; }
+    .crm-cab { min-width:0; }
+    .crm-sub { font-size:12.5px; color:var(--muted); margin-top:2px; overflow-wrap:anywhere; }
+    .crm-bloque { border-top:1px solid var(--border); padding:14px 0; }
+    .crm-bloque:first-child { border-top:none; padding-top:0; }
+    .crm-bloque:last-child { padding-bottom:0; }
+    .crm-label { font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:8px; }
+    .crm-label span { text-transform:none; letter-spacing:0; font-weight:500; }
+    .crm-acc { display:flex; flex-wrap:wrap; gap:8px; }
+    .crm-etapas-sel { display:flex; flex-wrap:wrap; gap:6px; }
+    /* Sin fondo propio: la activa toma el color de su etapa (.e-*) */
+    .etapa-op { font:inherit; font-size:12.5px; font-weight:600; border:1.5px solid var(--border); border-radius:99px; padding:6px 12px; cursor:pointer; }
+    .etapa-op:hover:not(:disabled) { border-color:var(--blue); }
+    .etapa-op.activa { border-color:currentColor; font-weight:700; }
+    .etapa-op.activa::before { content:'✓ '; }
+    .etapa-op:not(.activa) { background:#fff; color:var(--ink); }
+    .etapa-op:disabled { cursor:not-allowed; opacity:.75; }
+    .etapa-op:disabled.activa { opacity:1; }
+    .crm-nota-pedido { background:var(--info-bg); color:var(--blue-dark); border-radius:10px; padding:10px 12px; font-size:13px; margin-top:10px; }
+    .crm-motivo { font-size:13px; color:#8A241C; margin-top:8px; }
+    .crm-motivo-box { display:grid; gap:8px; background:#FDF6F5; border:1px solid #F4D5D2; border-radius:10px; padding:12px; margin-top:10px; }
+    .crm-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; }
+    .crm-grid2 label { display:flex; flex-direction:column; gap:4px; }
+    .crm-full { grid-column:1/-1; }
+    .crm-fila-btn { display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-top:10px; flex-wrap:wrap; }
+    .crm-fila-btn .dirty-flag { margin-right:auto; }
+    .crm-reg { margin-top:10px; }
+    .crm-wa textarea { font-size:12.5px; margin-top:8px; }
+    .crm-check { display:flex; align-items:center; gap:8px; margin-top:8px; font-weight:500; color:var(--muted); cursor:pointer; }
+    .crm-check input { width:16px; height:16px; }
+    .crm-dup { background:var(--info-bg); color:var(--blue-dark); border-radius:8px; padding:8px 10px; font-size:12.5px; }
+    .crm-canales { display:flex; flex-wrap:wrap; gap:6px; }
+    .crm-mini { list-style:none; display:flex; flex-direction:column; gap:6px; }
+    .crm-mini button { all:unset; box-sizing:border-box; width:100%; cursor:pointer; display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; }
+    .crm-mini button:hover { border-color:var(--blue); }
+    .crm-mini button:focus-visible { outline:3px solid var(--blue); outline-offset:1px; }
+    .crm-mini small { color:var(--muted); margin-left:auto; }
+    .ped-items { width:100%; border-collapse:collapse; font-size:12.5px; }
+    .ped-items td { padding:5px 4px; border-bottom:1px solid var(--border); }
+    .ped-items td:last-child { text-align:right; white-space:nowrap; }
+
+    .crm-timeline { list-style:none; display:flex; flex-direction:column; gap:10px; }
+    .crm-timeline li { display:flex; gap:10px; font-size:13px; min-width:0; }
+    .tl-ic { width:28px; height:28px; border-radius:50%; background:var(--bg); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; }
+    .tl-txt { min-width:0; overflow-wrap:anywhere; white-space:pre-wrap; }
+    .tl-meta { font-size:11.5px; color:var(--muted); white-space:normal; }
+
+    @media (max-width:768px) {
+      /* Indicadores compactos: en el celular lo importante es la lista */
+      .crm .kpi-grid { gap:10px; margin-bottom:16px; }
+      .crm .kpi-card { padding:12px 14px; }
+      .crm .kpi-icon { display:none; }
+      .crm .kpi-value { font-size:22px; }
+      .crm-lista { grid-template-columns:1fr; }
+      .crm-tabs button { min-height:44px; font-size:13px; gap:5px; }
+      .crm-etapas { flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; }
+      .crm-etapas .chip { flex-shrink:0; min-height:38px; }
+      .crm .filters-bar select { flex:1 1 auto; min-height:44px; }
+      .opp-acc .btn { min-height:44px; flex:1 1 auto; justify-content:center; }
+      .page-header-actions { width:100%; flex-wrap:wrap; }
+      .page-header-actions #btn-nueva { flex:1 1 100%; min-height:46px; justify-content:center; }
+      /* La ficha ocupa la pantalla y se apoya abajo, como una hoja */
+      .crm-modal-bg { padding:0; align-items:flex-end; }
+      .crm-modal { max-width:none; width:100%; max-height:94vh; border-radius:16px 16px 0 0; }
+      .crm-grid2 { grid-template-columns:1fr; }
+      .crm-modal input, .crm-modal select, .crm-modal textarea { font-size:16px; }  /* evita el zoom de iOS */
+      .crm-modal .btn, .etapa-op, .crm-modal .chip { min-height:40px; }
+      .crm-acc .btn { flex:1 1 auto; justify-content:center; }
+      .crm-fila-btn .btn { flex:1 1 auto; justify-content:center; min-height:44px; }
+    }
+    @media (max-width:420px) {
+      .crm-tabs .tab-ic { display:none; }   /* así "Contactos" no se parte en dos líneas */
+    }
+  </style>
+</head>
+<body class="crm">
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><img class="sidebar-brand-icon" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="32" height="32"><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1>CRM de clientes</h1><p id="subtitle">Consultas, seguimientos y ventas de todos los canales</p></div>
+        <div class="page-header-actions" id="acciones">
+          <button class="btn btn-outline btn-sm" id="btn-export">⬇ Exportar</button>
+          <button class="btn btn-outline btn-sm" id="btn-refrescar">↻ Actualizar</button>
+          <button class="btn btn-primary" id="btn-nueva">+ Nueva consulta</button>
+        </div>
+      </div>
+
+      <div class="crm-aviso" id="aviso-setup" hidden>
+        <b>Falta un paso para usar el CRM:</b> ejecutar <code>sql/009-crm.sql</code> en Supabase → SQL Editor
+        (en una ventana de incógnito y sin el traductor del navegador). Después recargá esta página.
+      </div>
+
+      <div id="contenido">
+        <div class="kpi-grid" id="kpis"></div>
+
+        <div class="crm-tabs" role="tablist" aria-label="Vistas del CRM" id="tabs">
+          <button role="tab" data-vista="hoy" id="tab-hoy"><span class="tab-ic" aria-hidden="true">📅</span> Para hoy <span class="chip-n" id="n-hoy"></span></button>
+          <button role="tab" data-vista="embudo" id="tab-embudo"><span class="tab-ic" aria-hidden="true">🔀</span> Embudo <span class="chip-n" id="n-embudo"></span></button>
+          <button role="tab" data-vista="contactos" id="tab-contactos"><span class="tab-ic" aria-hidden="true">👥</span> Contactos <span class="chip-n" id="n-contactos"></span></button>
+        </div>
+
+        <div class="filters-bar">
+          <div class="search-bar" style="flex:1;min-width:200px;max-width:380px">
+            <span class="search-icon">🔍</span>
+            <input type="search" id="q" placeholder="Buscar por nombre, teléfono o qué busca…" autocomplete="off" aria-label="Buscar">
+          </div>
+          <select id="filtro-canal" aria-label="Canal" style="min-width:170px">
+            <option value="">Todos los canales</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" id="btn-limpiar" hidden>✕ Limpiar</button>
+          <span class="filter-count" id="filter-count"></span>
+        </div>
+
+        <div class="chips crm-etapas" id="chips-etapa" hidden></div>
+
+        <section id="vista" aria-live="polite"></section>
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+<div id="modal-slot"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script>
+/* ══ LÓGICA PURA DEL CRM ════════════════════════════════════════
+   Sin DOM ni red. scripts/test-admin.mjs extrae este bloque del archivo
+   y lo prueba tal cual; scripts/test-crm-sql.mjs compara telClave con
+   la misma regla de la base (fn_crm_tel_clave). */
+const ETAPAS = {
+  nueva:      { label:'Nueva consulta', corto:'Nuevas' },
+  contactado: { label:'Contactado',     corto:'Contactados' },
+  cotizado:   { label:'Cotizado',       corto:'Cotizados' },
+  ganada:     { label:'Venta ganada',   corto:'Ganadas' },
+  perdida:    { label:'Perdida',        corto:'Perdidas' }
+};
+const ABIERTAS = ['nueva', 'contactado', 'cotizado'];
+const CANALES = {
+  instagram: { label:'Instagram',     icono:'📷' },
+  whatsapp:  { label:'WhatsApp',      icono:'💬' },
+  facebook:  { label:'Facebook',      icono:'📘' },
+  web:       { label:'Tienda web',    icono:'🛒' },
+  mostrador: { label:'Local',         icono:'🏬' },
+  referido:  { label:'Recomendación', icono:'🤝' },
+  otro:      { label:'Otro',          icono:'•' }
+};
+const ACTIVIDADES = {
+  whatsapp:     { icono:'💬', verbo:'Le escribí por WhatsApp' },
+  llamada:      { icono:'📞', verbo:'Lo llamé' },
+  instagram:    { icono:'📷', verbo:'Le respondí por Instagram' },
+  visita:       { icono:'🏬', verbo:'Vino al local' },
+  nota:         { icono:'📝', verbo:'Nota interna' },
+  cambio_etapa: { icono:'🔀' },
+  sistema:      { icono:'⚙️' }
+};
+const MOTIVOS_PERDIDA = ['Precio', 'Sin stock', 'Compró en otro lado', 'No respondió', 'Otro'];
+
+/* Estado de la pantalla. Vive en la URL (igual que el listado de
+   productos): el botón atrás funciona, recargar no pierde nada y un link
+   abre la misma vista. op/c = ficha abierta (oportunidad / contacto). */
+const DEFAULTS = { vista:'hoy', q:'', canal:'', etapa:'', arch:'', op:'', c:'' };
+const VALIDOS = {
+  vista: ['hoy', 'embudo', 'contactos'],
+  canal: ['', ...Object.keys(CANALES)],
+  etapa: ['', ...Object.keys(ETAPAS)],
+  arch:  ['', '1']
+};
+
+function leerURL(search) {
+  const u = new URLSearchParams(search);
+  const s = { ...DEFAULTS };
+  for (const k of ['vista', 'canal', 'etapa', 'arch']) {
+    const v = u.get(k) || '';
+    s[k] = VALIDOS[k].includes(v) ? v : DEFAULTS[k];
+  }
+  s.q = (u.get('q') || '').slice(0, 80);
+  for (const k of ['op', 'c']) {
+    const v = u.get(k) || '';
+    s[k] = /^\d{1,12}$/.test(v) ? v : '';
+  }
+  return s;
+}
+
+function estadoAQuery(s) {
+  const u = new URLSearchParams();
+  Object.keys(DEFAULTS).forEach(k => { if (s[k] !== DEFAULTS[k]) u.set(k, s[k]); });
+  return u.toString();
+}
+
+function esc(v) {
+  return String(v ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/* Clave de teléfono: la misma regla que fn_crm_tel_clave en la base.
+   "+54 9 342 648-1326", "0342 15 648-1326" y "3426481326" → "3426481326". */
+function telClave(tel) {
+  let d = String(tel ?? '').replace(/\D/g, '');
+  if (d.length < 6) return null;
+  if (d.startsWith('54') && d.length >= 12) {
+    d = d.slice(2);
+    if (d.startsWith('9')) d = d.slice(1);
+  }
+  if (d.startsWith('0')) d = d.slice(1);
+  if (d.length === 12) {
+    for (const pos of [3, 2, 4]) {
+      if (d.substr(pos, 2) === '15') { d = d.slice(0, pos) + d.slice(pos + 2); break; }
+    }
+  }
+  return d.slice(-10);
+}
+
+/* Número para wa.me: los celulares argentinos van como 549 + área + número. */
+function waNumero(tel) {
+  const s = String(tel ?? '').trim();
+  const d = s.replace(/\D/g, '');
+  if (d.length < 6) return null;
+  if (s.startsWith('+') && !d.startsWith('54')) return d;   // de otro país: tal cual
+  if (d.startsWith('549') && d.length === 13) return d;
+  const k = telClave(s);
+  return k && k.length === 10 ? '549' + k : d;
+}
+
+/* Montos como los escribe la gente acá: "250.000", "1.500,50", "89999". */
+function parseMonto(v) {
+  let s = String(v ?? '').replace(/[\s$]/g, '');
+  if (!s) return '';
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+  return /^\d+(\.\d{1,2})?$/.test(s) ? s : null;
+}
+
+function pesos(n) {
+  if (n == null || n === '' || isNaN(Number(n))) return '';
+  return new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS', maximumFractionDigits:0 }).format(Number(n));
+}
+
+/* Fechas del próximo paso: 'YYYY-MM-DD' en la hora local del negocio. */
+function hoyISO(d = new Date()) {
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+function diaUTC(iso) { const [y, m, d] = iso.split('-').map(Number); return Date.UTC(y, m - 1, d); }
+function sumarDias(iso, n) { return new Date(diaUTC(iso) + n * 86400000).toISOString().slice(0, 10); }
+function diasEntre(a, b) { return Math.round((diaUTC(b) - diaUTC(a)) / 86400000); }
+
+function vencimiento(fecha, hoy) {
+  if (!fecha) return { clase:'sin', texto:'' };
+  const d = diasEntre(hoy, fecha);
+  if (d < 0)  return { clase:'vencida', texto: d === -1 ? 'Venció ayer' : `Venció hace ${-d} días` };
+  if (d === 0) return { clase:'hoy', texto:'Hoy' };
+  if (d === 1) return { clase:'pronto', texto:'Mañana' };
+  if (d <= 6)  return { clase:'pronto', texto:`En ${d} días` };
+  const [, m, dd] = fecha.split('-');
+  return { clase:'futura', texto:`${dd}/${m}` };
+}
+
+/* "Para hoy": lo vencido, lo agendado para hoy y las consultas nuevas que
+   todavía nadie agendó. Primero lo que tiene fecha (lo más atrasado
+   arriba); después las nuevas, de la que más espera a la más reciente. */
+function paraHoy(lista, hoy) {
+  const pend = lista.filter(o => ABIERTAS.includes(o.etapa) && (
+    (o.proxima_accion_fecha && o.proxima_accion_fecha <= hoy) ||
+    (!o.proxima_accion_fecha && o.etapa === 'nueva')));
+  const peso = o => o.proxima_accion_fecha ? 0 : 1;
+  return pend.sort((a, b) => peso(a) - peso(b)
+    || String(a.proxima_accion_fecha || '').localeCompare(String(b.proxima_accion_fecha || ''))
+    || String(a.created_at || '').localeCompare(String(b.created_at || '')));
+}
+
+function kpis(lista, hoy, ahora) {
+  const hace30 = ahora - 30 * 86400000;
+  const abiertas = lista.filter(o => ABIERTAS.includes(o.etapa));
+  const cerradas = lista.filter(o => !ABIERTAS.includes(o.etapa) && o.cerrada_at && Date.parse(o.cerrada_at) >= hace30);
+  const ganadas = cerradas.filter(o => o.etapa === 'ganada');
+  const perdidas = cerradas.filter(o => o.etapa === 'perdida');
+  const suma = l => l.reduce((t, o) => t + (Number(o.monto) > 0 ? Number(o.monto) : 0), 0);
+  const ph = paraHoy(lista, hoy);
+  return {
+    paraHoy: ph.length,
+    vencidas: ph.filter(o => o.proxima_accion_fecha && o.proxima_accion_fecha < hoy).length,
+    sinResponder: abiertas.filter(o => o.etapa === 'nueva').length,
+    enCurso: abiertas.length,
+    montoEnCurso: suma(abiertas),
+    ganadas30: ganadas.length,
+    montoGanado30: suma(ganadas),
+    tasa30: ganadas.length + perdidas.length
+      ? Math.round(100 * ganadas.length / (ganadas.length + perdidas.length)) : null
+  };
+}
+
+function sinTildes(s) { return String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+
+/* Búsqueda: nombre, comercio, Instagram, email, qué busca, código de
+   pedido, y el teléfono por dígitos (escrito como sea). */
+function coincide(o, c, q) {
+  const t = sinTildes(q).trim();
+  if (!t) return true;
+  const campos = [c && c.nombre, c && c.comercio, c && c.instagram, c && c.email,
+                  o && o.titulo, o && o.solicitudes && o.solicitudes.codigo];
+  if (campos.some(v => sinTildes(v).includes(t))) return true;
+  const dq = t.replace(/\D/g, '');
+  return dq.length >= 4 && !!c && String(c.telefono || '').replace(/\D/g, '').includes(dq);
+}
+
+function primerNombre(nombre) { return String(nombre || '').trim().split(/\s+/)[0] || ''; }
+
+/* Mensajes sugeridos para WhatsApp, con los datos reales de la consulta.
+   Siempre se muestran editables: son un punto de partida. */
+function plantillaWA(tipo, d) {
+  const n = primerNombre(d && d.nombre);
+  const hola = n ? `¡Hola ${n}!` : '¡Hola!';
+  const titulo = String((d && d.titulo) || '').trim();
+  const ref = /^Pedido MH-/.test(titulo) ? `tu pedido *${titulo.slice(7).split(' ')[0]}*`
+            : titulo ? `*${titulo}*` : '';
+  const precio = d && d.monto != null && d.monto !== '' ? pesos(d.monto) : '';
+  if (tipo === 'cotizacion') {
+    return `${hola} Te pasamos el precio${ref ? ` de ${ref}` : ''}: ${precio || '(completá el precio)'}.\n\n` +
+           `Aceptamos Mercado Pago, transferencia y efectivo. Hacemos entregas en Santa Fe y alrededores. ¿Te lo reservamos?`;
+  }
+  if (tipo === 'seguimiento') {
+    return `${hola} ¿Cómo estás? Te escribimos de Mundo Hogar para saber si pudiste pensarlo${ref ? ` (${ref})` : ''}. ` +
+           `Si querés te lo reservamos o te mostramos otras opciones. 😊`;
+  }
+  if (tipo === 'gracias') {
+    return `${hola} Gracias por tu compra en Mundo Hogar 🙌 Cualquier cosa que necesites, escribinos por acá. ` +
+           `Y si te gustó la atención, nos ayudás muchísimo recomendándonos. ¡Que lo disfrutes!`;
+  }
+  const motivo = /^Pedido MH-/.test(titulo) ? ref : `tu consulta${ref ? ` sobre ${ref}` : ''}`;
+  return `${hola} 😊 Te escribimos de Mundo Hogar por ${motivo}. ` +
+         `¿Seguís interesado? Contanos y te pasamos precio y disponibilidad.`;
+}
+
+const PLANTILLA_POR_ETAPA = { nueva:'saludo', contactado:'cotizacion', cotizado:'seguimiento', ganada:'gracias', perdida:'seguimiento' };
+
+/* Traduce un error de la base a algo que se entienda. Nunca muestra el
+   mensaje técnico (queda en la consola para diagnosticar). */
+function mensajeError(e) {
+  const m = String((e && e.message) || '');
+  const code = (e && e.code) || '';
+  const conPista = ['etapa_por_pedido', 'solicitud_solo_por_sync', 'sin_permiso', 'titulo_invalido',
+                    'nombre_invalido', 'monto_invalido', 'fecha_invalida', 'contacto_no_encontrado'];
+  if (e && e.hint && conPista.some(k => m.includes(k))) return e.hint;
+  if (m.includes('sin_permiso')) return 'Tu usuario no puede modificar el CRM.';
+  if (code === '23505' || m.includes('uq_crm_contactos_tel')) return 'Ya hay otro contacto activo con ese teléfono. Buscalo en Contactos.';
+  if (code === '42501' || /row-level security|permission denied/i.test(m)) return 'No tenés permiso para hacer esto.';
+  if (code === '23514' || code === '22001') return 'Algún dato no es válido o es demasiado largo. Revisalo y probá de nuevo.';
+  if (/Failed to fetch|NetworkError|network|Load failed/i.test(m)) return 'Sin conexión. Revisá internet y probá de nuevo.';
+  return 'No se pudo guardar. Probá de nuevo en un momento.';
+}
+
+/* ¿El error es porque todavía no se ejecutó sql/009-crm.sql? */
+function faltaInstalar(e) {
+  const m = String((e && e.message) || '');
+  const code = (e && e.code) || '';
+  if (code === '42P01' || code === 'PGRST205') return true;
+  if (code === 'PGRST202' && m.includes('crm_nueva_consulta')) return true;
+  return /crm_(contactos|oportunidades|actividades)/.test(m) && /does not exist|schema cache|could not find/i.test(m);
+}
+/* ══ FIN DE LA LÓGICA PURA ══════════════════════════════════════ */
+
+
+/* ── Datos en memoria ────────────────────────────────────────────── */
+let state = { ...DEFAULTS };
+let contactos = new Map();   // id → contacto (incluye archivados)
+let opps = [];               // oportunidades, con el pedido embebido
+let perfiles = new Map();    // id → nombre (el admin ve todos; el vendedor, el suyo)
+let miPerfil = null;
+let instalado = true;
+let limite = 60;             // tarjetas por tanda ("Mostrar más")
+const PASO = 60;
+const esAncho = window.matchMedia('(min-width: 1100px)');
+const SELECT_OPP = '*, solicitudes(codigo,estado,total_estimado)';
+
+const el = id => document.getElementById(id);
+
+/* Supabase devuelve como máximo 1000 filas por pedido: se pagina. */
+async function traerTodo(armar) {
+  const PAG = 1000;
+  let desde = 0, todo = [];
+  for (;;) {
+    const { data, error } = await armar().range(desde, desde + PAG - 1);
+    if (error) return { error };
+    todo = todo.concat(data || []);
+    if (!data || data.length < PAG) return { data: todo };
+    desde += PAG;
+  }
+}
+
+async function cargar() {
+  const [rc, ro, rp] = await Promise.all([
+    traerTodo(() => db.from('crm_contactos').select('*').order('id')),
+    traerTodo(() => db.from('crm_oportunidades').select(SELECT_OPP).order('id')),
+    db.from('profiles').select('id,nombre')
+  ]);
+  const err = rc.error || ro.error;
+  if (err) {
+    console.error('CRM: error al cargar', err);
+    if (faltaInstalar(err)) {
+      instalado = false;
+      el('aviso-setup').hidden = false;
+      el('btn-nueva').disabled = true;
+    } else {
+      const sinRed = /Failed to fetch|NetworkError|network|Load failed/i.test(String(err.message || ''));
+      Utils.toast(sinRed ? 'Sin conexión. Revisá internet y tocá ↻ Actualizar.'
+                         : 'No se pudieron cargar los datos del CRM. Probá con ↻ Actualizar.', 'error');
+    }
+    return false;
+  }
+  instalado = true;
+  el('aviso-setup').hidden = true;
+  el('btn-nueva').disabled = false;
+  contactos = new Map(rc.data.map(c => [c.id, c]));
+  opps = ro.data;
+  perfiles = new Map((rp.data || []).map(p => [p.id, p.nombre]));
+  if (miPerfil) perfiles.set(miPerfil.id, miPerfil.nombre);
+  return true;
+}
+
+const contactoDe = o => contactos.get(o.contacto_id);
+/* Los contactos archivados (pruebas, números equivocados) salen de las vistas */
+const oppsVisibles = () => opps.filter(o => { const c = contactoDe(o); return c && !c.archivado; });
+function oppsFiltradas() {
+  return oppsVisibles().filter(o =>
+    (!state.canal || o.canal === state.canal) && coincide(o, contactoDe(o), state.q));
+}
+function reemplazarOpp(nueva) {
+  const i = opps.findIndex(o => o.id === nueva.id);
+  if (i === -1) opps.push(nueva); else opps[i] = nueva;
+}
+
+/* ── URL ─────────────────────────────────────────────────────────── */
+function escribirURL(push = false) {
+  const qs = estadoAQuery(state);
+  const url = location.pathname + (qs ? '?' + qs : '');
+  if (url === location.pathname + location.search) return;
+  if (push) history.pushState({ crm: 1 }, '', url);
+  else history.replaceState(history.state, '', url);
+}
+
+/* ── Render ──────────────────────────────────────────────────────── */
+function render() {
+  pintarControles();
+  renderKpis();
+  if (!instalado) {
+    el('vista').innerHTML = `<div class="empty-state"><div class="empty-state-icon">🤝</div>
+      <h3>El CRM todavía no está instalado</h3><p>Seguí el aviso de arriba y recargá la página.</p></div>`;
+    return;
+  }
+  if (state.vista === 'hoy') renderHoy();
+  else if (state.vista === 'embudo') renderEmbudo();
+  else renderContactos();
+}
+
+function pintarControles() {
+  if (el('q').value !== state.q) el('q').value = state.q;
+  el('filtro-canal').value = state.canal;
+  document.querySelectorAll('#tabs [data-vista]').forEach(b =>
+    b.setAttribute('aria-selected', String(b.dataset.vista === state.vista)));
+  const n = (state.q ? 1 : 0) + (state.canal ? 1 : 0);
+  el('btn-limpiar').hidden = n === 0;
+
+  const vis = oppsVisibles();
+  el('n-hoy').textContent = paraHoy(vis, hoyISO()).length;
+  el('n-embudo').textContent = vis.filter(o => ABIERTAS.includes(o.etapa)).length;
+  el('n-contactos').textContent = [...contactos.values()].filter(c => !c.archivado).length;
+}
+
+function kpiHTML(clave, icono, color, label, valor, sub) {
+  return `<button type="button" class="kpi-card crm-kpi" data-kpi="${clave}">
+    <div class="kpi-icon ${color}">${icono}</div>
+    <div class="kpi-label">${label}</div>
+    <div class="kpi-value">${valor}</div>
+    <div class="kpi-sub">${sub}</div></button>`;
+}
+
+function renderKpis() {
+  if (!instalado) { el('kpis').innerHTML = ''; return; }
+  const k = kpis(oppsVisibles(), hoyISO(), Date.now());
+  el('kpis').innerHTML = [
+    kpiHTML('hoy', '📅', 'amber', 'Para hoy', k.paraHoy,
+      k.vencidas ? `${k.vencidas} vencido${k.vencidas !== 1 ? 's' : ''}` : 'seguimientos y consultas'),
+    kpiHTML('nuevas', '🆕', 'gold', 'Sin responder', k.sinResponder, 'consultas nuevas'),
+    kpiHTML('curso', '🔀', 'blue', 'En curso', k.enCurso,
+      k.montoEnCurso ? `${pesos(k.montoEnCurso)} estimado` : 'oportunidades abiertas'),
+    kpiHTML('ganadas', '🏆', 'green', 'Ganadas · 30 días', k.ganadas30,
+      [k.tasa30 != null ? `${k.tasa30}% de cierre` : '', k.montoGanado30 ? pesos(k.montoGanado30) : '']
+        .filter(Boolean).join(' · ') || 'ventas cerradas')
+  ].join('');
+}
+
+function tarjeta(o) {
+  const c = contactoDe(o) || {};
+  const canal = CANALES[o.canal] || CANALES.otro;
+  const v = ABIERTAS.includes(o.etapa) ? vencimiento(o.proxima_accion_fecha, hoyISO()) : { clase:'sin' };
+  const wa = waNumero(c.telefono);
+  return `<div class="opp-card b-${o.etapa}" data-op="${o.id}">
+    <div class="opp-top">
+      <span class="etapa-badge e-${o.etapa}">${ETAPAS[o.etapa].label}</span>
+      <span>${canal.icono} ${canal.label}</span>
+      ${v.clase !== 'sin' ? `<span class="venc venc-${v.clase}">${v.texto}</span>` : ''}
+    </div>
+    <button type="button" class="opp-nombre" data-op="${o.id}">${esc(c.nombre)}${c.tipo === 'mayorista' ? ' <span class="tag-may">Mayorista</span>' : ''}</button>
+    <div class="opp-titulo">${esc(o.titulo)}</div>
+    ${o.proxima_accion && ABIERTAS.includes(o.etapa) ? `<div class="opp-paso">➜ ${esc(o.proxima_accion)}</div>` : ''}
+    <div class="opp-meta">
+      ${o.monto != null ? `<span class="opp-monto">${pesos(o.monto)}</span>` : ''}
+      ${o.solicitud_id ? `<span class="tag-ped">🛒 ${esc(o.solicitudes ? o.solicitudes.codigo : 'Pedido web')}</span>` : ''}
+      ${o.etapa === 'perdida' && o.motivo_perdida ? `<span>${esc(o.motivo_perdida)}</span>` : ''}
+      <span>${!ABIERTAS.includes(o.etapa) && o.cerrada_at ? 'Cerrada ' + esc(Utils.timeAgo(o.cerrada_at).toLowerCase()) : 'Cargada ' + esc(Utils.timeAgo(o.created_at).toLowerCase())}</span>
+    </div>
+    ${wa && ABIERTAS.includes(o.etapa) ? `<div class="opp-acc">
+      <a class="btn btn-wa btn-sm" href="https://wa.me/${wa}" target="_blank" rel="noopener">💬 WhatsApp</a>
+      <a class="btn btn-outline btn-sm" href="tel:${esc(String(c.telefono).replace(/[^\d+]/g, ''))}" aria-label="Llamar a ${esc(c.nombre)}">📞</a>
+    </div>` : ''}
+  </div>`;
+}
+
+function botonMas(total) {
+  return total > limite
+    ? `<div class="crm-mas"><button type="button" class="btn btn-outline" data-accion="mas">Mostrar más (${total - limite})</button></div>` : '';
+}
+
+function vacio(icono, titulo, texto, conCTA = true) {
+  const filtros = state.q || state.canal;
+  return `<div class="empty-state"><div class="empty-state-icon">${icono}</div><h3>${titulo}</h3><p>${texto}</p>
+    ${filtros ? `<button type="button" class="btn btn-outline" data-accion="limpiar">✕ Limpiar búsqueda</button>`
+      : conCTA ? `<button type="button" class="btn btn-primary" data-accion="nueva">+ Nueva consulta</button>` : ''}</div>`;
+}
+
+function renderHoy() {
+  el('chips-etapa').hidden = true;
+  const hoy = hoyISO();
+  const lista = paraHoy(oppsFiltradas(), hoy);
+  el('filter-count').textContent = `${lista.length} pendiente${lista.length !== 1 ? 's' : ''}`;
+  if (!lista.length) {
+    el('vista').innerHTML = (state.q || state.canal)
+      ? vacio('🔍', 'Sin resultados', 'Ningún pendiente coincide con la búsqueda.')
+      : vacio('✅', '¡Al día!', 'No hay seguimientos vencidos ni consultas sin responder. Cuando entre una consulta, cargala con “+ Nueva consulta”.');
+    return;
+  }
+  const grupos = [
+    ['Vencidos', 'vencidos', lista.filter(o => o.proxima_accion_fecha && o.proxima_accion_fecha < hoy)],
+    ['Para hoy', '', lista.filter(o => o.proxima_accion_fecha === hoy)],
+    ['Consultas nuevas sin agendar', '', lista.filter(o => !o.proxima_accion_fecha)]
+  ];
+  let restante = limite, html = '';
+  for (const [titulo, cls, items] of grupos) {
+    if (!items.length || restante <= 0) continue;
+    const muestra = items.slice(0, restante);
+    restante -= muestra.length;
+    html += `<div class="crm-grupo-titulo ${cls}">${titulo} <span class="chip-n">${items.length}</span></div>
+      <div class="crm-lista">${muestra.map(tarjeta).join('')}</div>`;
+  }
+  el('vista').innerHTML = html + botonMas(lista.length);
+}
+
+function ordenEmbudo(a, b) {
+  return String(a.proxima_accion_fecha || '9999').localeCompare(String(b.proxima_accion_fecha || '9999'))
+    || String(a.created_at).localeCompare(String(b.created_at));
+}
+const ordenCierre = (a, b) => String(b.cerrada_at || '').localeCompare(String(a.cerrada_at || ''));
+
+function renderEmbudo() {
+  const lista = oppsFiltradas();
+  const ancho = esAncho.matches;
+  const cuenta = k => lista.filter(o => o.etapa === k).length;
+  const abiertas = lista.filter(o => ABIERTAS.includes(o.etapa));
+
+  el('chips-etapa').hidden = false;
+  el('chips-etapa').innerHTML =
+    `<button type="button" class="chip${!state.etapa ? ' active' : ''}" data-etapa-filtro="">${ancho ? 'Tablero' : 'Abiertas'} <span class="chip-n">${abiertas.length}</span></button>` +
+    Object.entries(ETAPAS).map(([k, e]) =>
+      `<button type="button" class="chip${state.etapa === k ? ' active' : ''}" data-etapa-filtro="${k}">${e.corto} <span class="chip-n">${cuenta(k)}</span></button>`).join('');
+
+  if (ancho && !state.etapa) {
+    const hace30 = Date.now() - 30 * 86400000;
+    const cerradas = lista.filter(o => !ABIERTAS.includes(o.etapa) && o.cerrada_at && Date.parse(o.cerrada_at) >= hace30).sort(ordenCierre);
+    const columnas = [
+      ...ABIERTAS.map(k => [ETAPAS[k].label, lista.filter(o => o.etapa === k).sort(ordenEmbudo)]),
+      ['Cerradas · 30 días', cerradas]
+    ];
+    el('filter-count').textContent = `${abiertas.length} abierta${abiertas.length !== 1 ? 's' : ''}`;
+    el('vista').innerHTML = `<div class="crm-board">${columnas.map(([titulo, items]) => {
+      const suma = items.reduce((t, o) => t + (Number(o.monto) > 0 ? Number(o.monto) : 0), 0);
+      return `<div class="crm-col"><div class="crm-col-head"><span>${titulo} · ${items.length}</span>${suma ? `<small>${pesos(suma)}</small>` : ''}</div>
+        ${items.length ? items.slice(0, limite).map(tarjeta).join('') : '<div class="crm-col-vacia">Nada por acá</div>'}
+        ${items.length > limite ? `<button type="button" class="btn btn-ghost btn-sm" data-accion="mas">+ ${items.length - limite} más</button>` : ''}
+      </div>`;
+    }).join('')}</div>`;
+    return;
+  }
+
+  const items = state.etapa
+    ? lista.filter(o => o.etapa === state.etapa).sort(ABIERTAS.includes(state.etapa) ? ordenEmbudo : ordenCierre)
+    : abiertas.sort(ordenEmbudo);
+  el('filter-count').textContent = `${items.length} oportunidad${items.length !== 1 ? 'es' : ''}`;
+  el('vista').innerHTML = items.length
+    ? `<div class="crm-lista">${items.slice(0, limite).map(tarjeta).join('')}</div>${botonMas(items.length)}`
+    : vacio('🔀', 'Nada en esta etapa', 'Probá con otra etapa o cargá una consulta nueva.');
+}
+
+function renderContactos() {
+  el('chips-etapa').hidden = false;
+  const todos = [...contactos.values()];
+  const nArch = todos.filter(c => c.archivado).length;
+  el('chips-etapa').innerHTML =
+    `<button type="button" class="chip${!state.arch ? ' active' : ''}" data-arch="">Activos <span class="chip-n">${todos.length - nArch}</span></button>
+     <button type="button" class="chip${state.arch ? ' active' : ''}" data-arch="1">Archivados <span class="chip-n">${nArch}</span></button>`;
+
+  const abiertasDe = new Map(), ganadasDe = new Map();
+  for (const o of opps) {
+    if (ABIERTAS.includes(o.etapa)) abiertasDe.set(o.contacto_id, (abiertasDe.get(o.contacto_id) || 0) + 1);
+    if (o.etapa === 'ganada') ganadasDe.set(o.contacto_id, (ganadasDe.get(o.contacto_id) || 0) + 1);
+  }
+  const reciente = c => c.ultimo_contacto_at || c.created_at || '';
+  const lista = todos
+    .filter(c => (state.arch ? c.archivado : !c.archivado)
+      && (!state.canal || c.canal_origen === state.canal)
+      && coincide(null, c, state.q))
+    .sort((a, b) => String(reciente(b)).localeCompare(String(reciente(a))));
+
+  el('filter-count').textContent = `${lista.length} contacto${lista.length !== 1 ? 's' : ''}`;
+  if (!lista.length) {
+    el('vista').innerHTML = vacio('👥', state.arch ? 'No hay archivados' : 'Sin contactos',
+      state.arch ? 'Los contactos que archives aparecen acá.' : 'Cada consulta que cargues crea su contacto.', !state.arch);
+    return;
+  }
+  el('vista').innerHTML = `<div class="crm-lista">${lista.slice(0, limite).map(c => {
+    const canal = CANALES[c.canal_origen] || CANALES.otro;
+    const ab = abiertasDe.get(c.id) || 0, ga = ganadasDe.get(c.id) || 0;
+    return `<div class="ct-card${c.archivado ? ' archivado' : ''}" data-contacto="${c.id}">
+      <div class="opp-top"><span>${canal.icono} ${canal.label}</span>${c.tipo === 'mayorista' ? '<span class="tag-may">Mayorista</span>' : ''}
+        ${c.ultimo_contacto_at ? `<span class="venc venc-futura">Último contacto ${esc(Utils.timeAgo(c.ultimo_contacto_at).toLowerCase())}</span>` : ''}</div>
+      <button type="button" class="opp-nombre" data-contacto="${c.id}">${esc(c.nombre)}</button>
+      ${c.comercio ? `<div class="opp-titulo">${esc(c.comercio)}</div>` : ''}
+      <div class="opp-meta">${c.telefono ? `<span>📞 ${esc(c.telefono)}</span>` : ''}${c.instagram ? `<span>📷 @${esc(c.instagram)}</span>` : ''}
+        <span>${ab} abierta${ab !== 1 ? 's' : ''} · ${ga} compra${ga !== 1 ? 's' : ''}</span></div>
+    </div>`;
+  }).join('')}</div>${botonMas(lista.length)}`;
+}
+
+/* ── Fichas (modales) ────────────────────────────────────────────── */
+const slot = () => el('modal-slot');
+
+function mostrarModal(tipo, html) {
+  const s = slot();
+  s.dataset.tipo = tipo;
+  s.innerHTML = `<div class="modal-backdrop crm-modal-bg" id="crm-bg">${html}</div>`;
+  document.body.style.overflow = 'hidden';
+  el('crm-bg').addEventListener('click', e => { if (e.target.id === 'crm-bg') cerrarModal(); });
+  s.querySelectorAll('[data-cerrar]').forEach(b => b.addEventListener('click', cerrarModal));
+  setTimeout(() => (s.querySelector('[data-foco]') || s.querySelector('.modal-close'))?.focus(), 30);
+}
+
+function vaciarModal() {
+  slot().innerHTML = '';
+  delete slot().dataset.tipo;
+  document.body.style.overflow = '';
+}
+
+/* Las fichas se abren con pushState: el botón atrás del celular las
+   cierra en vez de sacarte del panel. */
+function cerrarModal() {
+  const tipo = slot().dataset.tipo;
+  // Cancelar una consulta nueva abierta desde una ficha vuelve a esa ficha
+  if (tipo === 'nueva' && (state.op || state.c)) { sincronizarModal(); return; }
+  if ((tipo === 'op' || tipo === 'contacto') && (state.op || state.c)) {
+    if (history.state && history.state.crm) { history.back(); return; }
+    state.op = ''; state.c = '';
+    escribirURL(false);
+  }
+  vaciarModal();
+}
+
+function sincronizarModal() {
+  if (state.op) abrirOportunidad(state.op, null);
+  else if (state.c) abrirContacto(state.c, null);
+  else if (['op', 'contacto'].includes(slot().dataset.tipo)) vaciarModal();
+}
+
+function autor(a) {
+  if (!a.usuario_id) return 'Automático';
+  return perfiles.get(a.usuario_id) || 'Equipo';
+}
+
+async function cargarHistorial(contactoId, destino, conTitulo = false) {
+  const { data, error } = await db.from('crm_actividades').select('*')
+    .eq('contacto_id', contactoId).order('created_at', { ascending:false }).order('id', { ascending:false }).limit(200);
+  const ol = el(destino);
+  if (!ol) return;   // la ficha ya se cerró
+  if (error) { console.error(error); ol.innerHTML = '<li class="tl-meta">No se pudo cargar el historial.</li>'; return; }
+  if (!data.length) { ol.innerHTML = '<li class="tl-meta">Todavía no hay movimientos.</li>'; return; }
+  const titulos = new Map(opps.map(o => [o.id, o.titulo]));
+  ol.innerHTML = data.map(a => `<li>
+    <span class="tl-ic" aria-hidden="true">${(ACTIVIDADES[a.tipo] || ACTIVIDADES.sistema).icono}</span>
+    <div class="tl-txt">${esc(a.detalle || ACTIVIDADES[a.tipo]?.verbo || a.tipo)}
+      <div class="tl-meta">${esc(autor(a))} · ${Utils.datetime(a.created_at)}${conTitulo && a.oportunidad_id && titulos.get(a.oportunidad_id) ? ' · ' + esc(titulos.get(a.oportunidad_id)) : ''}</div></div>
+  </li>`).join('');
+}
+
+async function cargarPedido(solicitudId) {
+  const { data, error } = await db.from('solicitudes')
+    .select('codigo,estado,total_estimado,tipo_entrega,localidad,observaciones,solicitud_items(nombre,cantidad,precio_unitario,subtotal)')
+    .eq('id', solicitudId).single();
+  const box = el('d-pedido');
+  if (!box) return;
+  if (error || !data) { box.innerHTML = '<p class="form-hint">No se pudo cargar el pedido.</p>'; return; }
+  const items = data.solicitud_items || [];
+  box.innerHTML = `${items.length ? `<table class="ped-items"><tbody>${items.map(i => `<tr>
+      <td>${i.cantidad}× ${esc(i.nombre)}</td><td>${i.subtotal == null ? 'a cotizar' : pesos(i.subtotal)}</td></tr>`).join('')}</tbody></table>`
+    : '<p class="form-hint">Consulta sin productos.</p>'}
+    <div class="crm-fila-btn" style="justify-content:space-between">
+      <b>${data.total_estimado == null ? 'Total a confirmar' : 'Total ' + pesos(data.total_estimado)}</b>
+      <a class="btn btn-outline btn-sm" href="/admin/solicitudes.html?ver=${solicitudId}">Abrir el pedido →</a>
+    </div>
+    ${data.observaciones ? `<p class="crm-nota-pedido">💬 ${esc(data.observaciones)}</p>` : ''}`;
+}
+
+function accionesContacto(c) {
+  const wa = waNumero(c.telefono);
+  return `${wa ? `<a class="btn btn-wa btn-sm" href="https://wa.me/${wa}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}
+    ${c.telefono ? `<a class="btn btn-outline btn-sm" href="tel:${esc(String(c.telefono).replace(/[^\d+]/g, ''))}">📞 Llamar</a>` : ''}
+    ${c.instagram ? `<a class="btn btn-outline btn-sm" href="https://instagram.com/${encodeURIComponent(c.instagram)}" target="_blank" rel="noopener">📷 @${esc(c.instagram)}</a>` : ''}`;
+}
+
+/* ── Ficha de oportunidad ── */
+function abrirOportunidad(id, modo = 'push') {
+  const o = opps.find(x => String(x.id) === String(id));
+  if (!o || !contactoDe(o)) {
+    Utils.toast('Esa oportunidad no está disponible.', 'warning');
+    state.op = ''; escribirURL(false); vaciarModal();
+    return;
+  }
+  if (modo) { state.op = String(o.id); state.c = ''; escribirURL(modo === 'push'); }
+  const c = contactoDe(o);
+  const vinculada = !!o.solicitud_id;
+  const cerrada = !ABIERTAS.includes(o.etapa);
+  const canal = CANALES[o.canal] || CANALES.otro;
+  const wa = waNumero(c.telefono);
+
+  mostrarModal('op', `<div class="modal modal-lg crm-modal" role="dialog" aria-modal="true" aria-labelledby="crm-titulo">
+    <div class="modal-header">
+      <div class="crm-cab">
+        <h3 class="modal-title" id="crm-titulo">${esc(c.nombre)}${c.tipo === 'mayorista' ? ' <span class="tag-may">Mayorista</span>' : ''}</h3>
+        <div class="crm-sub">${esc(o.titulo)} · ${canal.icono} ${canal.label} · cargada ${esc(Utils.timeAgo(o.created_at).toLowerCase())}</div>
+      </div>
+      <button class="modal-close" data-cerrar aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="crm-bloque crm-acc">
+        ${accionesContacto(c)}
+        <button type="button" class="btn btn-ghost btn-sm" data-ver-contacto="${c.id}">👤 Ficha del contacto</button>
+      </div>
+
+      <div class="crm-bloque">
+        <div class="crm-label">Etapa</div>
+        <div class="crm-etapas-sel" role="group" aria-label="Etapa">
+          ${Object.entries(ETAPAS).map(([k, e]) => `<button type="button" class="etapa-op${o.etapa === k ? ' activa e-' + k : ''}" data-etapa="${k}" aria-pressed="${o.etapa === k}"${vinculada ? ' disabled' : ''}>${e.label}</button>`).join('')}
+        </div>
+        ${vinculada ? `<p class="crm-nota-pedido">🛒 Viene del pedido <b>${esc(o.solicitudes ? o.solicitudes.codigo : '#' + o.solicitud_id)}</b> de la tienda: la etapa se actualiza sola cuando cambiás el estado del pedido (así el stock queda bien). <a href="/admin/solicitudes.html?ver=${o.solicitud_id}">Abrir el pedido →</a></p>` : ''}
+        ${o.etapa === 'perdida' && o.motivo_perdida ? `<p class="crm-motivo">Motivo: ${esc(o.motivo_perdida)}</p>` : ''}
+        <div class="crm-motivo-box" id="motivo-box" hidden>
+          <label>¿Por qué se perdió?
+            <select id="motivo-sel">${MOTIVOS_PERDIDA.map(m => `<option>${m}</option>`).join('')}</select></label>
+          <input type="text" id="motivo-txt" maxlength="200" placeholder="Detalle (opcional)" aria-label="Detalle del motivo">
+          <div class="crm-fila-btn">
+            <button type="button" class="btn btn-ghost btn-sm" id="motivo-cancelar">Cancelar</button>
+            <button type="button" class="btn btn-danger btn-sm" id="motivo-ok">Marcar como perdida</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="crm-bloque">
+        <div class="crm-label">Seguimiento</div>
+        <div class="crm-grid2">
+          <label>Monto estimado
+            <input type="text" id="d-monto" inputmode="decimal" placeholder="Opcional, ej.: 250.000" value="${o.monto != null ? esc(String(Number(o.monto))) : ''}"${vinculada ? ' disabled title="Sale del total del pedido"' : ''}></label>
+          <label>Fecha del próximo paso
+            <input type="date" id="d-fecha" value="${esc(o.proxima_accion_fecha || '')}"${cerrada ? ' disabled' : ''}></label>
+          <label class="crm-full">Próximo paso
+            <input type="text" id="d-paso" maxlength="200" placeholder="Ej.: Mandarle fotos del color gris" value="${esc(o.proxima_accion || '')}"${cerrada ? ' disabled' : ''}></label>
+          ${cerrada ? '<p class="form-hint crm-full">Está cerrada. Para agendar un próximo paso, reabrila eligiendo otra etapa.</p>' : `
+          <div class="chips crm-full" aria-label="Fecha rápida">
+            <button type="button" class="chip" data-dias="0">Hoy</button>
+            <button type="button" class="chip" data-dias="1">Mañana</button>
+            <button type="button" class="chip" data-dias="3">En 3 días</button>
+            <button type="button" class="chip" data-dias="7">En 1 semana</button>
+            <button type="button" class="chip" data-dias="">Sin fecha</button>
+          </div>`}
+        </div>
+        <div class="crm-fila-btn">
+          <span class="dirty-flag" id="d-dirty" hidden>Cambios sin guardar</span>
+          <button type="button" class="btn btn-primary btn-sm" id="d-guardar" disabled>Guardar cambios</button>
+        </div>
+      </div>
+
+      <div class="crm-bloque">
+        <div class="crm-label">Registrar lo que hiciste</div>
+        <div class="chips">${['whatsapp', 'llamada', 'instagram', 'visita', 'nota'].map(t =>
+          `<button type="button" class="chip" data-reg="${t}">${ACTIVIDADES[t].icono} ${ACTIVIDADES[t].verbo}</button>`).join('')}</div>
+        <div class="crm-reg" id="reg-box" hidden>
+          <textarea id="reg-txt" rows="2" maxlength="2000" aria-label="Detalle"></textarea>
+          <div class="crm-fila-btn">
+            <button type="button" class="btn btn-ghost btn-sm" id="reg-cancelar">Cancelar</button>
+            <button type="button" class="btn btn-primary btn-sm" id="reg-ok">Guardar en el historial</button>
+          </div>
+        </div>
+      </div>
+
+      ${wa ? `<div class="crm-bloque crm-wa">
+        <div class="crm-label">✨ Mensaje sugerido <span>(editalo antes de mandarlo)</span></div>
+        <div class="chips">
+          <button type="button" class="chip" data-plantilla="saludo">👋 Primer contacto</button>
+          <button type="button" class="chip" data-plantilla="cotizacion">💲 Pasar precio</button>
+          <button type="button" class="chip" data-plantilla="seguimiento">🔄 Seguimiento</button>
+          <button type="button" class="chip" data-plantilla="gracias">🙌 Post-venta</button>
+        </div>
+        <textarea id="wa-txt" rows="5" aria-label="Mensaje de WhatsApp"></textarea>
+        <label class="crm-check"><input type="checkbox" id="wa-registrar" checked> Anotarlo en el historial al abrir WhatsApp</label>
+        <div class="crm-fila-btn">
+          <button type="button" class="btn btn-outline btn-sm" id="wa-copiar">📋 Copiar</button>
+          <a class="btn btn-wa btn-sm" id="wa-abrir" target="_blank" rel="noopener" href="#">Abrir WhatsApp con este mensaje</a>
+        </div>
+      </div>` : ''}
+
+      ${vinculada ? `<div class="crm-bloque"><div class="crm-label">Pedido de la tienda</div><div id="d-pedido">${Utils.skelRows(2)}</div></div>` : ''}
+
+      <div class="crm-bloque">
+        <div class="crm-label">Historial de ${esc(primerNombre(c.nombre))}</div>
+        <ol class="crm-timeline" id="d-historial"><li class="tl-meta">Cargando…</li></ol>
+      </div>
+    </div>
+  </div>`);
+
+  conectarFichaOportunidad(o, c, wa);
+  cargarHistorial(c.id, 'd-historial');
+  if (vinculada) cargarPedido(o.solicitud_id);
+}
+
+function conectarFichaOportunidad(o, c, wa) {
+  const s = slot();
+  s.querySelector('[data-ver-contacto]').addEventListener('click', () => abrirContacto(c.id, 'push'));
+
+  // Etapa
+  s.querySelectorAll('[data-etapa]').forEach(b => b.addEventListener('click', () => {
+    const etapa = b.dataset.etapa;
+    if (etapa === o.etapa) return;
+    if (etapa === 'perdida') { el('motivo-box').hidden = false; el('motivo-sel').focus(); return; }
+    actualizarOportunidad(o, { etapa },
+      etapa === 'ganada' ? '¡Venta ganada! 🎉' : `Movida a "${ETAPAS[etapa].label}"`);
+  }));
+  el('motivo-cancelar').addEventListener('click', () => { el('motivo-box').hidden = true; });
+  el('motivo-ok').addEventListener('click', () => {
+    const det = el('motivo-txt').value.trim();
+    const motivo = (el('motivo-sel').value + (det ? ': ' + det : '')).slice(0, 300);
+    actualizarOportunidad(o, { etapa:'perdida', motivo_perdida: motivo }, 'Marcada como perdida');
+  });
+
+  // Seguimiento: monto, fecha y próximo paso
+  const orig = { monto: o.monto != null ? String(Number(o.monto)) : '', fecha: o.proxima_accion_fecha || '', paso: o.proxima_accion || '' };
+  const leer = () => ({ monto: el('d-monto').value.trim(), fecha: el('d-fecha').value, paso: el('d-paso').value.trim() });
+  // "250.000" y "250000" son el mismo monto: se compara ya interpretado
+  const montoNorm = v => { const m = parseMonto(v); return m === null ? '?' + v : m === '' ? '' : String(Number(m)); };
+  const sucio = () => {
+    const a = leer();
+    return montoNorm(a.monto) !== montoNorm(orig.monto) || a.fecha !== orig.fecha || a.paso !== orig.paso;
+  };
+  const marcar = () => { const x = sucio(); el('d-guardar').disabled = !x; el('d-dirty').hidden = !x; };
+  ['d-monto', 'd-fecha', 'd-paso'].forEach(id => el(id).addEventListener('input', marcar));
+  s.querySelectorAll('[data-dias]').forEach(b => b.addEventListener('click', () => {
+    el('d-fecha').value = b.dataset.dias === '' ? '' : sumarDias(hoyISO(), Number(b.dataset.dias));
+    marcar();
+  }));
+  el('d-guardar').addEventListener('click', () => {
+    const a = leer(), cambios = {};
+    if (!o.solicitud_id) {
+      const m = parseMonto(a.monto);
+      if (m === null) { Utils.toast('El monto tiene que ser un número (ej.: 250.000).', 'warning'); el('d-monto').focus(); return; }
+      const nuevo = m === '' ? null : Number(m);
+      if (nuevo !== (o.monto == null ? null : Number(o.monto))) cambios.monto = nuevo;
+    }
+    if (a.fecha !== orig.fecha) cambios.proxima_accion_fecha = a.fecha || null;
+    if (a.paso !== orig.paso) cambios.proxima_accion = a.paso || null;
+    if (!Object.keys(cambios).length) { marcar(); return; }
+    actualizarOportunidad(o, cambios, 'Cambios guardados');
+  });
+
+  // Registrar contacto o nota
+  let tipoReg = null;
+  s.querySelectorAll('[data-reg]').forEach(b => b.addEventListener('click', () => {
+    tipoReg = b.dataset.reg;
+    s.querySelectorAll('[data-reg]').forEach(x => x.classList.toggle('active', x === b));
+    el('reg-box').hidden = false;
+    el('reg-txt').placeholder = tipoReg === 'nota' ? 'Escribí la nota…' : '¿Qué hablaron? (opcional)';
+    el('reg-txt').focus();
+  }));
+  el('reg-cancelar').addEventListener('click', () => {
+    tipoReg = null; el('reg-box').hidden = true; el('reg-txt').value = '';
+    s.querySelectorAll('[data-reg]').forEach(x => x.classList.remove('active'));
+  });
+  el('reg-ok').addEventListener('click', () => {
+    const txt = el('reg-txt').value.trim();
+    if (!tipoReg) return;
+    if (tipoReg === 'nota' && !txt) { Utils.toast('Escribí la nota antes de guardar.', 'warning'); el('reg-txt').focus(); return; }
+    registrarActividad(o, tipoReg, txt);
+  });
+
+  // Mensaje sugerido de WhatsApp
+  if (wa) {
+    const txt = el('wa-txt'), link = el('wa-abrir');
+    const actualizarLink = () => { link.href = `https://wa.me/${wa}?text=${encodeURIComponent(txt.value)}`; };
+    const usar = tipo => {
+      txt.value = plantillaWA(tipo, { nombre: c.nombre, titulo: o.titulo, monto: o.monto });
+      s.querySelectorAll('[data-plantilla]').forEach(b => b.classList.toggle('active', b.dataset.plantilla === tipo));
+      actualizarLink();
+    };
+    usar(PLANTILLA_POR_ETAPA[o.etapa] || 'saludo');
+    txt.addEventListener('input', actualizarLink);
+    s.querySelectorAll('[data-plantilla]').forEach(b => b.addEventListener('click', () => usar(b.dataset.plantilla)));
+    el('wa-copiar').addEventListener('click', () => Utils.copy(txt.value, 'Mensaje copiado: pegalo en WhatsApp'));
+    link.addEventListener('click', () => {
+      if (el('wa-registrar').checked) {
+        const resumen = txt.value.trim().replace(/\s+/g, ' ');
+        registrarActividad(o, 'whatsapp', 'Mensaje enviado desde el CRM: ' + (resumen.length > 160 ? resumen.slice(0, 160) + '…' : resumen), { silencioso:true });
+      }
+    });
+  }
+}
+
+async function actualizarOportunidad(o, cambios, okMsg) {
+  const { data, error } = await db.from('crm_oportunidades').update(cambios).eq('id', o.id).select(SELECT_OPP).single();
+  if (error) {
+    console.error('CRM: no se pudo actualizar la oportunidad', error);
+    Utils.toast(esc(mensajeError(error)), 'error');
+    return null;
+  }
+  reemplazarOpp(data);
+  render();
+  abrirOportunidad(data.id, null);
+  if (okMsg) Utils.toast(esc(okMsg), 'success');
+  return data;
+}
+
+async function registrarActividad(o, tipo, detalle, { silencioso = false } = {}) {
+  const { error } = await db.from('crm_actividades').insert({
+    oportunidad_id: o.id, contacto_id: o.contacto_id, tipo, detalle: detalle || null });
+  if (error) {
+    console.error('CRM: no se pudo registrar la actividad', error);
+    Utils.toast(esc(mensajeError(error)), 'error');
+    return false;
+  }
+  // La base pudo mover la etapa (nueva → contactado) y el último contacto
+  const [ro, rc] = await Promise.all([
+    db.from('crm_oportunidades').select(SELECT_OPP).eq('id', o.id).single(),
+    db.from('crm_contactos').select('*').eq('id', o.contacto_id).single()
+  ]);
+  if (!ro.error) reemplazarOpp(ro.data);
+  if (!rc.error) contactos.set(rc.data.id, rc.data);
+  render();
+  if (slot().dataset.tipo === 'op' && state.op === String(o.id)) abrirOportunidad(o.id, null);
+  if (!silencioso) {
+    const avanzo = !ro.error && ro.data.etapa !== o.etapa;
+    Utils.toast(avanzo ? `Registrado · pasó a "${ETAPAS[ro.data.etapa].label}"` : 'Registrado en el historial', 'success');
+  }
+  return true;
+}
+
+/* ── Ficha de contacto ── */
+const CAMPOS_CONTACTO = ['nombre', 'telefono', 'email', 'localidad', 'tipo', 'canal_origen', 'instagram', 'comercio', 'cuit', 'notas'];
+
+function abrirContacto(id, modo = 'push') {
+  const c = contactos.get(Number(id));
+  if (!c) {
+    Utils.toast('Ese contacto no está disponible.', 'warning');
+    state.c = ''; escribirURL(false); vaciarModal();
+    return;
+  }
+  if (modo) { state.c = String(c.id); state.op = ''; escribirURL(modo === 'push'); }
+  const suyas = opps.filter(o => o.contacto_id === c.id).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+  const canal = CANALES[c.canal_origen] || CANALES.otro;
+  const v = k => esc(c[k] ?? '');
+  const opciones = (obj, actual) => Object.entries(obj).map(([k, x]) =>
+    `<option value="${k}"${k === actual ? ' selected' : ''}>${typeof x === 'string' ? x : x.label}</option>`).join('');
+
+  mostrarModal('contacto', `<div class="modal modal-lg crm-modal" role="dialog" aria-modal="true" aria-labelledby="crm-titulo">
+    <div class="modal-header">
+      <div class="crm-cab">
+        <h3 class="modal-title" id="crm-titulo">${esc(c.nombre)}</h3>
+        <div class="crm-sub">${canal.icono} Llegó por ${canal.label} · cargado el ${Utils.date(c.created_at)}${c.archivado ? ' · <b>Archivado</b>' : ''}</div>
+      </div>
+      <button class="modal-close" data-cerrar aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="crm-bloque crm-acc">
+        ${accionesContacto(c)}
+        ${c.archivado ? '' : '<button type="button" class="btn btn-primary btn-sm" id="c-nueva">+ Nueva consulta</button>'}
+      </div>
+      <div class="crm-bloque">
+        <div class="crm-label">Oportunidades (${suyas.length})</div>
+        ${suyas.length ? `<ul class="crm-mini">${suyas.map(o => `<li><button type="button" data-ir-op="${o.id}">
+            <span class="etapa-badge e-${o.etapa}">${ETAPAS[o.etapa].label}</span> ${esc(o.titulo)}
+            ${o.monto != null ? `<b>${pesos(o.monto)}</b>` : ''}<small>${Utils.date(o.created_at)}</small></button></li>`).join('')}</ul>`
+          : '<p class="form-hint">Todavía no tiene oportunidades.</p>'}
+      </div>
+      <form class="crm-bloque" id="c-form" novalidate>
+        <div class="crm-label">Datos</div>
+        <div class="crm-grid2">
+          <label>Nombre <span class="req">*</span><input type="text" name="nombre" maxlength="120" required value="${v('nombre')}"></label>
+          <label>Teléfono<input type="tel" name="telefono" inputmode="tel" maxlength="40" value="${v('telefono')}"></label>
+          <label>Email<input type="email" name="email" maxlength="160" value="${v('email')}"></label>
+          <label>Localidad<input type="text" name="localidad" maxlength="80" value="${v('localidad')}"></label>
+          <label>Tipo<select name="tipo">${opciones({ minorista:'Minorista', mayorista:'Mayorista', otro:'Otro' }, c.tipo)}</select></label>
+          <label>Llegó por<select name="canal_origen">${opciones(CANALES, c.canal_origen)}</select></label>
+          <label>Instagram<input type="text" name="instagram" maxlength="60" placeholder="usuario, sin @" value="${v('instagram')}"></label>
+          <label>Comercio<input type="text" name="comercio" maxlength="120" value="${v('comercio')}"></label>
+          <label>CUIT<input type="text" name="cuit" inputmode="numeric" maxlength="15" value="${v('cuit')}"></label>
+          <label class="crm-full">Notas<textarea name="notas" rows="2" maxlength="2000">${v('notas')}</textarea></label>
+        </div>
+        <div class="crm-fila-btn">
+          <button type="button" class="btn btn-ghost btn-sm" id="c-archivar">${c.archivado ? '♻️ Reactivar' : '🗄️ Archivar'}</button>
+          <span class="dirty-flag" id="c-dirty" hidden>Cambios sin guardar</span>
+          <button type="submit" class="btn btn-primary btn-sm" id="c-guardar" disabled>Guardar datos</button>
+        </div>
+      </form>
+      <div class="crm-bloque">
+        <div class="crm-label">Historial</div>
+        <ol class="crm-timeline" id="c-historial"><li class="tl-meta">Cargando…</li></ol>
+      </div>
+    </div>
+  </div>`);
+
+  const s = slot(), form = el('c-form');
+  s.querySelectorAll('[data-ir-op]').forEach(b => b.addEventListener('click', () => abrirOportunidad(b.dataset.irOp, 'push')));
+  el('c-nueva')?.addEventListener('click', () => abrirNueva({ contacto: c }));
+
+  const valores = () => Object.fromEntries(CAMPOS_CONTACTO.map(k => [k, String(form.elements[k].value || '').trim()]));
+  const cambiosDe = () => {
+    const a = valores(), cambios = {};
+    CAMPOS_CONTACTO.forEach(k => { if (a[k] !== String(c[k] ?? '')) cambios[k] = a[k] || null; });
+    return cambios;
+  };
+  const marcar = () => { const n = Object.keys(cambiosDe()).length; el('c-guardar').disabled = !n; el('c-dirty').hidden = !n; };
+  form.addEventListener('input', marcar);
+  form.addEventListener('change', marcar);
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const cambios = cambiosDe();
+    if (!Object.keys(cambios).length) return;
+    if ('nombre' in cambios && String(cambios.nombre || '').length < 2) { Utils.toast('El nombre es obligatorio.', 'warning'); form.elements.nombre.focus(); return; }
+    if (cambios.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cambios.email)) { Utils.toast('Ese email no parece válido.', 'warning'); form.elements.email.focus(); return; }
+    el('c-guardar').disabled = true;
+    await guardarContacto(c, cambios, 'Datos guardados');
+  });
+  el('c-archivar').addEventListener('click', async () => {
+    if (!c.archivado) {
+      const ab = opps.filter(o => o.contacto_id === c.id && ABIERTAS.includes(o.etapa)).length;
+      const ok = await Utils.confirm(
+        `¿Archivar a <b>${esc(c.nombre)}</b>?${ab === 1 ? ' Su oportunidad abierta deja de aparecer en el embudo.'
+          : ab > 1 ? ` Sus ${ab} oportunidades abiertas dejan de aparecer en el embudo.` : ''} No se borra nada: lo podés reactivar cuando quieras.`,
+        'Archivar contacto', 'Archivar', false);
+      if (!ok) return;
+    }
+    await guardarContacto(c, { archivado: !c.archivado }, c.archivado ? 'Contacto reactivado' : 'Contacto archivado');
+  });
+  cargarHistorial(c.id, 'c-historial', true);
+}
+
+async function guardarContacto(c, cambios, okMsg) {
+  const { data, error } = await db.from('crm_contactos').update(cambios).eq('id', c.id).select('*').single();
+  if (error) {
+    console.error('CRM: no se pudo guardar el contacto', error);
+    Utils.toast(esc(mensajeError(error)), 'error');
+    if (el('c-guardar')) el('c-guardar').disabled = false;
+    return null;
+  }
+  contactos.set(data.id, data);
+  render();
+  abrirContacto(data.id, null);
+  Utils.toast(esc(okMsg), 'success');
+  return data;
+}
+
+/* ── Nueva consulta ── */
+function canalPreferido() {
+  try { const v = localStorage.getItem('mh_crm_canal'); return CANALES[v] ? v : 'instagram'; } catch (_) { return 'instagram'; }
+}
+
+function abrirNueva(pref = {}) {
+  const c = pref.contacto || null;
+  const canalIni = c ? c.canal_origen : canalPreferido();
+  mostrarModal('nueva', `<div class="modal crm-modal" role="dialog" aria-modal="true" aria-labelledby="crm-titulo" style="max-width:560px">
+    <form id="n-form" novalidate style="display:contents">
+    <div class="modal-header">
+      <div class="crm-cab">
+        <h3 class="modal-title" id="crm-titulo">${c ? `Nueva consulta de ${esc(c.nombre)}` : 'Nueva consulta'}</h3>
+        <div class="crm-sub">Cargala apenas entra: así nadie se queda sin respuesta.</div>
+      </div>
+      <button type="button" class="modal-close" data-cerrar aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="crm-bloque">
+        <div class="crm-label">¿Por dónde llegó? <span class="req">*</span></div>
+        <div class="crm-canales" role="group" aria-label="Canal">
+          ${['instagram', 'whatsapp', 'facebook', 'mostrador', 'referido', 'otro'].map(k =>
+            `<button type="button" class="chip${k === canalIni ? ' active' : ''}" data-canal="${k}" aria-pressed="${k === canalIni}">${CANALES[k].icono} ${CANALES[k].label}</button>`).join('')}
+        </div>
+      </div>
+      <div class="crm-bloque crm-grid2">
+        ${c ? '' : `
+        <label>Nombre <span class="req">*</span><input type="text" name="nombre" maxlength="120" autocomplete="off" data-foco></label>
+        <label>Teléfono<input type="tel" name="telefono" inputmode="tel" maxlength="40" autocomplete="off" placeholder="342 15 123-4567"></label>
+        <div class="crm-full crm-dup" id="n-dup" hidden></div>
+        <label id="n-ig-wrap">Usuario de Instagram<input type="text" name="instagram" maxlength="60" autocomplete="off" placeholder="sin @"></label>
+        <label>Tipo<select name="tipo"><option value="minorista">Minorista</option><option value="mayorista">Mayorista / comercio</option></select></label>`}
+        <label class="crm-full">¿Qué busca? <span class="req">*</span><input type="text" name="titulo" maxlength="160" autocomplete="off" placeholder="Ej.: Freidora de aire 5 L"${c ? ' data-foco' : ''}></label>
+        <label>Monto estimado<input type="text" name="monto" inputmode="decimal" autocomplete="off" placeholder="Opcional, ej.: 250.000"></label>
+        <label>Próximo paso<input type="text" name="paso" maxlength="200" value="Responder la consulta"></label>
+        <div class="crm-full">
+          <div class="crm-label" style="margin-bottom:6px">¿Para cuándo?</div>
+          <div class="chips" role="group" aria-label="Fecha del próximo paso">
+            <button type="button" class="chip active" data-n-dias="0" aria-pressed="true">Hoy</button>
+            <button type="button" class="chip" data-n-dias="1" aria-pressed="false">Mañana</button>
+            <button type="button" class="chip" data-n-dias="3" aria-pressed="false">En 3 días</button>
+            <button type="button" class="chip" data-n-dias="" aria-pressed="false">Sin fecha</button>
+          </div>
+        </div>
+        <label class="crm-full">Nota<textarea name="nota" rows="2" maxlength="2000" placeholder="Opcional: lo que preguntó, qué publicación vio…"></textarea></label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" data-cerrar>Cancelar</button>
+      <button type="submit" class="btn btn-primary" id="n-guardar">Guardar consulta</button>
+    </div>
+    </form>
+  </div>`);
+
+  const s = slot(), form = el('n-form');
+  let canal = canalIni, dias = '0', existente = null;
+
+  s.querySelectorAll('[data-canal]').forEach(b => b.addEventListener('click', () => {
+    canal = b.dataset.canal;
+    s.querySelectorAll('[data-canal]').forEach(x => { const on = x === b; x.classList.toggle('active', on); x.setAttribute('aria-pressed', String(on)); });
+    if (el('n-ig-wrap')) el('n-ig-wrap').hidden = canal !== 'instagram';
+  }));
+  if (el('n-ig-wrap')) el('n-ig-wrap').hidden = canal !== 'instagram';
+  s.querySelectorAll('[data-n-dias]').forEach(b => b.addEventListener('click', () => {
+    dias = b.dataset.nDias;
+    s.querySelectorAll('[data-n-dias]').forEach(x => { const on = x === b; x.classList.toggle('active', on); x.setAttribute('aria-pressed', String(on)); });
+  }));
+
+  // Aviso de duplicado: si el teléfono ya está cargado, la consulta se suma a ese contacto
+  if (!c) {
+    let timer;
+    form.elements.telefono.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const k = telClave(form.elements.telefono.value);
+        const candidatos = k ? [...contactos.values()].filter(x => x.telefono_clave === k) : [];
+        existente = candidatos.find(x => !x.archivado) || candidatos[0] || null;
+        const box = el('n-dup');
+        if (!existente) { box.hidden = true; return; }
+        const ch = CANALES[existente.canal_origen] || CANALES.otro;
+        box.innerHTML = `ℹ️ Ya está cargado como <b>${esc(existente.nombre)}</b> (${ch.label}${existente.archivado ? ', archivado' : ''}). La consulta se va a sumar a ese contacto. <a href="#" id="n-ver">Ver ficha</a>`;
+        box.hidden = false;
+        el('n-ver').addEventListener('click', ev => { ev.preventDefault(); abrirContacto(existente.id, 'push'); });
+      }, 250);
+    });
+  }
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = form.elements;
+    const titulo = f.titulo.value.trim();
+    const monto = parseMonto(f.monto.value);
+    if (!c && !existente && f.nombre.value.trim().length < 2) { Utils.toast('Poné el nombre del cliente.', 'warning'); f.nombre.focus(); return; }
+    if (titulo.length < 2) { Utils.toast('Contá en pocas palabras qué busca.', 'warning'); f.titulo.focus(); return; }
+    if (monto === null) { Utils.toast('El monto tiene que ser un número (ej.: 250.000).', 'warning'); f.monto.focus(); return; }
+
+    const payload = {
+      canal, titulo, monto,
+      proxima_accion: f.paso.value.trim(),
+      proxima_accion_fecha: dias === '' ? '' : sumarDias(hoyISO(), Number(dias)),
+      nota: f.nota.value.trim()
+    };
+    if (c) payload.contacto_id = String(c.id);
+    else Object.assign(payload, { nombre: f.nombre.value.trim(), telefono: f.telefono.value.trim(),
+                                  instagram: canal === 'instagram' ? f.instagram.value.trim() : '', tipo: f.tipo.value });
+
+    const btn = el('n-guardar');
+    btn.disabled = true; btn.textContent = 'Guardando…';
+    const { data, error } = await db.rpc('crm_nueva_consulta', { p: payload });
+    if (error) {
+      console.error('CRM: no se pudo cargar la consulta', error);
+      Utils.toast(esc(faltaInstalar(error) ? 'Falta ejecutar sql/009-crm.sql en Supabase.' : mensajeError(error)), 'error');
+      btn.disabled = false; btn.textContent = 'Guardar consulta';
+      return;
+    }
+    try { localStorage.setItem('mh_crm_canal', canal); } catch (_) { /* no es importante */ }
+    await cargar();
+    render();
+    abrirOportunidad(data.oportunidad_id, 'push');
+    const nombre = contactos.get(data.contacto_id)?.nombre || '';
+    Utils.toast(data.contacto_nuevo ? 'Consulta cargada' : `Consulta sumada a ${esc(nombre)} (ya estaba en el CRM)`, 'success');
+  });
+}
+
+/* ── Exportar ── */
+function celda(v) {
+  const s = String(v ?? '');
+  return /^[=+\-@]/.test(s) ? "'" + s : s;   // evita que Excel lo tome como fórmula
+}
+
+function exportar() {
+  const fecha = hoyISO();
+  if (state.vista === 'contactos') {
+    const lista = [...contactos.values()].filter(c => (state.arch ? c.archivado : !c.archivado)
+      && (!state.canal || c.canal_origen === state.canal) && coincide(null, c, state.q));
+    if (!lista.length) { Utils.toast('No hay nada para exportar.', 'warning'); return; }
+    Utils.exportCSV(lista.map(c => ({
+      Nombre: celda(c.nombre), Telefono: celda(c.telefono), Email: celda(c.email), Localidad: celda(c.localidad),
+      Tipo: c.tipo, 'Llegó por': (CANALES[c.canal_origen] || CANALES.otro).label, Instagram: celda(c.instagram),
+      Comercio: celda(c.comercio), CUIT: celda(c.cuit), 'Último contacto': c.ultimo_contacto_at ? Utils.datetime(c.ultimo_contacto_at) : '',
+      Archivado: c.archivado ? 'Sí' : 'No'
+    })), `crm-contactos-${fecha}.csv`);
+    return;
+  }
+  const base = oppsFiltradas();
+  const lista = state.vista === 'hoy' ? paraHoy(base, fecha)
+    : state.etapa ? base.filter(o => o.etapa === state.etapa) : base;
+  if (!lista.length) { Utils.toast('No hay nada para exportar.', 'warning'); return; }
+  Utils.exportCSV(lista.map(o => {
+    const c = contactoDe(o) || {};
+    return {
+      Contacto: celda(c.nombre), Telefono: celda(c.telefono), Canal: (CANALES[o.canal] || CANALES.otro).label,
+      'Qué busca': celda(o.titulo), Etapa: ETAPAS[o.etapa].label, Monto: o.monto ?? '',
+      'Próximo paso': celda(o.proxima_accion), Fecha: o.proxima_accion_fecha || '',
+      Cargada: Utils.datetime(o.created_at), Cerrada: o.cerrada_at ? Utils.datetime(o.cerrada_at) : '',
+      'Motivo de pérdida': celda(o.motivo_perdida), Pedido: o.solicitudes ? o.solicitudes.codigo : ''
+    };
+  }), `crm-${state.vista}-${fecha}.csv`);
+}
+
+/* ── Eventos ─────────────────────────────────────────────────────── */
+function cambiar(parcial) {
+  Object.assign(state, parcial);
+  limite = PASO;
+  escribirURL(false);
+  render();
+}
+
+let debQ;
+el('q').addEventListener('input', () => {
+  clearTimeout(debQ);
+  debQ = setTimeout(() => cambiar({ q: el('q').value.slice(0, 80) }), 200);
+});
+el('filtro-canal').addEventListener('change', () => cambiar({ canal: el('filtro-canal').value }));
+el('btn-limpiar').addEventListener('click', () => cambiar({ q:'', canal:'' }));
+el('tabs').addEventListener('click', e => {
+  const b = e.target.closest('[data-vista]'); if (!b) return;
+  cambiar({ vista: b.dataset.vista, etapa:'', arch:'' });
+});
+el('chips-etapa').addEventListener('click', e => {
+  const b = e.target.closest('[data-etapa-filtro],[data-arch]'); if (!b) return;
+  if ('etapaFiltro' in b.dataset) cambiar({ etapa: b.dataset.etapaFiltro });
+  else cambiar({ arch: b.dataset.arch });
+});
+el('kpis').addEventListener('click', e => {
+  const b = e.target.closest('[data-kpi]'); if (!b) return;
+  const destino = { hoy:{ vista:'hoy', etapa:'' }, nuevas:{ vista:'embudo', etapa:'nueva' },
+                    curso:{ vista:'embudo', etapa:'' }, ganadas:{ vista:'embudo', etapa:'ganada' } }[b.dataset.kpi];
+  cambiar({ ...destino, arch:'' });
+});
+el('vista').addEventListener('click', e => {
+  const accion = e.target.closest('[data-accion]');
+  if (accion) {
+    if (accion.dataset.accion === 'mas') { limite += PASO; render(); }
+    else if (accion.dataset.accion === 'nueva') abrirNueva();
+    else if (accion.dataset.accion === 'limpiar') cambiar({ q:'', canal:'' });
+    return;
+  }
+  if (e.target.closest('a')) return;   // WhatsApp / llamar: no abren la ficha
+  const op = e.target.closest('[data-op]');
+  if (op) { abrirOportunidad(op.dataset.op, 'push'); return; }
+  const ct = e.target.closest('[data-contacto]');
+  if (ct) abrirContacto(ct.dataset.contacto, 'push');
+});
+el('btn-nueva').addEventListener('click', () => abrirNueva());
+el('btn-export').addEventListener('click', exportar);
+el('btn-refrescar').addEventListener('click', async () => {
+  if (await cargar()) { render(); sincronizarModal(); Utils.toast('Datos actualizados', 'success', 1800); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && slot().innerHTML) cerrarModal(); });
+window.addEventListener('popstate', () => {
+  state = leerURL(location.search);
+  render();
+  sincronizarModal();
+});
+esAncho.addEventListener('change', () => { if (state.vista === 'embudo') render(); });
+
+/* ── Inicio ──────────────────────────────────────────────────────── */
+(async function init() {
+  const profile = await Auth.init();
+  if (!profile) return;
+  miPerfil = profile;
+  await Layout.init('crm', 'CRM de clientes');
+
+  // La base es la barrera real (RLS); esto evita mostrar una pantalla
+  // que solo devolvería "sin permisos".
+  if (!['administrador', 'vendedor'].includes(profile.rol)) {
+    el('acciones').remove();
+    el('contenido').innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔒</div>
+      <h3>El CRM es para administración y ventas</h3>
+      <p>Tu usuario es de stock. Si necesitás verlo, pedile al administrador que te cambie el rol.</p></div>`;
+    return;
+  }
+
+  el('filtro-canal').insertAdjacentHTML('beforeend',
+    Object.entries(CANALES).map(([k, c]) => `<option value="${k}">${c.icono} ${c.label}</option>`).join(''));
+  state = leerURL(location.search);
+  el('kpis').innerHTML = Utils.skelKpis(4);
+  el('vista').innerHTML = Utils.skelRows(4);
+  await cargar();
+  escribirURL(false);   // normaliza la URL (descarta parámetros inválidos)
+  render();
+  if (instalado) sincronizarModal();
+})();
+</script>
+  <script src="/admin/js/assistant.js"></script>
+  <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/admin/sw.js').catch(()=>{}); }</script>
+</body>
+</html>

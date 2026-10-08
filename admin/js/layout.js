@@ -2,6 +2,7 @@
 const Layout = {
   NAV: [
     { id:'dashboard',  label:'Dashboard',           icon:'📊', href:'/admin/dashboard.html',      section:'Principal' },
+    { id:'crm',        label:'CRM de clientes',      icon:'🤝', href:'/admin/crm.html',            section:'Ventas', roles:['administrador','vendedor'] },
     { id:'solicitudes',label:'Solicitudes WhatsApp', icon:'💬', href:'/admin/solicitudes.html',    section:'Ventas' },
     { id:'productos',  label:'Productos',            icon:'🛍️', href:'/admin/productos.html',      section:'Catálogo' },
     { id:'categorias', label:'Categorías',           icon:'🏷️', href:'/admin/categorias.html',     section:'Catálogo' },
@@ -18,6 +19,7 @@ const Layout = {
     const sections = {};
     this.NAV.forEach(item => {
       if (item.adminOnly && profile?.rol !== 'administrador') return;
+      if (item.roles && !item.roles.includes(profile?.rol)) return;
       if (!sections[item.section]) sections[item.section] = [];
       sections[item.section].push(item);
     });
