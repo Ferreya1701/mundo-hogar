@@ -615,6 +615,7 @@ function tarjeta(o) {
     <div class="opp-meta">
       ${o.monto != null ? `<span class="opp-monto">${pesos(o.monto)}</span>` : ''}
       ${o.solicitud_id ? `<span class="tag-ped">🛒 ${esc(o.solicitudes ? o.solicitudes.codigo : 'Pedido web')}</span>` : ''}
+      ${o.ref_externa ? '<span class="tag-ped">🤖 Bot de WhatsApp</span>' : ''}
       ${o.etapa === 'perdida' && o.motivo_perdida ? `<span>${esc(o.motivo_perdida)}</span>` : ''}
       <span>${!ABIERTAS.includes(o.etapa) && o.cerrada_at ? 'Cerrada ' + esc(Utils.timeAgo(o.cerrada_at).toLowerCase()) : 'Cargada ' + esc(Utils.timeAgo(o.created_at).toLowerCase())}</span>
     </div>

@@ -120,11 +120,15 @@ await estadoPedido(solC, 'cancelado');
 
 // ── Migración: dos veces ──────────────────────────────────────────
 const SQL009 = leerSQL('009-crm.sql');
+const SQL010 = leerSQL('010-bot-whatsapp.sql');
 let errorMigracion = null;
-try { await db.exec(SQL009); await db.exec(SQL009); } catch (e) { errorMigracion = e.message; }
+try {
+  await db.exec(SQL009); await db.exec(SQL009);
+  await db.exec(SQL010); await db.exec(SQL010);
+} catch (e) { errorMigracion = e.message; }
 
 grupo('Migración');
-t('corre limpia y dos veces seguidas', errorMigracion, null);
+t('009 y 010 corren limpias, dos veces seguidas', errorMigracion, null);
 if (errorMigracion) { console.log(`\n${ok} pasadas, ${fail} fallidas\n`); process.exit(1); }
 
 // ── Clave de teléfono ─────────────────────────────────────────────
@@ -334,6 +338,110 @@ await q(`ALTER TABLE crm_oportunidades DROP CONSTRAINT prueba_falla`);
 await estadoPedido(solF, 'cotizacion_enviada');
 t('y el CRM se pone al día en el cambio siguiente',
   (await q(`SELECT etapa FROM crm_oportunidades WHERE solicitud_id = $1`, [solF]))[0].etapa, 'cotizado');
+
+// ── Bot de WhatsApp (sql/010) ─────────────────────────────────────
+grupo('Bot · catálogo público con la misma regla que la tienda');
+await q(`INSERT INTO categorias (nombre, slug) VALUES ('Electro', 'electro')`);
+const cat = (await q(`SELECT id FROM categorias WHERE slug = 'electro'`))[0].id;
+await q(`INSERT INTO productos (nombre, slug, categoria_id, precio_minorista, seguimiento_inventario) VALUES
+  ('Pava eléctrica', 'pava', $1, 25000, true),
+  ('Tostadora', 'tostadora', $1, 30000, true),
+  ('Heladera', 'heladera', $1, NULL, true),
+  ('Microondas', 'microondas', $1, 150000, true)`, [cat]);
+await q(`UPDATE productos SET en_oferta = true, precio_oferta = 120000, permite_venta_sin_stock = true WHERE slug = 'microondas'`);
+await q(`INSERT INTO productos (nombre, slug, precio_minorista, estado) VALUES ('Discontinuado', 'disc', 1000, 'inactivo')`);
+await como('authenticated', ADMIN, `SELECT fn_registrar_movimiento((SELECT id FROM productos WHERE slug = 'tostadora'), 'carga_inicial', 5)`);
+const cb = Object.fromEntries((await anon(`SELECT * FROM catalogo_bot`)).map(r => [r.nombre, r]));
+t('el público lo lee', Object.keys(cb).length >= 5, true);
+t('solo activos', 'Discontinuado' in cb, false);
+t('con precio y stock 0 → sin stock (como la web)', cb['Pava eléctrica'].disponible, false);
+t('con stock → disponible', cb['Tostadora'].disponible, true);
+t('sin precio → "consultar" y no se afirma stock', [cb['Heladera'].precio, cb['Heladera'].disponible], [null, true]);
+t('oferta → precio de oferta y precio anterior',
+  [Number(cb['Microondas'].precio), Number(cb['Microondas'].precio_anterior), cb['Microondas'].en_oferta], [120000, 150000, true]);
+t('se vende sin stock → disponible', cb['Microondas'].disponible, true);
+t('link a la ficha de la tienda', cb['Tostadora'].url, 'https://mundohogarstf.com/producto/tostadora');
+t('categoría por nombre', cb['Tostadora'].categoria, 'Electro');
+
+grupo('Bot · clave de la integración');
+const claveBot = (await q(`SELECT crm_crear_integracion('panelbot') AS k`))[0].k;
+t('formato de la clave', /^mhcrm_[0-9a-f]{64}$/.test(claveBot), true);
+t('en la base no se guarda la clave, solo su hash',
+  (await q(`SELECT count(*)::int AS n FROM crm_integraciones WHERE token_hash = $1`, [claveBot]))[0].n, 0);
+await falla('el público no puede crear claves', () => anon(`SELECT crm_crear_integracion('x')`), /permission denied/);
+await falla('el staff tampoco', () => vend(`SELECT crm_crear_integracion('x')`), /permission denied/);
+await falla('nadie lee la tabla de claves por la API', () => vend(`SELECT * FROM crm_integraciones`), /permission denied/);
+const bot = (p, k = claveBot) => anon(`SELECT crm_bot_evento($1, $2::jsonb) AS r`, [k, JSON.stringify(p)]).then(r => r[0].r);
+await falla('clave equivocada → no autorizado',
+  () => bot({ tipo:'consulta', ref:'x', telefono:'3420000001' }, 'mhcrm_trucha'), /no_autorizado/);
+
+grupo('Bot · consultas que pasa a una persona');
+const hoyAR = (await q(`SELECT (now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date::text AS d`))[0].d;
+const c1 = await bot({ tipo:'consulta', ref:'conv-1', telefono:'+54 9 351 600 1111', nombre:'Rocío Paz',
+                       titulo:'Juego de sillas', resumen:'Pregunta si hay en gris' });
+t('crea contacto y oportunidad', [c1.ok, c1.contacto_nuevo, c1.oportunidad_nueva], [true, true, true]);
+const oc1 = (await q(`SELECT * FROM crm_oportunidades WHERE id = $1`, [c1.oportunidad_id]))[0];
+t('entra en "Para hoy": nueva, por WhatsApp, con fecha de hoy en Argentina',
+  [oc1.etapa, oc1.canal, oc1.proxima_accion_fecha.toISOString().slice(0, 10)], ['nueva', 'whatsapp', hoyAR]);
+t('el resumen queda en el historial',
+  (await q(`SELECT detalle FROM crm_actividades WHERE oportunidad_id = $1 AND tipo = 'sistema'`, [c1.oportunidad_id]))[0].detalle,
+  '🤖 El bot pasó la charla a una persona: Pregunta si hay en gris');
+t('el link abre la ficha en el CRM', c1.url, 'https://mundohogarstf.com/admin/crm.html?op=' + c1.oportunidad_id);
+const c1b = await bot({ tipo:'consulta', ref:'conv-1', telefono:'3516001111', nombre:'Rocío Paz', titulo:'Juego de sillas' });
+t('el mismo ref (reintento) no duplica', [c1b.oportunidad_id, c1b.oportunidad_nueva], [c1.oportunidad_id, false]);
+const c2 = await bot({ tipo:'consulta', ref:'conv-2', telefono:'3426481326' });
+t('cliente que ya compró en la web → mismo contacto', c2.contacto_id == juan, true);
+t('y no le pisa el nombre', (await q(`SELECT nombre FROM crm_contactos WHERE id = $1`, [juan]))[0].nombre, 'Juan Pérez');
+const c3 = await bot({ tipo:'consulta', ref:'conv-3', telefono:'3517770000' });
+t('sin nombre → "Cliente de WhatsApp" y los últimos 4',
+  (await q(`SELECT nombre FROM crm_contactos WHERE id = $1`, [c3.contacto_id]))[0].nombre, 'Cliente de WhatsApp 0000');
+await bot({ tipo:'consulta', ref:'conv-4', telefono:'3517770000', nombre:'Marcos Díaz' });
+t('cuando llega el nombre real, se completa',
+  (await q(`SELECT nombre FROM crm_contactos WHERE id = $1`, [c3.contacto_id]))[0].nombre, 'Marcos Díaz');
+
+grupo('Bot · pedidos');
+const p1 = await bot({ tipo:'pedido', ref:'ped-1', telefono:'3516001111', nombre:'Rocío Paz',
+  items:[{ nombre:'Freidora de aire 5L', cantidad:2, precio:89999 }, { nombre:'Tostadora', cantidad:1, precio:30000 }] });
+const opp = async id => (await q(`SELECT * FROM crm_oportunidades WHERE id = $1`, [id]))[0];
+const ultimaNota = async id => (await q(`SELECT detalle FROM crm_actividades WHERE oportunidad_id = $1 AND tipo = 'sistema' ORDER BY id DESC LIMIT 1`, [id]))[0].detalle;
+let op1 = await opp(p1.oportunidad_id);
+t('total calculado', Number(op1.monto), 209998);
+t('título con el primer producto', op1.titulo, 'Pedido por WhatsApp · Freidora de aire 5L y 1 más');
+t('próximo paso: confirmar', op1.proxima_accion, 'Confirmar el pedido con el cliente');
+t('el detalle lista los productos con precios en pesos', await ultimaNota(p1.oportunidad_id),
+  '🤖 El bot tomó un pedido por WhatsApp:\n• 2× Freidora de aire 5L — $179.998\n• 1× Tostadora — $30.000\nTotal: $209.998');
+const p2 = await bot({ tipo:'pedido', ref:'ped-2', telefono:'3516001111', items:[{ nombre:'Heladera', cantidad:1, precio:null }] });
+const op2 = await opp(p2.oportunidad_id);
+t('con productos a cotizar → total vacío', op2.monto, null);
+t('y el próximo paso lo dice', op2.proxima_accion, 'Cotizar lo que falta y confirmar el pedido');
+await bot({ tipo:'pedido', ref:'ped-1', telefono:'3516001111', items:[{ nombre:'Freidora de aire 5L', cantidad:1, precio:89999 }] });
+op1 = await opp(p1.oportunidad_id);
+t('si el cliente corrige el pedido, se actualiza la misma oportunidad',
+  [Number(op1.monto), op1.titulo], [89999, 'Pedido por WhatsApp · Freidora de aire 5L']);
+await vend(`UPDATE crm_oportunidades SET etapa = 'ganada' WHERE id = $1`, [p1.oportunidad_id]);
+await bot({ tipo:'pedido', ref:'ped-1', telefono:'3516001111', items:[{ nombre:'Freidora de aire 5L', cantidad:5, precio:89999 }] });
+op1 = await opp(p1.oportunidad_id);
+t('si el equipo ya la cerró, el bot no la toca', [op1.etapa, Number(op1.monto)], ['ganada', 89999]);
+t('pero el cambio queda asentado', (await ultimaNota(p1.oportunidad_id)).startsWith('🤖 El cliente cambió el pedido:'), true);
+t('el vendedor ve todo en el CRM',
+  (await vend(`SELECT count(*)::int AS n FROM crm_oportunidades WHERE ref_externa LIKE 'panelbot:%'`))[0].n, 6);
+
+grupo('Bot · datos inválidos');
+await falla('tipo desconocido', () => bot({ tipo:'spam', ref:'z', telefono:'3420000002' }), /tipo_invalido/);
+await falla('sin ref', () => bot({ tipo:'consulta', telefono:'3420000002' }), /ref_requerida/);
+await falla('sin teléfono', () => bot({ tipo:'consulta', ref:'z' }), /telefono_invalido/);
+await falla('pedido sin productos', () => bot({ tipo:'pedido', ref:'z', telefono:'3420000002', items:[] }), /items_invalidos/);
+await falla('precio que no es número', () => bot({ tipo:'pedido', ref:'z', telefono:'3420000002', items:[{ nombre:'x', precio:'mucho' }] }), /items_invalidos/);
+
+grupo('Bot · límite, rotación y corte de la clave');
+await q(`UPDATE crm_integraciones SET eventos_ventana = 120, ventana_desde = now() WHERE nombre = 'panelbot'`);
+await falla('más de 120 eventos por minuto → frena', () => bot({ tipo:'consulta', ref:'z2', telefono:'3420000003' }), /limite_eventos/);
+await q(`UPDATE crm_integraciones SET eventos_ventana = 0 WHERE nombre = 'panelbot'`);
+const claveNueva = (await q(`SELECT crm_crear_integracion('panelbot') AS k`))[0].k;
+await falla('rotar la clave: la vieja deja de andar', () => bot({ tipo:'consulta', ref:'z3', telefono:'3420000004' }), /no_autorizado/);
+t('la nueva anda', (await bot({ tipo:'consulta', ref:'z3', telefono:'3420000004' }, claveNueva)).ok, true);
+await q(`UPDATE crm_integraciones SET activo = false WHERE nombre = 'panelbot'`);
+await falla('desactivada → no autorizado', () => bot({ tipo:'consulta', ref:'z4', telefono:'3420000005' }, claveNueva), /no_autorizado/);
 
 // ── La regla del panel = la regla de la base ──────────────────────
 grupo('Clave de teléfono: panel y base dan lo mismo');
