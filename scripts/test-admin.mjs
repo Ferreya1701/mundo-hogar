@@ -143,7 +143,7 @@ const crm = new Function(
   extraer(CRM, /^\/\* ══ LÓGICA PURA DEL CRM/, /^\/\* ══ FIN DE LA LÓGICA PURA/) + `
   return { leerURL, estadoAQuery, telClave, waNumero, parseMonto, hoyISO, sumarDias, diasEntre,
            vencimiento, paraHoy, kpis, coincide, plantillaWA, mensajeError, faltaInstalar,
-           ETAPAS, PLANTILLA_POR_ETAPA };`
+           linkCharla, ETAPAS, PLANTILLA_POR_ETAPA };`
 )();
 
 grupo('CRM · estado en la URL');
@@ -167,6 +167,29 @@ t('WhatsApp desde formato local', crm.waNumero('0342 15 648-1326'), '54934264813
 t('WhatsApp ya internacional', crm.waNumero('+54 9 342 648-1326'), '5493426481326');
 t('WhatsApp de otro país, tal cual', crm.waNumero('+1 305 555 1234'), '13055551234');
 t('WhatsApp sin teléfono', crm.waNumero(''), null);
+
+// El botón "Abrir la charla" evita que se responda desde el número viejo:
+// si el link se armara mal, el equipo volvería a wa.me sin darse cuenta.
+grupo('CRM · link a la charla de PanelBot');
+const BASE = 'https://panel.tiaf.shop/app/conversaciones/';
+const conv = v => ({ conversacion_externa: v });
+t('contacto con conversación', crm.linkCharla(conv('abc123'), BASE), BASE + 'abc123');
+t('sin base configurada no hay botón', crm.linkCharla(conv('abc123'), null), null);
+t('base vacía no hay botón', crm.linkCharla(conv('abc123'), ''), null);
+t('contacto sin conversación', crm.linkCharla(conv(null), BASE), null);
+t('conversación vacía', crm.linkCharla(conv('   '), BASE), null);
+t('sin contacto', crm.linkCharla(null, BASE), null);
+t('base que no es https se rechaza', crm.linkCharla(conv('abc'), 'http://panel.tiaf.shop/c/'), null);
+t('base javascript: se rechaza', crm.linkCharla(conv('abc'), 'javascript:alert(1)//'), null);
+t('el id no puede escapar de la base',
+  crm.linkCharla(conv('../../admin?x=1#y'), BASE), BASE + 'adminx1y');
+// El punto tampoco sobrevive: un id no necesita puntos y así ni siquiera
+// se puede escribir un host ni un ".." dentro del link.
+t('el id no puede inyectar otro host',
+  crm.linkCharla(conv('//evil.com/x'), BASE), BASE + 'evilcomx');
+t('id larguísimo se recorta', crm.linkCharla(conv('a'.repeat(300)), BASE).length, BASE.length + 120);
+t('id con guiones y dos puntos (formato típico)',
+  crm.linkCharla(conv('wa:549342-648_1326'), BASE), BASE + 'wa%3A549342-648_1326');
 
 grupo('CRM · montos como se escriben acá');
 t('"250.000"', crm.parseMonto('250.000'), '250000');

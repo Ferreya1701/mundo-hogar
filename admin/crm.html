@@ -115,6 +115,7 @@
     .crm-wa textarea { font-size:12.5px; margin-top:8px; }
     .crm-check { display:flex; align-items:center; gap:8px; margin-top:8px; font-weight:500; color:var(--muted); cursor:pointer; }
     .crm-check input { width:16px; height:16px; }
+    .crm-hint-charla { font-size:11.5px; color:var(--muted); margin-top:8px; line-height:1.5; }
     .crm-dup { background:var(--info-bg); color:var(--blue-dark); border-radius:8px; padding:8px 10px; font-size:12.5px; }
     .crm-canales { display:flex; flex-wrap:wrap; gap:6px; }
     .crm-mini { list-style:none; display:flex; flex-direction:column; gap:6px; }
@@ -330,6 +331,18 @@ function waNumero(tel) {
   return k && k.length === 10 ? '549' + k : d;
 }
 
+/* Link a la charla real en PanelBot, cuando existe.
+   Por qué importa: wa.me responde desde el WhatsApp que esté abierto en el
+   navegador, así que con el número viejo logueado se le contesta al cliente
+   desde ahí. La charla de PanelBot sale siempre del número del negocio.
+   El id se vuelve a sanear acá (la base ya lo hizo) porque lo que llega por
+   la API no se da por bueno: así no puede cambiar el destino del botón. */
+function linkCharla(c, base) {
+  if (!base || !/^https:\/\//.test(String(base)) || !c) return null;
+  const id = String(c.conversacion_externa ?? '').replace(/[^A-Za-z0-9_:-]/g, '').slice(0, 120);
+  return id ? String(base) + encodeURIComponent(id) : null;
+}
+
 /* Montos como los escribe la gente acá: "250.000", "1.500,50", "89999". */
 function parseMonto(v) {
   let s = String(v ?? '').replace(/[\s$]/g, '');
@@ -477,6 +490,7 @@ let perfiles = new Map();    // id → nombre (el admin ve todos; el vendedor, e
 let miPerfil = null;
 let instalado = true;
 let limite = 60;             // tarjetas por tanda ("Mostrar más")
+let baseCharla = null;       // prefijo de las conversaciones de PanelBot (sql/011)
 const PASO = 60;
 const esAncho = window.matchMedia('(min-width: 1100px)');
 const SELECT_OPP = '*, solicitudes(codigo,estado,total_estimado)';
@@ -497,11 +511,17 @@ async function traerTodo(armar) {
 }
 
 async function cargar() {
-  const [rc, ro, rp] = await Promise.all([
+  const [rc, ro, rp, rb] = await Promise.all([
     traerTodo(() => db.from('crm_contactos').select('*').order('id')),
     traerTodo(() => db.from('crm_oportunidades').select(SELECT_OPP).order('id')),
-    db.from('profiles').select('id,nombre')
+    db.from('profiles').select('id,nombre'),
+    // Si el 011 todavía no corrió, esto falla y el panel sigue como antes
+    // (botón de WhatsApp de siempre). No es motivo para cortar la carga, así
+    // que se atrapa incluso si rpc tirara el error de forma sincrónica.
+    Promise.resolve().then(() => db.rpc('crm_base_conversacion', {}))
+                     .then(r => r, e => ({ error: e }))
   ]);
+  baseCharla = (!rb.error && typeof rb.data === 'string' && /^https:\/\//.test(rb.data)) ? rb.data : null;
   const err = rc.error || ro.error;
   if (err) {
     console.error('CRM: error al cargar', err);
@@ -603,6 +623,7 @@ function tarjeta(o) {
   const canal = CANALES[o.canal] || CANALES.otro;
   const v = ABIERTAS.includes(o.etapa) ? vencimiento(o.proxima_accion_fecha, hoyISO()) : { clase:'sin' };
   const wa = waNumero(c.telefono);
+  const charla = linkCharla(c, baseCharla);
   return `<div class="opp-card b-${o.etapa}" data-op="${o.id}">
     <div class="opp-top">
       <span class="etapa-badge e-${o.etapa}">${ETAPAS[o.etapa].label}</span>
@@ -619,9 +640,11 @@ function tarjeta(o) {
       ${o.etapa === 'perdida' && o.motivo_perdida ? `<span>${esc(o.motivo_perdida)}</span>` : ''}
       <span>${!ABIERTAS.includes(o.etapa) && o.cerrada_at ? 'Cerrada ' + esc(Utils.timeAgo(o.cerrada_at).toLowerCase()) : 'Cargada ' + esc(Utils.timeAgo(o.created_at).toLowerCase())}</span>
     </div>
-    ${wa && ABIERTAS.includes(o.etapa) ? `<div class="opp-acc">
-      <a class="btn btn-wa btn-sm" href="https://wa.me/${wa}" target="_blank" rel="noopener">💬 WhatsApp</a>
-      <a class="btn btn-outline btn-sm" href="tel:${esc(String(c.telefono).replace(/[^\d+]/g, ''))}" aria-label="Llamar a ${esc(c.nombre)}">📞</a>
+    ${(wa || charla) && ABIERTAS.includes(o.etapa) ? `<div class="opp-acc">
+      ${charla
+        ? `<a class="btn btn-wa btn-sm" href="${charla}" target="_blank" rel="noopener">💬 Abrir la charla</a>`
+        : `<a class="btn btn-wa btn-sm" href="https://wa.me/${wa}" target="_blank" rel="noopener">💬 WhatsApp</a>`}
+      ${c.telefono ? `<a class="btn btn-outline btn-sm" href="tel:${esc(String(c.telefono).replace(/[^\d+]/g, ''))}" aria-label="Llamar a ${esc(c.nombre)}">📞</a>` : ''}
     </div>` : ''}
   </div>`;
 }
@@ -829,7 +852,12 @@ async function cargarPedido(solicitudId) {
 
 function accionesContacto(c) {
   const wa = waNumero(c.telefono);
-  return `${wa ? `<a class="btn btn-wa btn-sm" href="https://wa.me/${wa}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}
+  const charla = linkCharla(c, baseCharla);
+  // Con charla abierta no se ofrece wa.me: es justamente lo que hace que se
+  // responda desde el número equivocado.
+  return `${charla
+      ? `<a class="btn btn-wa btn-sm" href="${charla}" target="_blank" rel="noopener">💬 Abrir la charla</a>`
+      : wa ? `<a class="btn btn-wa btn-sm" href="https://wa.me/${wa}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}
     ${c.telefono ? `<a class="btn btn-outline btn-sm" href="tel:${esc(String(c.telefono).replace(/[^\d+]/g, ''))}">📞 Llamar</a>` : ''}
     ${c.instagram ? `<a class="btn btn-outline btn-sm" href="https://instagram.com/${encodeURIComponent(c.instagram)}" target="_blank" rel="noopener">📷 @${esc(c.instagram)}</a>` : ''}`;
 }
@@ -848,6 +876,7 @@ function abrirOportunidad(id, modo = 'push') {
   const cerrada = !ABIERTAS.includes(o.etapa);
   const canal = CANALES[o.canal] || CANALES.otro;
   const wa = waNumero(c.telefono);
+  const charla = linkCharla(c, baseCharla);
 
   mostrarModal('op', `<div class="modal modal-lg crm-modal" role="dialog" aria-modal="true" aria-labelledby="crm-titulo">
     <div class="modal-header">
@@ -918,7 +947,7 @@ function abrirOportunidad(id, modo = 'push') {
         </div>
       </div>
 
-      ${wa ? `<div class="crm-bloque crm-wa">
+      ${(wa || charla) ? `<div class="crm-bloque crm-wa">
         <div class="crm-label">✨ Mensaje sugerido <span>(editalo antes de mandarlo)</span></div>
         <div class="chips">
           <button type="button" class="chip" data-plantilla="saludo">👋 Primer contacto</button>
@@ -927,11 +956,15 @@ function abrirOportunidad(id, modo = 'push') {
           <button type="button" class="chip" data-plantilla="gracias">🙌 Post-venta</button>
         </div>
         <textarea id="wa-txt" rows="5" aria-label="Mensaje de WhatsApp"></textarea>
-        <label class="crm-check"><input type="checkbox" id="wa-registrar" checked> Anotarlo en el historial al abrir WhatsApp</label>
+        <label class="crm-check"><input type="checkbox" id="wa-registrar" checked> Anotarlo en el historial al abrir la charla</label>
         <div class="crm-fila-btn">
           <button type="button" class="btn btn-outline btn-sm" id="wa-copiar">📋 Copiar</button>
-          <a class="btn btn-wa btn-sm" id="wa-abrir" target="_blank" rel="noopener" href="#">Abrir WhatsApp con este mensaje</a>
+          ${charla
+            ? `<a class="btn btn-wa btn-sm" id="wa-abrir" target="_blank" rel="noopener" href="${charla}">Copiar y abrir la charla</a>`
+            : `<a class="btn btn-wa btn-sm" id="wa-abrir" target="_blank" rel="noopener" href="#">Abrir WhatsApp con este mensaje</a>`}
         </div>
+        ${charla ? `<p class="crm-hint-charla">La charla se abre en el panel del bot, con el número del negocio.
+          El texto se copia al portapapeles: pegalo ahí.</p>` : ''}
       </div>` : ''}
 
       ${vinculada ? `<div class="crm-bloque"><div class="crm-label">Pedido de la tienda</div><div id="d-pedido">${Utils.skelRows(2)}</div></div>` : ''}
@@ -950,6 +983,7 @@ function abrirOportunidad(id, modo = 'push') {
 
 function conectarFichaOportunidad(o, c, wa) {
   const s = slot();
+  const charla = linkCharla(c, baseCharla);
   s.querySelector('[data-ver-contacto]').addEventListener('click', () => abrirContacto(c.id, 'push'));
 
   // Etapa
@@ -1017,9 +1051,13 @@ function conectarFichaOportunidad(o, c, wa) {
   });
 
   // Mensaje sugerido de WhatsApp
-  if (wa) {
+  if (wa || charla) {
     const txt = el('wa-txt'), link = el('wa-abrir');
-    const actualizarLink = () => { link.href = `https://wa.me/${wa}?text=${encodeURIComponent(txt.value)}`; };
+    // Con charla el destino es fijo (PanelBot no acepta texto en la URL):
+    // el mensaje viaja por el portapapeles. Sin charla, va dentro del wa.me.
+    const actualizarLink = () => {
+      if (!charla) link.href = `https://wa.me/${wa}?text=${encodeURIComponent(txt.value)}`;
+    };
     const usar = tipo => {
       txt.value = plantillaWA(tipo, { nombre: c.nombre, titulo: o.titulo, monto: o.monto });
       s.querySelectorAll('[data-plantilla]').forEach(b => b.classList.toggle('active', b.dataset.plantilla === tipo));
@@ -1028,8 +1066,9 @@ function conectarFichaOportunidad(o, c, wa) {
     usar(PLANTILLA_POR_ETAPA[o.etapa] || 'saludo');
     txt.addEventListener('input', actualizarLink);
     s.querySelectorAll('[data-plantilla]').forEach(b => b.addEventListener('click', () => usar(b.dataset.plantilla)));
-    el('wa-copiar').addEventListener('click', () => Utils.copy(txt.value, 'Mensaje copiado: pegalo en WhatsApp'));
+    el('wa-copiar').addEventListener('click', () => Utils.copy(txt.value, 'Mensaje copiado: pegalo en la charla'));
     link.addEventListener('click', () => {
+      if (charla) Utils.copy(txt.value, 'Mensaje copiado: pegalo en la charla');
       if (el('wa-registrar').checked) {
         const resumen = txt.value.trim().replace(/\s+/g, ' ');
         registrarActividad(o, 'whatsapp', 'Mensaje enviado desde el CRM: ' + (resumen.length > 160 ? resumen.slice(0, 160) + '…' : resumen), { silencioso:true });

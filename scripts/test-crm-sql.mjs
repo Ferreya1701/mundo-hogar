@@ -121,14 +121,16 @@ await estadoPedido(solC, 'cancelado');
 // ── Migración: dos veces ──────────────────────────────────────────
 const SQL009 = leerSQL('009-crm.sql');
 const SQL010 = leerSQL('010-bot-whatsapp.sql');
+const SQL011 = leerSQL('011-crm-conversacion.sql');
 let errorMigracion = null;
 try {
   await db.exec(SQL009); await db.exec(SQL009);
   await db.exec(SQL010); await db.exec(SQL010);
+  await db.exec(SQL011); await db.exec(SQL011);
 } catch (e) { errorMigracion = e.message; }
 
 grupo('Migración');
-t('009 y 010 corren limpias, dos veces seguidas', errorMigracion, null);
+t('009, 010 y 011 corren limpias, dos veces seguidas', errorMigracion, null);
 if (errorMigracion) { console.log(`\n${ok} pasadas, ${fail} fallidas\n`); process.exit(1); }
 
 // ── Clave de teléfono ─────────────────────────────────────────────
@@ -442,6 +444,83 @@ await falla('rotar la clave: la vieja deja de andar', () => bot({ tipo:'consulta
 t('la nueva anda', (await bot({ tipo:'consulta', ref:'z3', telefono:'3420000004' }, claveNueva)).ok, true);
 await q(`UPDATE crm_integraciones SET activo = false WHERE nombre = 'panelbot'`);
 await falla('desactivada → no autorizado', () => bot({ tipo:'consulta', ref:'z4', telefono:'3420000005' }, claveNueva), /no_autorizado/);
+
+// ── Abrir la charla en PanelBot (sql/011) ─────────────────────────
+// Lo que se prueba acá es que el equipo no vuelva a responder desde el
+// número viejo: si el id no se guarda, el CRM muestra wa.me otra vez.
+grupo('Charla · saneado del id');
+await q(`UPDATE crm_integraciones SET activo = true, eventos_ventana = 0 WHERE nombre = 'panelbot'`);
+const convId = async v => (await q(`SELECT fn_crm_conv_id($1) AS c`, [v]))[0].c;
+t('id normal', await convId('abc-123_x'), 'abc-123_x');
+t('con dos puntos (formato wa:…)', await convId('wa:5493426481326'), 'wa:5493426481326');
+t('barras y query fuera', await convId('../../admin?x=1#y'), 'adminx1y');
+t('no puede escribir un host', await convId('//evil.com/x'), 'evilcomx');
+t('espacios y vacío → null', await convId('   '), null);
+t('null → null', await convId(null), null);
+t('larguísimo se recorta a 120', (await convId('a'.repeat(400))).length, 120);
+
+grupo('Charla · configurar la dirección base');
+const base = async () => (await q(`SELECT base_conversacion AS b FROM crm_integraciones WHERE nombre='panelbot'`))[0].b;
+t('sin configurar arranca en null', await base(), null);
+t('se guarda y devuelve con la barra final',
+  (await q(`SELECT crm_set_base_conversacion('https://panel.tiaf.shop/app/conversaciones') AS r`))[0].r,
+  'https://panel.tiaf.shop/app/conversaciones/');
+t('no duplica la barra',
+  (await q(`SELECT crm_set_base_conversacion('https://panel.tiaf.shop/app/conversaciones/') AS r`))[0].r,
+  'https://panel.tiaf.shop/app/conversaciones/');
+await falla('http sin cifrar se rechaza', () => q(`SELECT crm_set_base_conversacion('http://panel.tiaf.shop/c/')`), /base_invalida/);
+await falla('javascript: se rechaza', () => q(`SELECT crm_set_base_conversacion('javascript:alert(1)')`), /base_invalida/);
+await falla('el público no puede configurarla', () => anon(`SELECT crm_set_base_conversacion('https://x.com/')`), /permission denied/);
+await falla('el staff tampoco', () => vend(`SELECT crm_set_base_conversacion('https://x.com/')`), /permission denied/);
+t('apagar el botón',
+  (await q(`SELECT crm_set_base_conversacion(NULL) AS r`))[0].r, '(botón desactivado)');
+await q(`SELECT crm_set_base_conversacion('https://panel.tiaf.shop/app/conversaciones/')`);
+
+grupo('Charla · quién puede leer la dirección base');
+t('el vendedor la lee', (await vend(`SELECT crm_base_conversacion() AS b`))[0].b, 'https://panel.tiaf.shop/app/conversaciones/');
+t('el encargado de stock no (no usa el CRM)', (await como('authenticated', STOCK, `SELECT crm_base_conversacion() AS b`))[0].b, null);
+// Al público no se le revocó solo el dato: no puede ni ejecutar la función.
+await falla('el público no puede ni llamarla', () => anon(`SELECT crm_base_conversacion()`), /permission denied/);
+
+grupo('Charla · el bot guarda la conversación');
+const convDe = async tel => (await q(
+  `SELECT conversacion_externa AS c FROM crm_contactos WHERE telefono_clave = fn_crm_tel_clave($1)`, [tel]))[0]?.c;
+
+const rC1 = await bot({ tipo:'consulta', ref:'conv-aaa', telefono:'3420001001', nombre:'Ana Ruiz' }, claveNueva);
+t('consulta: avisa que la guardó', rC1.conversacion_guardada, true);
+t('consulta sin "conversacion": usa el ref (contrato del entregable 12)', await convDe('3420001001'), 'conv-aaa');
+
+await bot({ tipo:'consulta', ref:'conv-bbb', telefono:'3420001002', conversacion:'charla-777' }, claveNueva);
+t('consulta con "conversacion" explícita: gana esa', await convDe('3420001002'), 'charla-777');
+
+const rP1 = await bot({ tipo:'pedido', ref:'pedido-999', telefono:'3420001003',
+  items:[{ nombre:'Freidora', cantidad:1, precio:1000 }] }, claveNueva);
+t('pedido sin "conversacion": NO se guarda (el ref es el pedido, no la charla)', await convDe('3420001003'), null);
+t('pedido: avisa que no la guardó', rP1.conversacion_guardada, false);
+
+await bot({ tipo:'pedido', ref:'pedido-998', telefono:'3420001003', conversacion:'charla-888',
+  items:[{ nombre:'Pava', cantidad:1, precio:500 }] }, claveNueva);
+t('pedido con "conversacion": se guarda en el mismo contacto', await convDe('3420001003'), 'charla-888');
+
+await bot({ tipo:'consulta', ref:'conv-ccc', telefono:'3420001003', conversacion:'charla-889' }, claveNueva);
+t('una charla nueva reemplaza la anterior', await convDe('3420001003'), 'charla-889');
+
+await bot({ tipo:'pedido', ref:'pedido-997', telefono:'3420001003',
+  items:[{ nombre:'Tostadora', cantidad:1, precio:800 }] }, claveNueva);
+t('un evento sin charla NO borra la que había', await convDe('3420001003'), 'charla-889');
+
+await bot({ tipo:'consulta', ref:'conv-ddd', telefono:'3420001004', conversacion:'../../x?y=1' }, claveNueva);
+t('el id que llega del bot se sanea en la base', await convDe('3420001004'), 'xy1');
+
+const antes = (await q(`SELECT count(*)::int AS n FROM crm_oportunidades`))[0].n;
+await bot({ tipo:'consulta', ref:'conv-aaa', telefono:'3420001001', conversacion:'otra-charla' }, claveNueva);
+t('reenviar el mismo ref sigue sin duplicar', (await q(`SELECT count(*)::int AS n FROM crm_oportunidades`))[0].n, antes);
+t('…y de paso actualiza la charla', await convDe('3420001001'), 'otra-charla');
+
+grupo('Charla · el público no se entera');
+t('anon no puede leer la columna',
+  await anon(`SELECT conversacion_externa FROM crm_contactos LIMIT 1`).then(() => 'leyó', e => /permission denied|policy/i.test(e.message) ? 'bloqueado' : 'otro: ' + e.message),
+  'bloqueado');
 
 // ── La regla del panel = la regla de la base ──────────────────────
 grupo('Clave de teléfono: panel y base dan lo mismo');
