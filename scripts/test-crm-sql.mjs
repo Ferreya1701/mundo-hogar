@@ -474,7 +474,25 @@ await falla('el público no puede configurarla', () => anon(`SELECT crm_set_base
 await falla('el staff tampoco', () => vend(`SELECT crm_set_base_conversacion('https://x.com/')`), /permission denied/);
 t('apagar el botón',
   (await q(`SELECT crm_set_base_conversacion(NULL) AS r`))[0].r, '(botón desactivado)');
+
+// El bot no tiene que ser PanelBot: la puerta identifica al sistema externo
+// por el hash de su clave, no por el nombre. Esto cubre un bot propio de TIAF.
+grupo('Charla · sirve para cualquier bot, no solo PanelBot');
+await falla('una integración que no existe avisa claro',
+  () => q(`SELECT crm_set_base_conversacion('https://x.com/', 'no-existe')`), /integracion_inexistente/);
+await q(`SELECT crm_crear_integracion('bot-tiaf')`);
+t('se configura por nombre',
+  (await q(`SELECT crm_set_base_conversacion('https://panel.tiaf.shop/charlas', 'bot-tiaf') AS r`))[0].r,
+  'https://panel.tiaf.shop/charlas/');
+t('el panel la lee sin saber el nombre',
+  (await vend(`SELECT crm_base_conversacion() AS b`))[0].b, 'https://panel.tiaf.shop/charlas/');
+await falla('nombre vacío se rechaza',
+  () => q(`SELECT crm_set_base_conversacion('https://x.com/', '  ')`), /nombre_requerido/);
+// Se deja solo la de panelbot para el resto de las pruebas
+await q(`UPDATE crm_integraciones SET activo = false WHERE nombre = 'bot-tiaf'`);
 await q(`SELECT crm_set_base_conversacion('https://panel.tiaf.shop/app/conversaciones/')`);
+t('vuelve a la de panelbot',
+  (await vend(`SELECT crm_base_conversacion() AS b`))[0].b, 'https://panel.tiaf.shop/app/conversaciones/');
 
 grupo('Charla · quién puede leer la dirección base');
 t('el vendedor la lee', (await vend(`SELECT crm_base_conversacion() AS b`))[0].b, 'https://panel.tiaf.shop/app/conversaciones/');

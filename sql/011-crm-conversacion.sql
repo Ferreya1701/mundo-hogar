@@ -29,8 +29,11 @@
 --
 -- DESPUÉS DE CORRERLO, configurar la dirección base UNA vez:
 --     SELECT crm_set_base_conversacion('https://panel.tiaf.shop/app/conversaciones/');
---   (la dirección real la confirma José; sin esto el botón no aparece y
---    el CRM sigue funcionando como hasta ahora)
+--   El segundo parámetro es el nombre de la integración ('panelbot' por
+--   defecto); si el bot es otro, pasale el nombre con el que lo creaste.
+--   LA DIRECCIÓN DE ARRIBA ES UN EJEMPLO DEDUCIDO, NO VERIFICADA: pedila a
+--   quien maneje el bot. Sin esto el botón no aparece y el CRM sigue
+--   funcionando como hasta ahora.
 --   Para desactivar el botón en todo el panel:
 --     SELECT crm_set_base_conversacion(NULL);
 -- ============================================================
@@ -67,12 +70,24 @@ GRANT EXECUTE ON FUNCTION fn_crm_conv_id(TEXT) TO authenticated;
 -- ──────────────────────────────────────────────
 -- 3) CONFIGURAR LA DIRECCIÓN BASE (solo desde el SQL Editor)
 --    Exige https: un http:// mandaría al equipo a un sitio sin cifrar.
+--
+--    El nombre de la integración es un parámetro, no 'panelbot' fijo: la
+--    puerta del 010 ya identifica al sistema externo por el hash de su
+--    clave, así que cualquier bot (PanelBot, uno propio de TIAF OS, otro)
+--    funciona igual. Atarlo a un nombre habría obligado a llamar 'panelbot'
+--    a algo que no lo es.
 -- ──────────────────────────────────────────────
-CREATE OR REPLACE FUNCTION crm_set_base_conversacion(p_base TEXT)
+CREATE OR REPLACE FUNCTION crm_set_base_conversacion(p_base TEXT, p_nombre TEXT DEFAULT 'panelbot')
 RETURNS TEXT LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public AS $$
-DECLARE v_base TEXT := nullif(btrim(coalesce(p_base, '')), '');
+DECLARE
+  v_base   TEXT := nullif(btrim(coalesce(p_base, '')), '');
+  v_nombre TEXT := nullif(btrim(coalesce(p_nombre, '')), '');
 BEGIN
+  IF v_nombre IS NULL THEN
+    RAISE EXCEPTION 'nombre_requerido' USING HINT = 'Pasá el nombre de la integración.';
+  END IF;
+
   IF v_base IS NOT NULL THEN
     IF v_base !~* '^https://[a-z0-9.-]+[a-z0-9](/[A-Za-z0-9_./-]*)?$' THEN
       RAISE EXCEPTION 'base_invalida'
@@ -81,23 +96,29 @@ BEGIN
     IF right(v_base, 1) <> '/' THEN v_base := v_base || '/'; END IF;
   END IF;
 
-  UPDATE crm_integraciones SET base_conversacion = v_base WHERE nombre = 'panelbot';
+  UPDATE crm_integraciones SET base_conversacion = v_base WHERE nombre = v_nombre;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'integracion_inexistente'
-      USING HINT = 'Primero creá la integración: SELECT crm_crear_integracion(''panelbot'');';
+      USING HINT = 'Primero creá la integración: SELECT crm_crear_integracion(''<nombre>'');';
   END IF;
 
   RETURN coalesce(v_base, '(botón desactivado)');
 END;
 $$;
 
-REVOKE ALL ON FUNCTION crm_set_base_conversacion(TEXT) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION crm_set_base_conversacion(TEXT, TEXT) FROM PUBLIC, anon, authenticated;
 
 -- ──────────────────────────────────────────────
 -- 4) LO QUE LEE EL PANEL
 --    crm_integraciones no se puede leer por la API (ahí vive el hash de la
 --    clave). Esta función devuelve SOLO la dirección base, y solo a quien
 --    usa el CRM. El público no recibe nada.
+--
+--    No pregunta por nombre: el panel solo necesita saber DÓNDE viven las
+--    charlas. Toma la de la integración activa que tenga una configurada.
+--    Si algún día convivieran dos bots escribiendo charlas, habría que
+--    registrar en el contacto de cuál vino cada una; hoy ese caso no existe
+--    y no se construye por adelantado.
 -- ──────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION crm_base_conversacion()
 RETURNS TEXT LANGUAGE plpgsql STABLE SECURITY DEFINER
@@ -107,7 +128,8 @@ BEGIN
     RETURN NULL;
   END IF;
   RETURN (SELECT base_conversacion FROM crm_integraciones
-           WHERE nombre = 'panelbot' AND activo LIMIT 1);
+           WHERE activo AND base_conversacion IS NOT NULL
+           ORDER BY id LIMIT 1);
 END;
 $$;
 
