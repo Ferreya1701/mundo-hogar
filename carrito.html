@@ -204,7 +204,7 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
       const precio = itemPrice(it);
       const key = it.pid != null ? it.pid : it.slug;
       return `<div class="cart-item" data-key="${esc(key)}">
-        <img src="${esc(img || MH.PLACEHOLDER)}" alt="${esc(nombre)}" onerror="this.onerror=null;this.src=MH.PLACEHOLDER">
+        <img src="${esc(MH.webpUrl(img) || img || MH.PLACEHOLDER)}" data-jpg="${esc(img || '')}" alt="${esc(nombre)}" onerror="if(this.dataset.jpg&&/\\.webp$/i.test(this.src)){this.src=this.dataset.jpg}else{this.onerror=null;this.src=MH.PLACEHOLDER}">
         <div>
           <div class="cart-item-name">${slug ? `<a href="/producto/${esc(slug)}">${esc(nombre)}</a>` : esc(nombre)}</div>
           ${sku ? `<div class="cart-item-sku">Código: ${esc(sku)}</div>` : ''}

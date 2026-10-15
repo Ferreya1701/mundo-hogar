@@ -162,15 +162,14 @@
     .filter(i => i.url);
   const main = $('#pd-img');
   main.alt = p.nombre;
-  main.onerror = function(){ this.onerror = null; this.src = MH.PLACEHOLDER; };
-  main.src = imgs.length ? imgs[0].url : MH.PLACEHOLDER;
+  MH.setImg(main, imgs.length ? imgs[0].url : null);
   if (imgs.length > 1) {
     const th = $('#pd-thumbs');
     th.hidden = false;
-    th.innerHTML = imgs.map((i, idx) => `<img src="${esc(i.url)}" alt="${esc(i.alt)}" class="${idx===0?'active':''}" data-i="${idx}" loading="lazy">`).join('');
+    th.innerHTML = imgs.map((i, idx) => `<img src="${esc(MH.webpUrl(i.url) || i.url)}" alt="${esc(i.alt)}" class="${idx===0?'active':''}" data-i="${idx}" loading="lazy">`).join('');
     th.addEventListener('click', e => {
       const t = e.target.closest('img[data-i]'); if (!t) return;
-      main.src = imgs[+t.dataset.i].url;
+      MH.setImg(main, imgs[+t.dataset.i].url);
       th.querySelectorAll('img').forEach(x => x.classList.toggle('active', x === t));
     });
   }

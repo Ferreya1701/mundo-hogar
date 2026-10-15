@@ -264,10 +264,24 @@ window.MH = (function () {
     return _cache;
   }
 
+  // Las fotos propias (/images/productos/*.jpg) tienen una copia .webp más liviana.
+  // Se pide la .webp; si falla, se cae al .jpg original y recién después al placeholder.
+  function webpUrl(url) {
+    return typeof url === 'string' && /^\/images\/productos\/.+\.jpe?g$/i.test(url)
+      ? url.replace(/\.jpe?g$/i, '.webp') : null;
+  }
+  function setImg(img, url) {
+    const w = webpUrl(url);
+    img.onerror = function () {
+      if (w && /\.webp$/i.test(this.src)) { this.src = url; return; }
+      this.onerror = null; this.src = PLACEHOLDER;
+    };
+    img.src = w || url || PLACEHOLDER;
+  }
+
   // Crea la tarjeta de producto (DOM). Dos estados: con precio (agregar al carrito)
   // y sin precio ("Consultar precio" + cotización). Nunca muestra $0/NaN.
   function createCard(p) {
-    const url = p.imagen || PLACEHOLDER;
     const card = document.createElement('article');
     card.className = 'mh-card';
     card.dataset.category = p.categoria;
@@ -313,8 +327,7 @@ window.MH = (function () {
         <div class="mh-card-cta">${ctaHTML}</div>
       </div>`;
     const img = card.querySelector('img');
-    img.onerror = function () { this.onerror = null; this.src = PLACEHOLDER; };
-    img.src = url;
+    setImg(img, p.imagen);
     const addBtn = card.querySelector('.mh-add');
     if (addBtn) addBtn.addEventListener('click', () => { Cart.add(p, 1); Cart.flash(addBtn); });
     return card;
@@ -469,7 +482,7 @@ window.MH = (function () {
   return {
     ONLINE_PAYMENTS_ENABLED,
     get WA_NUMBER() { return WA_NUMBER; },
-    PLACEHOLDER, CATS, CAT_BY_SLUG, catLabel, catVisual, waLink,
+    PLACEHOLDER, webpUrl, setImg, CATS, CAT_BY_SLUG, catLabel, catVisual, waLink,
     loadProducts, createCard, skeletons, initCarousel, initReveal, stagger,
     initCounters, animateCount, initScrollProgress,
     loadSettings, loadContent, applyContent, syncWaLinks, isValidPrice, effectivePrice, hasPrice, fmtPrice,
