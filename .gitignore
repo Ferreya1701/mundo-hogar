@@ -38,3 +38,6 @@ node_modules/
 /*.JPEG
 /*.png
 /*.PNG
+
+# Cache local de wrangler (Cloudflare)
+.wrangler/

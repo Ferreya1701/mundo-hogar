@@ -1,0 +1,21 @@
+# Lo que NO se publica en Cloudflare (no lo usa la tienda ni el panel).
+.git
+.github
+.claude
+.wrangler
+node_modules
+wrangler.jsonc
+vercel.json
+*.md
+sql/
+scripts/
+supabase/
+material/
+docs/
+imagenes de productos/
+originales/
+drive-download-*/
+*.HEIC
+*.heic
+/*.jpg
+/*.JPG

@@ -1,0 +1,11 @@
+// Cloudflare Workers (solo archivos estáticos, sin código de servidor).
+// Las reglas de rutas y encabezados viven en _redirects y _headers.
+{
+  "name": "mundo-hogar",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": ".",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash"
+  }
+}
