@@ -1,0 +1,7 @@
+# Cloudflare Pages — equivalente a los "rewrites" de vercel.json.
+# Mantener los dos archivos iguales mientras convivan ambos hostings.
+# Las páginas destino van SIN ".html": Cloudflare redirige solo "x.html" -> "x".
+/images/*            /public/images/:splat  200
+/categorias          /categoria             200
+/categorias/*        /categoria             200
+/producto/*          /producto              200
