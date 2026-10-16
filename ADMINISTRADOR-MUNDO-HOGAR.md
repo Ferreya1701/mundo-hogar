@@ -79,7 +79,7 @@ git commit -m "Configurar Supabase"
 git push
 ```
 
-Vercel desplegará automáticamente.
+Cloudflare despliega automáticamente cada push a `main` (Workers, proyecto `mundo-hogar`).
 
 ---
 
@@ -103,7 +103,7 @@ WHERE email = 'tu@email.com';
 
 ### Paso 3 — Iniciar sesión
 
-Accedé al panel en: `https://tu-sitio.vercel.app/admin/`
+Accedé al panel en: `https://mundohogarstf.com/admin/`
 
 ---
 

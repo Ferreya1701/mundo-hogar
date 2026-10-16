@@ -1,5 +1,8 @@
-# Cloudflare Pages — equivalente a los "headers" de vercel.json.
+# Encabezados del sitio en Cloudflare Workers (hosting de producción).
+# HSTS: el navegador recuerda por 1 año que este dominio va solo por HTTPS.
+# Sin includeSubDomains ni preload a propósito: los subdominios son del correo de GoDaddy.
 /*
+  Strict-Transport-Security: max-age=31536000
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin

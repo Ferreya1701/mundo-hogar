@@ -1,5 +1,6 @@
-# Cloudflare Pages — equivalente a los "rewrites" de vercel.json.
-# Mantener los dos archivos iguales mientras convivan ambos hostings.
+# Rutas del sitio en Cloudflare Workers (hosting de producción desde 2026-10-16).
+# vercel.json replica estas reglas solo para el espejo mundo-hogar-tan.vercel.app
+# y scripts/server.js para el servidor local: si cambiás una, cambiá las tres.
 # Las páginas destino van SIN ".html": Cloudflare redirige solo "x.html" -> "x".
 /images/*            /public/images/:splat  200
 /categorias          /categoria             200

@@ -1,6 +1,26 @@
 # PROJECT_STATUS — Mundo Hogar / TIAF
 
-> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-07-13.
+> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-10-16.
+
+## Hosting (desde 2026-10-16): Cloudflare Workers
+- **Producción:** `https://mundohogarstf.com` servido por **Cloudflare Workers** (solo archivos
+  estáticos, sin código de servidor), cuenta Cloudflare de TIAF, proyecto `mundo-hogar`. Cada push a
+  `main` se despliega solo. Motivo: el plan Hobby de Vercel no permite uso comercial; Cloudflare es
+  gratis, comercial y sin tope de ancho de banda. Consumo real en Vercel antes de mudar: 4,53 GB/30 días.
+- **Config versionada:** `wrangler.jsonc` (assets, 404 propia, barra final automática),
+  `_redirects` (rutas), `_headers` (seguridad + caché 1 año en imágenes), `.assetsignore` (no se
+  publican `sql/`, `scripts/`, `supabase/`, `*.md` ni configs).
+- **DNS en Cloudflare** (nameservers `patryk`/`sreeni.ns.cloudflare.com`; el dominio se sigue pagando en
+  GoDaddy). Correo de GoDaddy intacto: MX, SPF, DMARC y 4 CNAME (`bounces.cloud[2].em`,
+  `sable.cloud[2]._domainkey`) copiados a mano — el escaneo automático no los detectó.
+- **Configuración de zona:** "Always Use HTTPS" activo. Regla de redirección 301 `www` → dominio
+  principal ("www a dominio principal (301)", conserva parámetros): canonical, OG y sitemap usan el
+  dominio sin `www`. Pendiente subir la versión mínima de TLS a 1.2 (SSL/TLS → Edge Certificates).
+- **Vercel** queda solo como espejo en `mundo-hogar-tan.vercel.app` (sin dominio propio). `vercel.json`
+  replica las reglas para ese espejo.
+- **Imágenes:** cada `.jpg` de `public/images/productos` tiene su `.webp` (máx. 1200 px). El sitio pide
+  la `.webp` y cae al `.jpg` si falta (`MH.webpUrl` / `MH.setImg`). Al sumar fotos nuevas, generar ambas.
+- Cloudflare redirige `x.html` → `x` y `/productos` → `/productos/` (conserva los parámetros).
 
 ## Fase actual
 **Núcleo de stock ↔ ventas DESPLEGADO Y VERIFICADO en producción (2026-07-13).** `sql/006` y `sql/007`

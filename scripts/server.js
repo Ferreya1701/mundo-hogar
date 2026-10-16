@@ -1,4 +1,4 @@
-// Dev server local que replica el routing de vercel.json
+// Dev server local que replica el routing de producción (_redirects de Cloudflare / vercel.json)
 // /images/* -> public/images/*  |  /categorias[/x] -> categoria.html  |  index de carpetas
 const http = require('http');
 const fs = require('fs');
