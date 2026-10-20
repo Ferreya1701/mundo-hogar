@@ -1,5 +1,5 @@
 // Dev server local que replica el routing de producción (_redirects de Cloudflare / vercel.json)
-// /images/* -> public/images/*  |  /categorias[/x] -> categoria.html  |  index de carpetas
+// /images/* -> public/images/*  |  /categorias[/x] -> categoria.html  |  index de carpetas  |  /x -> x.html
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -22,6 +22,8 @@ function resolveFile(url) {
   if (url === '/') return path.join(ROOT, 'index.html');
   let p = path.join(ROOT, url.replace(/^\//, ''));
   try { if (fs.statSync(p).isDirectory()) return path.join(p, 'index.html'); } catch (e) {}
+  // URLs sin extensión (/admin/dashboard -> admin/dashboard.html), como hace Cloudflare
+  if (!path.extname(p) && fs.existsSync(p + '.html')) return p + '.html';
   return p;
 }
 

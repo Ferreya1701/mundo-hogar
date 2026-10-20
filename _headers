@@ -13,3 +13,11 @@
 
 /public/images/*
   Cache-Control: public, max-age=31536000, immutable
+
+# CSS y JS del panel: 5 minutos sin volver a consultar al servidor al cambiar
+# de módulo. Corto a propósito: después de publicar, en 5 minutos todos ven lo nuevo.
+/admin/css/*
+  Cache-Control: public, max-age=300
+
+/admin/js/*
+  Cache-Control: public, max-age=300

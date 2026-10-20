@@ -211,7 +211,7 @@ function verDetalle(id) {
   slot.innerHTML = `<div class="sol-modal-bg" id="modal-bg">
     <div class="sol-modal" role="dialog" aria-modal="true">
       <h3>${esc(s.cliente_nombre)}</h3>
-      <div class="cod">${esc(s.codigo)} · ${Utils.datetime(s.created_at)} · ${s.canal==='mayorista'?'Consulta mayorista':'Tienda web'}${verCRM ? ` · <a href="/admin/crm.html?vista=embudo&q=${encodeURIComponent(s.codigo)}">🤝 Ver en el CRM</a>` : ''}</div>
+      <div class="cod">${esc(s.codigo)} · ${Utils.datetime(s.created_at)} · ${s.canal==='mayorista'?'Consulta mayorista':'Tienda web'}${verCRM ? ` · <a href="/admin/crm?vista=embudo&q=${encodeURIComponent(s.codigo)}">🤝 Ver en el CRM</a>` : ''}</div>
       <div class="sol-grid">
         <div><b>Teléfono</b>${esc(s.telefono)||'—'}</div>
         <div><b>Localidad</b>${esc(s.localidad)||'—'}</div>

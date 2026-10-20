@@ -48,8 +48,10 @@
 <script>
 (async function () {
   // Si ya hay sesión activa, redirigir al dashboard
+  // (sin sesión, se borra el menú guardado de otro usuario que haya usado esta pestaña)
   const { data: { session } } = await db.auth.getSession();
-  if (session) { window.location.href = '/admin/dashboard.html'; return; }
+  if (session) { window.location.href = '/admin/dashboard'; return; }
+  try { sessionStorage.removeItem('mhPerfil'); } catch (e) {}
 
   const form = document.getElementById('login-form');
   const btn  = document.getElementById('login-btn');
@@ -92,7 +94,7 @@
       return;
     }
 
-    window.location.href = '/admin/dashboard.html';
+    window.location.href = '/admin/dashboard';
   });
 
   function showError(msg) {

@@ -76,23 +76,23 @@ window.MHAssistant = (function () {
       h += `<li><b>${d.movimientos.length}</b> movimientos de stock en 7 días</li></ul>`;
       const prioridad = d.nuevas.length ? 'respondé las solicitudes nuevas' : d.sinPrecio.length ? 'cargá los precios que faltan' : 'revisá el stock';
       h += `Lo primero que conviene atender: <b>${prioridad}</b>.`;
-      h += '<br>' + (d.nuevas.length ? link('/admin/solicitudes.html?estado=nueva', '💬 Ver solicitudes') : link('/admin/productos.html?precio=sin', '💲 Cargar precios'));
+      h += '<br>' + (d.nuevas.length ? link('/admin/solicitudes?estado=nueva', '💬 Ver solicitudes') : link('/admin/productos?precio=sin', '💲 Cargar precios'));
       return h;
     },
     async sinPrecio() {
       const d = await datos();
       if (!d.sinPrecio.length) return '¡Excelente! Todos los productos activos tienen precio cargado. ✅';
-      return `Hay <b>${d.sinPrecio.length} productos sin precio</b> (se muestran como "Consultar precio" en la tienda):${listado(d.sinPrecio)}${link('/admin/productos.html?precio=sin', '💲 Verlos y cargar precios')}`;
+      return `Hay <b>${d.sinPrecio.length} productos sin precio</b> (se muestran como "Consultar precio" en la tienda):${listado(d.sinPrecio)}${link('/admin/productos?precio=sin', '💲 Verlos y cargar precios')}`;
     },
     async sinImagen() {
       const d = await datos();
       if (!d.sinImagen.length) return 'Todos los productos activos tienen imagen. ✅';
-      return `Hay <b>${d.sinImagen.length} productos sin imagen</b>:${listado(d.sinImagen)}${link('/admin/productos.html?imagen=sin', '🖼️ Verlos')}`;
+      return `Hay <b>${d.sinImagen.length} productos sin imagen</b>:${listado(d.sinImagen)}${link('/admin/productos?imagen=sin', '🖼️ Verlos')}`;
     },
     async incompletos() {
       const d = await datos();
       if (!d.incompletos.length) return 'No hay productos incompletos: todos tienen precio, imagen y categoría. ✅';
-      return `Hay <b>${d.incompletos.length} productos incompletos</b> (les falta precio, imagen o categoría):${listado(d.incompletos)}${link('/admin/productos.html?incompletos=1', '⚠️ Ver incompletos')}`;
+      return `Hay <b>${d.incompletos.length} productos incompletos</b> (les falta precio, imagen o categoría):${listado(d.incompletos)}${link('/admin/productos?incompletos=1', '⚠️ Ver incompletos')}`;
     },
     async stock() {
       const d = await datos();
@@ -100,7 +100,7 @@ window.MHAssistant = (function () {
       let h = '';
       if (d.sinStock.length) h += `<b>${d.sinStock.length} sin stock</b> (crítico):${listado(d.sinStock, 5)}`;
       if (d.stockBajo.length) h += `<b>${d.stockBajo.length} con stock bajo</b>:${listado(d.stockBajo, 5)}`;
-      h += `Para reponer: registrá una <b>entrada por compra</b> desde Inventario.${link('/admin/alertas.html', '🔔 Ver alertas')}${link('/admin/inventario.html', '📥 Registrar entrada')}`;
+      h += `Para reponer: registrá una <b>entrada por compra</b> desde Inventario.${link('/admin/alertas', '🔔 Ver alertas')}${link('/admin/inventario', '📥 Registrar entrada')}`;
       return h;
     },
     async solicitudes() {
@@ -111,13 +111,13 @@ window.MHAssistant = (function () {
         h += '<ul>' + d.nuevas.slice(0, 5).map(s => `<li>${esc(s.cliente_nombre)} (${esc(s.codigo)})</li>`).join('') + '</ul>';
         h += 'Consejo: responder dentro de la primera hora aumenta mucho las chances de cerrar la venta.';
       }
-      return h + link('/admin/solicitudes.html?estado=nueva', '💬 Responder ahora');
+      return h + link('/admin/solicitudes?estado=nueva', '💬 Responder ahora');
     },
     async movimientos() {
       const d = await datos();
-      if (!d.movimientos.length) return 'No se registraron movimientos de stock en los últimos 7 días. Se registran desde <b>Registrar Movimiento</b>.' + link('/admin/inventario.html', '📦 Registrar');
+      if (!d.movimientos.length) return 'No se registraron movimientos de stock en los últimos 7 días. Se registran desde <b>Registrar Movimiento</b>.' + link('/admin/inventario', '📦 Registrar');
       const entradas = d.movimientos.filter(m => ['carga_inicial', 'entrada_compra', 'ajuste_positivo', 'devolucion_cliente'].includes(m.tipo)).length;
-      return `En los últimos 7 días hubo <b>${d.movimientos.length} movimientos</b> (${entradas} entradas, ${d.movimientos.length - entradas} salidas/ajustes). Los últimos:<ul>${d.movimientos.slice(0, 5).map(m => `<li>${esc(m.productos?.nombre || '—')} · ${esc(m.tipo.replace(/_/g, ' '))}</li>`).join('')}</ul>${link('/admin/movimientos.html', '📋 Ver historial')}`;
+      return `En los últimos 7 días hubo <b>${d.movimientos.length} movimientos</b> (${entradas} entradas, ${d.movimientos.length - entradas} salidas/ajustes). Los últimos:<ul>${d.movimientos.slice(0, 5).map(m => `<li>${esc(m.productos?.nombre || '—')} · ${esc(m.tipo.replace(/_/g, ' '))}</li>`).join('')}</ul>${link('/admin/movimientos', '📋 Ver historial')}`;
     },
     async destacados() {
       const d = await datos();
@@ -127,30 +127,30 @@ window.MHAssistant = (function () {
         h += ` Te conviene tener 8–12. Hay <b>${candidatos.length} candidatos ideales</b> (con precio e imagen):${listado(candidatos, 5)}`;
         h += 'Para destacar: en Productos, tocá la <b>estrella ⭐</b> del producto.';
       }
-      return h + link('/admin/productos.html', '🛍️ Ir a Productos');
+      return h + link('/admin/productos', '🛍️ Ir a Productos');
     },
     async categoriasVacias() {
       const { data: cats } = await db.from('categorias').select('id,nombre');
       const d = await datos();
       const vacias = (cats || []).filter(c => !d.productos.some(p => p.categoria_id === c.id));
       if (!vacias.length) return 'Todas las categorías tienen productos. ✅';
-      return `Hay <b>${vacias.length} categorías vacías</b>: ${vacias.map(c => esc(c.nombre)).join(', ')}. Asignales productos o desactivalas.${link('/admin/categorias.html', '🏷️ Ver categorías')}`;
+      return `Hay <b>${vacias.length} categorías vacías</b>: ${vacias.map(c => esc(c.nombre)).join(', ')}. Asignales productos o desactivalas.${link('/admin/categorias', '🏷️ Ver categorías')}`;
     }
   };
 
   /* ── Guías de uso (base de conocimiento) ── */
   const GUIAS = [
-    { k: /(cargo|creo|agrego|añado|nuevo).*(producto)|producto nuevo/i, t: 'Para <b>crear un producto</b>: Productos → "+ Nuevo Producto". Completá nombre, categoría, precio minorista y stock inicial, subí la foto (clic o arrastrar) y Guardar. Con "Destacado" activado aparece en la portada.' + link('/admin/producto-form.html', '+ Crear producto') },
-    { k: /(edito|cambio|modifico).*(precio|producto)|precio.*(cambiar|editar|cargar|poner)/i, t: 'Para <b>cambiar un precio</b>: Productos → lápiz ✏️ del producto → campo "Precio minorista" (número sin puntos, ej: 234000) → Guardar. El cambio se ve al instante en la tienda.' + link('/admin/productos.html', '🛍️ Ir a Productos') },
-    { k: /(creo|agrego|nueva).*(categor)/i, t: 'Para <b>crear una categoría</b>: Categorías → completá el nombre (el slug se genera solo) → Guardar. Después asignásela a los productos desde su formulario.' + link('/admin/categorias.html', '🏷️ Ir a Categorías') },
-    { k: /(registro|cargo|hago).*(movimiento|stock|entrada|salida)|reponer stock|sumar stock/i, t: 'Para <b>registrar stock</b>: Registrar Movimiento → elegí el tipo (entrada por compra, salida por venta, ajuste…) → buscá el producto → cantidad. Vas a ver el "antes → después" antes de confirmar. Todo queda en el Historial.' + link('/admin/inventario.html', '📦 Registrar movimiento') },
+    { k: /(cargo|creo|agrego|añado|nuevo).*(producto)|producto nuevo/i, t: 'Para <b>crear un producto</b>: Productos → "+ Nuevo Producto". Completá nombre, categoría, precio minorista y stock inicial, subí la foto (clic o arrastrar) y Guardar. Con "Destacado" activado aparece en la portada.' + link('/admin/producto-form', '+ Crear producto') },
+    { k: /(edito|cambio|modifico).*(precio|producto)|precio.*(cambiar|editar|cargar|poner)/i, t: 'Para <b>cambiar un precio</b>: Productos → lápiz ✏️ del producto → campo "Precio minorista" (número sin puntos, ej: 234000) → Guardar. El cambio se ve al instante en la tienda.' + link('/admin/productos', '🛍️ Ir a Productos') },
+    { k: /(creo|agrego|nueva).*(categor)/i, t: 'Para <b>crear una categoría</b>: Categorías → completá el nombre (el slug se genera solo) → Guardar. Después asignásela a los productos desde su formulario.' + link('/admin/categorias', '🏷️ Ir a Categorías') },
+    { k: /(registro|cargo|hago).*(movimiento|stock|entrada|salida)|reponer stock|sumar stock/i, t: 'Para <b>registrar stock</b>: Registrar Movimiento → elegí el tipo (entrada por compra, salida por venta, ajuste…) → buscá el producto → cantidad. Vas a ver el "antes → después" antes de confirmar. Todo queda en el Historial.' + link('/admin/inventario', '📦 Registrar movimiento') },
     { k: /(subo|cambio|agrego).*(imagen|foto)/i, t: 'Para <b>subir una imagen</b>: Productos → ✏️ del producto → sección "Imagen principal" → hacé clic o arrastrá el archivo (JPG/PNG/WebP, máx. 5 MB) → Guardar.' },
     { k: /no aparece|no se ve|no se muestra/i, t: 'Si un producto <b>no aparece en la tienda</b>, revisá: 1) Estado = "Activo" (inactivo/archivado no se muestran), 2) que tenga categoría asignada, 3) recargá la página de la tienda. Si sigue sin verse, decime el nombre y lo reviso.' },
     { k: /(oculto|pauso|desactivo|publico).*(producto)/i, t: 'Para <b>ocultar/publicar</b> un producto rápido: en Productos usá el botón ⏸️/▶️ de la fila. Ocultar no borra nada: lo podés volver a publicar cuando quieras.' },
     { k: /oferta|descuento|promoci/i, t: 'Para <b>crear una oferta</b>: editá el producto → activá "En oferta" → cargá el "Precio oferta" (menor al minorista). En la tienda aparece el precio anterior tachado y la etiqueta Oferta.' },
-    { k: /whatsapp.*(cambio|numero|número)|numero.*whatsapp/i, t: 'Para <b>cambiar el número de WhatsApp</b> de toda la tienda: Configuración → "WhatsApp" → guardá. Todos los botones de la web pasan a usar el número nuevo al instante.' + link('/admin/configuracion.html', '⚙️ Ir a Configuración') },
-    { k: /texto|portada|titulo|título|hero/i, t: 'Los <b>textos de la portada</b> (título, subtítulo, sección mayorista, envíos, pagos) se editan desde Configuración → "Textos de la página". En el título, usá "|" antes de la parte que va en naranja.' + link('/admin/configuracion.html', '⚙️ Editar textos') },
-    { k: /usuario|vendedor|empleado|acceso/i, t: 'Para <b>dar acceso a otra persona</b>: Usuarios → invitala con su email y elegí el rol (Administrador: todo · Encargado de stock: productos y stock · Vendedor: solo consulta y solicitudes).' + link('/admin/usuarios.html', '👥 Ir a Usuarios') },
+    { k: /whatsapp.*(cambio|numero|número)|numero.*whatsapp/i, t: 'Para <b>cambiar el número de WhatsApp</b> de toda la tienda: Configuración → "WhatsApp" → guardá. Todos los botones de la web pasan a usar el número nuevo al instante.' + link('/admin/configuracion', '⚙️ Ir a Configuración') },
+    { k: /texto|portada|titulo|título|hero/i, t: 'Los <b>textos de la portada</b> (título, subtítulo, sección mayorista, envíos, pagos) se editan desde Configuración → "Textos de la página". En el título, usá "|" antes de la parte que va en naranja.' + link('/admin/configuracion', '⚙️ Editar textos') },
+    { k: /usuario|vendedor|empleado|acceso/i, t: 'Para <b>dar acceso a otra persona</b>: Usuarios → invitala con su email y elegí el rol (Administrador: todo · Encargado de stock: productos y stock · Vendedor: solo consulta y solicitudes).' + link('/admin/usuarios', '👥 Ir a Usuarios') },
     { k: /alerta.*(significa|explic)|significa.*alerta|que es.*alerta/i, t: 'Las <b>alertas de stock</b> avisan cuando un producto llega a 0 (crítico, rojo) o queda por debajo de su "stock mínimo" (bajo, amarillo). El stock mínimo lo definís en cada producto; cuando se cruza, aparece acá y en el Dashboard.' },
     { k: /instalar|app|escritorio|acceso directo/i, t: 'El panel se puede <b>instalar como app</b>: en Chrome, menú ⋮ → "Instalar Mundo Hogar — Administrador". Queda con el logo en el escritorio y abre directo al panel.' }
   ];

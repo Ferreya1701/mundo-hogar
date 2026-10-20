@@ -4,6 +4,5 @@
 // respuestas viejas generaría más confusión que ayuda.
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
-self.addEventListener('fetch', (event) => {
-  event.respondWith(fetch(event.request));
-});
+// Sin manejador de "fetch" a propósito: reenviar cada pedido no aportaba nada
+// y sumaba un paso a cada archivo al cambiar de módulo.

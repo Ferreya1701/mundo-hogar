@@ -1,17 +1,17 @@
 // Renderiza sidebar + header compartidos
 const Layout = {
   NAV: [
-    { id:'dashboard',  label:'Dashboard',           icon:'📊', href:'/admin/dashboard.html',      section:'Principal' },
-    { id:'crm',        label:'CRM de clientes',      icon:'🤝', href:'/admin/crm.html',            section:'Ventas', roles:['administrador','vendedor'] },
-    { id:'solicitudes',label:'Solicitudes WhatsApp', icon:'💬', href:'/admin/solicitudes.html',    section:'Ventas' },
-    { id:'productos',  label:'Productos',            icon:'🛍️', href:'/admin/productos.html',      section:'Catálogo' },
-    { id:'categorias', label:'Categorías',           icon:'🏷️', href:'/admin/categorias.html',     section:'Catálogo' },
-    { id:'carga-stock',label:'Carga de Stock',       icon:'📥', href:'/admin/carga-stock.html',    section:'Stock' },
-    { id:'inventario', label:'Registrar Movimiento', icon:'📦', href:'/admin/inventario.html',     section:'Stock' },
-    { id:'movimientos',label:'Historial',            icon:'📋', href:'/admin/movimientos.html',    section:'Stock' },
-    { id:'alertas',    label:'Alertas de Stock',     icon:'🔔', href:'/admin/alertas.html',        section:'Stock' },
-    { id:'usuarios',   label:'Usuarios',             icon:'👥', href:'/admin/usuarios.html',       section:'Admin', adminOnly:true },
-    { id:'configuracion', label:'Configuración',     icon:'⚙️', href:'/admin/configuracion.html',  section:'Admin', adminOnly:true },
+    { id:'dashboard',  label:'Dashboard',           icon:'📊', href:'/admin/dashboard',      section:'Principal' },
+    { id:'crm',        label:'CRM de clientes',      icon:'🤝', href:'/admin/crm',            section:'Ventas', roles:['administrador','vendedor'] },
+    { id:'solicitudes',label:'Solicitudes WhatsApp', icon:'💬', href:'/admin/solicitudes',    section:'Ventas' },
+    { id:'productos',  label:'Productos',            icon:'🛍️', href:'/admin/productos',      section:'Catálogo' },
+    { id:'categorias', label:'Categorías',           icon:'🏷️', href:'/admin/categorias',     section:'Catálogo' },
+    { id:'carga-stock',label:'Carga de Stock',       icon:'📥', href:'/admin/carga-stock',    section:'Stock' },
+    { id:'inventario', label:'Registrar Movimiento', icon:'📦', href:'/admin/inventario',     section:'Stock' },
+    { id:'movimientos',label:'Historial',            icon:'📋', href:'/admin/movimientos',    section:'Stock' },
+    { id:'alertas',    label:'Alertas de Stock',     icon:'🔔', href:'/admin/alertas',        section:'Stock' },
+    { id:'usuarios',   label:'Usuarios',             icon:'👥', href:'/admin/usuarios',       section:'Admin', adminOnly:true },
+    { id:'configuracion', label:'Configuración',     icon:'⚙️', href:'/admin/configuracion',  section:'Admin', adminOnly:true },
   ],
 
   render(pageId, pageTitle, profile) {
@@ -37,8 +37,8 @@ const Layout = {
     });
     document.getElementById('sidebar-nav').innerHTML = navHTML;
 
-    // Título
-    document.getElementById('page-title').textContent = pageTitle || '';
+    // Título (el dibujado anticipado no lo conoce y deja el del HTML)
+    if (pageTitle !== undefined) document.getElementById('page-title').textContent = pageTitle || '';
 
     // Info usuario
     if (profile) {
@@ -68,14 +68,26 @@ const Layout = {
     }
   },
 
+  // Dibuja el menú apenas carga el script, con el perfil que guardó la página
+  // anterior, para que no quede vacío mientras responde Supabase. Es solo
+  // visual: los permisos reales los sigue controlando Auth.init + Supabase.
+  prerender() {
+    const sb = document.getElementById('sidebar');
+    if (!sb) return;
+    if (localStorage.getItem('sbCollapsed') === 'true' && !this.esMovil()) {
+      sb.classList.add('collapsed');
+    }
+    const profile = Auth.cachedProfile();
+    if (!profile) return;
+    const actual = this.NAV.find(i => location.pathname.replace(/\.html$/, '') === i.href);
+    this.render(actual?.id, undefined, profile);
+  },
+
   async init(pageId, pageTitle) {
     const profile = await Auth.getProfile();
     this.render(pageId, pageTitle, profile);
 
     const sb = document.getElementById('sidebar');
-    if (localStorage.getItem('sbCollapsed') === 'true' && !this.esMovil()) {
-      sb.classList.add('collapsed');
-    }
 
     const btn = document.getElementById('sidebar-toggle');
     if (btn) {
@@ -97,3 +109,5 @@ const Layout = {
       ?.addEventListener('click', () => Auth.logout());
   }
 };
+
+Layout.prerender();

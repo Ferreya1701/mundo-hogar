@@ -135,7 +135,7 @@ function renderTable() {
       <td>${c.activo?'<span class="badge badge-success">Activa</span>':'<span class="badge badge-muted">Inactiva</span>'}</td>
       <td>
         <div class="d-flex gap-2">
-          ${cnt.total > 0 ? `<a href="/admin/productos.html?cat=${c.id}" class="btn btn-ghost btn-sm" data-tip="Ver sus productos">👁️</a>` : ''}
+          ${cnt.total > 0 ? `<a href="/admin/productos?cat=${c.id}" class="btn btn-ghost btn-sm" data-tip="Ver sus productos">👁️</a>` : ''}
           <button class="btn btn-ghost btn-sm" onclick="editarCat(${c.id})" data-tip="Editar">✏️</button>
           <button class="btn btn-ghost btn-sm" onclick="eliminarCat(${c.id},'${c.nombre.replace(/'/g,"\\'")}')" data-tip="Eliminar">🗑️</button>
         </div>

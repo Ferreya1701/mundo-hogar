@@ -26,7 +26,7 @@
       <button class="header-toggle" id="sidebar-toggle">☰</button>
       <span class="header-title" id="page-title"></span>
       <div class="header-actions">
-        <a href="/admin/inventario.html" class="btn btn-ghost btn-sm">📦 Movimiento suelto</a>
+        <a href="/admin/inventario" class="btn btn-ghost btn-sm">📦 Movimiento suelto</a>
         <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
       </div>
     </header>
@@ -383,7 +383,7 @@ async function initPage() {
   if (!profile) return;
   if (!['administrador','encargado_stock'].includes(profile.rol)) {
     Utils.toast('Sin permisos para mover stock', 'error');
-    window.location.href = '/admin/dashboard.html';
+    window.location.href = '/admin/dashboard';
     return;
   }
   await Layout.init('carga-stock', 'Carga de stock');

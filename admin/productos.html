@@ -37,7 +37,7 @@
         <div class="page-header-actions">
           <button class="btn btn-outline btn-sm" id="btn-export">⬇ Exportar CSV</button>
           <button class="btn btn-outline btn-sm" id="btn-importar">📥 Importar JSON</button>
-          <a href="/admin/producto-form.html" class="btn btn-primary">+ Nuevo Producto</a>
+          <a href="/admin/producto-form" class="btn btn-primary">+ Nuevo Producto</a>
         </div>
       </div>
 
@@ -425,7 +425,7 @@ function renderTable() {
         <p>Ningún producto coincide con los filtros aplicados.</p>
         ${nFiltros
           ? `<button type="button" class="btn btn-outline" data-accion="limpiar">✕ Limpiar filtros</button>`
-          : `<a href="/admin/producto-form.html" class="btn btn-primary">+ Agregar un producto</a>`}
+          : `<a href="/admin/producto-form" class="btn btn-primary">+ Agregar un producto</a>`}
        </div></td></tr>`;
     document.getElementById('paginacion').innerHTML = '';
     return;
@@ -488,7 +488,7 @@ function renderTable() {
                   data-tip="${p.destacado?'Quitar de destacados':'Destacar en portada'}"
                   aria-label="${p.destacado?'Quitar de destacados':'Destacar'} ${nombre}"
                   aria-pressed="${!!p.destacado}">⭐</button>` : ''}
-          <a href="/admin/producto-form.html?id=${p.id}${volverParam}" class="btn btn-ghost btn-sm act-editar"
+          <a href="/admin/producto-form?id=${p.id}${volverParam}" class="btn btn-ghost btn-sm act-editar"
              data-tip="${puedeEditar?'Editar':'Ver ficha'}" aria-label="${puedeEditar?'Editar':'Ver'} ${nombre}">
             ${puedeEditar?'✏️':'👁️'}<span class="solo-movil">${puedeEditar?'Editar':'Ver'}</span></a>
           ${puedeEditar ? `

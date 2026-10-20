@@ -4,6 +4,12 @@
    Violeta reservado para el Asistente MH (IA).
    ============================================================ */
 
+/* ── Cambio de módulo ──────────────────────────────────────
+   Fundido entre páginas del panel en lugar del destello en blanco
+   (Chrome/Edge; los demás navegadores navegan como siempre). */
+@view-transition { navigation: auto; }
+.sidebar { view-transition-name: sidebar; }
+
 /* ── Variables ─────────────────────────────────────────────── */
 :root {
   /* Marca (los nombres --night/--gold se conservan para compatibilidad) */
@@ -977,6 +983,7 @@ kbd {
 /* ── Menos movimiento ────────────────────────────────────────── */
 @media (prefers-reduced-motion:reduce) {
   *,*::before,*::after { animation-duration:.001ms !important; transition-duration:.001ms !important; }
+  ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*) { animation:none !important; }
 }
 
 /* ── Section divider ─────────────────────────────────────────── */

@@ -26,7 +26,7 @@
       <button class="header-toggle" id="sidebar-toggle">☰</button>
       <span class="header-title" id="page-title"></span>
       <div class="header-actions">
-        <a href="/admin/movimientos.html" class="btn btn-ghost btn-sm">Ver historial</a>
+        <a href="/admin/movimientos" class="btn btn-ghost btn-sm">Ver historial</a>
         <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
       </div>
     </header>
@@ -134,7 +134,7 @@
         <div class="card">
           <div class="card-header">
             <span class="card-title">Movimientos de hoy</span>
-            <a href="/admin/movimientos.html" class="btn btn-ghost btn-sm">Ver historial completo</a>
+            <a href="/admin/movimientos" class="btn btn-ghost btn-sm">Ver historial completo</a>
           </div>
           <div id="mov-hoy-body">
             <div class="page-loading"><div class="spinner"></div></div>
@@ -302,7 +302,7 @@ async function initPage() {
   const profile = await Auth.init();
   if (!profile) return;
   if (!['administrador','encargado_stock'].includes(profile.rol)) {
-    window.location.href='/admin/dashboard.html'; return;
+    window.location.href='/admin/dashboard'; return;
   }
   await Layout.init('inventario','Registrar Movimiento');
   await Promise.all([cargarProductos(), cargarMovHoy()]);

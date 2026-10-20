@@ -26,7 +26,7 @@
       <button class="header-toggle" id="sidebar-toggle">☰</button>
       <span class="header-title" id="page-title"></span>
       <div class="header-actions">
-        <a href="/admin/productos.html" class="btn btn-ghost btn-sm" id="link-volver">← Volver al listado</a>
+        <a href="/admin/productos" class="btn btn-ghost btn-sm" id="link-volver">← Volver al listado</a>
         <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
       </div>
     </header>
@@ -265,7 +265,7 @@ let uploadedImageUrl = null;
    rara y siempre se antepone la ruta fija del listado. Si no viene
    (se entró por link directo), se vuelve al listado sin filtros. */
 const volverQS = new URLSearchParams(urlParams.get('volver') || '').toString();
-const URL_LISTADO = '/admin/productos.html' + (volverQS ? '?' + volverQS : '');
+const URL_LISTADO = '/admin/productos' + (volverQS ? '?' + volverQS : '');
 document.getElementById('link-volver').href = URL_LISTADO;
 
 /* ── Detección de cambios sin guardar ───────────────────────── */
@@ -542,7 +542,7 @@ async function guardar(volverAlListado) {
     document.getElementById('form-subtitle').textContent = data.nombre;
     bloquearCamposStock();
     history.replaceState(null, '',
-      `/admin/producto-form.html?id=${editId}` + (volverQS ? `&volver=${encodeURIComponent(volverQS)}` : ''));
+      `/admin/producto-form?id=${editId}` + (volverQS ? `&volver=${encodeURIComponent(volverQS)}` : ''));
   }
 
   marcarLimpio();
@@ -568,7 +568,7 @@ async function initPage() {
   currentProfile = profile;
   if (!['administrador','encargado_stock'].includes(profile.rol)) {
     Utils.toast('Sin permisos para gestionar productos','error');
-    window.location.href='/admin/dashboard.html';
+    window.location.href='/admin/dashboard';
     return;
   }
   await Layout.init('productos', isEdit ? 'Editar Producto' : 'Nuevo Producto');

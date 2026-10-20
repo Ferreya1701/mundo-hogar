@@ -26,7 +26,7 @@
       <span class="header-title" id="page-title"></span>
       <div class="header-actions">
         <button class="btn btn-outline btn-sm" onclick="loadData()">↺ Actualizar</button>
-        <a href="/admin/inventario.html" class="btn btn-primary btn-sm">+ Registrar entrada</a>
+        <a href="/admin/inventario" class="btn btn-primary btn-sm">+ Registrar entrada</a>
         <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
       </div>
     </header>
@@ -142,8 +142,8 @@ function renderTable() {
       </td>
       <td>
         <div class="d-flex gap-2">
-          <a href="/admin/inventario.html?producto=${p.id}" class="btn btn-outline btn-sm" style="font-size:11px" data-tip="Registrar reposición con este producto ya elegido">📥 Entrada</a>
-          <a href="/admin/producto-form.html?id=${p.id}" class="btn btn-ghost btn-sm" data-tip="Editar producto">✏️</a>
+          <a href="/admin/inventario?producto=${p.id}" class="btn btn-outline btn-sm" style="font-size:11px" data-tip="Registrar reposición con este producto ya elegido">📥 Entrada</a>
+          <a href="/admin/producto-form?id=${p.id}" class="btn btn-ghost btn-sm" data-tip="Editar producto">✏️</a>
         </div>
       </td>
     </tr>`;
