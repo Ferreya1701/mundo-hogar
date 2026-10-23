@@ -25,7 +25,10 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const MODEL = "claude-opus-5";
+// Haiku 4.5: alcanza para extraer datos de un comprobante legible y cuesta
+// ~USD 0,003 por lectura. Si aparecen muchas fotos borrosas, subir a
+// "claude-sonnet-5" (y ahí sí se pueden sumar fallbacks y effort).
+const MODEL = "claude-haiku-4-5";
 
 const PROMPT = `Sos un lector de comprobantes de transferencia bancaria y de billeteras virtuales de Argentina (Mercado Pago, Ualá, bancos, etc.).
 
@@ -151,14 +154,11 @@ Deno.serve(async (req) => {
         headers: {
           "x-api-key": apiKey,
           "anthropic-version": "2023-06-01",
-          "anthropic-beta": "server-side-fallback-2026-07-01",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           model: MODEL,
           max_tokens: 2048,
-          fallbacks: "default",
-          output_config: { effort: "medium" },
           messages: [{ role: "user", content: [adjunto, { type: "text", text: PROMPT }] }],
         }),
       });

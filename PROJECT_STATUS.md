@@ -35,7 +35,7 @@ Gestor de ventas y cobros (no factura, no se conecta con ARCA). Guía: `GUIA-COB
   `comprobante_registrar_lectura`. Probado con `scripts/test-cobros-sql.mjs` (68 pruebas, PGlite).
 - **Edge Function `leer-comprobante`** — DESPLEGADA (`--no-verify-jwt`, valida sola). **Falta el secreto
   `ANTHROPIC_API_KEY`** (el proyecto no lo tiene; sin él los comprobantes quedan "ilegible" y se revisan a mano): lee imagen/PDF con Claude
-  (`claude-opus-5`, fallbacks por defecto) y registra la lectura; la base decide si coincide.
+  (`claude-haiku-4-5`, ~USD 0,003 por lectura) y registra la lectura; la base decide si coincide.
 - **Tienda:** `pedido.html` en `/pedido/<código>` (estado, datos para transferir, subida de
   comprobante); `carrito.html` ofrece "Pagar por transferencia" si hay total y
   `site_settings.cobros_activos`; `assets/catalogo.js` expone `MH.cobrosActivos()`.
