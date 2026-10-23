@@ -13,11 +13,12 @@ personales del desarrollador.
 | Servicio | Para qué | Dueño hoy | Acción al transferir |
 |---|---|---|---|
 | **GitHub** (`Ferreya1701/mundo-hogar`) | Código fuente | Desarrollador | Transferir repo o crear cuenta del dueño y pasarlo |
-| **Vercel** | Hosting/deploy | Desarrollador | Transferir proyecto o reconectar bajo cuenta del dueño |
-| **Supabase** | Base de datos del panel | A crear | Crear bajo cuenta/email del dueño |
+| **Cloudflare** (Worker `mundo-hogar` + zona DNS `mundohogarstf.com`) | Hosting de producción y DNS | Cuenta de TIAF | Verificar que el dueño tenga acceso; conectar el Worker al repo del dueño |
+| **GoDaddy** (`mundohogarstf.com`) | Registro del dominio y correo | Del dueño (negocio) | Confirmar titularidad y acceso; renovación anual |
+| **Vercel** (`mundo-hogar-tan.vercel.app`) | Espejo sin dominio, opcional | Desarrollador | Borrar el proyecto o reconectarlo bajo cuenta del dueño |
+| **Supabase** | Base de datos del panel | Desarrollador | Transferir la organización/proyecto al email del dueño |
 | **Mercado Pago** | Cobros | Del dueño (negocio) | Usar la cuenta del negocio; nunca la del desarrollador |
-| **Dominio** (`mundohogar.com.ar`, opcional) | URL propia | A definir | Registrar a nombre del dueño |
-| **Email** (`ventas@mundohogar.com.ar`) | Contacto | A definir | Crear o cambiar el que figura en la web |
+| **WhatsApp / PanelBot** | Bot de atención conectado al CRM | A confirmar | Ver `sql/010` y `sql/011`; el número se configura en el panel |
 | **Analytics / Meta Pixel** | Métricas/ads | No instalado aún | Crear bajo cuentas del dueño |
 
 ## 2. Transferir el repositorio de GitHub
@@ -27,15 +28,24 @@ cuenta del dueño.
 **Opción B:** el dueño crea su cuenta y se le agrega como colaborador/propietario; luego se quita al
 desarrollador.
 
-## 3. Transferir el proyecto de Vercel
+## 3. Hosting y DNS (Cloudflare) y dominio (GoDaddy)
 
-1. El dueño crea cuenta en Vercel e inicia sesión **con su GitHub**.
-2. *Add New → Project* → importar `mundo-hogar`.
-3. **Framework Preset:** *Other*. **Root Directory:** vacío. **Build Command:** vacío.
-   **Output Directory:** vacío (el `vercel.json` ya fuerza la raíz).
-4. Deploy. Verificar que la home abra sin 404.
-5. Cargar las **Environment Variables** que correspondan (ver punto 6).
-6. Quitar el proyecto de la cuenta del desarrollador.
+Desde 2026-10-16 el sitio se sirve desde **Cloudflare Workers** (solo archivos estáticos) y el DNS vive
+en Cloudflare. El dominio `mundohogarstf.com` y el correo siguen en **GoDaddy**. Detalle completo en
+`PROJECT_STATUS.md` → sección *Hosting*.
+
+1. **Cloudflare:** la cuenta es de TIAF. Si la administra el desarrollador, agregar al dueño como
+   miembro (*Manage Account → Members*) con rol de administrador, o pasar la cuenta a su email.
+2. **Worker `mundo-hogar`:** está conectado al repo de GitHub (*Workers & Pages → mundo-hogar →
+   Settings → Builds*). Si el repo cambia de dueño (punto 2), reconectar la integración con GitHub
+   desde la cuenta nueva. Configuración de build: sin comando de build; `wrangler.jsonc` ya define todo.
+3. **DNS:** verificar que sigan los registros del correo de GoDaddy (MX, SPF, DMARC y los 4 CNAME de
+   `bounces.*` y `sable.*._domainkey`). Cualquier cambio de nameservers rompe el correo.
+4. **GoDaddy:** confirmar que el dominio esté a nombre del negocio, con renovación automática y acceso
+   del dueño. Los nameservers deben quedar apuntando a Cloudflare (`patryk` / `sreeni.ns.cloudflare.com`).
+5. **Vercel (opcional):** el espejo `mundo-hogar-tan.vercel.app` no tiene dominio ni uso comercial.
+   Se puede borrar el proyecto de la cuenta del desarrollador sin afectar al sitio; si se borra, quitar
+   también `vercel.json` del repo.
 
 ## 4. Crear/transferir la base de datos (Supabase)
 
@@ -67,8 +77,8 @@ Así el sistema deja de depender de cuentas personales del desarrollador.
 ## 6. Variables de entorno a configurar
 
 - **Supabase** (en `supabase-config.js`): `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
-- **Mercado Pago** (solo si se implementa checkout; en Vercel → *Settings → Environment Variables*,
-  NUNCA en el código): `MP_ACCESS_TOKEN`, `MP_PUBLIC_KEY`, `MP_WEBHOOK_SECRET`,
+- **Mercado Pago** (solo si se implementa checkout; irían en un Worker con código de servidor, como
+  *secrets* de Cloudflare, NUNCA en el código): `MP_ACCESS_TOKEN`, `MP_PUBLIC_KEY`, `MP_WEBHOOK_SECRET`,
   `URL_SUCCESS`, `URL_FAILURE`, `URL_PENDING`.
 
 ## 7. Mercado Pago
@@ -80,9 +90,11 @@ Así el sistema deja de depender de cuentas personales del desarrollador.
 
 ## 8. Dominio y emails
 
-- Si se quiere `mundohogar.com.ar`: registrarlo a nombre del dueño y conectarlo en Vercel
-  (*Settings → Domains*).
-- El email `ventas@mundohogar.com.ar` que aparece en la web debe **existir** o cambiarse por uno real.
+- El dominio en uso es `mundohogarstf.com` (ver punto 3). El canonical, el sitemap y las etiquetas OG
+  usan el dominio sin `www`; `www` redirige con 301.
+- El correo del dominio está en GoDaddy. Si se cambia de proveedor de correo, actualizar los registros
+  MX/SPF/DMARC/DKIM en el DNS de Cloudflare, no en GoDaddy.
+- El número de WhatsApp de la web se edita desde el panel (*Configuración*), sin tocar código.
 
 ## 9. Analytics y Meta Pixel (opcional, para ads)
 
@@ -92,8 +104,10 @@ Meta Business) y agregar el script en `index.html`. Relevante porque el negocio 
 ## 10. Checklist final de independencia
 
 - [ ] Repo GitHub a nombre del dueño.
-- [ ] Proyecto Vercel a nombre del dueño, con la home abriendo OK.
-- [ ] Supabase del dueño, SQL corrido, admin del dueño creado.
+- [ ] Dueño con acceso de administrador a la cuenta de Cloudflare; Worker conectado al repo del dueño.
+- [ ] Dominio en GoDaddy a nombre del negocio, con renovación automática.
+- [ ] Proyecto de Vercel borrado o a nombre del dueño.
+- [ ] Supabase transferido al dueño, admin del dueño creado.
 - [ ] Admin del desarrollador desactivado.
 - [ ] Mercado Pago = cuenta del negocio.
 - [ ] Variables sensibles solo en entornos seguros (no en el código).

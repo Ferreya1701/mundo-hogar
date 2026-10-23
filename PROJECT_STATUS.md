@@ -1,6 +1,6 @@
 # PROJECT_STATUS — Mundo Hogar / TIAF
 
-> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-10-16.
+> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-10-23.
 
 ## Hosting (desde 2026-10-16): Cloudflare Workers
 - **Producción:** `https://mundohogarstf.com` servido por **Cloudflare Workers** (solo archivos
@@ -77,15 +77,22 @@ modelo de datos, roadmap, propuesta ejecutiva, demo HTML).
 1. ~~Ejecutar `sql/006` y `sql/007` en Supabase~~ — **HECHO 2026-07-13**, verificado en producción.
 2. Precios: se cargan desde /admin cuando el dueño quiera (catálogo externo en Drive; NO automatizar).
    **0 de 137 productos con precio/stock al 2026-07-05** — sigue pendiente de carga real.
-3. Confirmar usuario admin creado en Supabase.
-4. La rama `research/sistema-operativo-mundo-hogar` (docs del sistema operativo integral completo,
-   `sql/borradores-no-ejecutados/`) sigue sin mergear a `main` — pendiente de revisión.
+3. Confirmar usuario admin del dueño creado en Supabase (y desactivar el del desarrollador al transferir).
+4. ~~Rama `research/sistema-operativo-mundo-hogar` sin mergear~~ — la rama ya no existe; lo útil quedó en
+   `main` (`sql/borradores-no-ejecutados/008-multideposito-BORRADOR.sql`, commit `5986736`). La
+   documentación de negocio vive fuera del repo (`docs/` está excluido por ser repo público).
+5. Supabase FREE no tiene backups automáticos: hacer uno manual (o subir a Pro) antes de cargar precios
+   y stock reales.
 
 ## Archivos importantes
 - `assets/catalogo.js` — MH: catálogo, precios, Cart, settings, track, flag pagos.
 - `producto.html`, `carrito.html`, `admin/solicitudes.html`, `sql/005-solicitudes.sql`.
 - `supabase-config.js` — ahora expone window.* (crítico, no revertir).
-- `vercel.json` / `scripts/server.js` — rewrites.
+- `wrangler.jsonc` / `_redirects` / `_headers` — hosting de producción (Cloudflare).
+- `vercel.json` / `scripts/server.js` — mismas reglas para el espejo de Vercel y el servidor local.
 
 ## Próxima acción
-Ejecutar `sql/005-solicitudes.sql` en Supabase y probar el ciclo completo solicitud→admin en producción. Luego Fase 3 (según plan): pedidos con pago online (MP) — mantener flag apagado hasta entonces.
+1. Cerrar la mudanza: subir la versión mínima de TLS a 1.2 en Cloudflare y decidir si el espejo de Vercel
+   se borra (si se borra, quitar `vercel.json`).
+2. Carga real de precios y stock desde el panel (lado del dueño) con backup manual previo de Supabase.
+3. Fase 3 (según plan): pedidos con pago online (MP) — mantener el flag apagado hasta entonces.
