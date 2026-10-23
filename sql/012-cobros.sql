@@ -290,7 +290,7 @@ DECLARE
   i INT;
 BEGIN
   FOR i IN 1..40 LOOP
-    v_cand := v_base + (1 + floor(random() * 99))::int / 100.0;
+    v_cand := round(v_base + (1 + floor(random() * 99))::int / 100.0, 2);
     IF NOT EXISTS (
       SELECT 1 FROM solicitudes
        WHERE cuenta_cobro_id = p_cuenta
@@ -786,7 +786,7 @@ BEGIN
 
   IF NOT coalesce((p_lectura->>'legible')::boolean, false) OR v_conf < 40 OR v_monto IS NULL THEN
     v_estado := 'ilegible';
-    v_motivos := array_append(v_motivos, 'No se pudo leer con claridad el comprobante');
+    v_motivos := array_append(v_motivos, coalesce(nullif(left(p_lectura->>'notas', 200), ''), 'No se pudo leer con claridad el comprobante'));
   ELSE
     IF v_sol.monto_a_pagar IS NOT NULL AND abs(v_monto - v_sol.monto_a_pagar) > 0.005 THEN
       v_estado := 'no_coincide';

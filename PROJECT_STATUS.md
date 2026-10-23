@@ -22,9 +22,9 @@
   la `.webp` y cae al `.jpg` si falta (`MH.webpUrl` / `MH.setImg`). Al sumar fotos nuevas, generar ambas.
 - Cloudflare redirige `x.html` → `x` y `/productos` → `/productos/` (conserva los parámetros).
 
-## Cobros por transferencia (2026-10-23) — CÓDIGO LISTO, PENDIENTE DE DESPLEGAR EN SUPABASE
+## Cobros por transferencia (2026-10-23) — DESPLEGADO EN PRODUCCIÓN
 Gestor de ventas y cobros (no factura, no se conecta con ARCA). Guía: `GUIA-COBROS.md`.
-- **`sql/012-cobros.sql`** (NO ejecutado aún en producción): `cuentas_cobro`, columnas de pago en
+- **`sql/012-cobros.sql`** — EJECUTADO en producción el 2026-10-23 (vía `npx supabase db query --linked`): `cuentas_cobro`, columnas de pago en
   `solicitudes` (`estado_pago`, cuenta, monto con centavos únicos, vencimiento), `comprobantes`,
   `movimientos_cobro` (libro inmutable), `liquidaciones`, config en `site_settings`
   (`cobros_activos`, `cobros_plazo_horas`, `cobros_auto_confirmar`, `comision_pct`,
@@ -33,16 +33,22 @@ Gestor de ventas y cobros (no factura, no se conecta con ARCA). Guía: `GUIA-COB
   `pedido_subir_comprobante`. Panel: `habilitar_pago`, `confirmar_pago`, `rechazar_comprobante`,
   `anular_pago`, `cerrar_liquidacion`, `fn_cobros_vencer`. Solo servicio:
   `comprobante_registrar_lectura`. Probado con `scripts/test-cobros-sql.mjs` (68 pruebas, PGlite).
-- **Edge Function `leer-comprobante`** (NO desplegada aún): lee imagen/PDF con Claude
+- **Edge Function `leer-comprobante`** — DESPLEGADA (`--no-verify-jwt`, valida sola). **Falta el secreto
+  `ANTHROPIC_API_KEY`** (el proyecto no lo tiene; sin él los comprobantes quedan "ilegible" y se revisan a mano): lee imagen/PDF con Claude
   (`claude-opus-5`, fallbacks por defecto) y registra la lectura; la base decide si coincide.
 - **Tienda:** `pedido.html` en `/pedido/<código>` (estado, datos para transferir, subida de
   comprobante); `carrito.html` ofrece "Pagar por transferencia" si hay total y
   `site_settings.cobros_activos`; `assets/catalogo.js` expone `MH.cobrosActivos()`.
 - **Panel:** `admin/pedidos.html` reemplaza a Solicitudes (que ahora redirige),
   `admin/cuentas-cobro.html` (admin). Menú actualizado en `layout.js`.
-- **Pasos para prender:** ejecutar 012 → desplegar `leer-comprobante` → cargar cuentas → activar
-  cobros en Configuración de Cuentas de cobro. Hasta ejecutar el 012, la tienda sigue igual que
-  antes (el panel avisa que falta el SQL).
+- **Estado en producción:** `cobros_activos = true`, `carrito_activo = false` (la tienda es solo
+  catálogo + WhatsApp; el equipo prueba con `?preview=1`). Existe una cuenta
+  **"CUENTA DE PRUEBA (borrar)"** (alias `prueba.mundohogar.mp`) y el pedido de prueba
+  `MH-261023-FCAA` con un comprobante en revisión: sirven para recorrer el panel. **Borrar o pausar
+  la cuenta de prueba y cargar las reales antes de prender `carrito_activo`.**
+- Verificado en producción el 2026-10-23: crear pedido → pagar por transferencia (cuenta y
+  centavos) → subir al bucket → registrar comprobante → función de lectura → consulta; subida fuera
+  de la carpeta y descarga anónima rechazadas.
 - Riesgo a conversar con el cliente antes de usar varias cuentas: ver `GUIA-COBROS.md` (cabecera).
 
 ## Fase actual
@@ -115,9 +121,9 @@ modelo de datos, roadmap, propuesta ejecutiva, demo HTML).
 - `vercel.json` / `scripts/server.js` — mismas reglas para el espejo de Vercel y el servidor local.
 
 ## Próxima acción
-1. Backup manual de Supabase y ejecutar `sql/012-cobros.sql`; desplegar la Edge Function
-   `leer-comprobante`; cargar las cuentas y activar los cobros (ver `GUIA-COBROS.md`). Probar el
-   ciclo completo en producción con un pedido de prueba.
+1. Cargar el secreto `ANTHROPIC_API_KEY` en Supabase (lectura automática de comprobantes y
+   asistente del panel), cargar las cuentas reales, borrar la cuenta y el pedido de prueba, y
+   recién después prender `carrito_activo` desde Configuración (ver `GUIA-COBROS.md`).
 2. Carga real de precios y stock desde el panel (lado del dueño).
 3. Cerrar la mudanza: subir la versión mínima de TLS a 1.2 en Cloudflare y decidir si el espejo de Vercel
    se borra (si se borra, quitar `vercel.json`).
