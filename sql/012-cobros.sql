@@ -62,6 +62,10 @@ ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS cobros_plazo_horas    INT    
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS cobros_auto_confirmar BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS comision_pct          NUMERIC(5,2) NOT NULL DEFAULT 0;
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS cobros_instrucciones  TEXT;
+-- Carrito y pedidos visibles en la tienda pública. Apagado: la tienda es solo
+-- catálogo + WhatsApp; el equipo igual puede probar el circuito completo
+-- entrando con ?preview=1 (queda guardado en ese navegador).
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS carrito_activo        BOOLEAN NOT NULL DEFAULT false;
 
 
 -- ──────────────────────────────────────────────

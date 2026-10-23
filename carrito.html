@@ -50,6 +50,14 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
     </nav>
     <h1 class="page-t">Tu carrito</h1>
 
+    <div id="cart-off" class="empty-state" hidden>
+      <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      <h3>Muy pronto vas a poder comprar desde acá</h3>
+      <p>Mientras tanto, consultanos por WhatsApp y te cotizamos lo que necesites.</p>
+      <a class="btn btn-wa" style="margin-top:14px" href="https://wa.me/5493426481326?text=Hola!%20Quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">Escribir por WhatsApp</a>
+      <a class="btn btn-outline" style="margin-top:14px;margin-left:8px" href="/productos">Ver productos</a>
+    </div>
+
     <div id="cart-empty" class="empty-state" hidden>
       <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
       <h3>Tu carrito está vacío</h3>
@@ -199,6 +207,11 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
   function render() {
     const items = Cart.items;
     const hay = items.length > 0;
+    if (!MH.carritoVisible()) {   // carrito apagado desde el panel y sin modo prueba
+      $('#cart-off').hidden = false; $('#cart-empty').hidden = true; $('#cart-layout').hidden = true;
+      return;
+    }
+    $('#cart-off').hidden = true;
     $('#cart-empty').hidden = hay;
     $('#cart-layout').hidden = !hay;
     if (!hay) return;
@@ -403,6 +416,7 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
   });
 
   // ── Inicio ──
+  try { await Promise.race([MH.loadSettings(), new Promise(res => setTimeout(res, 4000))]); } catch (e) {}
   render();               // primero con datos guardados (rápido)
   await refreshItems();   // luego con datos vivos de la base
   render();

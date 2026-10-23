@@ -109,12 +109,13 @@ window.MH = (function () {
       const key = window.SUPABASE_PUBLISHABLE_KEY || window.SUPABASE_ANON_KEY;
       if (!url || !key) return null;
       const hdr = { headers: { apikey: key, Authorization: `Bearer ${key}` } };
-      let res = await fetch(`${url}/rest/v1/site_settings?id=eq.1&select=whatsapp,envio_info,mensaje_promo,nombre_tienda,cobros_activos,cobros_instrucciones`, hdr);
+      let res = await fetch(`${url}/rest/v1/site_settings?id=eq.1&select=whatsapp,envio_info,mensaje_promo,nombre_tienda,cobros_activos,cobros_instrucciones,carrito_activo`, hdr);
       // Base sin sql/012 todavía (no existen las columnas de cobros): pedir solo lo básico
       if (!res.ok) res = await fetch(`${url}/rest/v1/site_settings?id=eq.1&select=whatsapp,envio_info,mensaje_promo,nombre_tienda`, hdr);
       if (!res.ok) return null;
       const rows = await res.json();
       _settings = rows[0] || null;
+      applyCartVisibility();
       if (_settings && _settings.whatsapp) {
         const num = String(_settings.whatsapp).replace(/\D/g, '');
         if (num.length >= 10) { WA_NUMBER = num; syncWaLinks(); }
@@ -476,7 +477,7 @@ window.MH = (function () {
   // Inicialización común a todas las páginas: settings (número de WhatsApp
   // configurable) + botón flotante del carrito.
   function boot() {
-    Cart.initFab();
+    applyCartVisibility();   // oculto por defecto; loadSettings lo vuelve a evaluar
     loadSettings();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
@@ -485,8 +486,31 @@ window.MH = (function () {
   // ¿Está habilitado el pago por transferencia? (requiere loadSettings)
   const cobrosActivos = () => !!(_settings && _settings.cobros_activos);
 
+  // ── Carrito visible u oculto ──
+  // Mientras la tienda no vende, el carrito no se muestra al público
+  // (site_settings.carrito_activo = false, que es el valor por defecto y lo
+  // que pasa si la base todavía no tiene la columna). El equipo prueba el
+  // circuito completo entrando a cualquier página con ?preview=1 (y sale
+  // con ?preview=0). Hasta saber qué dice la base, el carrito arranca oculto.
+  const PREVIEW_KEY = 'mh_preview';
+  (function initPreview() {
+    try {
+      const q = new URLSearchParams(location.search).get('preview');
+      if (q === '1') localStorage.setItem(PREVIEW_KEY, '1');
+      if (q === '0') localStorage.removeItem(PREVIEW_KEY);
+    } catch (e) {}
+  })();
+  const isPreview = () => { try { return localStorage.getItem(PREVIEW_KEY) === '1'; } catch (e) { return false; } };
+  const carritoVisible = () => isPreview() || !!(_settings && _settings.carrito_activo);
+  function applyCartVisibility() {
+    const on = carritoVisible();
+    document.documentElement.classList.toggle('mh-no-cart', !on);
+    document.documentElement.classList.toggle('mh-preview', isPreview());
+    if (on) Cart.initFab();
+  }
+
   return {
-    ONLINE_PAYMENTS_ENABLED, cobrosActivos,
+    ONLINE_PAYMENTS_ENABLED, cobrosActivos, carritoVisible, isPreview,
     get WA_NUMBER() { return WA_NUMBER; },
     PLACEHOLDER, webpUrl, setImg, CATS, CAT_BY_SLUG, catLabel, catVisual, waLink,
     loadProducts, createCard, skeletons, initCarousel, initReveal, stagger,

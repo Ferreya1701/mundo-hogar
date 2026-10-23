@@ -306,3 +306,7 @@ h1,h2,h3{font-family:'Plus Jakarta Sans','Inter',sans-serif;line-height:1.15;let
   *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
   .reveal{opacity:1;transform:none}
 }
+
+/* ── Carrito oculto (site_settings.carrito_activo = false y sin ?preview=1) ── */
+.mh-no-cart .mh-add,.mh-no-cart #mh-cart-fab,.mh-no-cart #btn-add,.mh-no-cart #pd-ctas .qty,.mh-no-cart .mh-cart-only{display:none !important}
+.mh-preview::before{content:"Modo prueba: el carrito está oculto para el público. Salir: agregá ?preview=0 a la dirección.";display:block;background:#0A2E63;color:#fff;font-size:12px;text-align:center;padding:5px 12px}

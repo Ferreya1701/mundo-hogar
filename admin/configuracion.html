@@ -42,6 +42,10 @@
           <div class="card-body">
             <form id="form-settings" class="form-grid" style="gap:14px" novalidate>
               <div class="form-group">
+                <label class="toggle-wrap"><div class="toggle"><input type="checkbox" id="s-carrito_activo"><div class="toggle-track"></div><div class="toggle-thumb"></div></div><span class="toggle-label">Carrito y pedidos visibles en la tienda</span></label>
+                <span class="form-hint">Apagado: la tienda es catálogo + WhatsApp (sin botones "Agregar" ni carrito). Para probar el circuito completo sin mostrarlo, abrí la tienda con <code>?preview=1</code> al final de la dirección. Los cobros se configuran en Cuentas de cobro.</span>
+              </div>
+              <div class="form-group">
                 <label>Nombre de la tienda</label>
                 <input type="text" id="s-nombre_tienda" placeholder="Mundo Hogar">
               </div>
@@ -124,6 +128,7 @@ async function loadAll() {
   if (e1 || e2) { Utils.toast('Error cargando configuración: ' + (e1 || e2).message, 'error'); return; }
 
   if (st) {
+    $id('s-carrito_activo').checked = !!st.carrito_activo;
     $id('s-nombre_tienda').value = st.nombre_tienda || '';
     $id('s-whatsapp').value = st.whatsapp || '';
     $id('s-telefono').value = st.telefono || '';
@@ -170,6 +175,7 @@ $id('form-settings').addEventListener('submit', async e => {
   btn.disabled = true; btn.textContent = 'Guardando…';
   const payload = {
     id: 1,
+    carrito_activo: $id('s-carrito_activo').checked,
     nombre_tienda: $id('s-nombre_tienda').value.trim() || null,
     whatsapp: wa || null,
     telefono: $id('s-telefono').value.trim() || null,
