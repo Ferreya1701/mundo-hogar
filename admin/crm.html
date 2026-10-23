@@ -845,7 +845,7 @@ async function cargarPedido(solicitudId) {
     : '<p class="form-hint">Consulta sin productos.</p>'}
     <div class="crm-fila-btn" style="justify-content:space-between">
       <b>${data.total_estimado == null ? 'Total a confirmar' : 'Total ' + pesos(data.total_estimado)}</b>
-      <a class="btn btn-outline btn-sm" href="/admin/solicitudes?ver=${solicitudId}">Abrir el pedido →</a>
+      <a class="btn btn-outline btn-sm" href="/admin/pedidos?ver=${solicitudId}">Abrir el pedido →</a>
     </div>
     ${data.observaciones ? `<p class="crm-nota-pedido">💬 ${esc(data.observaciones)}</p>` : ''}`;
 }
@@ -897,7 +897,7 @@ function abrirOportunidad(id, modo = 'push') {
         <div class="crm-etapas-sel" role="group" aria-label="Etapa">
           ${Object.entries(ETAPAS).map(([k, e]) => `<button type="button" class="etapa-op${o.etapa === k ? ' activa e-' + k : ''}" data-etapa="${k}" aria-pressed="${o.etapa === k}"${vinculada ? ' disabled' : ''}>${e.label}</button>`).join('')}
         </div>
-        ${vinculada ? `<p class="crm-nota-pedido">🛒 Viene del pedido <b>${esc(o.solicitudes ? o.solicitudes.codigo : '#' + o.solicitud_id)}</b> de la tienda: la etapa se actualiza sola cuando cambiás el estado del pedido (así el stock queda bien). <a href="/admin/solicitudes?ver=${o.solicitud_id}">Abrir el pedido →</a></p>` : ''}
+        ${vinculada ? `<p class="crm-nota-pedido">🛒 Viene del pedido <b>${esc(o.solicitudes ? o.solicitudes.codigo : '#' + o.solicitud_id)}</b> de la tienda: la etapa se actualiza sola cuando cambiás el estado del pedido (así el stock queda bien). <a href="/admin/pedidos?ver=${o.solicitud_id}">Abrir el pedido →</a></p>` : ''}
         ${o.etapa === 'perdida' && o.motivo_perdida ? `<p class="crm-motivo">Motivo: ${esc(o.motivo_perdida)}</p>` : ''}
         <div class="crm-motivo-box" id="motivo-box" hidden>
           <label>¿Por qué se perdió?

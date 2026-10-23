@@ -76,7 +76,7 @@ window.MHAssistant = (function () {
       h += `<li><b>${d.movimientos.length}</b> movimientos de stock en 7 días</li></ul>`;
       const prioridad = d.nuevas.length ? 'respondé las solicitudes nuevas' : d.sinPrecio.length ? 'cargá los precios que faltan' : 'revisá el stock';
       h += `Lo primero que conviene atender: <b>${prioridad}</b>.`;
-      h += '<br>' + (d.nuevas.length ? link('/admin/solicitudes?estado=nueva', '💬 Ver solicitudes') : link('/admin/productos?precio=sin', '💲 Cargar precios'));
+      h += '<br>' + (d.nuevas.length ? link('/admin/pedidos?estado=nueva', '🧾 Ver pedidos') : link('/admin/productos?precio=sin', '💲 Cargar precios'));
       return h;
     },
     async sinPrecio() {
@@ -111,7 +111,7 @@ window.MHAssistant = (function () {
         h += '<ul>' + d.nuevas.slice(0, 5).map(s => `<li>${esc(s.cliente_nombre)} (${esc(s.codigo)})</li>`).join('') + '</ul>';
         h += 'Consejo: responder dentro de la primera hora aumenta mucho las chances de cerrar la venta.';
       }
-      return h + link('/admin/solicitudes?estado=nueva', '💬 Responder ahora');
+      return h + link('/admin/pedidos?estado=nueva', '💬 Responder ahora');
     },
     async movimientos() {
       const d = await datos();

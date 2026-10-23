@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tu pedido — Mundo Hogar</title>
+<meta name="description" content="Seguí el estado de tu pedido en Mundo Hogar, pagá por transferencia y subí el comprobante.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0A2E63">
+<link rel="icon" type="image/png" href="/images/marca/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/catalogo.css">
+<style>
+#hdr{position:sticky;top:0;z-index:200;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.hdr-inner{max-width:var(--maxw);margin:0 auto;padding:0 20px;height:66px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-badge{width:38px;height:38px;border-radius:50%;object-fit:contain;flex-shrink:0}
+.logo-txt b{display:block;font-family:'Plus Jakarta Sans';font-weight:800;color:var(--navy);font-size:16px;line-height:1}
+.logo-txt span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.nav{display:flex;align-items:center;gap:4px}
+.nav a{padding:9px 13px;border-radius:8px;font-size:14px;font-weight:600;color:var(--ink);transition:all var(--t)}
+.nav a:hover,.nav a.active{color:var(--blue);background:#eef4fc}
+@media(max-width:760px){.nav{display:none}}
+h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy);margin:4px 0 6px}
+.page-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px}
+.ped-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:28px;align-items:start}
+@media(max-width:860px){.ped-layout{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:22px}
+.card h2{font-size:17px;font-weight:800;color:var(--navy);margin-bottom:14px}
+.pill{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:5px 11px;letter-spacing:.02em}
+.pill-gris{background:#EEF1F6;color:#4A5A75}.pill-azul{background:#EAF2FD;color:#1763C6}.pill-amb{background:#FFF4E8;color:#8A4B12}
+.pill-verde{background:#E9F9EF;color:#14663A}.pill-rojo{background:#FDEEED;color:#8A241C}.pill-vio{background:#F3EDFD;color:#6B3FC0}
+.items{width:100%;border-collapse:collapse;font-size:14px}
+.items th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:6px 0;border-bottom:2px solid var(--border)}
+.items td{padding:9px 0;border-bottom:1px solid #eef1f6;vertical-align:top}
+.items td.r,.items th.r{text-align:right;white-space:nowrap}
+.pay-dato{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-top:8px;background:#F8FAFD}
+.pay-dato small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+.pay-dato b{font-size:15.5px;color:var(--navy);word-break:break-all}
+.pay-dato.monto b{font-size:22px;color:var(--blue-dark)}
+.copy{flex-shrink:0;border:1px solid var(--border);background:#fff;border-radius:8px;padding:6px 10px;font-size:12.5px;font-weight:700;color:var(--blue);cursor:pointer}
+.copy:hover{border-color:var(--blue)}
+.aviso{border-radius:12px;padding:13px 14px;font-size:14px;line-height:1.5;margin-top:14px}
+.aviso-info{background:#EAF2FD;color:#0D3A7A}.aviso-ok{background:#E9F9EF;color:#14663A}.aviso-warn{background:#FFF4E8;color:#8A4B12}.aviso-err{background:#FDEEED;color:#8A241C}
+.comp{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:8px;font-size:13.5px;display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.comp small{color:var(--muted);display:block;font-size:12px;margin-top:2px}
+.drop{border:2px dashed var(--border);border-radius:12px;padding:18px;text-align:center;color:var(--muted);font-size:14px;margin-top:12px;cursor:pointer;transition:border-color var(--t)}
+.drop:hover,.drop.over{border-color:var(--blue);color:var(--blue-dark)}
+.drop input{display:none}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0 0 6px;font-size:14px}
+.steps li{position:relative;padding-left:32px;margin-bottom:9px;line-height:1.5}
+.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:1px;width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.timeline{font-size:13px;color:var(--muted);margin-top:10px}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid #cdd8ea;border-top-color:var(--blue);border-radius:50%;animation:sp .8s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <div class="hdr-inner">
+    <a href="/" class="logo" aria-label="Mundo Hogar - Inicio"><img class="logo-badge" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="38" height="38"><span class="logo-txt"><b>Mundo Hogar</b><span>Mayorista &amp; Minorista</span></span></a>
+    <nav class="nav" aria-label="Navegación principal">
+      <a href="/">Inicio</a>
+      <a href="/#categorias">Categorías</a>
+      <a href="/productos">Productos</a>
+      <a href="/carrito">Carrito</a>
+    </nav>
+    <a class="btn btn-wa btn-sm" href="https://wa.me/5493426481326?text=Hola!%20Tengo%20una%20consulta%20sobre%20mi%20pedido." target="_blank" rel="noopener">WhatsApp</a>
+  </div>
+</header>
+
+<main class="section" style="padding-top:26px">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Ruta">
+      <a href="/">Inicio</a><span aria-hidden="true">›</span><span aria-current="page">Mi pedido</span>
+    </nav>
+
+    <!-- Buscar un pedido -->
+    <div id="buscar" hidden>
+      <h1 class="page-t">Seguí tu pedido</h1>
+      <p class="page-sub">Ingresá el código que te dimos (empieza con MH-) y el teléfono con el que hiciste el pedido.</p>
+      <form id="form-buscar" class="card" style="max-width:480px" novalidate>
+        <div class="form-grid">
+          <div class="field full">
+            <label for="b-codigo">Código del pedido</label>
+            <input id="b-codigo" type="text" placeholder="MH-261023-A1B2" maxlength="20" autocomplete="off" style="text-transform:uppercase">
+          </div>
+          <div class="field full">
+            <label for="b-tel">Teléfono</label>
+            <input id="b-tel" type="tel" inputmode="tel" placeholder="Ej: 342 5 123456" maxlength="25">
+          </div>
+        </div>
+        <button class="btn btn-blue" type="submit" style="width:100%;margin-top:14px">Ver mi pedido</button>
+        <div class="form-fail" id="buscar-fail" hidden></div>
+      </form>
+    </div>
+
+    <!-- Pedido -->
+    <div id="pedido" hidden>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <h1 class="page-t" style="margin-bottom:0">Pedido <span id="p-codigo"></span></h1>
+        <span id="p-estado" class="pill pill-gris"></span>
+      </div>
+      <p class="page-sub" id="p-sub"></p>
+
+      <div class="ped-layout">
+        <div>
+          <div class="card" id="card-pago"></div>
+          <div class="card" id="card-comprobantes" style="margin-top:20px" hidden></div>
+        </div>
+        <div class="card">
+          <h2>Detalle</h2>
+          <table class="items">
+            <thead><tr><th>Producto</th><th class="r">Cant.</th><th class="r">Subtotal</th></tr></thead>
+            <tbody id="p-items"></tbody>
+          </table>
+          <div id="p-totales" style="margin-top:10px"></div>
+          <div class="timeline" id="p-entrega"></div>
+          <a class="btn btn-wa btn-sm" id="p-wa" style="margin-top:16px;width:100%" target="_blank" rel="noopener" href="#">Consultar por WhatsApp</a>
+          <button type="button" class="btn btn-outline btn-sm" id="p-otro" style="margin-top:8px;width:100%">Ver otro pedido</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="mh-footer">
+  <div class="container">
+    <div class="mh-footer-bottom" style="border-top:none;padding:24px 0">
+      <span>© 2026 Mundo Hogar · Santa Fe Capital, Argentina.</span>
+      <span><a href="/">Inicio</a> · <a href="/productos">Productos</a> · <a href="https://wa.me/5493426481326" target="_blank" rel="noopener">WhatsApp</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="/supabase-config.js"></script>
+<script src="/assets/catalogo.js"></script>
+<script>
+(function () {
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const URL_SB = window.SUPABASE_URL, KEY = window.SUPABASE_PUBLISHABLE_KEY || window.SUPABASE_ANON_KEY;
+  const money = n => (n == null || isNaN(Number(n))) ? '—' : Number(n).toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fecha = d => d ? new Date(d).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+
+  // Teléfonos guardados por el carrito: { "MH-…": "342…" }
+  const guardados = (() => { try { return JSON.parse(localStorage.getItem('mh_pedidos') || '{}'); } catch (e) { return {}; } })();
+  const guardar = (codigo, tel) => { guardados[codigo] = tel; try { localStorage.setItem('mh_pedidos', JSON.stringify(guardados)); } catch (e) {} };
+
+  const ESTADOS = {
+    nueva: ['Recibido', 'pill-azul'], contactado: ['En contacto', 'pill-azul'], cotizacion_enviada: ['Cotización enviada', 'pill-vio'],
+    confirmado: ['Confirmado', 'pill-verde'], en_preparacion: ['En preparación', 'pill-amb'], entregado: ['Entregado', 'pill-verde'], cancelado: ['Cancelado', 'pill-rojo']
+  };
+  const ENTREGA = { envio: 'Envío a domicilio', retiro: 'Retiro en el local', a_confirmar: 'Entrega a confirmar' };
+
+  let codigo = decodeURIComponent(location.pathname.replace(/^\/pedido\/?/, '').replace(/\/$/, '')).toUpperCase().trim();
+  let tel = '';
+  let datos = null;
+
+  async function rpc(fn, params) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 20000);   // la base no responde: no dejar la página colgada
+    let r;
+    try {
+      r = await fetch(`${URL_SB}/rest/v1/rpc/${fn}`, {
+        method: 'POST', headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(params), signal: ctl.signal
+      });
+    } finally { clearTimeout(timer); }
+    const body = await r.json().catch(() => ({}));
+    if (!r.ok) { const e = new Error(body.message || 'error'); e.hint = body.hint; e.code = body.message; throw e; }
+    return body;
+  }
+  const errMsg = e => e.hint || (e.code && /no_encontrado/.test(e.code) ? 'No encontramos ese pedido.' : 'Algo falló. Probá de nuevo o escribinos por WhatsApp.');
+
+  function mostrarBuscar(msg) {
+    $('#pedido').hidden = true; $('#buscar').hidden = false;
+    if (codigo) $('#b-codigo').value = codigo;
+    if (msg) { $('#buscar-fail').textContent = msg; $('#buscar-fail').hidden = false; }
+  }
+
+  async function cargar() {
+    datos = await rpc('pedido_consultar', { p_codigo: codigo, p_telefono: tel });
+    guardar(codigo, tel);
+    if (location.pathname !== `/pedido/${codigo}`) history.replaceState(null, '', `/pedido/${codigo}`);
+    render();
+  }
+
+  function render() {
+    const d = datos;
+    $('#buscar').hidden = true; $('#pedido').hidden = false;
+    $('#p-codigo').textContent = d.codigo;
+    const [lbl, cls] = ESTADOS[d.estado] || [d.estado, 'pill-gris'];
+    $('#p-estado').textContent = lbl; $('#p-estado').className = 'pill ' + cls;
+    $('#p-sub').textContent = `Hecho el ${fecha(d.fecha)} · ${esc(d.cliente)}`;
+    $('#p-items').innerHTML = (d.items || []).map(i => `<tr>
+      <td>${esc(i.nombre)}${i.sku ? `<div style="font-size:11.5px;color:var(--muted)">Código ${esc(i.sku)}</div>` : ''}</td>
+      <td class="r">${i.cantidad}</td>
+      <td class="r">${i.subtotal == null ? '<span style="color:var(--muted)">a cotizar</span>' : money(i.subtotal)}</td></tr>`).join('');
+    $('#p-totales').innerHTML = `<div class="cart-row total"><span>Total</span><b>${d.tiene_pendientes || d.total == null ? 'A confirmar' : money(d.total)}</b></div>`;
+    $('#p-entrega').textContent = ENTREGA[d.tipo_entrega] || '';
+    $('#p-wa').href = MH.waLink(`Hola! Consulto por mi pedido ${d.codigo}.`);
+    renderPago();
+    renderComprobantes();
+  }
+
+  function renderPago() {
+    const d = datos, c = $('#card-pago');
+    const pagoPendiente = ['pendiente', 'comprobante_recibido', 'en_revision'].includes(d.estado_pago);
+
+    if (d.estado === 'cancelado') {
+      c.innerHTML = `<h2>Pago</h2><div class="aviso aviso-err">Este pedido fue cancelado. Si creés que es un error, escribinos por WhatsApp.</div>`;
+      return;
+    }
+    if (d.estado_pago === 'pagado') {
+      c.innerHTML = `<h2>Pago</h2><div class="aviso aviso-ok"><b>✓ Pago confirmado</b> el ${fecha(d.pagado_en)} por ${money(d.monto_pagado)}.<br>Ya estamos preparando tu pedido. Te avisamos por WhatsApp cuando esté listo.</div>`;
+      return;
+    }
+    if (pagoPendiente && d.cuenta) {
+      const vence = d.vence_en ? new Date(d.vence_en) : null;
+      const vencido = vence && vence < new Date();
+      c.innerHTML = `<h2>Pagá por transferencia</h2>
+        <ol class="steps">
+          <li>Transferí <b>exactamente ${money(d.monto_a_pagar)}</b> (con los centavos: así reconocemos tu pago).</li>
+          <li>Poné el código <b>${esc(d.codigo)}</b> como concepto o motivo, si tu app lo permite.</li>
+          <li>Subí la foto o el PDF del comprobante acá abajo.</li>
+        </ol>
+        <div class="pay-dato monto"><div><small>Monto exacto</small><b>${money(d.monto_a_pagar)}</b></div><button type="button" class="copy" data-copy="${Number(d.monto_a_pagar).toFixed(2).replace('.', ',')}">Copiar</button></div>
+        ${d.cuenta.alias ? `<div class="pay-dato"><div><small>Alias</small><b>${esc(d.cuenta.alias)}</b></div><button type="button" class="copy" data-copy="${esc(d.cuenta.alias)}">Copiar</button></div>` : ''}
+        ${d.cuenta.cvu ? `<div class="pay-dato"><div><small>CBU / CVU</small><b>${esc(d.cuenta.cvu)}</b></div><button type="button" class="copy" data-copy="${esc(d.cuenta.cvu)}">Copiar</button></div>` : ''}
+        <div class="pay-dato"><div><small>Titular</small><b>${esc(d.cuenta.titular)}</b>${d.cuenta.banco ? `<div style="font-size:12.5px;color:var(--muted)">${esc(d.cuenta.banco)}</div>` : ''}</div></div>
+        ${d.instrucciones ? `<div class="aviso aviso-info">${esc(d.instrucciones)}</div>` : ''}
+        ${vence ? `<div class="aviso ${vencido ? 'aviso-warn' : 'aviso-info'}">${vencido ? 'El plazo para pagar venció. Si ya transferiste, subí el comprobante igual.' : `Tenés tiempo hasta el ${fecha(d.vence_en)} para transferir y subir el comprobante.`}</div>` : ''}
+        <div id="subir">
+          <h2 style="margin-top:20px">Subí tu comprobante</h2>
+          <label class="drop" id="drop"><input type="file" id="archivo" accept="image/jpeg,image/png,image/webp,application/pdf,image/heic">
+            <b>Tocá para elegir</b> una foto o PDF del comprobante<br><span style="font-size:12.5px">JPG, PNG o PDF · hasta 10 MB</span></label>
+          <div id="subir-estado" style="margin-top:10px;font-size:14px"></div>
+        </div>`;
+      c.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = '✓ Copiado'; setTimeout(() => b.textContent = 'Copiar', 1500); } catch (e) {}
+      }));
+      const inp = c.querySelector('#archivo'), drop = c.querySelector('#drop');
+      inp.addEventListener('change', () => inp.files[0] && subir(inp.files[0]));
+      ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+      ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+      drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) subir(f); });
+      return;
+    }
+    if (d.puede_pagar) {
+      c.innerHTML = `<h2>Pago</h2>
+        <p style="font-size:14.5px;line-height:1.55">Podés pagar ahora por <b>transferencia</b> (Mercado Pago o cualquier banco) y subir el comprobante acá mismo. Cuando lo verificamos, tu pedido queda confirmado.</p>
+        <button type="button" class="btn btn-blue btn-lg" id="btn-pagar" style="width:100%;margin-top:14px">Pagar ${money(d.total)} por transferencia</button>
+        <p class="cart-note" style="margin-top:10px">También podés coordinar el pago por WhatsApp. El costo de envío, si corresponde, se coordina aparte.</p>
+        <div class="form-fail" id="pagar-fail" hidden></div>`;
+      $('#btn-pagar').addEventListener('click', async () => {
+        const b = $('#btn-pagar'); b.disabled = true; b.textContent = 'Preparando…';
+        try { await rpc('pedido_pagar_transferencia', { p_codigo: codigo, p_telefono: tel }); await cargar(); }
+        catch (e) { $('#pagar-fail').textContent = errMsg(e); $('#pagar-fail').hidden = false; b.disabled = false; b.textContent = `Pagar ${money(d.total)} por transferencia`; }
+      });
+      return;
+    }
+    if (d.estado_pago === 'vencido') {
+      c.innerHTML = `<h2>Pago</h2><div class="aviso aviso-warn">El plazo para pagar venció y liberamos la reserva. Escribinos por WhatsApp si todavía querés el pedido.</div>`;
+      return;
+    }
+    c.innerHTML = `<h2>Pago</h2><div class="aviso aviso-info">${d.tiene_pendientes || d.total == null
+      ? 'Tu pedido tiene productos a cotizar. Te pasamos el total por WhatsApp y después vas a poder pagarlo desde acá.'
+      : d.cobros_activos ? 'Coordinamos el pago por WhatsApp.' : 'Por ahora el pago se coordina por WhatsApp.'}</div>`;
+  }
+
+  function renderComprobantes() {
+    const d = datos, c = $('#card-comprobantes');
+    const lista = (d.comprobantes || []);
+    c.hidden = lista.length === 0;
+    if (!lista.length) return;
+    const LBL = {
+      recibido:    ['Recibido. Lo estamos leyendo…', 'pill-azul'],
+      coincide:    ['Leído: coincide con tu pedido. Esperando confirmación del equipo.', 'pill-verde'],
+      no_coincide: ['Necesita revisión manual', 'pill-amb'],
+      ilegible:    ['No se pudo leer. Probá con una foto más nítida.', 'pill-amb'],
+      aceptado:    ['Aceptado', 'pill-verde'],
+      rechazado:   ['Rechazado', 'pill-rojo']
+    };
+    c.innerHTML = `<h2>Comprobantes enviados</h2>` + lista.map((x, i) => {
+      const [l, cls] = LBL[x.estado] || [x.estado, 'pill-gris'];
+      return `<div class="comp"><div><b>Comprobante ${i + 1}</b><small>${fecha(x.fecha)}${x.monto_leido ? ` · leído ${money(x.monto_leido)}` : ''}</small>
+        ${x.motivo && ['no_coincide', 'rechazado', 'ilegible'].includes(x.estado) ? `<small style="color:#8A241C">${esc(x.motivo)}</small>` : ''}</div>
+        <span class="pill ${cls}" style="text-align:right;max-width:55%">${l}</span></div>`;
+    }).join('');
+  }
+
+  async function subir(file) {
+    const est = $('#subir-estado');
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { est.innerHTML = '<span style="color:#8A241C">El archivo pesa más de 10 MB. Sacá una captura o una foto más liviana.</span>'; return; }
+    const mime = file.type || 'application/octet-stream';
+    if (!/^(image\/(jpeg|png|webp|heic)|application\/pdf)$/.test(mime)) { est.innerHTML = '<span style="color:#8A241C">Formato no admitido. Subí JPG, PNG o PDF.</span>'; return; }
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || 'jpg';
+    const nombre = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const ruta = `${codigo}/${nombre}`;
+    est.innerHTML = '<span class="spin"></span>Subiendo el comprobante…';
+    try {
+      const up = await fetch(`${URL_SB}/storage/v1/object/comprobantes/${ruta}`, {
+        method: 'POST', headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': mime, 'x-upsert': 'false' }, body: file
+      });
+      if (!up.ok) { const e = await up.json().catch(() => ({})); throw new Error(e.message || 'No se pudo subir el archivo'); }
+      const reg = await rpc('pedido_subir_comprobante', { p_codigo: codigo, p_telefono: tel, p_archivo: ruta, p_mime: mime, p_tamano: file.size });
+      est.innerHTML = '<span class="spin"></span>Comprobante recibido. Leyéndolo…';
+      MH.track('comprobante_subido', {});
+      // Lectura automática (si no está configurada o tarda, queda "recibido" y lo revisa una persona)
+      try {
+        await Promise.race([
+          fetch(`${URL_SB}/functions/v1/leer-comprobante`, {
+            method: 'POST', headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ codigo, telefono: tel, comprobante_id: reg.comprobante_id })
+          }),
+          new Promise(res => setTimeout(res, 45000))
+        ]);
+      } catch (e) { /* lo revisa el equipo */ }
+      await cargar();
+      const nuevo = (datos.comprobantes || []).find(x => x.id === reg.comprobante_id);
+      const s = $('#subir-estado');
+      if (s) s.innerHTML = nuevo && nuevo.estado === 'coincide'
+        ? '<span style="color:#14663A;font-weight:600">✓ Comprobante leído y coincide. Te confirmamos el pedido en breve.</span>'
+        : nuevo && nuevo.estado === 'ilegible'
+          ? '<span style="color:#8A4B12;font-weight:600">No pudimos leerlo bien. Lo revisa una persona; si podés, subí una foto más clara.</span>'
+          : '<span style="color:#0D3A7A;font-weight:600">✓ Recibido. Lo revisamos y te avisamos por WhatsApp.</span>';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) {
+      est.innerHTML = `<span style="color:#8A241C">${esc(errMsg(e))}</span>`;
+    }
+  }
+
+  // ── Buscar ──
+  $('#form-buscar').addEventListener('submit', async e => {
+    e.preventDefault();
+    $('#buscar-fail').hidden = true;
+    codigo = $('#b-codigo').value.trim().toUpperCase();
+    tel = $('#b-tel').value.trim();
+    if (!/^MH-\d{6}-[A-Z0-9]{4}$/.test(codigo)) { $('#buscar-fail').textContent = 'El código tiene la forma MH-AAMMDD-XXXX.'; $('#buscar-fail').hidden = false; return; }
+    if (tel.replace(/\D/g, '').length < 6) { $('#buscar-fail').textContent = 'Ingresá el teléfono con el que hiciste el pedido.'; $('#buscar-fail').hidden = false; return; }
+    try { await cargar(); } catch (err) { $('#buscar-fail').textContent = errMsg(err); $('#buscar-fail').hidden = false; }
+  });
+  $('#p-otro').addEventListener('click', () => { codigo = ''; tel = ''; datos = null; history.replaceState(null, '', '/pedido'); $('#b-codigo').value = ''; $('#b-tel').value = ''; mostrarBuscar(); });
+
+  // ── Inicio ──
+  (async () => {
+    if (!URL_SB || !KEY) { mostrarBuscar('La tienda no está conectada a la base. Escribinos por WhatsApp.'); return; }
+    if (codigo && guardados[codigo]) {
+      tel = guardados[codigo];
+      try { await cargar(); return; } catch (e) { /* pedir teléfono */ }
+    }
+    mostrarBuscar(codigo ? 'Confirmá tu teléfono para ver el pedido.' : '');
+    if (codigo) $('#b-tel').focus();
+  })();
+})();
+</script>
+</body>
+</html>

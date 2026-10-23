@@ -63,7 +63,7 @@
         <div class="kpi-card" data-href="/admin/productos?precio=sin"><div class="kpi-icon amber">💲</div><div class="kpi-label">Sin precio</div><div class="kpi-value" id="kpi-sin-precio">—</div><div class="kpi-sub">clic para cargarlos</div></div>
         <div class="kpi-card" data-href="/admin/productos?destacados=1"><div class="kpi-icon violet">⭐</div><div class="kpi-label">Destacados</div><div class="kpi-value" id="kpi-destacados">—</div><div class="kpi-sub">visibles en portada</div></div>
         <div class="kpi-card" data-href="/admin/alertas"><div class="kpi-icon red">⚠️</div><div class="kpi-label">Sin stock</div><div class="kpi-value" id="kpi-sin-stock">—</div><div class="kpi-sub" id="kpi-bajo-sub">—</div></div>
-        <div class="kpi-card" data-href="/admin/solicitudes?estado=nueva"><div class="kpi-icon blue">💬</div><div class="kpi-label">Solicitudes nuevas</div><div class="kpi-value" id="kpi-solicitudes">—</div><div class="kpi-sub" id="kpi-sol-sub">—</div></div>
+        <div class="kpi-card" data-href="/admin/pedidos?estado=nueva"><div class="kpi-icon blue">💬</div><div class="kpi-label">Solicitudes nuevas</div><div class="kpi-value" id="kpi-solicitudes">—</div><div class="kpi-sub" id="kpi-sol-sub">—</div></div>
         <div class="kpi-card" data-href="/admin/movimientos"><div class="kpi-icon green">📦</div><div class="kpi-label">Movimientos hoy</div><div class="kpi-value" id="kpi-mov-hoy">—</div><div class="kpi-sub" id="kpi-mov-mes">—</div></div>
       </div>
 
@@ -74,7 +74,7 @@
           <div class="quick-actions">
             <a class="quick-action" href="/admin/producto-form"><span class="qa-ic">🛍️</span>Agregar producto</a>
             <a class="quick-action" href="/admin/inventario"><span class="qa-ic">📦</span>Registrar movimiento</a>
-            <a class="quick-action" href="/admin/solicitudes"><span class="qa-ic">💬</span>Ver solicitudes</a>
+            <a class="quick-action" href="/admin/pedidos"><span class="qa-ic">💬</span>Ver pedidos</a>
             <a class="quick-action" href="/admin/alertas"><span class="qa-ic">🔔</span>Alertas de stock</a>
             <a class="quick-action" href="/admin/categorias"><span class="qa-ic">🏷️</span>Categorías</a>
             <button class="quick-action" type="button" onclick="window.MHAssistant&&MHAssistant.open()"><span class="qa-ic">✨</span>Asistente MH</button>
@@ -198,7 +198,7 @@ async function loadData() {
     { n: sinImagen, crit: false, txt: `producto${sinImagen!==1?'s':''} sin imagen`, btn: 'Ver', href: '/admin/productos?imagen=sin' },
     { n: sinCat, crit: false, txt: `producto${sinCat!==1?'s':''} sin categoría`, btn: 'Ver', href: '/admin/productos?cat=sin' },
     { n: sinStock, crit: sinStock > 0, txt: `producto${sinStock!==1?'s':''} sin stock cargado`, btn: 'Ver alertas', href: '/admin/alertas' },
-    { n: solNuevas, crit: solNuevas > 3, txt: `solicitud${solNuevas!==1?'es':''} sin atender`, btn: 'Responder', href: '/admin/solicitudes?estado=nueva' }
+    { n: solNuevas, crit: solNuevas > 3, txt: `solicitud${solNuevas!==1?'es':''} sin atender`, btn: 'Responder', href: '/admin/pedidos?estado=nueva' }
   ];
   const conProblema = problemas.filter(p=>p.n>0);
   const completos = activosList.filter(p=>p.precio_minorista>0&&p.imagen_principal_url&&p.categoria_id).length;

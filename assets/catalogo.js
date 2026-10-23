@@ -2,9 +2,10 @@
    Mundo Hogar — Lógica compartida del catálogo
    ============================================================ */
 window.MH = (function () {
-  // Feature flag: el checkout online (Mercado Pago u otro) queda DESACTIVADO en esta fase.
-  // Cuando se integre un pago online, activar desde acá; ninguna UI de pago debe
-  // renderizarse mientras sea false.
+  // Feature flag de un checkout con pasarela (Mercado Pago Checkout u otro):
+  // sigue DESACTIVADO. El cobro por transferencia con comprobante (sql/012)
+  // no pasa por acá: se prende desde el panel (Configuración → Cobros) y la
+  // tienda lo lee de site_settings.cobros_activos (MH.cobrosActivos()).
   const ONLINE_PAYMENTS_ENABLED = false;
 
   // Número de respaldo; el vigente se lee de site_settings (editable desde el panel)
@@ -107,8 +108,10 @@ window.MH = (function () {
       const url = window.SUPABASE_URL;
       const key = window.SUPABASE_PUBLISHABLE_KEY || window.SUPABASE_ANON_KEY;
       if (!url || !key) return null;
-      const res = await fetch(`${url}/rest/v1/site_settings?id=eq.1&select=whatsapp,envio_info,mensaje_promo,nombre_tienda`,
-        { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+      const hdr = { headers: { apikey: key, Authorization: `Bearer ${key}` } };
+      let res = await fetch(`${url}/rest/v1/site_settings?id=eq.1&select=whatsapp,envio_info,mensaje_promo,nombre_tienda,cobros_activos,cobros_instrucciones`, hdr);
+      // Base sin sql/012 todavía (no existen las columnas de cobros): pedir solo lo básico
+      if (!res.ok) res = await fetch(`${url}/rest/v1/site_settings?id=eq.1&select=whatsapp,envio_info,mensaje_promo,nombre_tienda`, hdr);
       if (!res.ok) return null;
       const rows = await res.json();
       _settings = rows[0] || null;
@@ -479,8 +482,11 @@ window.MH = (function () {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 
+  // ¿Está habilitado el pago por transferencia? (requiere loadSettings)
+  const cobrosActivos = () => !!(_settings && _settings.cobros_activos);
+
   return {
-    ONLINE_PAYMENTS_ENABLED,
+    ONLINE_PAYMENTS_ENABLED, cobrosActivos,
     get WA_NUMBER() { return WA_NUMBER; },
     PLACEHOLDER, webpUrl, setImg, CATS, CAT_BY_SLUG, catLabel, catVisual, waLink,
     loadProducts, createCard, skeletons, initCarousel, initReveal, stagger,

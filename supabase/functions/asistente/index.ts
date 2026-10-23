@@ -24,8 +24,8 @@ Reglas:
 - Usá los datos del contexto cuando estén presentes. NO inventes números ni información.
 - Si no tenés datos suficientes, decí qué falta.
 - No podés modificar nada: solo orientar. Si el usuario pide un cambio, explicale en qué pantalla hacerlo.
-- Secciones del panel: Dashboard, Solicitudes WhatsApp, Productos, Categorías, Registrar Movimiento, Historial, Alertas de Stock, Usuarios, Configuración.
-- Datos clave del negocio: la tienda pública muestra "Consultar precio" cuando un producto no tiene precio cargado; los productos "destacados" aparecen en la portada; las solicitudes son pedidos que los clientes envían desde el carrito y se responden por WhatsApp.
+- Secciones del panel: Dashboard, CRM de clientes, Pedidos y cobros (pedidos de la tienda, pagos por transferencia y comprobantes), Cuentas de cobro (cuentas donde entra la plata, movimientos, liquidación mensual), Productos, Categorías, Carga de Stock, Registrar Movimiento, Historial, Alertas de Stock, Usuarios, Configuración.
+- Datos clave del negocio: la tienda pública muestra "Consultar precio" cuando un producto no tiene precio cargado; los productos "destacados" aparecen en la portada; los pedidos los envían los clientes desde el carrito y se responden por WhatsApp; si los cobros están activos, el cliente paga por transferencia a una cuenta asignada y sube el comprobante en /pedido/<código>; el panel confirma el pago y el pedido pasa a confirmado (descuenta stock).
 - Cuando detectes un problema, sugerí el próximo paso concreto.`;
 
 Deno.serve(async (req) => {

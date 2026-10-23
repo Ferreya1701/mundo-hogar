@@ -3,7 +3,8 @@ const Layout = {
   NAV: [
     { id:'dashboard',  label:'Dashboard',           icon:'📊', href:'/admin/dashboard',      section:'Principal' },
     { id:'crm',        label:'CRM de clientes',      icon:'🤝', href:'/admin/crm',            section:'Ventas', roles:['administrador','vendedor'] },
-    { id:'solicitudes',label:'Solicitudes WhatsApp', icon:'💬', href:'/admin/solicitudes',    section:'Ventas' },
+    { id:'pedidos',    label:'Pedidos y cobros',     icon:'🧾', href:'/admin/pedidos',        section:'Ventas' },
+    { id:'cuentas-cobro', label:'Cuentas de cobro',  icon:'🏦', href:'/admin/cuentas-cobro',  section:'Ventas', adminOnly:true },
     { id:'productos',  label:'Productos',            icon:'🛍️', href:'/admin/productos',      section:'Catálogo' },
     { id:'categorias', label:'Categorías',           icon:'🏷️', href:'/admin/categorias',     section:'Catálogo' },
     { id:'carga-stock',label:'Carga de Stock',       icon:'📥', href:'/admin/carga-stock',    section:'Stock' },

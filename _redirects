@@ -6,3 +6,4 @@
 /categorias          /categoria             200
 /categorias/*        /categoria             200
 /producto/*          /producto              200
+/pedido/*            /pedido              200

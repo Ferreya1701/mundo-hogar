@@ -59,12 +59,20 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
 
     <div id="cart-ok" hidden>
       <div class="form-ok">
-        <b>¡Solicitud generada!</b> Tu código es <b id="ok-codigo"></b>.<br>
+        <b>¡Pedido generado!</b> Tu código es <b id="ok-codigo"></b>.<br>
         Se abrió WhatsApp con tu pedido listo para enviar. Si no se abrió,
         <a id="ok-wa-link" href="#" target="_blank" rel="noopener" style="font-weight:700;text-decoration:underline">tocá acá para abrirlo</a>.<br>
         Mundo Hogar te va a responder para confirmar precios, stock y entrega.
       </div>
-      <a class="btn btn-outline" style="margin-top:16px" href="/productos">Seguir viendo productos</a>
+      <div id="ok-pago" class="cart-box" style="margin-top:16px;max-width:560px" hidden>
+        <h2>¿Querés pagarlo ahora?</h2>
+        <p style="font-size:14.5px;line-height:1.55;margin-bottom:12px">Podés pagar por <b>transferencia</b> (Mercado Pago o cualquier banco) y subir el comprobante en la página de tu pedido. Cuando lo verificamos, el pedido queda confirmado.</p>
+        <a class="btn btn-blue btn-lg" id="ok-pagar-link" href="#" style="width:100%">Pagar por transferencia</a>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+        <a class="btn btn-outline" id="ok-pedido-link" href="#">Seguir mi pedido</a>
+        <a class="btn btn-outline" href="/productos">Seguir viendo productos</a>
+      </div>
     </div>
 
     <div class="cart-layout" id="cart-layout" hidden>
@@ -324,6 +332,7 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
     enviando = true;
     const btn = $('#btn-enviar');
     btn.disabled = true; btn.textContent = 'Generando solicitud…';
+    try { await Promise.race([MH.loadSettings(), new Promise(res => setTimeout(res, 4000))]); } catch (e) {}
     MH.track('begin_checkout', { items: Cart.count() });
 
     datos.items = Cart.items.filter(i => i.pid != null).map(i => ({ id: i.pid, cantidad: i.cant }));
@@ -376,7 +385,20 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
     $('#cart-layout').hidden = true;
     $('#ok-codigo').textContent = codigo;
     $('#ok-wa-link').href = waUrl;
-    $('#cart-ok').hidden = false;
+    // La página del pedido (/pedido/<código>) recuerda el teléfono en este navegador
+    try {
+      const g = JSON.parse(localStorage.getItem('mh_pedidos') || '{}');
+      g[codigo] = datos.telefono;
+      localStorage.setItem('mh_pedidos', JSON.stringify(g));
+    } catch (e) {}
+    $('#ok-pedido-link').href = `/pedido/${codigo}`;
+    $('#ok-pedido-link').hidden = !(resp && resp.codigo);
+    // Pago por transferencia: solo si el pedido quedó en la base, tiene total y los cobros están activos
+    if (resp && resp.codigo && !pendientes && MH.isValidPrice(total) && MH.cobrosActivos()) {
+      $('#ok-pagar-link').href = `/pedido/${codigo}`;
+      $('#ok-pagar-link').textContent = `Pagar ${MH.fmtPrice(total)} por transferencia`;
+      $('#ok-pago').hidden = false;
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 

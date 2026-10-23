@@ -186,6 +186,19 @@ Una vez logueado como administrador:
 - Editar nombre, rol y estado de usuarios
 - Instrucciones para crear nuevos usuarios vía Supabase
 
+### Pedidos y cobros (`/admin/pedidos.html`)
+- Pedidos que llegan desde el carrito (antes "Solicitudes WhatsApp"), con estado del pedido y del pago
+- Chip "Para revisar": comprobantes que esperan confirmación o rechazo
+- Confirmar pago (pasa el pedido a confirmado y descuenta stock), rechazar comprobante, registrar
+  pago a mano, habilitar pago de una cotización, anular pago (administrador)
+- Plantillas de WhatsApp: datos para pagar, pedir comprobante, pago confirmado
+- Requiere `sql/012-cobros.sql`. Guía completa: `GUIA-COBROS.md`
+
+### Cuentas de cobro (`/admin/cuentas-cobro.html`)
+- Solo visible para Administradores
+- Cuentas (alias/CVU) a las que transfieren los clientes, con cobrado hoy/mes, pendiente y límites
+- Movimientos por cuenta y mes (exportable), liquidación mensual con comisión, configuración de cobros
+
 ---
 
 ## 8. Seguridad
@@ -227,6 +240,8 @@ Una vez logueado como administrador:
 | Historial        | `/admin/movimientos.html`              |
 | Alertas          | `/admin/alertas.html`                  |
 | Usuarios         | `/admin/usuarios.html`                 |
+| Pedidos y cobros | `/admin/pedidos`                       |
+| Cuentas de cobro | `/admin/cuentas-cobro`                 |
 
 ---
 

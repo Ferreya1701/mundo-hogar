@@ -9,6 +9,8 @@
     { "source": "/categorias/:slug", "destination": "/categoria.html" },
     { "source": "/producto/:slug", "destination": "/producto.html" },
     { "source": "/carrito", "destination": "/carrito.html" },
+    { "source": "/pedido", "destination": "/pedido.html" },
+    { "source": "/pedido/:codigo", "destination": "/pedido.html" },
     { "source": "/admin/:page([a-z-]+)", "destination": "/admin/:page.html" }
   ],
   "headers": [

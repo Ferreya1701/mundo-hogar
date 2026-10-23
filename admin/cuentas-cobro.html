@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/admin/manifest.json">
+  <meta name="theme-color" content="#0A2E63">
+  <link rel="icon" type="image/png" href="/images/marca/favicon.png">
+  <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
+  <title>Cuentas de cobro — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+  <style>
+    .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+    .cta-off{opacity:.55}
+    .lim{font-size:11.5px;color:#888}
+    .barra{height:6px;background:#eef1f6;border-radius:4px;overflow:hidden;margin-top:4px;min-width:90px}
+    .barra i{display:block;height:100%;background:var(--success,#1E9E5A)}
+    .barra i.alto{background:#F47A1F}.barra i.tope{background:#C43B31}
+    .cfg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+    .mov-tipo-cobro{color:#14663A;font-weight:700}.mov-tipo-anulacion{color:#8A241C;font-weight:700}
+    .liq{border:1px solid var(--border,#e5e7eb);border-radius:10px;padding:12px 14px;margin-top:10px;font-size:13.5px}
+    .liq table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+    .liq td,.liq th{padding:4px 6px;border-bottom:1px solid #f0f0f0;text-align:left}
+    .aviso-legal{background:#FFF4E8;border-radius:10px;padding:12px 14px;font-size:12.5px;color:#8A4B12;line-height:1.5;margin-top:14px}
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><img class="sidebar-brand-icon" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="32" height="32"><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/" target="_blank" class="btn btn-ghost btn-sm">🌐 Ver Tienda</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1>Cuentas de cobro</h1><p id="subtitle">A qué cuentas transfieren los clientes, cuánto entró en cada una y la liquidación mensual</p></div>
+        <div class="page-header-actions">
+          <button class="btn btn-primary btn-sm" id="btn-nueva">+ Nueva cuenta</button>
+          <button class="btn btn-outline btn-sm" id="btn-refrescar">↻ Actualizar</button>
+        </div>
+      </div>
+
+      <div id="falta-sql" class="card" style="margin-bottom:16px" hidden><div class="card-body" style="color:#8A4B12">Falta ejecutar <code>sql/012-cobros.sql</code> en Supabase (SQL Editor) para usar este módulo.</div></div>
+
+      <div class="kpi-grid" id="kpis">
+        <div class="kpi-card"><div class="kpi-icon green">💵</div><div class="kpi-label">Cobrado hoy</div><div class="kpi-value" id="k-hoy">—</div><div class="kpi-sub" id="k-hoy-sub"></div></div>
+        <div class="kpi-card"><div class="kpi-icon blue">📅</div><div class="kpi-label">Cobrado este mes</div><div class="kpi-value" id="k-mes">—</div><div class="kpi-sub" id="k-mes-sub"></div></div>
+        <div class="kpi-card" data-href="/admin/pedidos?pago=pendiente"><div class="kpi-icon amber">⏳</div><div class="kpi-label">Esperando pago</div><div class="kpi-value" id="k-pend">—</div><div class="kpi-sub" id="k-pend-sub">pedidos con cuenta asignada</div></div>
+        <div class="kpi-card"><div class="kpi-icon violet">🧮</div><div class="kpi-label">Comisión estimada del mes</div><div class="kpi-value" id="k-com">—</div><div class="kpi-sub" id="k-com-sub"></div></div>
+      </div>
+
+      <div class="tabs" style="margin-top:20px">
+        <button class="tab-btn active" data-tab="cuentas">Cuentas</button>
+        <button class="tab-btn" data-tab="movimientos">Movimientos</button>
+        <button class="tab-btn" data-tab="liquidaciones">Liquidaciones</button>
+        <button class="tab-btn" data-tab="config">Configuración</button>
+      </div>
+
+      <!-- CUENTAS -->
+      <section id="tab-cuentas">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Cuenta</th><th>Destino</th><th style="text-align:center">Activa</th><th style="text-align:center">Peso</th>
+              <th class="num">Hoy</th><th class="num">Mes</th><th class="num">Pendiente</th><th>Último cobro</th><th></th>
+            </tr></thead>
+            <tbody id="tabla-cuentas"></tbody>
+          </table>
+        </div>
+        <div class="aviso-legal">Las cuentas tienen que ser del negocio o de personas que facturen al negocio por lo que reciben. Cada cobro queda registrado con su pedido para que la conciliación y la facturación sean simples. El reparto automático es operativo (límites por cuenta, redundancia), no para fraccionar ingresos.</div>
+      </section>
+
+      <!-- MOVIMIENTOS -->
+      <section id="tab-movimientos" hidden>
+        <div class="filters-bar">
+          <select id="mov-cuenta" style="min-width:170px"><option value="">Todas las cuentas</option></select>
+          <input type="month" id="mov-mes" style="min-width:150px">
+          <select id="mov-tipo" style="min-width:130px"><option value="">Cobros y anulaciones</option><option value="cobro">Solo cobros</option><option value="anulacion">Solo anulaciones</option></select>
+          <span id="mov-count" style="font-size:13px;color:var(--muted,#888);font-weight:600"></span>
+          <button class="btn btn-outline btn-sm" id="mov-export" style="margin-left:auto">⬇ Exportar CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Cuenta</th><th>Tipo</th><th>Pedido</th><th>Cliente</th><th class="num">Monto</th><th>Nº operación</th><th>Detalle</th><th>Usuario</th></tr></thead>
+            <tbody id="tabla-mov"></tbody>
+          </table>
+          <div style="padding:10px 16px;font-size:13.5px;font-weight:700;text-align:right" id="mov-total"></div>
+        </div>
+      </section>
+
+      <!-- LIQUIDACIONES -->
+      <section id="tab-liquidaciones" hidden>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Cerrar un mes</span></div>
+          <div class="card-body">
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:12px">El cierre congela el total cobrado por cuenta en ese mes (cobros menos anulaciones) y calcula la comisión con el porcentaje configurado. Un mes cerrado no cambia aunque después se anule un pago: la diferencia se ve en el mes siguiente.</p>
+            <div class="d-flex gap-2" style="align-items:center;flex-wrap:wrap">
+              <input type="month" id="liq-periodo" style="min-width:150px">
+              <button class="btn btn-primary btn-sm" id="btn-cerrar-liq">Cerrar liquidación</button>
+              <span id="liq-preview" style="font-size:13px;color:#555"></span>
+            </div>
+          </div>
+        </div>
+        <div id="liq-lista" style="margin-top:16px"></div>
+      </section>
+
+      <!-- CONFIG -->
+      <section id="tab-config" hidden>
+        <div class="card">
+          <div class="card-header"><span class="card-title">⚙️ Cobros por transferencia</span></div>
+          <div class="card-body">
+            <form id="form-cfg" novalidate>
+              <div class="cfg-grid">
+                <div class="form-group">
+                  <label class="toggle-wrap"><div class="toggle"><input type="checkbox" id="cfg-activos"><div class="toggle-track"></div><div class="toggle-thumb"></div></div><span class="toggle-label">Cobros activos en la tienda</span></label>
+                  <span class="form-hint">Apagado: el cliente no ve "Pagar por transferencia", pero desde Pedidos igual se puede habilitar un pago a mano.</span>
+                </div>
+                <div class="form-group">
+                  <label class="toggle-wrap"><div class="toggle"><input type="checkbox" id="cfg-auto"><div class="toggle-track"></div><div class="toggle-thumb"></div></div><span class="toggle-label">Confirmar solo cuando el comprobante coincide</span></label>
+                  <span class="form-hint">Si la IA lee monto, cuenta y fecha correctos con confianza alta, el pedido pasa a pagado y confirmado sin que nadie lo toque. Un comprobante editado puede engañar a la lectura: activalo solo si revisás los ingresos en la cuenta después.</span>
+                </div>
+                <div class="form-group">
+                  <label>Plazo para pagar (horas)</label>
+                  <input type="number" id="cfg-plazo" min="1" max="720" step="1">
+                  <span class="form-hint">Pasado el plazo sin comprobante, el pago queda vencido y el cliente puede volver a habilitarlo.</span>
+                </div>
+                <div class="form-group">
+                  <label>Comisión nuestra (%)</label>
+                  <input type="number" id="cfg-comision" min="0" max="100" step="0.01">
+                  <span class="form-hint">Se calcula sobre lo cobrado en el mes al cerrar la liquidación. El cambio rige para cierres futuros.</span>
+                </div>
+                <div class="form-group" style="grid-column:1/-1">
+                  <label>Instrucciones para el cliente (se muestran junto a los datos de la cuenta)</label>
+                  <textarea id="cfg-instr" rows="2" placeholder="Ej: Transferí desde una cuenta a tu nombre. Si pagás desde Mercado Pago, elegí “Transferir” y pegá el alias."></textarea>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary" id="btn-cfg" style="margin-top:6px">Guardar configuración</button>
+            </form>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="card-header"><span class="card-title">🤖 Lectura automática de comprobantes</span></div>
+          <div class="card-body" style="font-size:13.5px;line-height:1.6" id="ia-estado">Comprobando…</div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script>
+const $id = s => document.getElementById(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const money = n => Number(n || 0).toLocaleString('es-AR', { style:'currency', currency:'ARS', minimumFractionDigits:2, maximumFractionDigits:2 });
+let cuentas = [];      // v_cuentas_cobro_resumen
+let settings = {};
+let movimientos = [];
+let perfiles = {};
+
+const err = e => e.hint || e.message || 'Error';
+
+// ── Cuentas ──
+async function cargarCuentas() {
+  const { data, error } = await db.from('v_cuentas_cobro_resumen').select('*').order('orden').order('id');
+  if (error) {
+    if (/does not exist|42P01|PGRST/.test((error.message||'') + (error.code||''))) { $id('falta-sql').hidden = false; return false; }
+    Utils.toast('Error: ' + error.message, 'error'); return false;
+  }
+  cuentas = data || [];
+  renderCuentas(); renderKpis();
+  $id('mov-cuenta').innerHTML = '<option value="">Todas las cuentas</option>' + cuentas.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
+  return true;
+}
+
+function barra(valor, limite) {
+  if (!limite) return '';
+  const p = Math.min(100, Math.round(Number(valor) / Number(limite) * 100));
+  return `<div class="barra" title="${p}% del límite"><i class="${p >= 100 ? 'tope' : p >= 80 ? 'alto' : ''}" style="width:${p}%"></i></div>`;
+}
+
+function renderCuentas() {
+  const tb = $id('tabla-cuentas');
+  if (!cuentas.length) {
+    tb.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">🏦</div><h3>Sin cuentas de cobro</h3><p>Cargá la primera cuenta (alias o CVU de Mercado Pago o de un banco) para empezar a cobrar.</p></div></td></tr>`;
+    return;
+  }
+  tb.innerHTML = cuentas.map(c => `<tr class="${c.activa ? '' : 'cta-off'}">
+    <td><b>${esc(c.nombre)}</b>${c.es_respaldo ? ' <span class="badge badge-gold">respaldo</span>' : ''}<div style="font-size:12px;color:#888">${esc(c.titular)}${c.cuit_cuil ? ' · ' + esc(c.cuit_cuil) : ''}</div></td>
+    <td style="font-size:12.5px">${c.alias ? `<div><b>${esc(c.alias)}</b></div>` : ''}${c.cvu ? `<div style="font-family:monospace;font-size:11.5px">${esc(c.cvu)}</div>` : ''}<div style="color:#888;font-size:11.5px">${esc(c.banco)}</div></td>
+    <td style="text-align:center"><label class="toggle-wrap" style="justify-content:center"><div class="toggle"><input type="checkbox" data-activa="${c.id}" ${c.activa ? 'checked' : ''}><div class="toggle-track"></div><div class="toggle-thumb"></div></div></label></td>
+    <td style="text-align:center">${c.peso}</td>
+    <td class="num">${money(c.cobrado_hoy)}${c.limite_diario ? `<div class="lim">de ${money(c.limite_diario)}</div>${barra(Number(c.cobrado_hoy), c.limite_diario)}` : ''}</td>
+    <td class="num">${money(c.cobrado_mes)}<div class="lim">${c.cobros_mes} cobro${c.cobros_mes == 1 ? '' : 's'}${c.limite_mensual ? ` · de ${money(c.limite_mensual)}` : ''}</div>${c.limite_mensual ? barra(Number(c.cobrado_mes) + Number(c.pendiente), c.limite_mensual) : ''}</td>
+    <td class="num">${money(c.pendiente)}<div class="lim">${c.pedidos_pendientes} pedido${c.pedidos_pendientes == 1 ? '' : 's'}</div></td>
+    <td style="font-size:12.5px;color:#555;white-space:nowrap">${c.ultimo_cobro ? Utils.timeAgo(c.ultimo_cobro) : '—'}</td>
+    <td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" data-editar="${c.id}">Editar</button> <button class="btn btn-ghost btn-sm" data-movs="${c.id}">Movimientos</button></td>
+  </tr>`).join('');
+}
+
+function renderKpis() {
+  const hoy = cuentas.reduce((s, c) => s + Number(c.cobrado_hoy), 0);
+  const mes = cuentas.reduce((s, c) => s + Number(c.cobrado_mes), 0);
+  const pend = cuentas.reduce((s, c) => s + Number(c.pendiente), 0);
+  const nPend = cuentas.reduce((s, c) => s + Number(c.pedidos_pendientes), 0);
+  const nMes = cuentas.reduce((s, c) => s + Number(c.cobros_mes), 0);
+  $id('k-hoy').textContent = money(hoy);
+  $id('k-hoy-sub').textContent = `${cuentas.filter(c => c.activa).length} cuenta(s) activa(s)`;
+  $id('k-mes').textContent = money(mes);
+  $id('k-mes-sub').textContent = `${nMes} cobro${nMes === 1 ? '' : 's'} confirmado${nMes === 1 ? '' : 's'}`;
+  $id('k-pend').textContent = money(pend);
+  $id('k-pend-sub').textContent = `${nPend} pedido${nPend === 1 ? '' : 's'} con cuenta asignada`;
+  const pct = Number(settings.comision_pct || 0);
+  $id('k-com').textContent = money(mes * pct / 100);
+  $id('k-com-sub').textContent = pct ? `${pct}% de lo cobrado este mes` : 'configurá el porcentaje';
+}
+
+function modalCuenta(c) {
+  const bd = document.createElement('div');
+  bd.className = 'modal-backdrop';
+  const v = k => esc(c ? (c[k] ?? '') : '');
+  bd.innerHTML = `<div class="modal modal-lg">
+    <div class="modal-header"><h3 class="modal-title">${c ? 'Editar cuenta' : 'Nueva cuenta de cobro'}</h3><button class="modal-close" id="_mc">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group"><label>Nombre interno *</label><input id="c-nombre" value="${v('nombre')}" placeholder="Cuenta 1 — Juan" maxlength="60"></div>
+        <div class="form-group"><label>Titular (como figura en la cuenta) *</label><input id="c-titular" value="${v('titular')}" maxlength="120"></div>
+        <div class="form-group"><label>Alias</label><input id="c-alias" value="${v('alias')}" placeholder="mundo.hogar.mp" maxlength="60"></div>
+        <div class="form-group"><label>CBU / CVU (22 dígitos)</label><input id="c-cvu" value="${v('cvu')}" inputmode="numeric" maxlength="22"></div>
+        <div class="form-group"><label>CUIT / CUIL del titular</label><input id="c-cuit" value="${v('cuit_cuil')}" maxlength="15"></div>
+        <div class="form-group"><label>Banco / billetera</label><input id="c-banco" value="${c ? esc(c.banco) : 'Mercado Pago'}" maxlength="60"></div>
+        <div class="form-group"><label>Peso (1 a 10)</label><input id="c-peso" type="number" min="1" max="10" value="${c ? c.peso : 5}"><span class="form-hint">Más peso = recibe más pedidos que las otras.</span></div>
+        <div class="form-group"><label>Orden (desempate)</label><input id="c-orden" type="number" min="0" value="${c ? c.orden : cuentas.length + 1}"></div>
+        <div class="form-group"><label>Límite diario ($)</label><input id="c-ldia" type="number" min="1" step="1" value="${c && c.limite_diario ? Number(c.limite_diario) : ''}" placeholder="sin límite"></div>
+        <div class="form-group"><label>Límite mensual ($)</label><input id="c-lmes" type="number" min="1" step="1" value="${c && c.limite_mensual ? Number(c.limite_mensual) : ''}" placeholder="sin límite"></div>
+        <div class="form-group"><label class="toggle-wrap"><div class="toggle"><input type="checkbox" id="c-activa" ${!c || c.activa ? 'checked' : ''}><div class="toggle-track"></div><div class="toggle-thumb"></div></div><span class="toggle-label">Activa (recibe pedidos nuevos)</span></label></div>
+        <div class="form-group"><label class="toggle-wrap"><div class="toggle"><input type="checkbox" id="c-respaldo" ${c && c.es_respaldo ? 'checked' : ''}><div class="toggle-track"></div><div class="toggle-thumb"></div></div><span class="toggle-label">Cuenta de respaldo</span></label><span class="form-hint">Toma los pedidos cuando ninguna otra entra en sus límites.</span></div>
+        <div class="form-group" style="grid-column:1/-1"><label>Notas internas</label><input id="c-notas" value="${v('notas')}" maxlength="300"></div>
+      </div>
+      <div class="form-error" id="c-err" style="margin-top:8px"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" id="_cno">Cancelar</button><button class="btn btn-primary" id="_cyes">${c ? 'Guardar' : 'Crear cuenta'}</button></div>
+  </div>`;
+  document.body.appendChild(bd);
+  const cerrar = () => bd.remove();
+  bd.querySelector('#_mc').onclick = cerrar; bd.querySelector('#_cno').onclick = cerrar;
+  bd.querySelector('#_cyes').onclick = async () => {
+    const g = id => bd.querySelector('#' + id).value.trim();
+    const payload = {
+      nombre: g('c-nombre'), titular: g('c-titular'), alias: g('c-alias') || null,
+      cvu: g('c-cvu').replace(/\D/g, '') || null, cuit_cuil: g('c-cuit') || null, banco: g('c-banco') || 'Mercado Pago',
+      peso: Math.min(10, Math.max(1, Number(g('c-peso')) || 5)), orden: Number(g('c-orden')) || 0,
+      limite_diario: g('c-ldia') ? Number(g('c-ldia')) : null, limite_mensual: g('c-lmes') ? Number(g('c-lmes')) : null,
+      activa: bd.querySelector('#c-activa').checked, es_respaldo: bd.querySelector('#c-respaldo').checked, notas: g('c-notas') || null
+    };
+    const e = bd.querySelector('#c-err');
+    if (!payload.nombre || !payload.titular) { e.textContent = 'Nombre y titular son obligatorios.'; return; }
+    if (!payload.alias && !payload.cvu) { e.textContent = 'Cargá el alias o el CBU/CVU.'; return; }
+    if (payload.cvu && payload.cvu.length !== 22) { e.textContent = 'El CBU/CVU tiene 22 dígitos.'; return; }
+    const q = c ? db.from('cuentas_cobro').update(payload).eq('id', c.id) : db.from('cuentas_cobro').insert(payload);
+    const { error } = await q;
+    if (error) { e.textContent = err(error); return; }
+    Utils.toast(c ? 'Cuenta actualizada' : 'Cuenta creada', 'success');
+    Utils.log(c ? 'editar' : 'crear', 'cuentas_cobro', c ? c.id : '-', `${c ? 'Editó' : 'Creó'} la cuenta de cobro ${payload.nombre}`);
+    cerrar(); await cargarCuentas();
+  };
+}
+
+$id('btn-nueva').addEventListener('click', () => modalCuenta(null));
+$id('tabla-cuentas').addEventListener('click', e => {
+  const ed = e.target.closest('[data-editar]');
+  if (ed) return modalCuenta(cuentas.find(c => c.id === Number(ed.dataset.editar)));
+  const mv = e.target.closest('[data-movs]');
+  if (mv) { $id('mov-cuenta').value = mv.dataset.movs; irTab('movimientos'); cargarMovimientos(); }
+});
+$id('tabla-cuentas').addEventListener('change', async e => {
+  const t = e.target.closest('[data-activa]'); if (!t) return;
+  const { error } = await db.from('cuentas_cobro').update({ activa: t.checked }).eq('id', Number(t.dataset.activa));
+  if (error) { Utils.toast(err(error), 'error'); t.checked = !t.checked; return; }
+  Utils.toast(t.checked ? 'Cuenta activada' : 'Cuenta pausada: no recibe pedidos nuevos', 'success');
+  await cargarCuentas();
+});
+
+// ── Movimientos ──
+async function cargarMovimientos() {
+  const cta = $id('mov-cuenta').value, mes = $id('mov-mes').value, tipo = $id('mov-tipo').value;
+  let q = db.from('movimientos_cobro').select('*, solicitudes(codigo, cliente_nombre)').order('fecha', { ascending: false }).limit(2000);
+  if (cta) q = q.eq('cuenta_cobro_id', Number(cta));
+  if (tipo) q = q.eq('tipo', tipo);
+  if (mes) {
+    const [y, m] = mes.split('-').map(Number);
+    const desde = new Date(y, m - 1, 1), hasta = new Date(y, m, 1);
+    q = q.gte('fecha', desde.toISOString()).lt('fecha', hasta.toISOString());
+  }
+  const { data, error } = await q;
+  if (error) { Utils.toast(err(error), 'error'); return; }
+  movimientos = data || [];
+  const ids = [...new Set(movimientos.map(m => m.usuario_id).filter(Boolean))].filter(id => !perfiles[id]);
+  if (ids.length) {
+    const { data: ps } = await db.from('profiles').select('id, nombre').in('id', ids);
+    (ps || []).forEach(p => perfiles[p.id] = p.nombre);
+  }
+  const nombreCta = id => (cuentas.find(c => c.id === id) || {}).nombre || id;
+  $id('mov-count').textContent = `${movimientos.length} movimiento${movimientos.length === 1 ? '' : 's'}`;
+  $id('tabla-mov').innerHTML = movimientos.length ? movimientos.map(m => `<tr>
+    <td style="white-space:nowrap;font-size:12.5px">${Utils.datetime(m.fecha)}</td>
+    <td>${esc(nombreCta(m.cuenta_cobro_id))}</td>
+    <td class="mov-tipo-${m.tipo}">${m.tipo === 'cobro' ? 'Cobro' : 'Anulación'}</td>
+    <td style="font-family:monospace;font-size:12px">${m.solicitudes ? `<a href="/admin/pedidos?ver=${m.solicitud_id}">${esc(m.solicitudes.codigo)}</a>` : '—'}</td>
+    <td>${esc(m.solicitudes ? m.solicitudes.cliente_nombre : '')}</td>
+    <td class="num ${m.tipo === 'anulacion' ? 'text-danger' : ''}">${m.tipo === 'anulacion' ? '−' : ''}${money(m.monto)}</td>
+    <td style="font-size:12px">${esc(m.nro_operacion || '')}</td>
+    <td style="font-size:12px;color:#555">${esc(m.detalle || '')}</td>
+    <td style="font-size:12px;color:#888">${esc(m.usuario_id ? (perfiles[m.usuario_id] || '…') : 'automático')}</td>
+  </tr>`).join('') : `<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">📒</div><h3>Sin movimientos</h3><p>Cada pago confirmado aparece acá, en la cuenta donde entró.</p></div></td></tr>`;
+  const total = movimientos.reduce((s, m) => s + (m.tipo === 'cobro' ? 1 : -1) * Number(m.monto), 0);
+  $id('mov-total').textContent = movimientos.length ? `Neto del período: ${money(total)}` : '';
+}
+['mov-cuenta', 'mov-mes', 'mov-tipo'].forEach(id => $id(id).addEventListener('change', cargarMovimientos));
+$id('mov-export').addEventListener('click', () => {
+  const nombreCta = id => (cuentas.find(c => c.id === id) || {}).nombre || id;
+  Utils.exportCSV(movimientos.map(m => ({
+    Fecha: Utils.datetime(m.fecha), Cuenta: nombreCta(m.cuenta_cobro_id), Tipo: m.tipo,
+    Pedido: m.solicitudes ? m.solicitudes.codigo : '', Cliente: m.solicitudes ? m.solicitudes.cliente_nombre : '',
+    Monto: (m.tipo === 'anulacion' ? -1 : 1) * Number(m.monto), 'Nro operacion': m.nro_operacion || '', Detalle: m.detalle || '',
+    Usuario: m.usuario_id ? (perfiles[m.usuario_id] || '') : 'automático'
+  })), `movimientos-cobro-${$id('mov-mes').value || 'todos'}.csv`);
+});
+
+// ── Liquidaciones ──
+async function cargarLiquidaciones() {
+  const { data, error } = await db.from('liquidaciones').select('*').order('periodo', { ascending: false });
+  if (error) { Utils.toast(err(error), 'error'); return; }
+  const el = $id('liq-lista');
+  if (!data || !data.length) { el.innerHTML = '<p style="font-size:13.5px;color:var(--muted)">Todavía no hay meses cerrados.</p>'; return; }
+  el.innerHTML = data.map(l => {
+    const ctas = (l.detalle && l.detalle.cuentas) || [];
+    return `<div class="liq">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><b>${l.periodo}</b><span>Cobrado <b>${money(l.total_cobrado)}</b> · Comisión ${l.porcentaje}% = <b>${money(l.comision)}</b></span></div>
+      <div style="font-size:12px;color:#888">Cerrada el ${Utils.datetime(l.created_at)}</div>
+      ${ctas.length ? `<table><thead><tr><th>Cuenta</th><th>Titular</th><th class="num">Cobros</th><th class="num">Anulaciones</th><th class="num">Total</th></tr></thead><tbody>
+        ${ctas.map(c => `<tr><td>${esc(c.nombre)}</td><td>${esc(c.titular)}</td><td class="num">${c.cobros}</td><td class="num">${c.anulaciones}</td><td class="num">${money(c.total)}</td></tr>`).join('')}</tbody></table>` : '<div style="font-size:12.5px;color:#888;margin-top:6px">Sin movimientos en el mes.</div>'}
+      <div style="margin-top:8px"><button class="btn btn-ghost btn-sm" data-liq-csv="${l.id}">⬇ Pedidos del mes (CSV)</button></div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('[data-liq-csv]').forEach(b => b.addEventListener('click', () => {
+    const l = data.find(x => x.id === Number(b.dataset.liqCsv));
+    const peds = (l.detalle && l.detalle.pedidos) || [];
+    const nombreCta = id => (cuentas.find(c => c.id === id) || {}).nombre || id;
+    Utils.exportCSV(peds.map(p => ({ Fecha: Utils.datetime(p.fecha), Pedido: p.codigo || '', Tipo: p.tipo, Cuenta: nombreCta(p.cuenta_id), Monto: (p.tipo === 'anulacion' ? -1 : 1) * Number(p.monto) })),
+      `liquidacion-${l.periodo}.csv`);
+  }));
+}
+$id('btn-cerrar-liq').addEventListener('click', async () => {
+  const per = $id('liq-periodo').value;
+  if (!per) return Utils.toast('Elegí el mes a cerrar.', 'warning');
+  const ok = await Utils.confirm(`Se cierra <b>${per}</b> con el ${Number(settings.comision_pct || 0)}% de comisión. No se puede deshacer.`, 'Cerrar liquidación', 'Cerrar', false);
+  if (!ok) return;
+  const { data, error } = await db.rpc('cerrar_liquidacion', { p_periodo: per });
+  if (error) return Utils.toast(err(error), 'error');
+  Utils.toast(`Liquidación ${data.periodo}: cobrado ${money(data.total_cobrado)}, comisión ${money(data.comision)}`, 'success', 7000);
+  await cargarLiquidaciones();
+});
+
+// ── Configuración ──
+async function cargarConfig() {
+  const { data } = await db.from('site_settings').select('cobros_activos, cobros_plazo_horas, cobros_auto_confirmar, comision_pct, cobros_instrucciones').eq('id', 1).maybeSingle();
+  settings = data || {};
+  $id('cfg-activos').checked = !!settings.cobros_activos;
+  $id('cfg-auto').checked = !!settings.cobros_auto_confirmar;
+  $id('cfg-plazo').value = settings.cobros_plazo_horas ?? 72;
+  $id('cfg-comision').value = settings.comision_pct ?? 0;
+  $id('cfg-instr').value = settings.cobros_instrucciones || '';
+}
+$id('form-cfg').addEventListener('submit', async e => {
+  e.preventDefault();
+  const payload = {
+    cobros_activos: $id('cfg-activos').checked, cobros_auto_confirmar: $id('cfg-auto').checked,
+    cobros_plazo_horas: Math.min(720, Math.max(1, Number($id('cfg-plazo').value) || 72)),
+    comision_pct: Math.min(100, Math.max(0, Number($id('cfg-comision').value) || 0)),
+    cobros_instrucciones: $id('cfg-instr').value.trim() || null
+  };
+  if (payload.cobros_activos && !cuentas.some(c => c.activa)) {
+    Utils.toast('No hay ninguna cuenta activa: cargá una antes de prender los cobros.', 'warning', 6000);
+  }
+  const { error } = await db.from('site_settings').update(payload).eq('id', 1);
+  if (error) return Utils.toast(err(error), 'error');
+  settings = { ...settings, ...payload };
+  Utils.toast('Configuración de cobros guardada', 'success');
+  Utils.log('editar', 'site_settings', 1, `Cobros: ${payload.cobros_activos ? 'activos' : 'apagados'}, auto ${payload.cobros_auto_confirmar ? 'sí' : 'no'}, ${payload.comision_pct}%`);
+  renderKpis();
+});
+
+async function estadoIA() {
+  const el = $id('ia-estado');
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/leer-comprobante`, {
+      method: 'POST', headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ping: true })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(String(r.status));
+    el.innerHTML = j.ia
+      ? '✅ La Edge Function <code>leer-comprobante</code> está desplegada y tiene la clave de Anthropic. Los comprobantes se leen solos al subirse.'
+      : '⚠️ La Edge Function está desplegada pero <b>falta el secreto ANTHROPIC_API_KEY</b>. Los comprobantes quedan "recibidos" y se revisan a mano.';
+  } catch (e) {
+    el.innerHTML = '⚠️ La Edge Function <code>leer-comprobante</code> no está desplegada. Los comprobantes se suben igual y quedan "recibidos" para revisarlos a mano. Para activar la lectura automática, desplegá <code>supabase/functions/leer-comprobante/index.ts</code> igual que el asistente (ver GUIA-ASISTENTE-IA.md).';
+  }
+}
+
+// ── Tabs ──
+function irTab(t) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
+  ['cuentas', 'movimientos', 'liquidaciones', 'config'].forEach(k => $id('tab-' + k).hidden = k !== t);
+  if (t === 'movimientos') cargarMovimientos();
+  if (t === 'liquidaciones') cargarLiquidaciones();
+  if (t === 'config') estadoIA();
+}
+document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => irTab(b.dataset.tab)));
+document.querySelectorAll('.kpi-card[data-href]').forEach(k => k.addEventListener('click', () => location.href = k.dataset.href));
+$id('btn-refrescar').addEventListener('click', async () => { await cargarConfig(); await cargarCuentas(); });
+
+(async function () {
+  const profile = await Auth.init();
+  if (!profile) return;
+  await Auth.requireRole(['administrador']);
+  await Layout.init('cuentas-cobro', 'Cuentas de cobro');
+  const hoy = new Date();
+  $id('mov-mes').value = hoy.toISOString().slice(0, 7);
+  const ant = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+  $id('liq-periodo').value = `${ant.getFullYear()}-${String(ant.getMonth() + 1).padStart(2, '0')}`;
+  await cargarConfig();
+  if (await cargarCuentas()) {
+    const tab = new URLSearchParams(location.search).get('tab');
+    if (tab) irTab(tab);
+  }
+})();
+</script>
+  <script src="/admin/js/assistant.js"></script>
+  <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/admin/sw.js').catch(()=>{}); }</script>
+</body>
+</html>

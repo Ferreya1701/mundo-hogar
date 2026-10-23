@@ -1,6 +1,6 @@
 # PROJECT_STATUS — Mundo Hogar / TIAF
 
-> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-10-23.
+> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-10-23 (cobros).
 
 ## Hosting (desde 2026-10-16): Cloudflare Workers
 - **Producción:** `https://mundohogarstf.com` servido por **Cloudflare Workers** (solo archivos
@@ -21,6 +21,29 @@
 - **Imágenes:** cada `.jpg` de `public/images/productos` tiene su `.webp` (máx. 1200 px). El sitio pide
   la `.webp` y cae al `.jpg` si falta (`MH.webpUrl` / `MH.setImg`). Al sumar fotos nuevas, generar ambas.
 - Cloudflare redirige `x.html` → `x` y `/productos` → `/productos/` (conserva los parámetros).
+
+## Cobros por transferencia (2026-10-23) — CÓDIGO LISTO, PENDIENTE DE DESPLEGAR EN SUPABASE
+Gestor de ventas y cobros (no factura, no se conecta con ARCA). Guía: `GUIA-COBROS.md`.
+- **`sql/012-cobros.sql`** (NO ejecutado aún en producción): `cuentas_cobro`, columnas de pago en
+  `solicitudes` (`estado_pago`, cuenta, monto con centavos únicos, vencimiento), `comprobantes`,
+  `movimientos_cobro` (libro inmutable), `liquidaciones`, config en `site_settings`
+  (`cobros_activos`, `cobros_plazo_horas`, `cobros_auto_confirmar`, `comision_pct`,
+  `cobros_instrucciones`), bucket privado `comprobantes`. Redefine `cambiar_estado_solicitud`
+  (007) con vía interna. RPC públicas: `pedido_consultar`, `pedido_pagar_transferencia`,
+  `pedido_subir_comprobante`. Panel: `habilitar_pago`, `confirmar_pago`, `rechazar_comprobante`,
+  `anular_pago`, `cerrar_liquidacion`, `fn_cobros_vencer`. Solo servicio:
+  `comprobante_registrar_lectura`. Probado con `scripts/test-cobros-sql.mjs` (68 pruebas, PGlite).
+- **Edge Function `leer-comprobante`** (NO desplegada aún): lee imagen/PDF con Claude
+  (`claude-opus-5`, fallbacks por defecto) y registra la lectura; la base decide si coincide.
+- **Tienda:** `pedido.html` en `/pedido/<código>` (estado, datos para transferir, subida de
+  comprobante); `carrito.html` ofrece "Pagar por transferencia" si hay total y
+  `site_settings.cobros_activos`; `assets/catalogo.js` expone `MH.cobrosActivos()`.
+- **Panel:** `admin/pedidos.html` reemplaza a Solicitudes (que ahora redirige),
+  `admin/cuentas-cobro.html` (admin). Menú actualizado en `layout.js`.
+- **Pasos para prender:** ejecutar 012 → desplegar `leer-comprobante` → cargar cuentas → activar
+  cobros en Configuración de Cuentas de cobro. Hasta ejecutar el 012, la tienda sigue igual que
+  antes (el panel avisa que falta el SQL).
+- Riesgo a conversar con el cliente antes de usar varias cuentas: ver `GUIA-COBROS.md` (cabecera).
 
 ## Fase actual
 **Núcleo de stock ↔ ventas DESPLEGADO Y VERIFICADO en producción (2026-07-13).** `sql/006` y `sql/007`
@@ -92,7 +115,11 @@ modelo de datos, roadmap, propuesta ejecutiva, demo HTML).
 - `vercel.json` / `scripts/server.js` — mismas reglas para el espejo de Vercel y el servidor local.
 
 ## Próxima acción
-1. Cerrar la mudanza: subir la versión mínima de TLS a 1.2 en Cloudflare y decidir si el espejo de Vercel
+1. Backup manual de Supabase y ejecutar `sql/012-cobros.sql`; desplegar la Edge Function
+   `leer-comprobante`; cargar las cuentas y activar los cobros (ver `GUIA-COBROS.md`). Probar el
+   ciclo completo en producción con un pedido de prueba.
+2. Carga real de precios y stock desde el panel (lado del dueño).
+3. Cerrar la mudanza: subir la versión mínima de TLS a 1.2 en Cloudflare y decidir si el espejo de Vercel
    se borra (si se borra, quitar `vercel.json`).
-2. Carga real de precios y stock desde el panel (lado del dueño) con backup manual previo de Supabase.
-3. Fase 3 (según plan): pedidos con pago online (MP) — mantener el flag apagado hasta entonces.
+4. Mejora futura: verificar ingresos por API de Mercado Pago (hoy la verificación final es manual
+   o por confirmación automática opcional).

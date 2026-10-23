@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/admin/manifest.json">
+  <meta name="theme-color" content="#0A2E63">
+  <link rel="icon" type="image/png" href="/images/marca/favicon.png">
+  <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
+  <title>Pedidos y cobros — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+  <style>
+    .estado-select{padding:5px 8px;border-radius:6px;border:1px solid var(--border,#ddd);font-size:12px;font-weight:600;cursor:pointer}
+    .est-nueva{background:#FFF4E8;color:#8A4B12}
+    .est-contactado{background:#EAF2FD;color:#1763C6}
+    .est-cotizacion_enviada{background:#F3EDFD;color:#6B3FC0}
+    .est-confirmado{background:#E9F9EF;color:#14663A}
+    .est-en_preparacion{background:#FDF8E4;color:#8A6D0B}
+    .est-entregado{background:#EDF6EF;color:#2F6B3D}
+    .est-cancelado{background:#FDEEED;color:#8A241C}
+    .pago{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap}
+    .pago-sin_pago{background:#EEF1F6;color:#4A5A75}
+    .pago-pendiente{background:#EAF2FD;color:#1763C6}
+    .pago-comprobante_recibido,.pago-en_revision{background:#FFF4E8;color:#8A4B12}
+    .pago-pagado{background:#E9F9EF;color:#14663A}
+    .pago-vencido{background:#FDEEED;color:#8A241C}
+    .sol-modal-bg{position:fixed;inset:0;background:rgba(10,20,40,.45);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px}
+    .sol-modal{background:#fff;border-radius:14px;max-width:760px;width:100%;max-height:92vh;overflow:auto;padding:26px}
+    .sol-modal h3{margin-bottom:4px}
+    .sol-modal .cod{font-family:monospace;font-size:13px;color:#666}
+    .sol-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;margin:14px 0;font-size:13.5px}
+    .sol-grid b{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:#888;font-weight:600;margin-bottom:1px}
+    .sol-items{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
+    .sol-items th{text-align:left;font-size:11px;text-transform:uppercase;color:#888;padding:6px 8px;border-bottom:2px solid #eee}
+    .sol-items td{padding:7px 8px;border-bottom:1px solid #f0f0f0}
+    .sol-obs{background:#F7F8FA;border-radius:8px;padding:10px 12px;font-size:13px;margin-top:10px;white-space:pre-wrap}
+    .pend-tag{background:#FFF4E8;color:#8A4B12;font-size:11px;font-weight:700;border-radius:5px;padding:2px 6px}
+    .pago-box{border:1px solid var(--border,#e5e7eb);border-radius:12px;padding:16px;margin-top:16px}
+    .pago-box h4{font-size:14px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .comp{border:1px solid var(--border,#e5e7eb);border-radius:10px;padding:10px 12px;margin-top:8px;display:grid;grid-template-columns:72px 1fr;gap:12px;font-size:13px}
+    .comp img{width:72px;height:72px;object-fit:cover;border-radius:8px;background:#f3f4f6;cursor:zoom-in}
+    .comp .ph{width:72px;height:72px;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:24px}
+    .comp dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:6px 0;font-size:12.5px}
+    .comp dt{color:#888}.comp dd{font-weight:600}
+    .comp-coincide{border-color:#8fd3a6;background:#F4FBF6}
+    .comp-no_coincide,.comp-ilegible{border-color:#f0c58f;background:#FFFAF3}
+    .comp-rechazado{opacity:.7}
+    .comp-aceptado{border-color:#8fd3a6}
+    .eventos{font-size:12.5px;color:#555;margin-top:12px;max-height:160px;overflow:auto;border-top:1px solid #eee;padding-top:8px}
+    .eventos div{padding:3px 0}
+    .eventos span{color:#999;font-family:monospace;font-size:11px;margin-right:6px}
+    .mini-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+    .mini-form .full{grid-column:1/-1}
+    .mini-form input,.mini-form select{width:100%;padding:7px 9px;border:1px solid var(--border,#ddd);border-radius:7px;font-size:13px}
+    .mini-form label{font-size:11px;text-transform:uppercase;color:#888;font-weight:600;display:block;margin-bottom:3px}
+    .img-zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:700;display:flex;align-items:center;justify-content:center;cursor:zoom-out}
+    .img-zoom img{max-width:95vw;max-height:95vh;border-radius:8px}
+    @media (max-width:768px){ .sol-grid,.mini-form{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><img class="sidebar-brand-icon" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="32" height="32"><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/" target="_blank" class="btn btn-ghost btn-sm">🌐 Ver Tienda</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1>Pedidos y cobros</h1><p id="subtitle">Pedidos de la tienda, pagos por transferencia y comprobantes</p></div>
+        <div class="page-header-actions">
+          <button class="btn btn-outline btn-sm" id="btn-export">⬇ Exportar CSV</button>
+          <button class="btn btn-outline btn-sm" id="btn-refrescar">↻ Actualizar</button>
+        </div>
+      </div>
+
+      <div class="chips" id="estado-chips" style="margin-bottom:14px"></div>
+
+      <div class="filters-bar">
+        <div class="search-bar" style="flex:1;min-width:200px;max-width:340px">
+          <span class="search-icon">🔍</span>
+          <input type="search" id="q" placeholder="Buscar por código, cliente, teléfono...">
+        </div>
+        <select id="filtro-estado" style="min-width:160px">
+          <option value="">Todos los estados</option>
+          <option value="nueva">Nueva</option>
+          <option value="contactado">Contactado</option>
+          <option value="cotizacion_enviada">Cotización enviada</option>
+          <option value="confirmado">Confirmado</option>
+          <option value="en_preparacion">En preparación</option>
+          <option value="entregado">Entregado</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+        <select id="filtro-pago" style="min-width:160px">
+          <option value="">Todos los pagos</option>
+          <option value="revisar">Para revisar</option>
+          <option value="sin_pago">Sin pago</option>
+          <option value="pendiente">Esperando pago</option>
+          <option value="comprobante_recibido">Comprobante recibido</option>
+          <option value="en_revision">En revisión</option>
+          <option value="pagado">Pagado</option>
+          <option value="vencido">Vencido</option>
+        </select>
+        <select id="filtro-cuenta" style="min-width:150px"><option value="">Todas las cuentas</option></select>
+        <select id="filtro-canal" style="min-width:130px">
+          <option value="">Todos los canales</option>
+          <option value="web">Tienda web</option>
+          <option value="mayorista">Mayorista</option>
+        </select>
+        <span id="filter-count" style="font-size:13px;color:var(--muted,#888);font-weight:600"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Código</th><th>Fecha</th><th>Cliente</th>
+            <th style="text-align:right">Total</th><th>Pago</th><th>Cuenta</th><th>Estado</th><th></th>
+          </tr></thead>
+          <tbody id="tabla-body"></tbody>
+        </table>
+        <div class="pagination" id="paginacion"></div>
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+<div id="modal-slot"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script>
+let solicitudes = [];
+let cuentas = [];
+let settings = {};
+let perfil = null;
+let page = 1;
+let sinCobros = false;   // falta ejecutar sql/012
+const PER = 25;
+const ESTADOS = {
+  nueva: 'Nueva', contactado: 'Contactado', cotizacion_enviada: 'Cotización enviada',
+  confirmado: 'Confirmado', en_preparacion: 'En preparación', entregado: 'Entregado', cancelado: 'Cancelado'
+};
+const PAGOS = {
+  sin_pago: 'Sin pago', pendiente: 'Esperando pago', comprobante_recibido: 'Comprobante recibido',
+  en_revision: 'En revisión', pagado: 'Pagado', vencido: 'Vencido'
+};
+const COMP = {
+  recibido: ['Recibido, sin leer', 'badge-info'], coincide: ['Coincide con el pedido', 'badge-success'],
+  no_coincide: ['No coincide', 'badge-warning'], ilegible: ['Ilegible', 'badge-warning'],
+  aceptado: ['Aceptado', 'badge-success'], rechazado: ['Rechazado', 'badge-danger']
+};
+const ENTREGA = { envio: 'Envío', retiro: 'Retiro', a_confirmar: 'A confirmar' };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const money = n => n == null ? 'A confirmar' : Number(n).toLocaleString('es-AR', { style:'currency', currency:'ARS', minimumFractionDigits:0, maximumFractionDigits:2 });
+const money2 = n => n == null ? '—' : Number(n).toLocaleString('es-AR', { style:'currency', currency:'ARS', minimumFractionDigits:2, maximumFractionDigits:2 });
+const paraRevisar = s => ['comprobante_recibido', 'en_revision'].includes(s.estado_pago);
+const cuentaDe = id => cuentas.find(c => c.id === id);
+const esAdmin = () => perfil && perfil.rol === 'administrador';
+
+function errorAmigable(error) {
+  const msg = error.message || '';
+  if (msg.includes('stock_insuficiente')) {
+    let det = '';
+    try { det = (JSON.parse(error.details || '[]')).map(f => `• ${f.nombre}: pedido ${f.pedido}, disponible ${f.disponible}`).join('\n'); } catch (_) {}
+    return 'Stock insuficiente para confirmar el pedido:\n' + (det || msg) + '\nAjustá el stock en Inventario y volvé a confirmar el pago.';
+  }
+  if (error.hint) return error.hint;
+  if (msg.includes('sin_permiso')) return 'Tu rol no puede hacer esta acción.';
+  if (msg.includes('transicion_invalida')) return 'Esa transición de estado no está permitida.';
+  return 'No se pudo completar: ' + msg;
+}
+
+function applyFilters() {
+  const q = document.getElementById('q').value.toLowerCase().trim();
+  const est = document.getElementById('filtro-estado').value;
+  const pago = document.getElementById('filtro-pago').value;
+  const cta = document.getElementById('filtro-cuenta').value;
+  const canal = document.getElementById('filtro-canal').value;
+  let list = solicitudes;
+  if (q) list = list.filter(s =>
+    (s.codigo||'').toLowerCase().includes(q) ||
+    (s.cliente_nombre||'').toLowerCase().includes(q) ||
+    (s.telefono||'').toLowerCase().includes(q));
+  if (est) list = list.filter(s => s.estado === est);
+  if (pago === 'revisar') list = list.filter(paraRevisar);
+  else if (pago) list = list.filter(s => s.estado_pago === pago);
+  if (cta) list = list.filter(s => String(s.cuenta_cobro_id) === cta);
+  if (canal) list = list.filter(s => s.canal === canal);
+  return list;
+}
+
+function estadoSelect(s) {
+  return `<select class="estado-select est-${s.estado}" data-id="${s.id}">
+    ${Object.entries(ESTADOS).map(([v,l]) => `<option value="${v}"${v===s.estado?' selected':''}>${l}</option>`).join('')}
+  </select>`;
+}
+const pagoPill = s => `<span class="pago pago-${s.estado_pago || 'sin_pago'}">${PAGOS[s.estado_pago] || 'Sin pago'}${paraRevisar(s) ? ' ●' : ''}</span>`;
+
+function renderTable() {
+  const filtered = applyFilters();
+  // Los que esperan una decisión primero, después los más nuevos
+  filtered.sort((a, b) => (paraRevisar(b) - paraRevisar(a)) || (new Date(b.created_at) - new Date(a.created_at)));
+  const slice = filtered.slice((page-1)*PER, page*PER);
+  document.getElementById('filter-count').textContent = `${filtered.length} pedido${filtered.length!==1?'s':''}`;
+
+  if (!slice.length) {
+    document.getElementById('tabla-body').innerHTML =
+      `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">🧾</div>
+        <h3>Sin pedidos</h3><p>Cuando un cliente envíe un pedido desde la tienda, va a aparecer acá.</p></div></td></tr>`;
+    document.getElementById('paginacion').innerHTML = '';
+    return;
+  }
+  document.getElementById('tabla-body').innerHTML = slice.map(s => {
+    const c = cuentaDe(s.cuenta_cobro_id);
+    return `<tr${paraRevisar(s) ? ' style="background:#FFFBF5"' : ''}>
+    <td style="font-family:monospace;font-size:12px;white-space:nowrap">${esc(s.codigo)}${s.canal==='mayorista'?' <span class="pend-tag">Mayorista</span>':''}</td>
+    <td style="white-space:nowrap;color:var(--muted,#888);font-size:12px">${Utils.datetime(s.created_at)}</td>
+    <td style="font-weight:500">${esc(s.cliente_nombre)}<div style="font-size:11.5px;color:#888">${esc(s.telefono)}${s.comercio?` · ${esc(s.comercio)}`:''}</div></td>
+    <td style="white-space:nowrap;font-weight:600;text-align:right">${s.monto_a_pagar != null && s.estado_pago !== 'sin_pago' ? money2(s.monto_a_pagar) : money(s.total_estimado)}${s.tiene_pendientes?' <span class="pend-tag" title="Tiene productos sin precio">a cotizar</span>':''}</td>
+    <td>${pagoPill(s)}</td>
+    <td style="font-size:12.5px;white-space:nowrap">${c ? esc(c.nombre) : '<span style="color:#aaa">—</span>'}</td>
+    <td>${estadoSelect(s)}</td>
+    <td><button class="btn ${paraRevisar(s) ? 'btn-primary' : 'btn-ghost'} btn-sm" data-ver="${s.id}">${paraRevisar(s) ? 'Revisar' : 'Ver'}</button></td>
+  </tr>`; }).join('');
+
+  Utils.renderPagination(document.getElementById('paginacion'), page, filtered.length, PER,
+    p => { page = p; renderTable(); });
+}
+
+// ── Plantillas de WhatsApp ──
+function armarRespuesta(s, tipo) {
+  const items = s.solicitud_items || [];
+  const nombre = (s.cliente_nombre || '').split(' ')[0] || 'Hola';
+  const listado = items.map(i => `• ${i.cantidad}x ${i.nombre}${i.precio_unitario != null ? ` — ${money(i.precio_unitario)} c/u` : ' — a cotizar'}`).join('\n');
+  const totalTxt = s.total_estimado != null
+    ? `Total estimado: ${money(s.total_estimado)}${s.tiene_pendientes ? ' (+ los productos a cotizar)' : ''}`
+    : 'Te pasamos la cotización completa a la brevedad.';
+  const entregaTxt = s.tipo_entrega === 'envio'
+    ? `Coordinamos el envío${s.localidad ? ` a ${s.localidad}` : ''} y te confirmamos el costo.`
+    : s.tipo_entrega === 'retiro' ? 'Podés retirarlo por nuestro local cuando esté confirmado.' : 'Decinos si preferís envío o retiro y lo coordinamos.';
+  const linkPedido = `https://mundohogarstf.com/pedido/${s.codigo}`;
+  const c = cuentaDe(s.cuenta_cobro_id);
+  if (tipo === 'contacto') {
+    return `¡Hola ${nombre}! 😊 Te escribimos de Mundo Hogar por tu pedido *${s.codigo}*.\n\n${listado ? 'Recibimos tu solicitud:\n' + listado + '\n\n' : ''}${totalTxt}\n\n${entregaTxt}\n\n${settings.cobros_activos ? `Podés pagar por transferencia y subir el comprobante acá: ${linkPedido}` : 'Aceptamos Mercado Pago, transferencia y efectivo.'} ¿Avanzamos?`;
+  }
+  if (tipo === 'cotizacion') {
+    return `¡Hola ${nombre}! Te pasamos la cotización de tu pedido *${s.codigo}*:\n\n${listado || '(completar productos y precios)'}\n\n${totalTxt}\n\n${entregaTxt}\n\nCualquier duda estamos a disposición. ¡Gracias por elegir Mundo Hogar!`;
+  }
+  if (tipo === 'pagar') {
+    return `¡Hola ${nombre}! Para confirmar tu pedido *${s.codigo}* podés transferir *${money2(s.monto_a_pagar)}* (exacto, con los centavos)${c ? ` al alias *${c.alias || c.cvu}* (${c.titular})` : ''}.\n\nDespués subí el comprobante acá: ${linkPedido}\n\nCuando lo verificamos, te avisamos. ¡Gracias!`;
+  }
+  if (tipo === 'comprobante') {
+    return `¡Hola ${nombre}! Vimos tu pedido *${s.codigo}* pero todavía no nos llegó el comprobante. Cuando puedas, subilo acá: ${linkPedido}\n\nSi ya transferiste y tenés algún problema para subirlo, mandanos la foto por acá. ¡Gracias!`;
+  }
+  if (tipo === 'rechazo') {
+    const ult = (s.comprobantes || []).filter(x => x.estado === 'rechazado').slice(-1)[0];
+    return `¡Hola ${nombre}! Revisamos el comprobante de tu pedido *${s.codigo}* y no pudimos validarlo${ult && ult.motivo ? `: ${ult.motivo}` : ''}.\n\n¿Podés revisarlo y subir uno nuevo acá? ${linkPedido}\n\n¡Gracias!`;
+  }
+  if (tipo === 'pagado') {
+    return `¡Hola ${nombre}! ✅ Confirmamos el pago de tu pedido *${s.codigo}* por ${money2(s.monto_pagado)}. Ya lo estamos preparando.\n\n${entregaTxt}\n\nPodés seguirlo acá: ${linkPedido}\n\n¡Gracias por elegir Mundo Hogar!`;
+  }
+  return `¡Hola ${nombre}! ¿Cómo estás? Te escribimos de Mundo Hogar por tu consulta *${s.codigo}*. ¿Pudiste verla? Si te quedó alguna duda o querés que te reservemos los productos, avisanos. ¡Seguimos en contacto! 😊`;
+}
+
+// ── Detalle ──
+async function verDetalle(id) {
+  const s = solicitudes.find(x => x.id === id); if (!s) return;
+  const items = s.solicitud_items || [];
+  const slot = document.getElementById('modal-slot');
+  const tel = esc((s.telefono||'').replace(/\D/g,''));
+  slot.innerHTML = `<div class="sol-modal-bg" id="modal-bg">
+    <div class="sol-modal" role="dialog" aria-modal="true">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div>
+          <h3>${esc(s.cliente_nombre)} ${pagoPill(s)}</h3>
+          <div class="cod">${esc(s.codigo)} · ${Utils.datetime(s.created_at)} · ${s.canal==='mayorista'?'Consulta mayorista':'Tienda web'}${['administrador','vendedor'].includes(perfil.rol) ? ` · <a href="/admin/crm?vista=embudo&q=${encodeURIComponent(s.codigo)}">🤝 CRM</a>` : ''} · <a href="/pedido/${esc(s.codigo)}" target="_blank" rel="noopener">🔗 Página del cliente</a></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="modal-cerrar">✕</button>
+      </div>
+      <div class="sol-grid">
+        <div><b>Teléfono</b><a href="https://wa.me/${tel}" target="_blank" rel="noopener">${esc(s.telefono)||'—'}</a></div>
+        <div><b>Localidad</b>${esc(s.localidad)||'—'}</div>
+        <div><b>Entrega</b>${ENTREGA[s.tipo_entrega]||'—'}${s.direccion?` — ${esc(s.direccion)}`:''}</div>
+        <div><b>Estado</b>${ESTADOS[s.estado]||s.estado}</div>
+        ${s.es_mayorista?`<div><b>Comercio</b>${esc(s.comercio)||'—'}</div><div><b>CUIT</b>${esc(s.cuit)||'—'}</div>`:''}
+      </div>
+      ${items.length ? `<table class="sol-items">
+        <thead><tr><th>Producto</th><th>Código</th><th style="text-align:center">Cant.</th><th style="text-align:right">Precio</th><th style="text-align:right">Subtotal</th></tr></thead>
+        <tbody>${items.map(i => `<tr>
+          <td>${esc(i.nombre)}</td><td style="font-size:11.5px;color:#888">${esc(i.sku)||'—'}</td>
+          <td style="text-align:center">${i.cantidad}</td>
+          <td style="text-align:right">${i.precio_unitario==null?'<span class="pend-tag">a cotizar</span>':money(i.precio_unitario)}</td>
+          <td style="text-align:right">${i.subtotal==null?'—':money(i.subtotal)}</td>
+        </tr>`).join('')}</tbody></table>
+      <div style="text-align:right;font-weight:700;margin-top:6px">Total estimado: ${money(s.total_estimado)}</div>` : '<p style="color:#888;font-size:13px;margin:12px 0">Sin productos (consulta general).</p>'}
+      ${s.observaciones ? `<div class="sol-obs"><b>Observaciones del cliente:</b><br>${esc(s.observaciones)}</div>` : ''}
+
+      <div class="pago-box" id="pago-box">${sinCobros ? '<p style="font-size:13px;color:#8A4B12">Falta ejecutar <code>sql/012-cobros.sql</code> en Supabase para gestionar cobros.</p>' : '<div class="spinner" style="margin:10px auto"></div>'}</div>
+
+      <div style="background:var(--violet-bg,#F3F0FF);border-radius:10px;padding:14px;margin-top:16px">
+        <div style="font-size:12px;font-weight:700;color:var(--violet-dark,#6244E0);margin-bottom:8px">✨ Mensaje de WhatsApp (editalo antes de enviar)</div>
+        <div class="d-flex gap-2" style="flex-wrap:wrap;margin-bottom:8px">
+          <button class="chip" data-plantilla="contacto">👋 Primer contacto</button>
+          <button class="chip" data-plantilla="cotizacion">💲 Cotización</button>
+          <button class="chip" data-plantilla="pagar">🏦 Datos para pagar</button>
+          <button class="chip" data-plantilla="comprobante">📎 Pedir comprobante</button>
+          <button class="chip" data-plantilla="rechazo">↩ Comprobante rechazado</button>
+          <button class="chip" data-plantilla="pagado">✅ Pago confirmado</button>
+          <button class="chip" data-plantilla="seguimiento">🔄 Seguimiento</button>
+        </div>
+        <textarea id="respuesta-txt" rows="6" style="font-size:12.5px;background:#fff"></textarea>
+        <div class="d-flex gap-2" style="justify-content:flex-end;margin-top:8px">
+          <button class="btn btn-outline btn-sm" id="btn-copiar-resp">📋 Copiar</button>
+          <a class="btn btn-primary btn-sm" id="btn-wa-resp" target="_blank" rel="noopener" href="#">Abrir WhatsApp con este mensaje</a>
+        </div>
+      </div>
+      <div class="eventos" id="eventos"></div>
+    </div>
+  </div>`;
+
+  const txtEl = document.getElementById('respuesta-txt');
+  const waBtn = document.getElementById('btn-wa-resp');
+  const setPlantilla = (tipo) => {
+    txtEl.value = armarRespuesta(s, tipo);
+    waBtn.href = `https://wa.me/${tel}?text=${encodeURIComponent(txtEl.value)}`;
+    document.querySelectorAll('[data-plantilla]').forEach(b => b.classList.toggle('active', b.dataset.plantilla === tipo));
+  };
+  setPlantilla(s.estado_pago === 'pagado' ? 'pagado' : s.estado_pago === 'pendiente' ? 'pagar'
+    : s.estado === 'nueva' ? 'contacto' : s.estado === 'contactado' ? 'cotizacion' : 'seguimiento');
+  txtEl.addEventListener('input', () => { waBtn.href = `https://wa.me/${tel}?text=${encodeURIComponent(txtEl.value)}`; });
+  document.querySelectorAll('[data-plantilla]').forEach(b => b.addEventListener('click', () => setPlantilla(b.dataset.plantilla)));
+  document.getElementById('btn-copiar-resp').addEventListener('click', () => Utils.copy(txtEl.value, 'Mensaje copiado: pegalo en WhatsApp'));
+  document.getElementById('modal-cerrar').onclick = () => slot.innerHTML = '';
+  document.getElementById('modal-bg').addEventListener('click', e => { if (e.target.id === 'modal-bg') slot.innerHTML = ''; });
+
+  if (!sinCobros) { renderPago(s); cargarEventos(s.id); }
+}
+
+async function cargarEventos(id) {
+  const el = document.getElementById('eventos'); if (!el) return;
+  const { data } = await db.from('solicitud_eventos').select('created_at, estado_anterior, estado_nuevo, detalle')
+    .eq('solicitud_id', id).order('created_at', { ascending: false }).limit(40);
+  if (!data || !data.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<b style="font-size:12px">Historial</b>` + data.map(e => `<div><span>${Utils.datetime(e.created_at)}</span>${
+    e.estado_anterior !== e.estado_nuevo ? `${ESTADOS[e.estado_anterior]||e.estado_anterior||'—'} → <b>${ESTADOS[e.estado_nuevo]||e.estado_nuevo}</b>${e.detalle ? ' · ' : ''}` : ''}${esc(e.detalle||'')}</div>`).join('');
+}
+
+async function renderPago(s) {
+  const box = document.getElementById('pago-box'); if (!box) return;
+  const c = cuentaDe(s.cuenta_cobro_id);
+  const comps = (s.comprobantes || []).slice().sort((a, b) => a.id - b.id);
+  const cerrado = ['cancelado', 'entregado'].includes(s.estado);
+  let h = `<h4>💳 Pago ${pagoPill(s)}</h4>`;
+
+  if (s.estado_pago === 'pagado') {
+    h += `<div style="font-size:13.5px">Pagado <b>${money2(s.monto_pagado)}</b> el ${Utils.datetime(s.pagado_en)}${c ? ` en <b>${esc(c.nombre)}</b> (${esc(c.titular)})` : ''}.</div>`;
+    if (esAdmin()) h += `<button class="btn btn-outline btn-sm" id="btn-anular" style="margin-top:10px">Anular pago…</button>`;
+  } else {
+    if (['pendiente', 'comprobante_recibido', 'en_revision'].includes(s.estado_pago) && c) {
+      h += `<div style="font-size:13.5px">Debe transferir <b>${money2(s.monto_a_pagar)}</b> a <b>${esc(c.nombre)}</b> · ${esc(c.alias || c.cvu)} (${esc(c.titular)})${s.pago_vence_en ? ` · vence ${Utils.datetime(s.pago_vence_en)}` : ''}.</div>`;
+    } else if (!cerrado) {
+      h += `<div style="font-size:13px;color:#555">${s.estado_pago === 'vencido' ? 'El plazo venció sin comprobante. ' : ''}${!settings.cobros_activos ? '<b>Los cobros por transferencia están apagados</b> (Cuentas de cobro → Configuración); igual podés habilitar este pedido a mano. ' : ''}${s.total_estimado == null || s.tiene_pendientes ? 'El pedido tiene productos a cotizar: indicá el monto final para habilitar el pago.' : 'El cliente puede pagarlo desde su página, o habilitalo desde acá para mandarle los datos.'}</div>
+        <div class="mini-form">
+          <div><label>Monto a cobrar</label><input type="number" id="hab-monto" min="1" step="0.01" placeholder="${s.total_estimado != null && !s.tiene_pendientes ? Number(s.total_estimado) : 'Monto final'}"></div>
+          <div style="display:flex;align-items:flex-end"><button class="btn btn-primary btn-sm" id="btn-habilitar" style="width:100%">Habilitar pago por transferencia</button></div>
+        </div>`;
+    }
+  }
+
+  // Comprobantes
+  if (comps.length) {
+    h += `<div style="margin-top:14px;font-size:13px;font-weight:700">Comprobantes (${comps.length})</div>`;
+    for (const x of comps) {
+      const [lbl, cls] = COMP[x.estado] || [x.estado, 'badge-muted'];
+      const lec = x.lectura || {};
+      h += `<div class="comp comp-${x.estado}" data-comp="${x.id}">
+        <div>${/^image\//.test(x.mime || '') ? `<img data-src="${esc(x.archivo)}" alt="Comprobante" title="Ver grande">` : `<a class="ph" data-src="${esc(x.archivo)}" title="Abrir PDF" href="#">📄</a>`}</div>
+        <div>
+          <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span><span class="badge ${cls}">${lbl}</span> <span style="color:#888;font-size:12px">${Utils.datetime(x.created_at)}${x.confianza != null ? ` · confianza ${x.confianza}%` : ''}</span></span></div>
+          ${x.motivo ? `<div style="color:#8A241C;font-size:12.5px;margin-top:4px">${esc(x.motivo)}</div>` : ''}
+          ${x.leido_en ? `<dl>
+            <dt>Monto leído</dt><dd>${x.monto_leido != null ? money2(x.monto_leido) : '—'}${s.monto_a_pagar != null ? ` <span style="color:#888;font-weight:400">(esperado ${money2(s.monto_a_pagar)})</span>` : ''}</dd>
+            <dt>Fecha</dt><dd>${x.fecha_leida ? Utils.date(x.fecha_leida) : '—'}${lec.hora ? ' ' + esc(lec.hora) : ''}</dd>
+            <dt>Destino</dt><dd>${esc(x.destino_leido || '—')}${lec.destino_banco ? ` · ${esc(lec.destino_banco)}` : ''}</dd>
+            <dt>Origen</dt><dd>${esc(lec.origen_titular || '—')}${lec.origen_banco ? ` · ${esc(lec.origen_banco)}` : ''}</dd>
+            <dt>Nº operación</dt><dd>${esc(x.nro_operacion || '—')}</dd>
+            ${lec.notas ? `<dt>Notas IA</dt><dd style="font-weight:400">${esc(lec.notas)}</dd>` : ''}
+          </dl>` : `<div style="font-size:12.5px;color:#888;margin-top:4px">Todavía no fue leído por la IA.</div>`}
+          ${!['aceptado', 'rechazado'].includes(x.estado) && s.estado_pago !== 'pagado' ? `<div class="d-flex gap-2" style="flex-wrap:wrap;margin-top:6px">
+            <button class="btn btn-primary btn-sm" data-aceptar="${x.id}">✓ Confirmar pago con este comprobante</button>
+            <button class="btn btn-outline btn-sm" data-rechazar="${x.id}">Rechazar…</button>
+            <button class="btn btn-ghost btn-sm" data-releer="${x.id}">↻ Releer con IA</button>
+          </div>` : ''}
+        </div>
+      </div>`;
+    }
+  }
+
+  // Pago manual
+  if (s.estado_pago !== 'pagado' && !cerrado) {
+    h += `<details style="margin-top:14px"><summary style="cursor:pointer;font-size:13px;font-weight:700">Registrar pago a mano (sin comprobante, efectivo, otro medio)</summary>
+      <div class="mini-form">
+        <div><label>Monto recibido</label><input type="number" id="man-monto" min="1" step="0.01" value="${s.monto_a_pagar != null ? Number(s.monto_a_pagar) : (s.total_estimado != null ? Number(s.total_estimado) : '')}"></div>
+        <div><label>Cuenta donde entró</label><select id="man-cuenta">${cuentas.map(k => `<option value="${k.id}"${k.id === s.cuenta_cobro_id ? ' selected' : ''}>${esc(k.nombre)}</option>`).join('')}</select></div>
+        <div><label>Nº operación / referencia</label><input type="text" id="man-nro" maxlength="60" placeholder="opcional"></div>
+        <div><label>Fecha del ingreso</label><input type="date" id="man-fecha" value="${new Date().toISOString().slice(0,10)}"></div>
+        <div class="full"><label>Nota</label><input type="text" id="man-nota" maxlength="300" placeholder="Ej: pagó en efectivo en el local"></div>
+        <div class="full"><button class="btn btn-outline btn-sm" id="btn-manual">Registrar pago</button></div>
+      </div></details>`;
+  }
+  box.innerHTML = h;
+
+  // Imágenes firmadas (el bucket es privado)
+  box.querySelectorAll('[data-src]').forEach(async el => {
+    const { data } = await db.storage.from('comprobantes').createSignedUrl(el.dataset.src, 900);
+    if (!data) return;
+    if (el.tagName === 'IMG') { el.src = data.signedUrl; el.addEventListener('click', () => zoom(data.signedUrl)); }
+    else { el.href = data.signedUrl; el.target = '_blank'; el.rel = 'noopener'; }
+  });
+
+  box.querySelector('#btn-habilitar')?.addEventListener('click', async () => {
+    const m = box.querySelector('#hab-monto').value;
+    const { data, error } = await db.rpc('habilitar_pago', { p_solicitud_id: s.id, p_monto: m ? Number(m) : null });
+    if (error) return Utils.toast(errorAmigable(error), 'error');
+    Utils.toast(`Pago habilitado: ${money2(data.monto)} en ${data.cuenta.alias || data.cuenta.cvu}`, 'success');
+    await recargarPedido(s.id, 'pagar');
+  });
+  box.querySelectorAll('[data-aceptar]').forEach(b => b.addEventListener('click', async () => {
+    const x = comps.find(k => k.id === Number(b.dataset.aceptar));
+    const ok = await Utils.confirm(`Se registra el cobro de <b>${money2(x && x.monto_leido != null && Math.abs(x.monto_leido - s.monto_a_pagar) > 0.005 ? x.monto_leido : s.monto_a_pagar)}</b> en <b>${c ? esc(c.nombre) : 'la cuenta asignada'}</b> y el pedido pasa a <b>confirmado</b> (descuenta stock).${x && x.estado !== 'coincide' ? '<br><br>⚠️ Este comprobante <b>no fue validado</b> por la lectura automática. Confirmá solo si viste el ingreso en la cuenta.' : ''}`, 'Confirmar pago', 'Confirmar pago', false);
+    if (!ok) return;
+    const monto = x && x.monto_leido != null && s.monto_a_pagar != null && Math.abs(x.monto_leido - s.monto_a_pagar) > 0.005 ? Number(x.monto_leido) : null;
+    const { data, error } = await db.rpc('confirmar_pago', { p_solicitud_id: s.id, p_comprobante_id: x.id, p_monto: monto, p_nro_operacion: x.nro_operacion || null,
+      p_fecha: x.fecha_leida ? new Date(x.fecha_leida + 'T12:00:00').toISOString() : null, p_nota: monto ? 'Confirmado con diferencia respecto al monto esperado' : null });
+    if (error) return Utils.toast(errorAmigable(error), 'error');
+    Utils.toast(`Pago confirmado · pedido ${ESTADOS[data.estado] || data.estado}${data.movimientos_stock ? ` · ${data.movimientos_stock} movimiento(s) de stock` : ''}`, 'success');
+    await recargarPedido(s.id, 'pagado');
+  }));
+  box.querySelectorAll('[data-rechazar]').forEach(b => b.addEventListener('click', async () => {
+    const motivo = prompt('Motivo del rechazo (el cliente lo va a ver en su página):', 'El comprobante no corresponde a este pedido');
+    if (!motivo) return;
+    const { error } = await db.rpc('rechazar_comprobante', { p_comprobante_id: Number(b.dataset.rechazar), p_motivo: motivo });
+    if (error) return Utils.toast(errorAmigable(error), 'error');
+    Utils.toast('Comprobante rechazado', 'success');
+    await recargarPedido(s.id, 'rechazo');
+  }));
+  box.querySelectorAll('[data-releer]').forEach(b => b.addEventListener('click', async () => {
+    b.disabled = true; b.textContent = 'Leyendo…';
+    try {
+      const { data: { session } } = await db.auth.getSession();
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/leer-comprobante`, {
+        method: 'POST', headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comprobante_id: Number(b.dataset.releer) })
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || r.status);
+      Utils.toast(`Lectura: ${COMP[j.estado] ? COMP[j.estado][0] : j.estado}${j.motivo ? ' · ' + j.motivo : ''}`, j.estado === 'coincide' ? 'success' : 'warning', 6000);
+    } catch (e) {
+      Utils.toast('No se pudo releer: ' + (e.message === 'ia_no_configurada' ? 'falta la Edge Function leer-comprobante' : e.message), 'error');
+    }
+    await recargarPedido(s.id);
+  }));
+  box.querySelector('#btn-manual')?.addEventListener('click', async () => {
+    const monto = Number(box.querySelector('#man-monto').value);
+    if (!(monto > 0)) return Utils.toast('Indicá el monto recibido.', 'warning');
+    const f = box.querySelector('#man-fecha').value;
+    const { data, error } = await db.rpc('confirmar_pago', { p_solicitud_id: s.id, p_comprobante_id: null, p_monto: monto,
+      p_nro_operacion: box.querySelector('#man-nro').value || null, p_fecha: f ? new Date(f + 'T12:00:00').toISOString() : null,
+      p_nota: box.querySelector('#man-nota').value || 'Registrado a mano', p_cuenta_id: Number(box.querySelector('#man-cuenta').value) || null });
+    if (error) return Utils.toast(errorAmigable(error), 'error');
+    Utils.toast(`Pago registrado · pedido ${ESTADOS[data.estado] || data.estado}`, 'success');
+    await recargarPedido(s.id, 'pagado');
+  });
+  box.querySelector('#btn-anular')?.addEventListener('click', async () => {
+    const motivo = prompt('Motivo de la anulación (queda en el historial de la cuenta):');
+    if (!motivo) return;
+    const { error } = await db.rpc('anular_pago', { p_solicitud_id: s.id, p_motivo: motivo });
+    if (error) return Utils.toast(errorAmigable(error), 'error');
+    Utils.toast('Pago anulado. El pedido sigue en su estado actual: cancelalo si corresponde.', 'warning', 6000);
+    await recargarPedido(s.id);
+  });
+}
+
+function zoom(url) {
+  const z = document.createElement('div'); z.className = 'img-zoom';
+  z.innerHTML = `<img src="${url}" alt="Comprobante">`;
+  z.addEventListener('click', () => z.remove());
+  document.body.appendChild(z);
+}
+
+async function recargarPedido(id, plantilla) {
+  const { data } = await db.from('solicitudes').select('*, solicitud_items(*), comprobantes(*)').eq('id', id).maybeSingle();
+  if (data) {
+    const i = solicitudes.findIndex(x => x.id === id);
+    if (i >= 0) solicitudes[i] = data;
+    renderChips(); renderTable();
+    if (document.getElementById('modal-bg')) {
+      renderPago(data); cargarEventos(id);
+      const h3 = document.querySelector('.sol-modal h3');
+      if (h3) h3.innerHTML = `${esc(data.cliente_nombre)} ${pagoPill(data)}`;
+      if (plantilla) {
+        const txt = document.getElementById('respuesta-txt'), wa = document.getElementById('btn-wa-resp');
+        txt.value = armarRespuesta(data, plantilla);
+        wa.href = `https://wa.me/${(data.telefono||'').replace(/\D/g,'')}?text=${encodeURIComponent(txt.value)}`;
+        document.querySelectorAll('[data-plantilla]').forEach(b => b.classList.toggle('active', b.dataset.plantilla === plantilla));
+      }
+    }
+  }
+}
+
+async function cambiarEstado(id, estado, sel) {
+  let { data, error } = await db.rpc('cambiar_estado_solicitud', { p_solicitud_id: id, p_nuevo_estado: estado });
+  if (error) { Utils.toast(errorAmigable(error), 'error'); renderTable(); return; }
+  const s = solicitudes.find(x => x.id === id);
+  if (s) s.estado = estado;
+  sel.className = 'estado-select est-' + estado;
+  const movs = data && data.movimientos;
+  Utils.toast(movs ? `Estado actualizado · ${movs} movimiento(s) de stock registrados` : 'Estado actualizado', 'success');
+}
+
+function renderChips() {
+  const actualEst = document.getElementById('filtro-estado').value;
+  const actualPago = document.getElementById('filtro-pago').value;
+  const counts = { '': solicitudes.length };
+  solicitudes.forEach(s => { counts[s.estado] = (counts[s.estado] || 0) + 1; });
+  const revisar = solicitudes.filter(paraRevisar).length;
+  const esperando = solicitudes.filter(s => s.estado_pago === 'pendiente').length;
+  let html = `<button class="chip${actualPago === 'revisar' ? ' active' : ''}" data-pago="revisar" style="${revisar ? 'border-color:#F47A1F;color:#8A4B12;font-weight:700' : ''}">⚠️ Para revisar <span class="chip-n">${revisar}</span></button>`;
+  html += `<button class="chip${actualPago === 'pendiente' ? ' active' : ''}" data-pago="pendiente">⏳ Esperando pago <span class="chip-n">${esperando}</span></button>`;
+  html += [['', 'Todas'], ...Object.entries(ESTADOS)].filter(([v]) => v === '' || counts[v])
+    .map(([v, l]) => `<button class="chip${v === actualEst && !actualPago ? ' active' : ''}" data-estado="${v}">${l} <span class="chip-n">${counts[v] || 0}</span></button>`).join('');
+  document.getElementById('estado-chips').innerHTML = html;
+}
+
+document.getElementById('estado-chips').addEventListener('click', e => {
+  const chip = e.target.closest('[data-estado],[data-pago]'); if (!chip) return;
+  if (chip.dataset.pago !== undefined) {
+    const sel = document.getElementById('filtro-pago');
+    sel.value = sel.value === chip.dataset.pago ? '' : chip.dataset.pago;
+  } else { document.getElementById('filtro-estado').value = chip.dataset.estado; document.getElementById('filtro-pago').value = ''; }
+  page = 1; renderChips(); renderTable();
+});
+
+async function cargar() {
+  // Vencer pagos pendientes fuera de plazo (barato; ignora errores si falta el 012)
+  if (!sinCobros) db.rpc('fn_cobros_vencer', { p_solicitud_id: null }).then(() => {});
+  let { data, error } = await db.from('solicitudes')
+    .select('*, solicitud_items(*), comprobantes(*)')
+    .order('created_at', { ascending: false }).limit(1000);
+  if (error && /comprobantes|estado_pago|does not exist|42P01|PGRST200/.test((error.message || '') + (error.code || ''))) {
+    sinCobros = true;
+    ({ data, error } = await db.from('solicitudes').select('*, solicitud_items(*)').order('created_at', { ascending: false }).limit(1000));
+  }
+  if (error) {
+    if ((error.message||'').includes('does not exist') || error.code === '42P01') {
+      document.getElementById('subtitle').textContent = 'Falta ejecutar sql/005-solicitudes.sql en Supabase (SQL Editor).';
+    }
+    Utils.toast('Error al cargar: ' + error.message, 'error');
+    return;
+  }
+  solicitudes = (data || []).map(s => ({ ...s, estado_pago: s.estado_pago || 'sin_pago', comprobantes: s.comprobantes || [] }));
+  const nuevas = solicitudes.filter(s => s.estado === 'nueva').length;
+  const revisar = solicitudes.filter(paraRevisar).length;
+  document.getElementById('subtitle').textContent = sinCobros
+    ? 'Falta ejecutar sql/012-cobros.sql en Supabase para gestionar cobros.'
+    : `${solicitudes.length} pedidos` + (nuevas ? ` · ${nuevas} sin atender` : '') + (revisar ? ` · ${revisar} comprobante(s) para revisar` : '');
+  renderChips();
+  renderTable();
+}
+
+async function cargarCuentasYSettings() {
+  const [{ data: c }, { data: st }] = await Promise.all([
+    db.from('cuentas_cobro').select('*').order('orden').order('id'),
+    db.from('site_settings').select('cobros_activos, cobros_plazo_horas, cobros_auto_confirmar').eq('id', 1).maybeSingle()
+  ]);
+  cuentas = c || [];
+  settings = st || {};
+  const sel = document.getElementById('filtro-cuenta');
+  sel.innerHTML = '<option value="">Todas las cuentas</option>' + cuentas.map(k => `<option value="${k.id}">${esc(k.nombre)}</option>`).join('');
+}
+
+document.getElementById('tabla-body').addEventListener('change', e => {
+  const sel = e.target.closest('.estado-select'); if (!sel) return;
+  cambiarEstado(Number(sel.dataset.id), sel.value, sel);
+});
+document.getElementById('tabla-body').addEventListener('click', e => {
+  const b = e.target.closest('[data-ver]'); if (!b) return;
+  verDetalle(Number(b.dataset.ver));
+});
+document.getElementById('btn-refrescar').addEventListener('click', async () => { await cargarCuentasYSettings(); await cargar(); });
+document.getElementById('btn-export').addEventListener('click', () => {
+  Utils.exportCSV(applyFilters().map(s => ({
+    Codigo: s.codigo, Fecha: Utils.datetime(s.created_at), Cliente: s.cliente_nombre,
+    Telefono: s.telefono, Localidad: s.localidad||'', Canal: s.canal,
+    Items: (s.solicitud_items||[]).map(i => `${i.cantidad}x ${i.nombre}`).join(' | '),
+    'Total estimado': s.total_estimado==null?'a confirmar':s.total_estimado,
+    'Monto a pagar': s.monto_a_pagar ?? '', 'Estado pago': PAGOS[s.estado_pago] || '', Cuenta: (cuentaDe(s.cuenta_cobro_id)||{}).nombre || '',
+    'Pagado': s.monto_pagado || '', 'Pagado el': s.pagado_en ? Utils.datetime(s.pagado_en) : '',
+    Entrega: ENTREGA[s.tipo_entrega]||'', Estado: ESTADOS[s.estado]||s.estado, Observaciones: s.observaciones||''
+  })), `pedidos-${new Date().toISOString().slice(0,10)}.csv`);
+});
+['q','filtro-estado','filtro-pago','filtro-cuenta','filtro-canal'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => { page = 1; renderChips(); renderTable(); });
+  document.getElementById(id).addEventListener('change', () => { page = 1; renderChips(); renderTable(); });
+});
+
+(async function () {
+  perfil = await Auth.init();
+  if (!perfil) return;
+  await Layout.init('pedidos', 'Pedidos y cobros');
+  const params = new URLSearchParams(location.search);
+  const estadoURL = params.get('estado');
+  if (estadoURL && ESTADOS[estadoURL]) document.getElementById('filtro-estado').value = estadoURL;
+  if (params.get('pago')) document.getElementById('filtro-pago').value = params.get('pago');
+  const qURL = (params.get('q') || '').slice(0, 80);
+  if (qURL) document.getElementById('q').value = qURL;
+  try { await cargarCuentasYSettings(); } catch (e) { sinCobros = true; }
+  await cargar();
+  const ver = Number(params.get('ver'));
+  if (Number.isInteger(ver) && ver > 0) verDetalle(ver);
+})();
+</script>
+  <script src="/admin/js/assistant.js"></script>
+  <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/admin/sw.js').catch(()=>{}); }</script>
+</body>
+</html>
