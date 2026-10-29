@@ -207,6 +207,7 @@ h1,h2,h3{font-family:'Plus Jakarta Sans','Inter',sans-serif;line-height:1.15;let
 .mh-price-ask{font-size:14px;font-weight:700;color:var(--blue);margin:6px 0 2px}
 .badge-oferta{background:#E8443A;color:#fff}
 .badge-nostock{background:#5A6B85;color:#fff}
+.mh-stock-note{font-size:11.5px;color:#5A6B85;margin-top:-4px;margin-bottom:6px}
 .mh-card-title a{color:inherit}
 .mh-card-title a:hover{color:var(--blue)}
 .mh-card-imglink{display:block}

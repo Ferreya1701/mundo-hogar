@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/admin/manifest.json">
+  <meta name="theme-color" content="#0A2E63">
+  <link rel="icon" type="image/png" href="/images/marca/favicon.png">
+  <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
+  <title>Vender en el local — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body class="pos">
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><img class="sidebar-brand-icon" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="32" height="32"><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/admin/ventas" class="btn btn-ghost btn-sm">🧮 Ventas del día</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div>
+          <h1>Vender en el local</h1>
+          <p class="pos-hoy" id="pos-hoy">Cargando…</p>
+        </div>
+      </div>
+
+      <div class="card mb-3" id="aviso-sql" hidden style="border-left:4px solid var(--danger)">
+        <div class="card-body" style="font-size:13px">
+          <b>Falta activar las ventas en la base de datos.</b> Ejecutá <code>sql/013-local-compras-stock.sql</code> en Supabase (ver GUIA-STOCK-Y-VENTAS.md). Hasta entonces esta pantalla no puede registrar ventas.
+        </div>
+      </div>
+
+      <div class="pos-layout">
+        <!-- ── Buscador y productos ── -->
+        <section>
+          <div class="pos-buscar">
+            <div class="pos-buscar-row">
+              <div class="search-bar">
+                <span class="search-icon">🔍</span>
+                <input type="search" id="q" placeholder="Buscar por nombre, SKU o código de barras…" autocomplete="off" aria-label="Buscar producto" autofocus>
+              </div>
+              <button type="button" class="btn btn-outline btn-scan" id="btn-scan" hidden aria-label="Escanear código con la cámara">📷 Escanear</button>
+            </div>
+          </div>
+          <div class="chips chips-filtro pos-cats" id="pos-cats"></div>
+          <div class="pos-results" id="resultados">
+            <div class="empty-state" style="grid-column:1/-1"><div class="spinner"></div></div>
+          </div>
+          <div class="card mt-3">
+            <div class="card-header"><span class="card-title">Vender algo que no está en el catálogo</span></div>
+            <div class="card-body">
+              <div class="pos-libre">
+                <div class="form-group"><label>Qué se vendió</label><input type="text" id="libre-nombre" placeholder="Ej: Cable alargue 5 m" maxlength="120"></div>
+                <div class="form-group"><label>Precio</label><input type="number" id="libre-precio" inputmode="decimal" min="0" step="0.01" placeholder="0"></div>
+                <button type="button" class="btn btn-outline" id="btn-libre">Agregar</button>
+              </div>
+              <div class="form-hint" style="margin-top:6px">No toca el stock. Si el producto va a volver a venderse, conviene crearlo en Productos.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Ticket ── -->
+        <aside class="card pos-ticket" id="ticket">
+          <div class="pos-ticket-bar" id="ticket-bar">
+            <div><div style="font-size:12px;color:var(--muted)" id="bar-items">Sin productos</div><b id="bar-total">$ 0</b></div>
+            <button type="button" class="btn btn-primary btn-sm" id="bar-abrir">Ver ticket ▲</button>
+          </div>
+          <div class="card-header"><span class="card-title">Ticket</span><button type="button" class="btn btn-ghost btn-sm" id="btn-vaciar">Vaciar</button></div>
+          <div class="card-body" id="ticket-body"></div>
+        </aside>
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script src="/admin/js/scanner.js"></script>
+<script>
+/* ============================================================
+   Caja del local. Lo que se vende acá descuenta stock SOLO de los
+   productos con stock controlado; los demás se venden igual y quedan
+   registrados, sin tocar el inventario (sql/013 → venta_registrar).
+   ============================================================ */
+const KEY_TICKET = 'mh_pos_ticket_v1';
+let productos = [];
+let cats = {};
+let cuentas = [];
+let perfil = null;
+let ticket = [];           // [{ key, producto_id, nombre, sku, cantidad, precio, imagen }]
+let medio = 'efectivo';
+let catSel = '';
+let ultimaVenta = null;    // resultado de la última venta para mostrar el ticket
+
+const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const money = n => Utils.currency(n);
+const money2 = n => new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS', minimumFractionDigits:0, maximumFractionDigits:2 }).format(Number(n||0));
+const norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+const precioDe = p => (p.en_oferta && Number(p.precio_oferta) > 0) ? Number(p.precio_oferta) : (Number(p.precio_minorista) > 0 ? Number(p.precio_minorista) : null);
+
+function msgError(error, accion = 'registrar la venta') {
+  console.error('[vender]', error);
+  const m = (error?.message || '').toLowerCase();
+  const hint = error?.hint || error?.details || '';
+  if (!navigator.onLine || m.includes('failed to fetch') || m.includes('networkerror'))
+    return 'Sin conexión. El ticket sigue acá: reintentá cuando vuelva internet.';
+  if (m.includes('jwt') || m.includes('expired'))
+    return 'Tu sesión venció. Iniciá sesión de nuevo y volvé a cobrar.';
+  if (m.includes('could not find the function') || m.includes('schema cache'))
+    return 'Falta ejecutar sql/013 en la base de datos (ver GUIA-STOCK-Y-VENTAS.md).';
+  if (m.includes('sin_permiso')) return hint || 'Tu usuario no puede registrar ventas.';
+  if (m.includes('precio_requerido')) return hint || 'Un producto no tiene precio: tocá el precio en el ticket y escribilo.';
+  if (m.includes('producto_archivado') || m.includes('producto_no_encontrado')) return hint || 'Un producto del ticket ya no existe. Quitalo y volvé a cobrar.';
+  if (m.includes('stock_insuficiente')) return hint || 'No alcanza el stock.';
+  if (m.includes('descuento_invalido')) return 'El descuento no puede superar el subtotal.';
+  if (m.includes('venta_vacia')) return 'El ticket está vacío.';
+  return hint || `No se pudo ${accion}. Probá de nuevo.`;
+}
+
+/* ── Persistencia del ticket (si se recarga la página no se pierde) ── */
+function guardarTicket() { try { sessionStorage.setItem(KEY_TICKET, JSON.stringify({ ticket, medio })); } catch (e) {} }
+function cargarTicket() {
+  try {
+    const s = JSON.parse(sessionStorage.getItem(KEY_TICKET) || 'null');
+    if (s && Array.isArray(s.ticket)) { ticket = s.ticket; medio = s.medio || 'efectivo'; }
+  } catch (e) {}
+}
+
+/* ── Datos ── */
+async function cargarDatos() {
+  const [catRes, prodRes, ctaRes] = await Promise.all([
+    db.from('categorias').select('id,nombre').order('orden'),
+    db.from('productos')
+      .select('id,nombre,sku,codigo_barras,categoria_id,precio_minorista,precio_oferta,en_oferta,stock_actual,stock_minimo,stock_controlado,seguimiento_inventario,permite_venta_sin_stock,imagen_principal_url,estado')
+      .neq('estado','archivado').order('nombre'),
+    db.from('cuentas_cobro').select('id,nombre,alias,activa').eq('activa', true).order('orden')
+  ]);
+  if (prodRes.error) {
+    const m = (prodRes.error.message || '').toLowerCase();
+    if (m.includes('stock_controlado')) { document.getElementById('aviso-sql').hidden = false; }
+    Utils.toast(msgError(prodRes.error, 'cargar el catálogo'), 'error', 7000);
+    document.getElementById('resultados').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">⚠️</div><h3>No se pudo cargar el catálogo</h3><button type="button" class="btn btn-outline" onclick="location.reload()">↺ Reintentar</button></div>`;
+    return;
+  }
+  (catRes.data || []).forEach(c => cats[c.id] = c.nombre);
+  productos = prodRes.data || [];
+  cuentas = ctaRes.error ? [] : (ctaRes.data || []);
+  renderCats();
+  renderResultados();
+  renderTicket();
+  cargarHoy();
+}
+
+async function cargarHoy() {
+  const el = document.getElementById('pos-hoy');
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const { data, error } = await db.from('ventas').select('total,medio_pago,estado').gte('fecha', hoy.toISOString()).eq('estado','cerrada');
+  if (error) {
+    if ((error.message||'').toLowerCase().includes('ventas')) document.getElementById('aviso-sql').hidden = false;
+    el.textContent = 'Lo que se cobra acá descuenta stock al instante.';
+    return;
+  }
+  const n = (data||[]).length, total = (data||[]).reduce((s,v)=>s+Number(v.total||0),0);
+  const porMedio = {};
+  (data||[]).forEach(v => porMedio[v.medio_pago] = (porMedio[v.medio_pago]||0) + Number(v.total||0));
+  el.innerHTML = `<span>Hoy: <b>${n}</b> venta${n!==1?'s':''}</span><span><b>${money(total)}</b></span>` +
+    Object.entries(porMedio).map(([m,t]) => `<span>${esc(MEDIOS[m]||m)}: ${money(t)}</span>`).join('');
+}
+
+/* ── Categorías ── */
+function renderCats() {
+  const usadas = new Set(productos.map(p => p.categoria_id).filter(Boolean));
+  const el = document.getElementById('pos-cats');
+  el.innerHTML = `<button type="button" class="chip${catSel===''?' active':''}" data-cat="">Todos</button>` +
+    Object.entries(cats).filter(([id]) => usadas.has(Number(id))).map(([id,n]) =>
+      `<button type="button" class="chip${catSel===id?' active':''}" data-cat="${id}">${esc(n)}</button>`).join('');
+}
+document.getElementById('pos-cats').addEventListener('click', e => {
+  const b = e.target.closest('.chip'); if (!b) return;
+  catSel = b.dataset.cat; renderCats(); renderResultados();
+});
+
+/* ── Búsqueda ── */
+function buscar(q) {
+  const t = norm(q).trim();
+  let lista = productos;
+  if (catSel) lista = lista.filter(p => String(p.categoria_id) === catSel);
+  if (!t) {
+    // Sin búsqueda: primero los que tienen precio y stock, visibles en tienda
+    return lista.slice().sort((a,b) => (precioDe(b)?1:0)-(precioDe(a)?1:0) || norm(a.nombre).localeCompare(norm(b.nombre))).slice(0, 40);
+  }
+  const digits = t.replace(/\D/g,'');
+  const puntaje = p => {
+    const n = norm(p.nombre), sku = norm(p.sku), bar = String(p.codigo_barras||'').replace(/\D/g,'');
+    if (digits.length >= 8 && bar && bar === digits) return 1000;
+    if (sku && sku === t) return 900;
+    if (sku && sku.startsWith(t)) return 500;
+    if (n.startsWith(t)) return 400;
+    const palabras = t.split(/\s+/).filter(Boolean);
+    if (palabras.every(w => n.includes(w) || (sku && sku.includes(w)))) return 300 - n.length / 100;
+    return 0;
+  };
+  return lista.map(p => [puntaje(p), p]).filter(x => x[0] > 0).sort((a,b) => b[0]-a[0]).map(x => x[1]).slice(0, 40);
+}
+
+function exacto(q) {
+  const t = norm(q).trim(); if (!t) return null;
+  const digits = t.replace(/\D/g,'');
+  return productos.find(p => (digits.length >= 8 && String(p.codigo_barras||'').replace(/\D/g,'') === digits) || norm(p.sku) === t) || null;
+}
+
+function stockBadge(p) {
+  if (p.seguimiento_inventario === false || p.permite_venta_sin_stock) return `<span class="ctrl ctrl-libre">sin control de stock</span>`;
+  if (!p.stock_controlado) return `<span class="ctrl ctrl-no" title="Todavía no se contó: la venta no toca el stock">sin contar</span>`;
+  if (p.stock_actual < 0) return `<span class="ctrl ctrl-neg">stock ${p.stock_actual} (revisar)</span>`;
+  const cls = p.stock_actual <= 0 ? 'ctrl-neg' : 'ctrl-si';
+  return `<span class="ctrl ${cls}">stock ${p.stock_actual}</span>`;
+}
+
+function renderResultados() {
+  const q = document.getElementById('q').value;
+  const lista = buscar(q);
+  const el = document.getElementById('resultados');
+  if (!lista.length) {
+    el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">🔍</div><h3>Nada con "${esc(q)}"</h3><p>Probá con otra palabra, o vendelo como ítem fuera del catálogo (abajo).</p></div>`;
+    return;
+  }
+  el.innerHTML = lista.map(p => {
+    const precio = precioDe(p);
+    const img = p.imagen_principal_url;
+    return `<button type="button" class="pos-item${p.estado!=='activo'?' oculto':''}" data-id="${p.id}" aria-label="Agregar ${esc(p.nombre)}">
+      ${img ? `<img src="${esc(img)}" alt="" loading="lazy" onerror="this.outerHTML='<div class=pos-img-ph>📦</div>'">` : '<div class="pos-img-ph">📦</div>'}
+      <div class="pos-item-info">
+        <div class="pos-item-nombre">${esc(p.nombre)}</div>
+        <div class="pos-item-meta">${p.sku ? `<span>${esc(p.sku)}</span>` : ''}${stockBadge(p)}${p.estado!=='activo' ? '<span class="badge badge-muted">oculto en tienda</span>' : ''}</div>
+      </div>
+      <div class="pos-item-precio ${precio===null?'ask':''}">${precio===null ? 'sin precio' : money(precio)}</div>
+    </button>`;
+  }).join('');
+}
+
+document.getElementById('resultados').addEventListener('click', e => {
+  const b = e.target.closest('.pos-item'); if (!b) return;
+  const p = productos.find(x => x.id === Number(b.dataset.id)); if (p) agregarProducto(p);
+});
+
+let tmr = null;
+document.getElementById('q').addEventListener('input', () => { clearTimeout(tmr); tmr = setTimeout(renderResultados, 90); });
+document.getElementById('q').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  const q = e.target.value;
+  const ex = exacto(q);
+  if (ex) { agregarProducto(ex); e.target.value = ''; renderResultados(); return; }
+  const lista = buscar(q);
+  if (lista.length === 1) { agregarProducto(lista[0]); e.target.value = ''; renderResultados(); }
+  else if (!lista.length && q.trim()) Utils.toast('No hay ningún producto con ese código', 'warning');
+});
+
+// Escaneo con la cámara
+if (MHScanner.disponible()) {
+  const b = document.getElementById('btn-scan'); b.hidden = false;
+  b.addEventListener('click', () => MHScanner.abrir(codigo => {
+    const ex = exacto(codigo);
+    if (ex) { agregarProducto(ex); return; }
+    document.getElementById('q').value = codigo; renderResultados();
+    Utils.toast(`Código ${codigo} no está en ningún producto. Podés cargarlo en Productos → código de barras.`, 'warning', 6000);
+  }));
+}
+
+/* ── Ticket ── */
+async function pedirPrecio(nombre, actual) {
+  return new Promise(resolve => {
+    const bd = document.createElement('div');
+    bd.className = 'modal-backdrop';
+    bd.innerHTML = `<div class="modal" style="max-width:360px">
+      <div class="modal-header"><h3 class="modal-title">Precio de venta</h3></div>
+      <div class="modal-body">
+        <p style="font-size:13px;color:var(--muted);margin-bottom:10px">${esc(nombre)}${actual==null?' no tiene precio cargado. Escribí a cuánto se vende:':''}</p>
+        <input type="number" id="_pp" inputmode="decimal" min="0" step="0.01" value="${actual ?? ''}" placeholder="0" style="width:100%;min-height:48px;font-size:18px;text-align:right">
+      </div>
+      <div class="modal-footer"><button class="btn btn-outline" id="_pno">Cancelar</button><button class="btn btn-primary" id="_pok">Aceptar</button></div></div>`;
+    document.body.appendChild(bd);
+    const inp = bd.querySelector('#_pp'); setTimeout(() => { inp.focus(); inp.select(); }, 30);
+    const ok = () => { const v = Number(inp.value); if (!isFinite(v) || v < 0) { inp.focus(); return; } bd.remove(); resolve(v); };
+    bd.querySelector('#_pok').onclick = ok;
+    bd.querySelector('#_pno').onclick = () => { bd.remove(); resolve(null); };
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') ok(); if (e.key === 'Escape') { bd.remove(); resolve(null); } });
+  });
+}
+
+async function agregarProducto(p) {
+  const key = 'p' + p.id;
+  const ya = ticket.find(t => t.key === key);
+  if (ya) { ya.cantidad = Math.min(ya.cantidad + 1, 9999); }
+  else {
+    let precio = precioDe(p);
+    if (precio === null) { precio = await pedirPrecio(p.nombre, null); if (precio === null) return; }
+    ticket.push({ key, producto_id: p.id, nombre: p.nombre, sku: p.sku, cantidad: 1, precio, imagen: p.imagen_principal_url });
+  }
+  guardarTicket(); renderTicket();
+  Utils.toast(`${p.nombre} agregado`, 'success', 1400);
+  if (navigator.vibrate) navigator.vibrate(25);
+  const q = document.getElementById('q');
+  if (window.innerWidth > 980) { q.select(); q.focus(); }
+}
+
+document.getElementById('btn-libre').addEventListener('click', () => {
+  const nombre = document.getElementById('libre-nombre').value.trim();
+  const precio = Number(document.getElementById('libre-precio').value);
+  if (nombre.length < 2) { Utils.toast('Escribí qué se vendió', 'warning'); document.getElementById('libre-nombre').focus(); return; }
+  if (!isFinite(precio) || precio < 0 || document.getElementById('libre-precio').value === '') { Utils.toast('Indicá el precio', 'warning'); document.getElementById('libre-precio').focus(); return; }
+  ticket.push({ key: 'l' + Date.now(), producto_id: null, nombre, sku: null, cantidad: 1, precio, imagen: null });
+  document.getElementById('libre-nombre').value = ''; document.getElementById('libre-precio').value = '';
+  guardarTicket(); renderTicket();
+});
+
+const MEDIOS = { efectivo:'Efectivo', transferencia:'Transferencia', debito:'Débito', credito:'Crédito', mercadopago:'Mercado Pago', cuenta_corriente:'Cuenta corriente', otro:'Otro' };
+
+function totales() {
+  const subtotal = ticket.reduce((s,t) => s + t.precio * t.cantidad, 0);
+  const desc = Math.max(0, Number(document.getElementById('desc')?.value || 0) || 0);
+  return { subtotal, desc: Math.min(desc, subtotal), total: Math.max(0, subtotal - Math.min(desc, subtotal)) };
+}
+
+function avisosStock() {
+  const avisos = [];
+  ticket.forEach(t => {
+    if (!t.producto_id) return;
+    const p = productos.find(x => x.id === t.producto_id); if (!p) return;
+    if (p.stock_controlado && p.seguimiento_inventario !== false && p.stock_actual - t.cantidad < 0)
+      avisos.push({ nombre: p.nombre, hay: p.stock_actual, piden: t.cantidad });
+  });
+  return avisos;
+}
+
+function renderTicket() {
+  const body = document.getElementById('ticket-body');
+  const n = ticket.reduce((s,t) => s + t.cantidad, 0);
+  const { total } = totales();
+  document.getElementById('bar-items').textContent = n ? `${n} unidad${n!==1?'es':''} · ${ticket.length} ítem${ticket.length!==1?'s':''}` : 'Sin productos';
+  document.getElementById('bar-total').textContent = money(total);
+
+  if (ultimaVenta) { renderVentaOk(); return; }
+
+  if (!ticket.length) {
+    body.innerHTML = `<div class="pos-vacio">Tocá un producto para agregarlo al ticket.<br><br>Con un lector USB: escaneá y listo. Con el celular: 📷 Escanear.</div>`;
+    return;
+  }
+  const descActual = document.getElementById('desc')?.value || '';
+  const cliN = document.getElementById('cli-nombre')?.value || '';
+  const cliT = document.getElementById('cli-tel')?.value || '';
+  const notas = document.getElementById('notas')?.value || '';
+  const cuentaSel = document.getElementById('cuenta')?.value || '';
+
+  const lineas = ticket.map(t => {
+    const p = t.producto_id ? productos.find(x => x.id === t.producto_id) : null;
+    let sub = '';
+    if (!p) sub = '<span class="ctrl ctrl-libre">fuera del catálogo</span>';
+    else if (p.seguimiento_inventario === false || p.permite_venta_sin_stock) sub = '<span class="ctrl ctrl-libre">sin control</span>';
+    else if (!p.stock_controlado) sub = '<span class="ctrl ctrl-no" title="No descuenta stock">sin contar</span>';
+    else if (p.stock_actual - t.cantidad < 0) sub = `<span class="pos-aviso">⚠ hay ${p.stock_actual}, queda en ${p.stock_actual - t.cantidad}</span>`;
+    else sub = `<span class="ctrl ctrl-si">quedan ${p.stock_actual - t.cantidad}</span>`;
+    return `<div class="pos-linea" data-key="${esc(t.key)}">
+      <div>
+        <div class="pos-linea-nombre">${esc(t.nombre)}</div>
+        <div class="pos-linea-sub">${t.sku ? `<span>${esc(t.sku)}</span>` : ''}<button type="button" class="pos-precio-btn" data-act="precio" title="Cambiar precio">${money2(t.precio)} c/u ✎</button>${sub}</div>
+      </div>
+      <div class="pos-linea-right">
+        <div class="pos-linea-total">${money(t.precio * t.cantidad)}</div>
+        <div class="qty-ctl"><button type="button" data-act="menos" aria-label="Menos">−</button><input type="number" inputmode="numeric" min="1" max="9999" value="${t.cantidad}" data-act="cant" aria-label="Cantidad"><button type="button" data-act="mas" aria-label="Más">+</button></div>
+        <button type="button" class="pos-quitar" data-act="quitar">Quitar</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const { subtotal, desc } = totales();
+  body.innerHTML = lineas + `
+    <div class="pos-totales">
+      <div class="fila"><span>Subtotal</span><b>${money(subtotal)}</b></div>
+      <div class="fila"><span>Descuento ($)</span><input type="number" id="desc" inputmode="decimal" min="0" step="1" placeholder="0" value="${esc(descActual)}"></div>
+      <div class="pos-total"><span>Total</span><span id="total-txt">${money(subtotal - desc)}</span></div>
+    </div>
+    <div class="pos-seccion"><span class="lbl">Medio de pago</span>
+      <div class="chips pay-chips" id="medios">${Object.entries(MEDIOS).map(([k,v]) => `<button type="button" class="chip${medio===k?' active':''}" data-medio="${k}">${v}</button>`).join('')}</div>
+      ${(medio==='transferencia'||medio==='mercadopago') && cuentas.length ? `<select id="cuenta" style="margin-top:8px;width:100%;min-height:40px"><option value="">¿A qué cuenta entró? (opcional)</option>${cuentas.map(c=>`<option value="${c.id}"${String(c.id)===cuentaSel?' selected':''}>${esc(c.nombre)}${c.alias?' · '+esc(c.alias):''}</option>`).join('')}</select>` : ''}
+    </div>
+    <div class="pos-seccion"><span class="lbl">Cliente (opcional)</span>
+      <div class="pos-cliente"><input type="text" id="cli-nombre" placeholder="Nombre" maxlength="80" value="${esc(cliN)}"><input type="tel" id="cli-tel" placeholder="Teléfono (para mandar el ticket)" maxlength="25" value="${esc(cliT)}"></div>
+    </div>
+    <div class="pos-seccion"><input type="text" id="notas" placeholder="Nota interna (opcional)" maxlength="400" value="${esc(notas)}"></div>
+    <button type="button" class="btn btn-primary btn-cobrar" id="btn-cobrar">Cobrar ${money(subtotal - desc)}</button>`;
+}
+
+document.getElementById('ticket-body').addEventListener('click', async e => {
+  const b = e.target.closest('[data-act], [data-medio], #btn-cobrar, [data-ok]');
+  if (!b) return;
+  if (b.id === 'btn-cobrar') { cobrar(); return; }
+  if (b.dataset.ok === 'nueva') { ultimaVenta = null; renderTicket(); document.getElementById('q').focus(); return; }
+  if (b.dataset.ok === 'wa') { enviarWA(); return; }
+  if (b.dataset.ok === 'copiar') { Utils.copy(textoTicket(ultimaVenta), 'Ticket copiado'); return; }
+  if (b.dataset.medio) { medio = b.dataset.medio; guardarTicket(); renderTicket(); return; }
+  const linea = b.closest('.pos-linea'); if (!linea) return;
+  const t = ticket.find(x => x.key === linea.dataset.key); if (!t) return;
+  if (b.dataset.act === 'mas') t.cantidad = Math.min(9999, t.cantidad + 1);
+  if (b.dataset.act === 'menos') { t.cantidad -= 1; if (t.cantidad < 1) ticket = ticket.filter(x => x !== t); }
+  if (b.dataset.act === 'quitar') ticket = ticket.filter(x => x !== t);
+  if (b.dataset.act === 'precio') { const v = await pedirPrecio(t.nombre, t.precio); if (v === null) return; t.precio = v; }
+  guardarTicket(); renderTicket();
+});
+document.getElementById('ticket-body').addEventListener('input', e => {
+  if (e.target.dataset.act === 'cant') {
+    const linea = e.target.closest('.pos-linea'); const t = ticket.find(x => x.key === linea.dataset.key);
+    const v = Math.max(1, Math.min(9999, parseInt(e.target.value, 10) || 1));
+    if (t) { t.cantidad = v; guardarTicket(); linea.querySelector('.pos-linea-total').textContent = money(t.precio * v); }
+    const { subtotal, desc } = totales();
+    document.getElementById('total-txt').textContent = money(subtotal - desc);
+    document.getElementById('btn-cobrar').textContent = `Cobrar ${money(subtotal - desc)}`;
+    document.getElementById('bar-total').textContent = money(subtotal - desc);
+  }
+  if (e.target.id === 'desc') {
+    const { subtotal, desc } = totales();
+    document.getElementById('total-txt').textContent = money(subtotal - desc);
+    document.getElementById('btn-cobrar').textContent = `Cobrar ${money(subtotal - desc)}`;
+    document.getElementById('bar-total').textContent = money(subtotal - desc);
+  }
+});
+document.getElementById('ticket-body').addEventListener('change', e => {
+  if (e.target.dataset.act === 'cant') renderTicket();
+});
+
+document.getElementById('btn-vaciar').addEventListener('click', async () => {
+  if (ultimaVenta) { ultimaVenta = null; renderTicket(); return; }
+  if (!ticket.length) return;
+  if (!await Utils.confirm('Se quitan todos los productos del ticket.', 'Vaciar ticket', 'Vaciar')) return;
+  ticket = []; guardarTicket(); renderTicket();
+});
+
+// Ticket como panel deslizable en celular
+const ticketEl = document.getElementById('ticket');
+function toggleTicket(abrir) {
+  const on = abrir ?? !ticketEl.classList.contains('abierto');
+  ticketEl.classList.toggle('abierto', on);
+  document.getElementById('bar-abrir').textContent = on ? 'Cerrar ▼' : 'Ver ticket ▲';
+}
+document.getElementById('ticket-bar').addEventListener('click', () => toggleTicket());
+
+/* ── Cobrar ── */
+let cobrando = false;
+async function cobrar() {
+  if (cobrando || !ticket.length) return;
+  const { subtotal, desc, total } = totales();
+  if (desc > subtotal) { Utils.toast('El descuento no puede superar el subtotal', 'warning'); return; }
+  const avisos = avisosStock();
+  const cliN = document.getElementById('cli-nombre').value.trim();
+  const cliT = document.getElementById('cli-tel').value.trim();
+  const notas = document.getElementById('notas').value.trim();
+  const cuenta = document.getElementById('cuenta')?.value || null;
+
+  const resumen = `<b>${money(total)}</b> en ${MEDIOS[medio]}${desc ? ` (descuento ${money(desc)})` : ''}.<br>` +
+    ticket.map(t => `${t.cantidad}× ${esc(t.nombre)}`).join('<br>') +
+    (avisos.length ? `<br><br><span style="color:#B45309">⚠ El sistema dice que no alcanza el stock de: ${avisos.map(a => `<b>${esc(a.nombre)}</b> (hay ${a.hay}, se venden ${a.piden})`).join(', ')}. Se vende igual y el stock queda en negativo para que lo revises en Contar stock.</span>` : '');
+  if (!await Utils.confirm(resumen, 'Confirmar venta', `Cobrar ${money(total)}`, false)) return;
+
+  cobrando = true;
+  const btn = document.getElementById('btn-cobrar'); if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Registrando…'; }
+  const payload = {
+    items: ticket.map(t => ({ producto_id: t.producto_id, nombre: t.producto_id ? undefined : t.nombre, cantidad: t.cantidad, precio_unitario: t.precio })),
+    medio_pago: medio, cuenta_cobro_id: cuenta || null,
+    cliente_nombre: cliN || null, cliente_telefono: cliT || null,
+    descuento: desc || 0, notas: notas || null, permitir_negativo: true
+  };
+  const { data, error } = await db.rpc('venta_registrar', { p: payload });
+  cobrando = false;
+  if (error) {
+    if (btn) { btn.disabled = false; btn.textContent = `Cobrar ${money(total)}`; }
+    Utils.toast(msgError(error), 'error', 8000);
+    return;
+  }
+  // Actualizar stock local con lo que devolvió la base
+  (data.items || []).forEach(i => {
+    if (!i.producto_id) return;
+    const p = productos.find(x => x.id === i.producto_id);
+    if (p && i.afecto_stock && typeof i.stock_posterior === 'number') p.stock_actual = i.stock_posterior;
+  });
+  ultimaVenta = Object.assign({}, data, { cliente_nombre: cliN, cliente_telefono: cliT });
+  ticket = []; guardarTicket();
+  renderTicket(); renderResultados(); cargarHoy();
+  toggleTicket(true);
+  Utils.toast(`Venta ${data.codigo} registrada ✅`, 'success');
+}
+
+function textoTicket(v) {
+  const L = [];
+  L.push('Mundo Hogar — Comprobante de venta');
+  L.push(`${v.codigo} · ${Utils.datetime(v.fecha)}`);
+  if (v.cliente_nombre) L.push(`Cliente: ${v.cliente_nombre}`);
+  L.push('');
+  (v.items||[]).forEach(i => L.push(`${i.cantidad}× ${i.nombre} — ${money2(i.subtotal)}`));
+  L.push('');
+  if (Number(v.descuento) > 0) { L.push(`Subtotal: ${money2(v.subtotal)}`); L.push(`Descuento: -${money2(v.descuento)}`); }
+  L.push(`TOTAL: ${money2(v.total)} (${MEDIOS[v.medio_pago]||v.medio_pago})`);
+  L.push('');
+  L.push('¡Gracias por tu compra!');
+  return L.join('\n');
+}
+function enviarWA() {
+  const tel = String(ultimaVenta?.cliente_telefono || '').replace(/\D/g,'');
+  const texto = encodeURIComponent(textoTicket(ultimaVenta));
+  let num = tel;
+  if (num && !num.startsWith('54')) num = '549' + num.replace(/^0/, '').replace(/^15/, '');
+  window.open(num ? `https://wa.me/${num}?text=${texto}` : `https://wa.me/?text=${texto}`, '_blank', 'noopener');
+}
+
+function renderVentaOk() {
+  const v = ultimaVenta;
+  const avisos = v.advertencias || [];
+  document.getElementById('ticket-body').innerHTML = `
+    <div class="pos-ok">
+      <div class="pos-ok-ic">✅</div>
+      <div class="pos-ok-total">${money(v.total)}</div>
+      <div class="pos-ok-cod">${esc(v.codigo)} · ${esc(MEDIOS[v.medio_pago]||v.medio_pago)}</div>
+      <div class="pos-ok-items">${(v.items||[]).map(i => `<div><span>${i.cantidad}× ${esc(i.nombre)}${i.afecto_stock ? ` <span class="ctrl ctrl-si">stock ${i.stock_posterior}</span>` : ' <span class="ctrl ctrl-no">sin tocar stock</span>'}</span><b>${money(i.subtotal)}</b></div>`).join('')}</div>
+      ${avisos.length ? `<div class="pos-aviso" style="display:block;text-align:left;padding:8px 10px">⚠ Stock en negativo: ${avisos.map(a => `<b>${esc(a.nombre)}</b> (${a.stock})`).join(', ')}. Revisalo en <a href="/admin/carga-stock">Contar stock</a>.</div>` : ''}
+      <div class="pos-ok-acciones">
+        <button type="button" class="btn btn-primary" data-ok="nueva">Nueva venta</button>
+        <button type="button" class="btn btn-outline" data-ok="wa">💬 Mandar ticket por WhatsApp</button>
+        <button type="button" class="btn btn-ghost" data-ok="copiar">Copiar ticket</button>
+      </div>
+    </div>`;
+}
+
+/* ── Atajos ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'F2' || (e.key === '/' && !/input|textarea|select/i.test(e.target.tagName))) { e.preventDefault(); document.getElementById('q').focus(); }
+  if (e.key === 'F9' && ticket.length && !ultimaVenta) { e.preventDefault(); cobrar(); }
+});
+
+async function initPage() {
+  perfil = await Auth.init();
+  if (!perfil) return;
+  await Layout.init('vender', 'Vender en el local');
+  cargarTicket();
+  await cargarDatos();
+}
+initPage();
+</script>
+  <script src="/admin/js/assistant.js"></script>
+  <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/admin/sw.js').catch(()=>{}); }</script>
+</body>
+</html>

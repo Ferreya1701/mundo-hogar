@@ -181,15 +181,27 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
     if (!ids.length) return;
     try {
       const url = window.SUPABASE_URL, key = window.SUPABASE_PUBLISHABLE_KEY || window.SUPABASE_ANON_KEY;
-      const res = await fetch(`${url}/rest/v1/productos?select=id,nombre,slug,sku,imagen_principal_url,precio_minorista,precio_oferta,en_oferta,estado&id=in.(${ids.join(',')})`,
-        { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+      const hdr = { headers: { apikey: key, Authorization: `Bearer ${key}` } };
+      const base = 'id,nombre,slug,sku,imagen_principal_url,precio_minorista,precio_oferta,en_oferta,estado,seguimiento_inventario,permite_venta_sin_stock,stock_actual';
+      // stock_controlado / stock_disponible existen desde sql/013
+      let res = await fetch(`${url}/rest/v1/productos?select=${base},stock_controlado,stock_disponible&id=in.(${ids.join(',')})`, hdr);
+      if (!res.ok) res = await fetch(`${url}/rest/v1/productos?select=${base}&id=in.(${ids.join(',')})`, hdr);
       if (!res.ok) return;
       (await res.json()).forEach(r => {
+        const precio = (r.en_oferta && Number(r.precio_oferta) > 0) ? Number(r.precio_oferta)
+                     : (Number(r.precio_minorista) > 0 ? Number(r.precio_minorista) : null);
         fresh[r.id] = {
           nombre: r.nombre, slug: r.slug, sku: r.sku, imagen: r.imagen_principal_url,
-          activo: r.estado === 'activo',
-          precio: (r.en_oferta && Number(r.precio_oferta) > 0) ? Number(r.precio_oferta)
-                : (Number(r.precio_minorista) > 0 ? Number(r.precio_minorista) : null)
+          activo: r.estado === 'activo', precio,
+          // misma regla que la tarjeta del catálogo (MH.availability)
+          disp: MH.availability({ precio, enOferta: false, precioOferta: null,
+            seguimiento: r.seguimiento_inventario !== false, permiteSinStock: !!r.permite_venta_sin_stock,
+            controlado: typeof r.stock_controlado === 'boolean' ? r.stock_controlado : undefined,
+            disponible: typeof r.stock_disponible === 'number' ? r.stock_disponible : (typeof r.stock_actual === 'number' ? r.stock_actual : null),
+            stock: r.stock_actual }),
+          disponible: typeof r.stock_disponible === 'number' ? r.stock_disponible : (typeof r.stock_actual === 'number' ? r.stock_actual : null),
+          controlado: typeof r.stock_controlado === 'boolean' ? r.stock_controlado : undefined,
+          limitaStock: r.seguimiento_inventario !== false && !r.permite_venta_sin_stock && r.stock_controlado === true
         };
       });
       // quita del carrito productos que ya no existen o fueron pausados
@@ -230,6 +242,9 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
           <div class="cart-item-name">${slug ? `<a href="/producto/${esc(slug)}">${esc(nombre)}</a>` : esc(nombre)}</div>
           ${sku ? `<div class="cart-item-sku">Código: ${esc(sku)}</div>` : ''}
           <div class="cart-item-price ${precio === null ? 'ask' : ''}">${precio === null ? 'Precio a confirmar' : MH.fmtPrice(precio) + ' c/u'}</div>
+          ${f.disp === 'sin_stock' ? '<div class="cart-item-sku" style="color:#B91C1C;font-weight:600">Sin stock ahora: quitalo o consultanos por WhatsApp</div>'
+            : f.limitaStock && typeof f.disponible === 'number' && it.cant > f.disponible ? `<div class="cart-item-sku" style="color:#B45309;font-weight:600">Solo quedan ${f.disponible}: bajá la cantidad</div>`
+            : f.disp === 'consultar' ? '<div class="cart-item-sku">Stock a confirmar por WhatsApp</div>' : ''}
         </div>
         <div class="cart-item-right">
           <div class="qty qty-sm">
@@ -259,7 +274,13 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
     const key = btn.closest('.cart-item').dataset.key;
     const it = Cart.items.find(i => String(i.pid) === key || i.slug === key); if (!it) return;
     if (btn.dataset.act === 'menos') Cart.setQty(key, it.cant - 1);
-    if (btn.dataset.act === 'mas') Cart.setQty(key, it.cant + 1);
+    if (btn.dataset.act === 'mas') {
+      const f = it.pid != null ? fresh[it.pid] : null;
+      if (f && f.limitaStock && typeof f.disponible === 'number' && it.cant + 1 > f.disponible) {
+        $('#form-fail').textContent = `De ${f.nombre} quedan ${f.disponible} unidad${f.disponible === 1 ? '' : 'es'} disponibles.`;
+        $('#form-fail').hidden = false;
+      } else Cart.setQty(key, it.cant + 1);
+    }
     if (btn.dataset.act === 'quitar') Cart.remove(key);
     render();
   });
@@ -363,6 +384,20 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
       if (r.ok) resp = await r.json();
       else {
         const err = await r.json().catch(() => ({}));
+        // Stock insuficiente en un producto controlado: el pedido NO se creó.
+        // Mostramos qué falta y dejamos el carrito para que ajuste cantidades.
+        if (r.status === 400 && err && String(err.message || '').includes('sin_stock')) {
+          let faltan = [];
+          try { faltan = JSON.parse(err.details || '[]'); } catch (e) {}
+          faltan.forEach(f => { if (f.disponible <= 0) Cart.remove(f.id); else Cart.setQty(f.id, f.disponible); });
+          await refreshItems(); render();
+          $('#form-fail').textContent = faltan.length
+            ? 'Mientras armabas el pedido se vendió parte del stock: ' + faltan.map(f => `${f.nombre} (quedan ${f.disponible})`).join(', ') + '. Ajustamos el carrito; revisalo y volvé a enviar.'
+            : (err.hint || 'Algunos productos ya no tienen stock disponible.');
+          $('#form-fail').hidden = false;
+          enviando = false; btn.disabled = false; btn.textContent = 'Enviar pedido por WhatsApp';
+          return;
+        }
         // errores de validación del servidor: mostrar y no continuar
         const msg = err && err.hint;
         if (r.status === 400 && msg && /Ingresá|Agregá|solicitudes|minutos|disponibles/.test(msg)) {

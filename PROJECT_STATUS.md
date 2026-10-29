@@ -1,6 +1,6 @@
 # PROJECT_STATUS — Mundo Hogar / TIAF
 
-> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-10-23 (cobros).
+> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-10-29 (stock real: caja, compras, conteo).
 
 ## Hosting (desde 2026-10-16): Cloudflare Workers
 - **Producción:** `https://mundohogarstf.com` servido por **Cloudflare Workers** (solo archivos
@@ -21,6 +21,44 @@
 - **Imágenes:** cada `.jpg` de `public/images/productos` tiene su `.webp` (máx. 1200 px). El sitio pide
   la `.webp` y cae al `.jpg` si falta (`MH.webpUrl` / `MH.setImg`). Al sumar fotos nuevas, generar ambas.
 - Cloudflare redirige `x.html` → `x` y `/productos` → `/productos/` (conserva los parámetros).
+
+## Stock real: ventas en el local, compras y conteo (2026-10-29) — CÓDIGO LISTO, SQL PENDIENTE DE EJECUTAR
+Guía: `GUIA-STOCK-Y-VENTAS.md`. Objetivo: que el stock sea confiable para vender online.
+- **`sql/013-local-compras-stock.sql`** — ESCRITO Y PROBADO (`scripts/test-stock-sql.mjs`, 109 pruebas en
+  PGlite), **todavía NO ejecutado en producción**. Hasta ejecutarlo, las páginas nuevas del panel muestran
+  "falta ejecutar sql/013" y la tienda/dashboard/alertas/carrito degradan al comportamiento anterior
+  (piden las columnas nuevas y, si no existen, repiten sin ellas).
+  Qué agrega: `productos.stock_controlado` (+ `stock_controlado_en`, `ultimo_conteo_en`, `sku_proveedor`);
+  conteo absoluto `fn_stock_contar` / `fn_stock_contar_lote` / `fn_stock_quitar_control`; alta rápida
+  `producto_crear_rapido` (SKU `MH-00001`, slug único, nace inactivo); `ventas` + `venta_items` con
+  `venta_registrar` (descuenta solo controlados, permite negativo con aviso, ítem libre, medio de pago,
+  cuenta de cobro opcional) y `venta_anular` (repone); `compras` / `compra_items` / `compra_recepciones`
+  con `compra_sugerir` (SKU, barras, código proveedor, nombre parecido con pg_trgm), `compra_crear`
+  (vincular/crear/omitir, `recibir_ahora`), `compra_recibir` ("ya había" para no contados; costo en pesos
+  por tipo de cambio; marca controlado), `compra_item_vincular`, `compra_cambiar_estado`; columnas
+  calculadas PostgREST `stock_comprometido` / `stock_disponible` / `disponibilidad_web` (comprometido =
+  pedidos web esperando pago); `crear_solicitud` redefinida: 'sin_stock' si un controlado no alcanza,
+  `solicitud_items.stock_a_confirmar` para productos con precio sin controlar (→ `tiene_pendientes`,
+  sin pago online); `catalogo_bot` suma `stock_controlado`. Backfill: productos con movimientos previos
+  quedan controlados. Extensión `pg_trgm` en esquema `extensions`.
+- **Panel:** `admin/vender.html` (caja; lector USB o cámara con `admin/js/scanner.js`, ticket deslizable
+  en celular, ticket por WhatsApp), `admin/ventas.html` (listado, KPIs, anular, CSV), `admin/compras.html`
+  (asistente: pegar/subir Excel/CSV o leer con IA → coincidencias → crear; recepción parcial/total),
+  `admin/carga-stock.html` reescrito como **conteo** absoluto (filtros sin contar / negativo / bajo).
+  Dashboard: KPIs ventas hoy y sin contar; Alertas: pestaña "Sin contar"; Pedidos: etiqueta "stock a
+  confirmar". Menú en `layout.js`. Asistente MH conoce las secciones nuevas.
+- **Tienda:** `MH.availability(p)` → ok / sin_stock / consultar / cotizar (`assets/catalogo.js`); tarjeta
+  y ficha muestran "Consultar stock" para productos sin controlar; ficha limita la cantidad al disponible
+  y dice "¡Últimas N!"; carrito avisa y, ante 'sin_stock' del servidor, ajusta cantidades y lo explica.
+- **Edge Function `supabase/functions/leer-lista-compra/index.ts`** — NO desplegada todavía. Lee foto/PDF/
+  texto de la lista del proveedor con Claude (`claude-opus-5`, salida JSON con esquema, fallbacks por
+  defecto) y devuelve renglones en español. Requiere el mismo `ANTHROPIC_API_KEY` que falta.
+- **Hosting:** `_headers` y `vercel.json` permiten la cámara en `/admin/*` (Permissions-Policy).
+- **Decisiones:** la caja nunca frena por stock (la realidad gana; queda negativo para revisar). Productos
+  nuevos creados por compras nacen `inactivo` (ocultos) hasta completar foto/precio. Pedidos web que
+  solo salen por WhatsApp no reservan stock; los que eligen pagar por transferencia sí (comprometido).
+- **Pruebas:** `scripts/test-stock-sql.mjs` (SQL), `scripts/test-compras-parse.mjs` (parseo de listas),
+  `scripts/test-admin.mjs` sigue en 129/129.
 
 ## Cobros por transferencia (2026-10-23) — DESPLEGADO EN PRODUCCIÓN
 Gestor de ventas y cobros (no factura, no se conecta con ARCA). Guía: `GUIA-COBROS.md`.
@@ -114,13 +152,17 @@ modelo de datos, roadmap, propuesta ejecutiva, demo HTML).
    y stock reales.
 
 ## Archivos importantes
-- `assets/catalogo.js` — MH: catálogo, precios, Cart, settings, track, flag pagos.
+- `sql/013-local-compras-stock.sql` + `GUIA-STOCK-Y-VENTAS.md` — stock controlado, caja, compras.
+- `assets/catalogo.js` — MH: catálogo, precios, disponibilidad (availability), Cart, settings, track.
 - `producto.html`, `carrito.html`, `admin/solicitudes.html`, `sql/005-solicitudes.sql`.
 - `supabase-config.js` — ahora expone window.* (crítico, no revertir).
 - `wrangler.jsonc` / `_redirects` / `_headers` — hosting de producción (Cloudflare).
 - `vercel.json` / `scripts/server.js` — mismas reglas para el espejo de Vercel y el servidor local.
 
 ## Próxima acción
+0. **Ejecutar `sql/013-local-compras-stock.sql` en producción** (`npx supabase db query --linked
+   --project-ref zydotmaolgddwenwywyc -f sql/013-local-compras-stock.sql`) y desplegar
+   `leer-lista-compra`. Después: contar stock por sector desde el celular y vender desde la caja.
 1. Cargar el secreto `ANTHROPIC_API_KEY` en Supabase (lectura automática de comprobantes y
    asistente del panel), cargar las cuentas reales, borrar la cuenta y el pedido de prueba, y
    recién después prender `carrito_activo` desde Configuración (ver `GUIA-COBROS.md`).

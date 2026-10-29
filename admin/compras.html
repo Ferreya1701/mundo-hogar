@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/admin/manifest.json">
+  <meta name="theme-color" content="#0A2E63">
+  <link rel="icon" type="image/png" href="/images/marca/favicon.png">
+  <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
+  <title>Compras y llegadas — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body class="compras">
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><img class="sidebar-brand-icon" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="32" height="32"><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/admin/carga-stock" class="btn btn-ghost btn-sm">📥 Contar stock</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- ═══════ LISTADO ═══════ -->
+      <section id="vista-lista">
+        <div class="page-header">
+          <div><h1>Compras y llegadas</h1><p>Pedidos al proveedor: la lista entra tal cual, lo nuevo se crea como producto y al llegar se carga el stock.</p></div>
+          <div class="page-header-actions">
+            <button type="button" class="btn btn-primary" id="btn-nueva">+ Nueva compra</button>
+          </div>
+        </div>
+        <div class="card mb-3" id="aviso-sql" hidden style="border-left:4px solid var(--danger)">
+          <div class="card-body" style="font-size:13px"><b>Falta ejecutar <code>sql/013-local-compras-stock.sql</code></b> en Supabase para usar las compras (ver GUIA-STOCK-Y-VENTAS.md).</div>
+        </div>
+        <div class="chips chips-filtro" id="chips-estado"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Compra</th><th>Proveedor / referencia</th><th style="text-align:center">Renglones</th><th style="text-align:center">Unidades</th><th style="text-align:right">Costo</th><th>Estado</th><th></th></tr></thead>
+            <tbody id="tabla-compras"><tr class="fila-plana"><td colspan="7" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══════ NUEVA COMPRA (asistente) ═══════ -->
+      <section id="vista-nueva" hidden>
+        <div class="page-header">
+          <div><h1>Nueva compra</h1><p>Pegá o subí la lista del proveedor. Después revisás a qué producto corresponde cada renglón.</p></div>
+          <div class="page-header-actions"><button type="button" class="btn btn-outline btn-sm" id="btn-cancelar-nueva">← Volver al listado</button></div>
+        </div>
+        <div class="wiz-steps">
+          <div class="wiz-step activo" data-step="1"><span class="n">1</span> La lista</div>
+          <div class="wiz-step" data-step="2"><span class="n">2</span> Revisar productos</div>
+          <div class="wiz-step" data-step="3"><span class="n">3</span> Listo</div>
+        </div>
+
+        <!-- Paso 1 -->
+        <div class="wiz-panel activo" id="paso-1">
+          <div class="split-2">
+            <div class="card">
+              <div class="card-header"><span class="card-title">Pegar la lista</span></div>
+              <div class="card-body">
+                <textarea class="lista-pegar" id="texto" placeholder="Copiá las celdas de Excel / Google Sheets y pegalas acá (una fila por producto).
+También sirve una lista simple:
+Freidora de aire 5L x 20
+Taladro 20V, 10, 30.5
+YW-AF5  Air fryer 5L  20  25.50"></textarea>
+                <div class="form-hint" style="margin-top:6px">Se detectan solas las columnas (descripción, cantidad, costo, código). En el paso siguiente podés corregirlas.</div>
+              </div>
+            </div>
+            <div style="display:grid;gap:14px">
+              <div class="card">
+                <div class="card-header"><span class="card-title">O subir el archivo</span></div>
+                <div class="card-body">
+                  <div class="drop-lista" id="drop"><b>Excel, CSV o TXT</b><br>Tocá para elegir o arrastrá el archivo acá<input type="file" id="archivo" accept=".xlsx,.xls,.csv,.tsv,.txt" hidden></div>
+                  <div id="archivo-info" class="form-hint" style="margin-top:6px"></div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-header"><span class="card-title">✨ Leer con IA</span></div>
+                <div class="card-body">
+                  <div class="ia-box" id="ia-box">
+                    <span style="flex:1">Foto, PDF o planilla desordenada (en inglés o chino): la IA saca los renglones y los traduce al español. <span id="ia-estado" style="color:var(--muted)"></span></span>
+                    <input type="file" id="ia-archivo" accept="image/*,.pdf" hidden>
+                    <button type="button" class="btn btn-outline" id="btn-ia-archivo">📎 Foto / PDF</button>
+                    <button type="button" class="btn btn-outline" id="btn-ia-texto" title="Interpretar lo pegado a la izquierda con IA">✨ Interpretar lo pegado</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt-3" id="card-mapa" hidden>
+            <div class="card-header"><span class="card-title">Columnas detectadas</span><span class="filter-count" id="mapa-info"></span></div>
+            <div class="card-body">
+              <label class="toggle-wrap" style="margin-bottom:8px"><div class="toggle"><input type="checkbox" id="tiene-encabezado"><div class="toggle-track"></div><div class="toggle-thumb"></div></div><span class="toggle-label">La primera fila es el encabezado (no es un producto)</span></label>
+              <div class="map-grid" id="mapa"></div>
+              <div class="form-hint">Obligatorias: <b>Descripción</b> y <b>Cantidad</b>. Si la lista no trae cantidad, se asume 1 por renglón.</div>
+            </div>
+          </div>
+          <div class="wiz-acciones">
+            <span></span>
+            <button type="button" class="btn btn-primary" id="btn-paso2" disabled>Revisar productos →</button>
+          </div>
+        </div>
+
+        <!-- Paso 2 -->
+        <div class="wiz-panel" id="paso-2">
+          <div class="card mb-3">
+            <div class="card-header"><span class="card-title">Datos de la compra</span></div>
+            <div class="card-body">
+              <div class="form-grid form-grid-3">
+                <div class="form-group"><label>Proveedor</label><input type="text" id="c-proveedor" maxlength="120" placeholder="Ej: Yiwu Trading Co."></div>
+                <div class="form-group"><label>Referencia</label><input type="text" id="c-ref" maxlength="120" placeholder="Nº de pedido / proforma / contenedor"></div>
+                <div class="form-group"><label>Origen</label><input type="text" id="c-origen" maxlength="60" value="China"></div>
+                <div class="form-group"><label>Moneda de la lista</label><select id="c-moneda"><option value="USD">USD (dólar)</option><option value="CNY">CNY (yuan)</option><option value="ARS">ARS (pesos)</option><option value="EUR">EUR</option></select></div>
+                <div class="form-group"><label>Tipo de cambio (pesos por 1)</label><input type="number" id="c-tc" inputmode="decimal" min="0" step="0.01" placeholder="Ej: 1500"><span class="form-hint">Para guardar el costo en pesos de cada producto. Opcional.</span></div>
+                <div class="form-group"><label>Fecha del pedido</label><input type="date" id="c-fecha"></div>
+                <div class="form-group"><label>Llegada estimada</label><input type="date" id="c-fecha-est"></div>
+                <div class="form-group"><label>Categoría para los productos nuevos</label><select id="c-cat"><option value="">Sin categoría (se completa después)</option></select></div>
+                <div class="form-group col-span-3" style="gap:10px">
+                  <label class="toggle-wrap"><div class="toggle"><input type="checkbox" id="c-llego"><div class="toggle-track"></div><div class="toggle-thumb"></div></div><span class="toggle-label"><b>La mercadería ya llegó</b>: cargar el stock ahora (si no, queda como pedido y se recibe cuando llegue)</span></label>
+                  <label class="toggle-wrap"><div class="toggle"><input type="checkbox" id="c-publicar"><div class="toggle-track"></div><div class="toggle-thumb"></div></div><span class="toggle-label">Publicar en la tienda los productos nuevos (sin foto ni precio se ven con "Consultar precio"; mejor dejarlos ocultos y completarlos)</span></label>
+                </div>
+                <div class="form-group col-span-3"><label>Notas</label><input type="text" id="c-notas" maxlength="1000" placeholder="Opcional"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rev-resumen" id="rev-resumen"></div>
+          <div class="d-flex gap-2 mb-3" style="flex-wrap:wrap">
+            <button type="button" class="btn btn-outline btn-sm" id="btn-aceptar-seguras">✓ Aceptar las coincidencias seguras</button>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-dudosas-nuevo">Las dudosas → producto nuevo</button>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-dudosas-vincular">Las dudosas → aceptar sugerencia</button>
+          </div>
+
+          <div class="table-wrap">
+            <table class="rev-tabla">
+              <thead><tr><th>Renglón de la lista</th><th style="text-align:right">Cant.</th><th style="text-align:right">Costo u.</th><th>Producto en el sistema</th></tr></thead>
+              <tbody id="rev-body"></tbody>
+            </table>
+          </div>
+          <div class="wiz-acciones">
+            <button type="button" class="btn btn-outline" id="btn-volver1">← Cambiar la lista</button>
+            <button type="button" class="btn btn-primary" id="btn-crear">Cargar la compra</button>
+          </div>
+        </div>
+
+        <!-- Paso 3 -->
+        <div class="wiz-panel" id="paso-3">
+          <div class="card"><div class="card-body" id="paso3-body"></div></div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script>
+const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+const $id = id => document.getElementById(id);
+const money = n => Utils.currency(n);
+const ESTADOS = { pedido:'Pedido', en_transito:'En tránsito', recibido_parcial:'Llegó parte', recibido:'Recibido', cancelado:'Cancelado' };
+let compras = [], productos = [], cats = {}, filtroEstado = 'abiertas', perfil = null;
+
+function msgError(error, accion = 'guardar') {
+  console.error('[compras]', error);
+  const m = (error?.message || '').toLowerCase();
+  if (!navigator.onLine || m.includes('failed to fetch') || m.includes('networkerror')) return 'Sin conexión. Reintentá cuando vuelva internet.';
+  if (m.includes('jwt') || m.includes('expired')) return 'Tu sesión venció. Iniciá sesión de nuevo.';
+  if (m.includes('could not find the function') || m.includes('schema cache') || m.includes('relation') && m.includes('compras')) return 'Falta ejecutar sql/013 en la base (ver GUIA-STOCK-Y-VENTAS.md).';
+  return error?.hint || error?.details || `No se pudo ${accion}. Probá de nuevo.`;
+}
+
+/* ═══════════════════ LISTADO ═══════════════════ */
+async function cargarCompras() {
+  const { data, error } = await db.from('compras').select('*').order('created_at', { ascending: false }).limit(500);
+  if (error) {
+    if ((error.message||'').toLowerCase().includes('compras')) $id('aviso-sql').hidden = false;
+    $id('tabla-compras').innerHTML = `<tr class="fila-plana"><td colspan="7"><div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>No se pudieron cargar las compras</h3><p>${esc(msgError(error, 'cargar'))}</p></div></td></tr>`;
+    return;
+  }
+  compras = data || [];
+  renderChips(); renderCompras();
+}
+function renderChips() {
+  const n = k => compras.filter(c => k === 'abiertas' ? !['recibido','cancelado'].includes(c.estado) : k === 'todas' ? true : c.estado === k).length;
+  const defs = [['abiertas','Abiertas'],['recibido','Recibidas'],['cancelado','Canceladas'],['todas','Todas']];
+  $id('chips-estado').innerHTML = defs.map(([k,l]) => `<button type="button" class="chip${filtroEstado===k?' active':''}" data-f="${k}">${l} <span class="chip-n">${n(k)}</span></button>`).join('');
+}
+$id('chips-estado').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; filtroEstado = b.dataset.f; renderChips(); renderCompras(); });
+function renderCompras() {
+  const lista = compras.filter(c => filtroEstado === 'abiertas' ? !['recibido','cancelado'].includes(c.estado) : filtroEstado === 'todas' ? true : c.estado === filtroEstado);
+  if (!lista.length) {
+    $id('tabla-compras').innerHTML = `<tr class="fila-plana"><td colspan="7"><div class="empty-state"><div class="empty-state-icon">🚢</div><h3>${filtroEstado==='abiertas' ? 'No hay compras en curso' : 'Sin compras'}</h3><p>Cuando hagan un pedido al proveedor, cargá la lista con "+ Nueva compra". Si la mercadería ya llegó, marcá "ya llegó" y el stock se carga en el momento.</p></div></td></tr>`;
+    return;
+  }
+  $id('tabla-compras').innerHTML = lista.map(c => `<tr data-id="${c.id}">
+    <td class="c-prod"><div class="td-name" style="font-family:monospace">${esc(c.codigo)}</div><div class="td-sku">${Utils.date(c.fecha_pedido)}${c.fecha_estimada && !['recibido','cancelado'].includes(c.estado) ? ` · llega ${Utils.date(c.fecha_estimada)}` : ''}${c.fecha_recibido ? ` · recibida ${Utils.date(c.fecha_recibido)}` : ''}</div></td>
+    <td class="c-cat"><div style="font-size:13px;font-weight:500">${esc(c.proveedor || '—')}</div><div style="font-size:11.5px;color:var(--muted)">${esc(c.referencia || '')}${c.origen ? ' · ' + esc(c.origen) : ''}</div></td>
+    <td class="c-sku" data-l="Renglones" style="text-align:center">${c.total_items}</td>
+    <td class="c-stock" data-l="Unidades" style="text-align:center">${c.total_unidades}</td>
+    <td class="c-precio" data-l="Costo" style="text-align:right">${c.total_costo != null ? `${esc(c.moneda)} ${Number(c.total_costo).toLocaleString('es-AR')}` : '—'}</td>
+    <td class="c-estado"><span class="cmp-estado cmp-${esc(c.estado)}">${esc(ESTADOS[c.estado]||c.estado)}</span></td>
+    <td class="c-acc"><div class="row-acciones d-flex gap-2">${!['recibido','cancelado'].includes(c.estado) ? `<button type="button" class="btn btn-primary btn-sm" data-recibir="${c.id}">📦 Recibir</button>` : ''}<button type="button" class="btn btn-outline btn-sm" data-ver="${c.id}">Ver</button></div></td>
+  </tr>`).join('');
+}
+$id('tabla-compras').addEventListener('click', e => {
+  const b = e.target.closest('[data-ver],[data-recibir]'); if (!b) return;
+  abrirCompra(Number(b.dataset.ver || b.dataset.recibir), !!b.dataset.recibir);
+});
+
+/* ═══════════════════ DETALLE / RECEPCIÓN ═══════════════════ */
+async function abrirCompra(id, modoRecibir) {
+  Utils.showLoading('Cargando compra…');
+  const [{ data: c, error: e1 }, { data: items, error: e2 }, { data: recs }] = await Promise.all([
+    db.from('compras').select('*').eq('id', id).maybeSingle(),
+    db.from('compra_items').select('*, productos(id,nombre,sku,stock_actual,stock_controlado,estado,seguimiento_inventario)').eq('compra_id', id).order('orden'),
+    db.from('compra_recepciones').select('*, compra_recepcion_items(*)').eq('compra_id', id).order('fecha', { ascending: false })
+  ]);
+  Utils.hideLoading();
+  if (e1 || e2 || !c) { Utils.toast(msgError(e1 || e2, 'abrir la compra'), 'error'); return; }
+  const abierta = !['recibido','cancelado'].includes(c.estado);
+  const pend = i => Math.max(0, i.cantidad_pedida - i.cantidad_recibida);
+  const bd = document.createElement('div'); bd.className = 'modal-backdrop';
+  bd.innerHTML = `<div class="modal modal-xl">
+    <div class="modal-header"><h3 class="modal-title">Compra ${esc(c.codigo)} <span class="cmp-estado cmp-${esc(c.estado)}">${esc(ESTADOS[c.estado]||c.estado)}</span></h3><button class="modal-close" id="_x">×</button></div>
+    <div class="modal-body">
+      <div class="cmp-grid">
+        <div><b>Proveedor</b>${esc(c.proveedor||'—')}${c.origen ? ' · ' + esc(c.origen) : ''}</div>
+        <div><b>Referencia</b>${esc(c.referencia||'—')}</div>
+        <div><b>Pedido</b>${Utils.date(c.fecha_pedido)}${c.fecha_estimada ? ` · llegada estimada ${Utils.date(c.fecha_estimada)}` : ''}</div>
+        <div><b>Costo</b>${c.total_costo != null ? `${esc(c.moneda)} ${Number(c.total_costo).toLocaleString('es-AR')}${c.tipo_cambio ? ` · TC ${Number(c.tipo_cambio).toLocaleString('es-AR')}` : ''}` : '—'}</div>
+        ${c.notas ? `<div style="grid-column:1/-1"><b>Notas</b>${esc(c.notas)}</div>` : ''}
+      </div>
+      ${abierta ? `<div class="card mb-3" style="border-left:4px solid var(--info)"><div class="card-body" style="font-size:13px;color:var(--muted)">Escribí cuántas unidades <b>llegaron ahora</b> de cada renglón (viene precargado lo que falta). Si de un producto que <b>todavía no se contó</b> quedaban unidades viejas en el local, anotalas en "Ya había": así el stock queda completo y controlado.</div></div>` : ''}
+      <div class="table-wrap"><table class="rec-tabla">
+        <thead><tr><th>Renglón</th><th style="text-align:right">Pedido</th><th style="text-align:right">Recibido</th>${abierta ? '<th style="text-align:right">Llegaron ahora</th><th style="text-align:right">Ya había</th>' : ''}</tr></thead>
+        <tbody>${(items||[]).map(i => {
+          const p = i.productos;
+          return `<tr data-item="${i.id}">
+            <td class="c-desc"><div class="rev-desc">${esc(p ? p.nombre : i.descripcion_original)}<small>${esc(i.descripcion_original)}${i.sku_proveedor ? ' · cód. prov. ' + esc(i.sku_proveedor) : ''}${p ? ` · ${esc(p.sku||'')} · ${p.stock_controlado ? `stock ${p.stock_actual}` : '<span class="ctrl ctrl-no">sin contar</span>'}${i.producto_nuevo ? ' <span class="badge badge-info">nuevo</span>' : ''}` : ' <span class="badge badge-danger">sin producto</span>'}</small></div></td>
+            <td data-l="Pedido" style="text-align:right">${i.cantidad_pedida}${i.costo_unitario != null ? `<div class="rec-pend">${esc(c.moneda)} ${Number(i.costo_unitario).toLocaleString('es-AR')} c/u</div>` : ''}</td>
+            <td data-l="Recibido" style="text-align:right">${i.cantidad_recibida}${pend(i) ? `<div class="rec-pend">faltan ${pend(i)}</div>` : '<div class="rec-pend">completo</div>'}</td>
+            ${abierta ? `<td data-l="Llegaron"><input type="number" class="rec-llego" inputmode="numeric" min="0" value="${pend(i)}" ${!p ? 'disabled title="Vinculá un producto primero"' : ''}></td>
+            <td data-l="Ya había">${p && !p.stock_controlado && p.seguimiento_inventario !== false ? `<input type="number" class="rec-habia" inputmode="numeric" min="0" placeholder="0">` : '<span class="rec-pend">—</span>'}</td>` : ''}
+          </tr>`; }).join('')}</tbody>
+      </table></div>
+      ${abierta ? `<div class="form-grid form-grid-2 mt-3">
+        <div class="form-group"><label>Nota de la recepción</label><input type="text" id="rec-notas" maxlength="400" placeholder="Ej: contenedor 1 de 2, 3 cajas rotas"></div>
+        <label class="toggle-wrap" style="align-self:end"><div class="toggle"><input type="checkbox" id="rec-cerrar"><div class="toggle-track"></div><div class="toggle-thumb"></div></div><span class="toggle-label">Dar la compra por terminada aunque falte mercadería</span></label>
+      </div>` : ''}
+      ${(recs||[]).length ? `<div class="cmp-recs"><b>Recepciones:</b> ${recs.map(r => `${Utils.datetime(r.fecha)} · ${r.total_unidades} u.${r.notas ? ' · ' + esc(r.notas) : ''}`).join(' &nbsp;|&nbsp; ')}</div>` : ''}
+    </div>
+    <div class="modal-footer" style="flex-wrap:wrap">
+      ${abierta && c.estado !== 'recibido_parcial' ? `<button class="btn btn-ghost" data-est="${c.estado === 'en_transito' ? 'pedido' : 'en_transito'}">${c.estado === 'en_transito' ? 'Volver a "pedido"' : '🚢 Marcar en tránsito'}</button><button class="btn btn-ghost" data-est="cancelado" style="color:var(--danger)">Cancelar compra</button>` : ''}
+      <span style="flex:1"></span>
+      <button class="btn btn-outline" id="_ok">Cerrar</button>
+      ${abierta ? `<button class="btn btn-outline" id="_todo">Llegó todo</button><button class="btn btn-primary" id="_recibir">📦 Registrar recepción</button>` : ''}
+    </div></div>`;
+  document.body.appendChild(bd);
+  bd.querySelector('#_x').onclick = bd.querySelector('#_ok').onclick = () => bd.remove();
+  bd.querySelector('#_todo')?.addEventListener('click', () => bd.querySelectorAll('tr[data-item]').forEach(tr => { const i = items.find(x => x.id === Number(tr.dataset.item)); const inp = tr.querySelector('.rec-llego'); if (inp && !inp.disabled) inp.value = pend(i); }));
+  bd.querySelectorAll('[data-est]').forEach(b => b.addEventListener('click', async () => {
+    const est = b.dataset.est;
+    if (est === 'cancelado' && !await Utils.confirm('La compra queda cancelada. No se mueve stock.', 'Cancelar compra', 'Cancelar compra')) return;
+    const { error } = await db.rpc('compra_cambiar_estado', { p_compra_id: c.id, p_estado: est });
+    if (error) { Utils.toast(msgError(error), 'error', 7000); return; }
+    Utils.toast('Compra actualizada', 'success'); bd.remove(); cargarCompras();
+  }));
+  bd.querySelector('#_recibir')?.addEventListener('click', async () => {
+    const lineas = [];
+    bd.querySelectorAll('tr[data-item]').forEach(tr => {
+      const llego = Math.max(0, parseInt(tr.querySelector('.rec-llego')?.value, 10) || 0);
+      const habia = Math.max(0, parseInt(tr.querySelector('.rec-habia')?.value, 10) || 0);
+      if (llego || habia) lineas.push({ item_id: Number(tr.dataset.item), cantidad: llego, ya_habia: habia });
+    });
+    const cerrar = bd.querySelector('#rec-cerrar').checked;
+    if (!lineas.length && !cerrar) { Utils.toast('No hay cantidades para recibir', 'warning'); return; }
+    const u = lineas.reduce((s,l) => s + l.cantidad, 0);
+    if (!await Utils.confirm(`Se cargan <b>${u} unidades</b> en ${lineas.length} renglón${lineas.length!==1?'es':''} como entrada por compra${cerrar ? ' y la compra se da por terminada' : ''}. Los productos quedan con stock controlado.`, 'Registrar recepción', 'Recibir', false)) return;
+    const btn = bd.querySelector('#_recibir'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Cargando stock…';
+    const { data, error } = await db.rpc('compra_recibir', { p_compra_id: c.id, p_items: lineas, p_notas: bd.querySelector('#rec-notas').value.trim() || null, p_cerrar: cerrar });
+    if (error) { btn.disabled = false; btn.textContent = '📦 Registrar recepción'; Utils.toast(msgError(error, 'recibir'), 'error', 8000); return; }
+    Utils.toast(`Recibidas ${data.unidades} unidades · ${data.nuevos_controlados} producto(s) pasan a stock controlado${data.pendientes ? ` · faltan renglones (${data.pendientes})` : ' · compra completa'}`, 'success', 7000);
+    bd.remove(); cargarCompras();
+  });
+  if (modoRecibir) bd.querySelector('.rec-llego:not([disabled])')?.focus();
+}
+
+/* ═══════════════════ NUEVA COMPRA ═══════════════════ */
+let filas = [];           // matriz cruda (array de arrays) de la lista pegada/subida
+let mapa = [];            // rol por columna
+let lineas = [];          // [{descripcion, nombre_es, sku, barras, cantidad, costo, notas}]
+let sugerencias = [];     // respuesta de compra_sugerir, por índice
+let decisiones = [];      // [{accion:'vincular'|'crear'|'omitir', producto_id, nombre, dudosa}]
+let iaDisponible = null;
+
+function irPaso(n) {
+  document.querySelectorAll('.wiz-step').forEach(s => { const k = Number(s.dataset.step); s.classList.toggle('activo', k === n); s.classList.toggle('hecho', k < n); });
+  document.querySelectorAll('.wiz-panel').forEach(p => p.classList.toggle('activo', p.id === 'paso-' + n));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+$id('btn-nueva').addEventListener('click', () => {
+  $id('vista-lista').hidden = true; $id('vista-nueva').hidden = false;
+  $id('c-fecha').value = new Date().toISOString().slice(0,10);
+  irPaso(1);
+  probarIA();
+});
+$id('btn-cancelar-nueva').addEventListener('click', async () => {
+  if (lineas.length && !$id('paso-3').classList.contains('activo') && !await Utils.confirm('Se pierde la lista que estabas revisando.', 'Volver al listado', 'Volver')) return;
+  $id('vista-nueva').hidden = true; $id('vista-lista').hidden = false;
+  filas = []; lineas = []; $id('texto').value = ''; $id('card-mapa').hidden = true; $id('btn-paso2').disabled = true; $id('archivo-info').textContent = '';
+  cargarCompras();
+});
+$id('btn-volver1').addEventListener('click', () => irPaso(1));
+
+/* ── Parseo de texto pegado ── */
+function parsearTexto(txt) {
+  const lineasTxt = txt.replace(/\r/g,'').split('\n').map(l => l.replace(/\s+$/,'')).filter(l => l.trim());
+  if (!lineasTxt.length) return [];
+  const cnt = ch => lineasTxt.reduce((s,l) => s + (l.split(ch).length - 1), 0);
+  let sep = null;
+  if (cnt('\t') >= lineasTxt.length * 0.5) sep = '\t';
+  else if (cnt(';') >= lineasTxt.length * 0.5) sep = ';';
+  else if (cnt(',') >= lineasTxt.length * 0.5) sep = ',';
+  if (sep) return lineasTxt.map(l => splitCSV(l, sep));
+  // Lista simple: "Nombre x 20", "20 x Nombre", "Nombre - 20", "Nombre 20 25.5"
+  return lineasTxt.map(l => {
+    let m;
+    if ((m = l.match(/^(.+?)\s*[x×]\s*(\d+)\s*(?:[-–,]?\s*\$?\s*([\d.,]+))?\s*$/i))) return [m[1].trim(), m[2], m[3] || ''];
+    if ((m = l.match(/^(\d+)\s*[x×]\s*(.+?)\s*$/i))) return [m[2].trim(), m[1], ''];
+    if ((m = l.match(/^(.+?)\s+(\d+)\s+\$?([\d.,]+)\s*$/))) return [m[1].trim(), m[2], m[3]];
+    if ((m = l.match(/^(.+?)\s*[-–:]\s*(\d+)\s*$/))) return [m[1].trim(), m[2], ''];
+    if ((m = l.match(/^(.+?)\s{2,}(\d+)\s*$/))) return [m[1].trim(), m[2], ''];
+    return [l.trim(), '', ''];
+  });
+}
+function splitCSV(line, sep) {
+  const out = []; let cur = '', q = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { if (q && line[i+1] === '"') { cur += '"'; i++; } else q = !q; }
+    else if (ch === sep && !q) { out.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  out.push(cur);
+  return out.map(s => s.trim());
+}
+const ROLES = { ignorar:'Ignorar', desc:'Descripción', nombre:'Nombre en español', cant:'Cantidad', costo:'Costo unitario', sku:'Código del proveedor', barras:'Código de barras' };
+function num(v) { if (v == null) return null; let s = String(v).trim().replace(/[^\d.,\-]/g,''); if (!s) return null;
+  // 1.234,56 → 1234.56 ; 1,234.56 → 1234.56 ; 12,5 → 12.5
+  if (/,\d{1,2}$/.test(s) && !/\.\d{1,2}$/.test(s)) s = s.replace(/\./g,'').replace(',', '.'); else s = s.replace(/,/g,'');
+  const n = Number(s); return isFinite(n) ? n : null; }
+function detectarMapa(filas, conEncabezado) {
+  const ncol = Math.max(...filas.map(f => f.length));
+  const roles = new Array(ncol).fill('ignorar');
+  const head = conEncabezado ? filas[0].map(h => norm(h)) : [];
+  const cuerpo = conEncabezado ? filas.slice(1) : filas;
+  const col = j => cuerpo.map(f => f[j] ?? '');
+  const usados = new Set();
+  const asignar = (j, r) => { if (!usados.has(r) && roles[j] === 'ignorar') { roles[j] = r; usados.add(r); } };
+  head.forEach((h, j) => {
+    if (/ean|upc|barcode|barras|条码/.test(h)) asignar(j, 'barras');
+    else if (/\bsku\b|item ?no|\bcod(igo|\.)?\b|\bcode\b|model|\bref\b|\bart\.? ?n|货号|型号|编号/.test(h)) asignar(j, 'sku');
+    else if (/cant|qty|quant|pcs|unid|units|数量|cajas|ctn/.test(h)) asignar(j, 'cant');
+    else if (/price|precio|cost|costo|unit|fob|usd|单价|价格/.test(h)) asignar(j, 'costo');
+    else if (/espa|spanish|nombre es|nombre_es/.test(h)) asignar(j, 'nombre');
+    else if (/desc|product|item|name|nombre|detalle|artic|artíc|goods|品名|商品|名称/.test(h)) asignar(j, 'desc');
+  });
+  // Por contenido
+  const stats = [...Array(ncol).keys()].map(j => {
+    const vals = col(j).filter(v => String(v).trim() !== '');
+    const nums = vals.map(num).filter(n => n !== null);
+    const enteros = nums.filter(n => Number.isInteger(n) && n >= 0 && n < 100000);
+    const largo = vals.reduce((s,v) => s + String(v).length, 0) / Math.max(vals.length, 1);
+    const digitos = vals.filter(v => /^\d{8,14}$/.test(String(v).replace(/\s/g,''))).length;
+    return { j, n: vals.length, nums: nums.length, enteros: enteros.length, decimales: nums.length - enteros.length, largo, digitos, letras: vals.filter(v => /[a-zA-Z一-鿿]{3,}/.test(String(v))).length };
+  }).filter(s => s.n > 0);
+  const libres = () => stats.filter(s => roles[s.j] === 'ignorar');
+  if (!usados.has('barras')) { const c = libres().filter(s => s.digitos >= s.n * 0.6 && s.n >= 1)[0]; if (c) asignar(c.j, 'barras'); }
+  if (!usados.has('desc')) { const c = libres().filter(s => s.letras >= s.n * 0.5).sort((a,b) => b.largo - a.largo)[0]; if (c) asignar(c.j, 'desc'); }
+  if (!usados.has('cant')) { const c = libres().filter(s => s.enteros >= s.n * 0.7 && s.decimales === 0).sort((a,b) => a.j - b.j)[0]; if (c) asignar(c.j, 'cant'); }
+  if (!usados.has('costo')) { const c = libres().filter(s => s.nums >= s.n * 0.7).sort((a,b) => b.decimales - a.decimales)[0]; if (c) asignar(c.j, 'costo'); }
+  if (!usados.has('sku')) { const c = libres().filter(s => s.letras < s.n * 0.5 && s.nums < s.n * 0.5 && s.largo <= 20 && s.n >= cuerpo.length * 0.5)[0]; if (c) asignar(c.j, 'sku'); }
+  return roles;
+}
+function pareceEncabezado(filas) {
+  if (filas.length < 2) return false;
+  const h = filas[0];
+  const numericosH = h.filter(v => num(v) !== null && /^[\d.,\s$]+$/.test(String(v))).length;
+  const numericos1 = filas[1].filter(v => num(v) !== null && /^[\d.,\s$]+$/.test(String(v))).length;
+  return numericosH === 0 && numericos1 > 0 || h.some(v => /desc|product|item|qty|cant|price|precio|sku|model|品名|数量|单价/i.test(String(v)));
+}
+function mostrarMapa() {
+  if (!filas.length) { $id('card-mapa').hidden = true; $id('btn-paso2').disabled = true; return; }
+  const enc = $id('tiene-encabezado').checked;
+  mapa = detectarMapa(filas, enc);
+  const ncol = mapa.length;
+  const ej = enc ? (filas[1] || []) : filas[0];
+  $id('mapa').innerHTML = [...Array(ncol).keys()].map(j => `<div class="map-col">
+    <div class="map-h">${enc ? esc(filas[0][j] || `Columna ${j+1}`) : `Columna ${j+1}`}</div>
+    <div class="map-ej">${esc(ej[j] || '')}</div>
+    <select data-col="${j}">${Object.entries(ROLES).map(([k,v]) => `<option value="${k}"${mapa[j]===k?' selected':''}>${v}</option>`).join('')}</select>
+  </div>`).join('');
+  const n = filas.length - (enc ? 1 : 0);
+  $id('mapa-info').textContent = `${n} renglón${n!==1?'es':''}`;
+  $id('card-mapa').hidden = false;
+  validarMapa();
+}
+function validarMapa() {
+  const ok = mapa.includes('desc') || mapa.includes('nombre');
+  $id('btn-paso2').disabled = !ok || !filas.length;
+  $id('btn-paso2').title = ok ? '' : 'Marcá qué columna es la descripción';
+}
+$id('mapa').addEventListener('change', e => { const j = Number(e.target.dataset.col); mapa[j] = e.target.value; validarMapa(); });
+$id('tiene-encabezado').addEventListener('change', mostrarMapa);
+let tmrTxt = null;
+$id('texto').addEventListener('input', () => { clearTimeout(tmrTxt); tmrTxt = setTimeout(() => { filas = parsearTexto($id('texto').value); $id('tiene-encabezado').checked = pareceEncabezado(filas); $id('archivo-info').textContent = ''; mostrarMapa(); }, 250); });
+
+/* ── Archivo (Excel / CSV) ── */
+const drop = $id('drop');
+drop.addEventListener('click', () => $id('archivo').click());
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag-over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
+drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('drag-over'); leerArchivo(e.dataTransfer.files[0]); });
+$id('archivo').addEventListener('change', () => leerArchivo($id('archivo').files[0]));
+async function cargarSheetJS() {
+  if (window.XLSX) return;
+  await new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+}
+async function leerArchivo(file) {
+  if (!file) return;
+  $id('archivo-info').textContent = `Leyendo ${file.name}…`;
+  try {
+    if (/\.xlsx?$/i.test(file.name)) {
+      await cargarSheetJS();
+      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+      filas = aoa.map(r => r.map(v => String(v ?? '').trim())).filter(r => r.some(v => v !== ''));
+      $id('texto').value = filas.map(r => r.join('\t')).join('\n');
+    } else {
+      const txt = await file.text();
+      $id('texto').value = txt;
+      filas = parsearTexto(txt);
+    }
+    $id('tiene-encabezado').checked = pareceEncabezado(filas);
+    $id('archivo-info').textContent = `${file.name}: ${filas.length} filas`;
+    mostrarMapa();
+  } catch (e) { console.error(e); $id('archivo-info').textContent = 'No se pudo leer el archivo. Probá copiando y pegando las celdas.'; }
+}
+
+/* ── IA (Edge Function leer-lista-compra) ── */
+async function probarIA() {
+  if (iaDisponible !== null) return;
+  try {
+    const { data, error } = await db.functions.invoke('leer-lista-compra', { body: { ping: true } });
+    iaDisponible = !error && !!data?.ia;
+    $id('ia-estado').textContent = iaDisponible ? '' : (error ? '(la función no está desplegada)' : '(falta la clave de IA en Supabase)');
+  } catch (e) { iaDisponible = false; $id('ia-estado').textContent = '(no disponible)'; }
+  $id('btn-ia-archivo').disabled = $id('btn-ia-texto').disabled = !iaDisponible;
+}
+$id('btn-ia-archivo').addEventListener('click', () => $id('ia-archivo').click());
+$id('ia-archivo').addEventListener('change', async () => {
+  const f = $id('ia-archivo').files[0]; if (!f) return;
+  if (f.size > 10 * 1024 * 1024) { Utils.toast('Máximo 10 MB', 'warning'); return; }
+  const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.readAsDataURL(f); });
+  await leerConIA({ archivo: b64, mime: f.type || 'image/jpeg' });
+});
+$id('btn-ia-texto').addEventListener('click', async () => {
+  const t = $id('texto').value.trim();
+  if (!t) { Utils.toast('Pegá la lista primero', 'warning'); return; }
+  await leerConIA({ texto: t });
+});
+async function leerConIA(body) {
+  Utils.showLoading('La IA está leyendo la lista… puede tardar un minuto');
+  const { data, error } = await db.functions.invoke('leer-lista-compra', { body });
+  Utils.hideLoading();
+  if (error || !data?.ok) {
+    let det = data?.detalle || '';
+    if (!det && error) { try { det = (await error.context?.json())?.detalle || ''; } catch (_) {} }
+    Utils.toast('La IA no pudo leer la lista. ' + (det || 'Cargala a mano.'), 'error', 8000); return;
+  }
+  if (!data.lineas.length) { Utils.toast('La IA no encontró renglones de productos. ' + (data.notas || ''), 'warning', 8000); return; }
+  // Volcamos como tabla con encabezado para que se vea y se pueda corregir
+  filas = [['Descripción original','Nombre en español','Código proveedor','Código de barras','Cantidad','Costo unitario'],
+    ...data.lineas.map(l => [l.descripcion_original||'', l.nombre_es||'', l.sku_proveedor||'', l.codigo_barras||'', l.cantidad ?? '', l.costo_unitario ?? ''])];
+  $id('texto').value = filas.map(r => r.join('\t')).join('\n');
+  $id('tiene-encabezado').checked = true;
+  mostrarMapa();
+  mapa = ['desc','nombre','sku','barras','cant','costo']; $id('mapa').querySelectorAll('select').forEach((s,j) => s.value = mapa[j]); validarMapa();
+  if (data.moneda && $id('c-moneda').querySelector(`option[value="${data.moneda}"]`)) $id('c-moneda').value = data.moneda;
+  if (data.proveedor) $id('c-proveedor').value = data.proveedor;
+  $id('archivo-info').textContent = `IA: ${data.lineas.length} renglones${data.notas ? ' · ' + data.notas : ''}`;
+  Utils.toast(`La IA encontró ${data.lineas.length} renglones. Revisalos y seguí.`, 'success', 5000);
+}
+
+/* ── Paso 2: armar líneas y pedir sugerencias ── */
+$id('btn-paso2').addEventListener('click', async () => {
+  const enc = $id('tiene-encabezado').checked;
+  const cuerpo = enc ? filas.slice(1) : filas;
+  const idx = r => mapa.indexOf(r);
+  lineas = cuerpo.map(f => {
+    const get = r => idx(r) >= 0 ? String(f[idx(r)] ?? '').trim() : '';
+    const desc = get('desc') || get('nombre');
+    const cant = num(get('cant'));
+    return { descripcion: desc, nombre_es: get('nombre') || null, sku: get('sku') || null, barras: get('barras').replace(/\D/g,'') || null,
+             cantidad: cant !== null && cant > 0 ? Math.round(cant) : 1, costo: num(get('costo')) };
+  }).filter(l => l.descripcion);
+  if (!lineas.length) { Utils.toast('No quedó ningún renglón con descripción', 'warning'); return; }
+  if (lineas.length > 1000) { Utils.toast('Máximo 1000 renglones por compra: dividila', 'warning'); return; }
+  Utils.showLoading('Buscando coincidencias en el catálogo…');
+  const [{ data: sug, error }, { data: prods }] = await Promise.all([
+    db.rpc('compra_sugerir', { p_lineas: lineas.map((l, i) => ({ i, descripcion: l.nombre_es || l.descripcion, sku: l.sku, codigo_barras: l.barras })) }),
+    db.from('productos').select('id,nombre,sku,stock_actual,stock_controlado,estado').neq('estado','archivado').order('nombre')
+  ]);
+  Utils.hideLoading();
+  if (error) { Utils.toast(msgError(error, 'buscar coincidencias'), 'error', 8000); return; }
+  productos = prods || [];
+  sugerencias = lineas.map((_, i) => (sug || []).find(s => s.i === i) || { candidatos: [], seguro: false });
+  decisiones = sugerencias.map((s, i) => {
+    const best = s.candidatos[0];
+    if (best && best.score >= 95) return { accion: 'vincular', producto_id: best.id, dudosa: false };
+    if (best && best.score >= 60) return { accion: 'vincular', producto_id: best.id, dudosa: true };
+    return { accion: 'crear', producto_id: null, nombre: lineas[i].nombre_es || lineas[i].descripcion, dudosa: false };
+  });
+  renderRevision(); irPaso(2);
+});
+
+function renderRevision() {
+  const resumen = { vincular: 0, crear: 0, omitir: 0, dudosa: 0 };
+  decisiones.forEach(d => { resumen[d.accion]++; if (d.dudosa) resumen.dudosa++; });
+  $id('rev-resumen').innerHTML = `<span class="chip">${lineas.length} renglones</span><span class="chip" style="background:var(--success-bg)">${resumen.vincular} ya existen</span><span class="chip" style="background:var(--info-bg)">${resumen.crear} nuevos</span>${resumen.dudosa ? `<span class="chip" style="background:var(--warning-bg)">${resumen.dudosa} para revisar</span>` : ''}${resumen.omitir ? `<span class="chip">${resumen.omitir} omitidos</span>` : ''}`;
+  $id('rev-body').innerHTML = lineas.map((l, i) => {
+    const d = decisiones[i], s = sugerencias[i];
+    const cls = d.accion === 'omitir' ? 'omitir' : d.accion === 'crear' ? 'nuevo' : d.dudosa ? 'duda' : 'ok';
+    const opts = s.candidatos.map(c => `<option value="v:${c.id}"${d.accion==='vincular'&&d.producto_id===c.id?' selected':''}>${esc(c.nombre)}${c.sku?' ['+esc(c.sku)+']':''} · ${c.score}% ${c.motivo==='Nombre parecido'?'parecido':''}${c.stock_controlado?` · stock ${c.stock_actual}`:' · sin contar'}</option>`).join('');
+    const otro = d.accion === 'vincular' && !s.candidatos.some(c => c.id === d.producto_id) ? (() => { const p = productos.find(x => x.id === d.producto_id); return p ? `<option value="v:${p.id}" selected>${esc(p.nombre)}${p.sku?' ['+esc(p.sku)+']':''}</option>` : ''; })() : '';
+    return `<tr data-i="${i}">
+      <td class="c-desc"><div class="rev-desc">${esc(l.descripcion)}<small>${l.nombre_es && l.nombre_es !== l.descripcion ? esc(l.nombre_es) + ' · ' : ''}${l.sku ? 'cód. ' + esc(l.sku) + ' · ' : ''}${l.barras ? 'EAN ' + esc(l.barras) : ''}</small></div></td>
+      <td data-l="Cant."><input type="number" class="rev-num" data-k="cantidad" inputmode="numeric" min="1" value="${l.cantidad}"></td>
+      <td data-l="Costo"><input type="number" class="rev-costo" data-k="costo" inputmode="decimal" min="0" step="0.0001" value="${l.costo ?? ''}" placeholder="—"></td>
+      <td class="c-match">
+        <select class="rev-sel ${cls}" data-k="accion">
+          ${opts}${otro}
+          <option value="crear"${d.accion==='crear'?' selected':''}>➕ Crear producto nuevo</option>
+          <option value="buscar"${d.accion==='buscar'?' selected':''}>🔎 Buscar otro producto…</option>
+          <option value="omitir"${d.accion==='omitir'?' selected':''}>⏭ Omitir este renglón</option>
+        </select>
+        ${d.accion === 'crear' ? `<input type="text" class="rev-nombre" data-k="nombre" maxlength="160" value="${esc(d.nombre)}" placeholder="Nombre del producto nuevo">` : ''}
+        ${d.accion === 'buscar' ? `<input type="search" class="rev-nombre" data-k="buscar" placeholder="Escribí para buscar en el catálogo…" autofocus><div class="rev-opciones" style="margin-top:4px;font-size:12.5px"></div>` : ''}
+        ${d.dudosa && d.accion === 'vincular' ? `<div class="form-hint" style="color:#92400E;margin-top:4px">Coincidencia dudosa: confirmá que es el mismo producto.</div>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+$id('rev-body').addEventListener('change', e => {
+  const tr = e.target.closest('tr'); if (!tr) return; const i = Number(tr.dataset.i); const k = e.target.dataset.k;
+  if (k === 'accion') {
+    const v = e.target.value;
+    if (v.startsWith('v:')) decisiones[i] = { accion: 'vincular', producto_id: Number(v.slice(2)), dudosa: false };
+    else if (v === 'crear') decisiones[i] = { accion: 'crear', producto_id: null, nombre: lineas[i].nombre_es || lineas[i].descripcion, dudosa: false };
+    else if (v === 'omitir') decisiones[i] = { accion: 'omitir', producto_id: null, dudosa: false };
+    else if (v === 'buscar') decisiones[i] = { accion: 'buscar', producto_id: null, dudosa: false };
+    renderRevision();
+    if (v === 'buscar') tr.parentElement.querySelector(`tr[data-i="${i}"] [data-k=buscar]`)?.focus();
+  }
+});
+$id('rev-body').addEventListener('input', e => {
+  const tr = e.target.closest('tr'); if (!tr) return; const i = Number(tr.dataset.i); const k = e.target.dataset.k;
+  if (k === 'cantidad') lineas[i].cantidad = Math.max(1, parseInt(e.target.value, 10) || 1);
+  if (k === 'costo') lineas[i].costo = e.target.value === '' ? null : Math.max(0, Number(e.target.value) || 0);
+  if (k === 'nombre') decisiones[i].nombre = e.target.value;
+  if (k === 'buscar') {
+    const q = norm(e.target.value).trim();
+    const res = q.length >= 2 ? productos.filter(p => q.split(/\s+/).every(w => norm(p.nombre).includes(w) || norm(p.sku).includes(w))).slice(0, 8) : [];
+    tr.querySelector('.rev-opciones').innerHTML = res.map(p => `<button type="button" class="btn btn-outline btn-sm" data-pick="${p.id}" style="margin:2px 4px 2px 0">${esc(p.nombre)}${p.sku?' ['+esc(p.sku)+']':''}</button>`).join('') || (q.length >= 2 ? '<span style="color:var(--muted)">Nada parecido. Elegí "Crear producto nuevo".</span>' : '');
+  }
+});
+$id('rev-body').addEventListener('click', e => {
+  const b = e.target.closest('[data-pick]'); if (!b) return;
+  const i = Number(b.closest('tr').dataset.i);
+  decisiones[i] = { accion: 'vincular', producto_id: Number(b.dataset.pick), dudosa: false };
+  renderRevision();
+});
+$id('btn-aceptar-seguras').addEventListener('click', () => { decisiones.forEach((d, i) => { const b = sugerencias[i].candidatos[0]; if (b && b.score >= 95) decisiones[i] = { accion:'vincular', producto_id: b.id, dudosa:false }; }); renderRevision(); });
+$id('btn-dudosas-nuevo').addEventListener('click', () => { decisiones.forEach((d, i) => { if (d.dudosa) decisiones[i] = { accion:'crear', producto_id:null, nombre: lineas[i].nombre_es || lineas[i].descripcion, dudosa:false }; }); renderRevision(); });
+$id('btn-dudosas-vincular').addEventListener('click', () => { decisiones.forEach(d => { if (d.dudosa) d.dudosa = false; }); renderRevision(); });
+
+/* ── Crear la compra ── */
+$id('btn-crear').addEventListener('click', async () => {
+  const sinDecidir = decisiones.filter(d => d.accion === 'buscar').length;
+  if (sinDecidir) { Utils.toast(`Hay ${sinDecidir} renglón${sinDecidir!==1?'es':''} con "Buscar otro producto" sin elegir`, 'warning'); return; }
+  const dudosas = decisiones.filter(d => d.dudosa).length;
+  const items = lineas.map((l, i) => {
+    const d = decisiones[i];
+    const base = { descripcion: l.descripcion, sku_proveedor: l.sku, cantidad: l.cantidad, costo_unitario: l.costo, accion: d.accion };
+    if (d.accion === 'vincular') base.producto_id = d.producto_id;
+    if (d.accion === 'crear') base.nuevo = { nombre: (d.nombre || l.descripcion).trim(), codigo_barras: l.barras, sku_proveedor: l.sku };
+    return base;
+  });
+  const activos = items.filter(i => i.accion !== 'omitir');
+  if (!activos.length) { Utils.toast('Todos los renglones están omitidos', 'warning'); return; }
+  const llego = $id('c-llego').checked;
+  const nuevos = activos.filter(i => i.accion === 'crear').length;
+  const unid = activos.reduce((s,i) => s + i.cantidad, 0);
+  if (!await Utils.confirm(`<b>${activos.length} renglones</b>, ${unid} unidades.<br>${nuevos} producto${nuevos!==1?'s':''} nuevo${nuevos!==1?'s':''} se crea${nuevos!==1?'n':''} (${$id('c-publicar').checked ? 'publicados en la tienda' : 'ocultos hasta completarlos'}).${dudosas ? `<br><span style="color:#92400E">${dudosas} coincidencia${dudosas!==1?'s':''} dudosa${dudosas!==1?'s':''} se toman como correctas.</span>` : ''}<br><br>${llego ? '<b>La mercadería ya llegó:</b> el stock se carga ahora y los productos quedan controlados.' : 'Queda como <b>pedido</b>: el stock se carga cuando registres la llegada.'}`, 'Cargar la compra', llego ? 'Cargar y recibir' : 'Cargar pedido', false)) return;
+  const btn = $id('btn-crear'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Guardando…';
+  const p = {
+    proveedor: $id('c-proveedor').value.trim() || null, referencia: $id('c-ref').value.trim() || null, origen: $id('c-origen').value.trim() || 'China',
+    moneda: $id('c-moneda').value, tipo_cambio: $id('c-tc').value || null, fecha_pedido: $id('c-fecha').value || null, fecha_estimada: $id('c-fecha-est').value || null,
+    notas: $id('c-notas').value.trim() || null, categoria_nuevos: $id('c-cat').value || null, publicar_nuevos: $id('c-publicar').checked, recibir_ahora: llego, items
+  };
+  const { data, error } = await db.rpc('compra_crear', { p });
+  btn.disabled = false; btn.textContent = 'Cargar la compra';
+  if (error) { Utils.toast(msgError(error, 'cargar la compra'), 'error', 9000); return; }
+  const nuevosList = data.productos_nuevos || [];
+  $id('paso3-body').innerHTML = `<div class="pos-ok">
+    <div class="pos-ok-ic">✅</div>
+    <h2 style="margin:4px 0">Compra ${esc(data.codigo)} cargada</h2>
+    <p style="color:var(--muted)">${data.renglones} renglones · ${data.unidades} unidades · <span class="cmp-estado cmp-${esc(data.estado)}">${esc(ESTADOS[data.estado]||data.estado)}</span></p>
+    ${data.recepcion ? `<p style="margin-top:8px">Stock cargado: <b>${data.recepcion.unidades} unidades</b> · ${data.recepcion.nuevos_controlados} producto${data.recepcion.nuevos_controlados!==1?'s':''} pasa${data.recepcion.nuevos_controlados!==1?'n':''} a stock controlado.</p>` : `<p style="margin-top:8px">Cuando llegue la mercadería, entrá a la compra y tocá <b>Recibir</b>: ahí se carga el stock.</p>`}
+    ${nuevosList.length ? `<div class="pos-ok-items"><div style="font-weight:600;border:none">Productos nuevos creados (${nuevosList.length}) — completá foto, precio y categoría:</div>${nuevosList.map(n => `<div><span>${esc(n.nombre)}</span><a class="btn btn-outline btn-sm" href="/admin/producto-form?id=${n.id}" target="_blank">✏️ Completar</a></div>`).join('')}</div>` : ''}
+    <div class="pos-ok-acciones" style="max-width:420px;margin:14px auto 0">
+      ${!data.recepcion ? `<button type="button" class="btn btn-primary" id="p3-recibir">📦 Ya llegó: recibir ahora</button>` : ''}
+      <button type="button" class="btn btn-outline" id="p3-volver">Ver todas las compras</button>
+      ${nuevosList.length ? `<a class="btn btn-ghost" href="/admin/productos?estado=inactivo">Ver productos ocultos</a>` : ''}
+    </div></div>`;
+  irPaso(3);
+  lineas = []; filas = []; $id('texto').value = ''; $id('card-mapa').hidden = true; $id('btn-paso2').disabled = true;
+  $id('p3-volver').addEventListener('click', () => $id('btn-cancelar-nueva').click());
+  $id('p3-recibir')?.addEventListener('click', () => { $id('btn-cancelar-nueva').click(); abrirCompra(data.id, true); });
+});
+
+async function initPage() {
+  perfil = await Auth.init();
+  if (!perfil) return;
+  if (!['administrador','encargado_stock'].includes(perfil.rol)) { Utils.toast('Sin permisos para cargar compras', 'error'); window.location.href = '/admin/dashboard'; return; }
+  await Layout.init('compras', 'Compras y llegadas');
+  const { data: catData } = await db.from('categorias').select('id,nombre').eq('activo', true).order('orden');
+  (catData||[]).forEach(c => { cats[c.id] = c.nombre; $id('c-cat').insertAdjacentHTML('beforeend', `<option value="${c.id}">${esc(c.nombre)}</option>`); });
+  await cargarCompras();
+  if (new URLSearchParams(location.search).get('nueva') === '1') $id('btn-nueva').click();
+}
+initPage();
+</script>
+  <script src="/admin/js/assistant.js"></script>
+  <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/admin/sw.js').catch(()=>{}); }</script>
+</body>
+</html>

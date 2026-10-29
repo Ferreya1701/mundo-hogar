@@ -39,9 +39,10 @@
       </div>
 
       <!-- KPIs rápidos -->
-      <div class="kpi-grid cols-3">
-        <div class="kpi-card"><div class="kpi-icon red">🚫</div><div class="kpi-label">Sin stock</div><div class="kpi-value" id="kpi-cero">—</div></div>
-        <div class="kpi-card"><div class="kpi-icon gold">⚠️</div><div class="kpi-label">Stock bajo</div><div class="kpi-value" id="kpi-bajo">—</div></div>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-icon red">🚫</div><div class="kpi-label">Sin stock</div><div class="kpi-value" id="kpi-cero">—</div><div class="kpi-sub">controlados en 0 o negativo</div></div>
+        <div class="kpi-card"><div class="kpi-icon gold">⚠️</div><div class="kpi-label">Stock bajo</div><div class="kpi-value" id="kpi-bajo">—</div><div class="kpi-sub">por debajo del mínimo</div></div>
+        <div class="kpi-card" data-href="/admin/carga-stock" style="cursor:pointer" onclick="location.href='/admin/carga-stock'"><div class="kpi-icon blue">📥</div><div class="kpi-label">Sin contar</div><div class="kpi-value" id="kpi-sincontar">—</div><div class="kpi-sub">todavía no se contaron</div></div>
         <div class="kpi-card"><div class="kpi-icon green">✅</div><div class="kpi-label">Stock OK</div><div class="kpi-value" id="kpi-ok">—</div></div>
       </div>
 
@@ -49,6 +50,7 @@
       <div class="tabs">
         <button class="tab-btn active" id="tab-cero" onclick="setTab('cero')">🚫 Sin stock</button>
         <button class="tab-btn" id="tab-bajo" onclick="setTab('bajo')">⚠️ Stock bajo</button>
+        <button class="tab-btn" id="tab-sincontar" onclick="setTab('sincontar')">📥 Sin contar</button>
         <button class="tab-btn" id="tab-todo" onclick="setTab('todo')">📋 Todos los activos</button>
       </div>
 
@@ -86,19 +88,21 @@ let cats = {};
 let currentTab = 'cero';
 
 async function loadData() {
-  const [{ data: prods }, { data: catData }] = await Promise.all([
-    db.from('productos').select('id,nombre,categoria_id,stock_actual,stock_minimo,estado').eq('estado','activo').order('stock_actual'),
-    db.from('categorias').select('id,nombre')
-  ]);
-  allData = prods || [];
+  // stock_controlado existe desde sql/013; si la base no lo tiene, todos se tratan como controlados
+  let { data: prods, error } = await db.from('productos').select('id,nombre,categoria_id,stock_actual,stock_minimo,estado,stock_controlado,seguimiento_inventario').eq('estado','activo').order('stock_actual');
+  if (error) ({ data: prods } = await db.from('productos').select('id,nombre,categoria_id,stock_actual,stock_minimo,estado').eq('estado','activo').order('stock_actual'));
+  const { data: catData } = await db.from('categorias').select('id,nombre');
+  allData = (prods || []).map(p => ({ ...p, controlado: p.stock_controlado !== false && p.seguimiento_inventario !== false, sinContar: p.stock_controlado === false && p.seguimiento_inventario !== false }));
   (catData||[]).forEach(c => cats[c.id]=c.nombre);
 
-  const cero = allData.filter(p=>p.stock_actual<=0).length;
-  const bajo = allData.filter(p=>p.stock_actual>0&&p.stock_minimo>0&&p.stock_actual<=p.stock_minimo).length;
-  const ok   = allData.length - cero - bajo;
+  const cero = allData.filter(p=>p.controlado&&p.stock_actual<=0).length;
+  const bajo = allData.filter(p=>p.controlado&&p.stock_actual>0&&p.stock_minimo>0&&p.stock_actual<=p.stock_minimo).length;
+  const sinContar = allData.filter(p=>p.sinContar).length;
+  const ok   = allData.filter(p=>p.controlado).length - cero - bajo;
 
   document.getElementById('kpi-cero').textContent = cero;
   document.getElementById('kpi-bajo').textContent = bajo;
+  document.getElementById('kpi-sincontar').textContent = sinContar;
   document.getElementById('kpi-ok').textContent   = ok;
 
   renderTable();
@@ -112,8 +116,9 @@ function setTab(tab) {
 }
 
 function getFiltered() {
-  if (currentTab === 'cero') return allData.filter(p=>p.stock_actual<=0);
-  if (currentTab === 'bajo') return allData.filter(p=>p.stock_actual>0&&p.stock_minimo>0&&p.stock_actual<=p.stock_minimo);
+  if (currentTab === 'cero') return allData.filter(p=>p.controlado&&p.stock_actual<=0);
+  if (currentTab === 'bajo') return allData.filter(p=>p.controlado&&p.stock_actual>0&&p.stock_minimo>0&&p.stock_actual<=p.stock_minimo);
+  if (currentTab === 'sincontar') return allData.filter(p=>p.sinContar);
   return allData;
 }
 
@@ -123,8 +128,8 @@ function renderTable() {
     document.getElementById('tabla-body').innerHTML =
       `<tr><td colspan="6"><div class="empty-state">
         <div class="empty-state-icon">✅</div>
-        <h3>${currentTab==='todo'?'Sin productos activos':'Sin alertas en esta categoría'}</h3>
-        <p>${currentTab!=='todo'?'¡Todo el stock está en niveles correctos!':''}</p>
+        <h3>${currentTab==='todo'?'Sin productos activos':currentTab==='sincontar'?'Todo el catálogo está contado':'Sin alertas en esta categoría'}</h3>
+        <p>${currentTab==='sincontar'?'Cada producto tiene su stock controlado.':currentTab!=='todo'?'¡Todo el stock está en niveles correctos!':''}</p>
       </div></td></tr>`;
     return;
   }
@@ -136,13 +141,17 @@ function renderTable() {
       <td style="text-align:center"><span class="stock-num ${sc}">${p.stock_actual}</span></td>
       <td style="text-align:center;color:var(--muted)">${p.stock_minimo||'—'}</td>
       <td>
-        ${p.stock_actual <= 0
-          ? '<span class="badge badge-danger">Sin stock</span>'
-          : '<span class="badge badge-warning">Stock bajo</span>'}
+        ${p.sinContar ? '<span class="badge badge-muted">Sin contar</span>'
+          : p.stock_actual < 0 ? '<span class="badge badge-danger">Negativo: revisar</span>'
+          : p.stock_actual <= 0 ? '<span class="badge badge-danger">Sin stock</span>'
+          : (p.stock_minimo > 0 && p.stock_actual <= p.stock_minimo) ? '<span class="badge badge-warning">Stock bajo</span>'
+          : '<span class="badge badge-success">OK</span>'}
       </td>
       <td>
         <div class="d-flex gap-2">
-          <a href="/admin/inventario?producto=${p.id}" class="btn btn-outline btn-sm" style="font-size:11px" data-tip="Registrar reposición con este producto ya elegido">📥 Entrada</a>
+          ${p.sinContar || p.stock_actual < 0
+            ? `<a href="/admin/carga-stock?producto=${p.id}" class="btn btn-outline btn-sm" style="font-size:11px" data-tip="Contar este producto">📥 Contar</a>`
+            : `<a href="/admin/inventario?producto=${p.id}" class="btn btn-outline btn-sm" style="font-size:11px" data-tip="Registrar reposición con este producto ya elegido">📥 Entrada</a>`}
           <a href="/admin/producto-form?id=${p.id}" class="btn btn-ghost btn-sm" data-tip="Editar producto">✏️</a>
         </div>
       </td>
@@ -156,7 +165,7 @@ document.getElementById('btn-export')?.addEventListener('click', () => {
     Categoría: cats[p.categoria_id]||'',
     'Stock Actual': p.stock_actual,
     'Stock Mínimo': p.stock_minimo,
-    Alerta: p.stock_actual<=0?'Sin stock':'Stock bajo'
+    Alerta: p.sinContar?'Sin contar':p.stock_actual<=0?'Sin stock':'Stock bajo'
   })), `alertas-stock-${new Date().toISOString().slice(0,10)}.csv`);
 });
 

@@ -234,7 +234,7 @@ function renderTable() {
     <td style="font-family:monospace;font-size:12px;white-space:nowrap">${esc(s.codigo)}${s.canal==='mayorista'?' <span class="pend-tag">Mayorista</span>':''}</td>
     <td style="white-space:nowrap;color:var(--muted,#888);font-size:12px">${Utils.datetime(s.created_at)}</td>
     <td style="font-weight:500">${esc(s.cliente_nombre)}<div style="font-size:11.5px;color:#888">${esc(s.telefono)}${s.comercio?` · ${esc(s.comercio)}`:''}</div></td>
-    <td style="white-space:nowrap;font-weight:600;text-align:right">${s.monto_a_pagar != null && s.estado_pago !== 'sin_pago' ? money2(s.monto_a_pagar) : money(s.total_estimado)}${s.tiene_pendientes?' <span class="pend-tag" title="Tiene productos sin precio">a cotizar</span>':''}</td>
+    <td style="white-space:nowrap;font-weight:600;text-align:right">${s.monto_a_pagar != null && s.estado_pago !== 'sin_pago' ? money2(s.monto_a_pagar) : money(s.total_estimado)}${s.tiene_pendientes?' <span class="pend-tag" title="Tiene productos sin precio o con stock a confirmar">a confirmar</span>':''}</td>
     <td>${pagoPill(s)}</td>
     <td style="font-size:12.5px;white-space:nowrap">${c ? esc(c.nombre) : '<span style="color:#aaa">—</span>'}</td>
     <td>${estadoSelect(s)}</td>
@@ -249,7 +249,7 @@ function renderTable() {
 function armarRespuesta(s, tipo) {
   const items = s.solicitud_items || [];
   const nombre = (s.cliente_nombre || '').split(' ')[0] || 'Hola';
-  const listado = items.map(i => `• ${i.cantidad}x ${i.nombre}${i.precio_unitario != null ? ` — ${money(i.precio_unitario)} c/u` : ' — a cotizar'}`).join('\n');
+  const listado = items.map(i => `• ${i.cantidad}x ${i.nombre}${i.precio_unitario != null ? ` — ${money(i.precio_unitario)} c/u` : ' — a cotizar'}${i.stock_a_confirmar ? ' (stock a confirmar)' : ''}`).join('\n');
   const totalTxt = s.total_estimado != null
     ? `Total estimado: ${money(s.total_estimado)}${s.tiene_pendientes ? ' (+ los productos a cotizar)' : ''}`
     : 'Te pasamos la cotización completa a la brevedad.';
@@ -307,7 +307,7 @@ async function verDetalle(id) {
         <tbody>${items.map(i => `<tr>
           <td>${esc(i.nombre)}</td><td style="font-size:11.5px;color:#888">${esc(i.sku)||'—'}</td>
           <td style="text-align:center">${i.cantidad}</td>
-          <td style="text-align:right">${i.precio_unitario==null?'<span class="pend-tag">a cotizar</span>':money(i.precio_unitario)}</td>
+          <td style="text-align:right">${i.precio_unitario==null?'<span class="pend-tag">a cotizar</span>':money(i.precio_unitario)}${i.stock_a_confirmar?' <span class="pend-tag" title="El producto no tenía stock controlado cuando se pidió: confirmá que haya">stock a confirmar</span>':''}</td>
           <td style="text-align:right">${i.subtotal==null?'—':money(i.subtotal)}</td>
         </tr>`).join('')}</tbody></table>
       <div style="text-align:right;font-weight:700;margin-top:6px">Total estimado: ${money(s.total_estimado)}</div>` : '<p style="color:#888;font-size:13px;margin:12px 0">Sin productos (consulta general).</p>'}

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/admin/manifest.json">
+  <meta name="theme-color" content="#0A2E63">
+  <link rel="icon" type="image/png" href="/images/marca/favicon.png">
+  <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
+  <title>Ventas del local — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body class="ventas">
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><img class="sidebar-brand-icon" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="32" height="32"><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/admin/vender" class="btn btn-primary btn-sm">🛒 Vender</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1>Ventas del local</h1><p id="subtitle">Lo que se cobró en el mostrador. Los pedidos de la tienda están en Pedidos web.</p></div>
+        <div class="page-header-actions">
+          <button class="btn btn-outline btn-sm" id="btn-export">⬇ Exportar CSV</button>
+          <button class="btn btn-outline btn-sm" id="btn-refrescar">↻ Actualizar</button>
+        </div>
+      </div>
+
+      <div class="chips chips-filtro" id="rangos">
+        <button type="button" class="chip active" data-r="hoy">Hoy</button>
+        <button type="button" class="chip" data-r="ayer">Ayer</button>
+        <button type="button" class="chip" data-r="semana">Esta semana</button>
+        <button type="button" class="chip" data-r="mes">Este mes</button>
+        <button type="button" class="chip" data-r="custom">Elegir fechas</button>
+      </div>
+
+      <div class="kpi-grid" id="kpis">
+        <div class="kpi-card"><div class="kpi-icon green">💵</div><div class="kpi-label">Total cobrado</div><div class="kpi-value" id="k-total">—</div><div class="kpi-sub" id="k-total-sub">—</div></div>
+        <div class="kpi-card"><div class="kpi-icon blue">🧾</div><div class="kpi-label">Ventas</div><div class="kpi-value" id="k-n">—</div><div class="kpi-sub" id="k-n-sub">—</div></div>
+        <div class="kpi-card"><div class="kpi-icon gold">📦</div><div class="kpi-label">Unidades</div><div class="kpi-value" id="k-u">—</div><div class="kpi-sub" id="k-u-sub">—</div></div>
+        <div class="kpi-card"><div class="kpi-icon violet">💳</div><div class="kpi-label">Por medio de pago</div><div class="kpi-sub" id="k-medios" style="margin-top:6px;line-height:1.6">—</div></div>
+      </div>
+
+      <div class="filters-bar">
+        <div class="search-bar"><span class="search-icon">🔍</span><input type="search" id="q" placeholder="Código, cliente, producto…"></div>
+        <input type="date" id="f-desde" style="min-width:140px">
+        <input type="date" id="f-hasta" style="min-width:140px">
+        <select id="f-medio" style="min-width:150px"><option value="">Todos los medios</option></select>
+        <select id="f-vend" style="min-width:150px"><option value="">Todos los vendedores</option></select>
+        <select id="f-estado" style="min-width:130px"><option value="cerrada">Cerradas</option><option value="anulada">Anuladas</option><option value="">Todas</option></select>
+        <span class="filter-count" id="filter-count"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Código</th><th>Cliente / vendedor</th><th>Ítems</th><th>Medio</th><th style="text-align:right">Total</th><th>Estado</th><th></th></tr></thead>
+          <tbody id="tabla-body"><tr class="fila-plana"><td colspan="8" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script>
+const MEDIOS = { efectivo:'Efectivo', transferencia:'Transferencia', debito:'Débito', credito:'Crédito', mercadopago:'Mercado Pago', cuenta_corriente:'Cuenta corriente', otro:'Otro' };
+const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const money = n => Utils.currency(n);
+let ventas = [], perfil = null, rango = 'hoy';
+const $id = id => document.getElementById(id);
+const iso = d => d.toISOString().slice(0,10);
+
+function setRango(r) {
+  rango = r;
+  document.querySelectorAll('#rangos .chip').forEach(c => c.classList.toggle('active', c.dataset.r === r));
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  let d = new Date(hoy), h = new Date(hoy);
+  if (r === 'ayer') { d.setDate(d.getDate()-1); h = new Date(d); }
+  if (r === 'semana') { const dow = (d.getDay()+6)%7; d.setDate(d.getDate()-dow); }
+  if (r === 'mes') d = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  if (r !== 'custom') { $id('f-desde').value = iso(d); $id('f-hasta').value = iso(h); cargar(); }
+}
+document.getElementById('rangos').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) setRango(b.dataset.r); });
+['f-desde','f-hasta'].forEach(id => $id(id).addEventListener('change', () => { rango = 'custom'; document.querySelectorAll('#rangos .chip').forEach(c => c.classList.toggle('active', c.dataset.r === 'custom')); cargar(); }));
+['q','f-medio','f-vend','f-estado'].forEach(id => { $id(id).addEventListener('input', render); $id(id).addEventListener('change', render); });
+
+async function cargar() {
+  const desde = new Date($id('f-desde').value + 'T00:00:00');
+  const hasta = new Date($id('f-hasta').value + 'T23:59:59.999');
+  const { data, error } = await db.from('ventas').select('*, venta_items(*)')
+    .gte('fecha', desde.toISOString()).lte('fecha', hasta.toISOString())
+    .order('fecha', { ascending: false }).limit(2000);
+  if (error) {
+    const m = (error.message||'').toLowerCase();
+    $id('tabla-body').innerHTML = `<tr class="fila-plana"><td colspan="8"><div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>${m.includes('ventas') ? 'Falta ejecutar sql/013 en la base' : 'No se pudieron cargar las ventas'}</h3><p>${esc(error.message)}</p></div></td></tr>`;
+    return;
+  }
+  ventas = data || [];
+  const vends = [...new Set(ventas.map(v => v.vendedor_nombre).filter(Boolean))].sort();
+  const vs = $id('f-vend'); const act = vs.value;
+  vs.innerHTML = '<option value="">Todos los vendedores</option>' + vends.map(v => `<option${v===act?' selected':''}>${esc(v)}</option>`).join('');
+  const ms = $id('f-medio'); const actM = ms.value;
+  ms.innerHTML = '<option value="">Todos los medios</option>' + Object.entries(MEDIOS).map(([k,v]) => `<option value="${k}"${k===actM?' selected':''}>${v}</option>`).join('');
+  render();
+}
+
+function filtrar() {
+  const q = $id('q').value.toLowerCase().trim(), medio = $id('f-medio').value, vend = $id('f-vend').value, est = $id('f-estado').value;
+  return ventas.filter(v => {
+    if (est && v.estado !== est) return false;
+    if (medio && v.medio_pago !== medio) return false;
+    if (vend && v.vendedor_nombre !== vend) return false;
+    if (q) {
+      const txt = [v.codigo, v.cliente_nombre, v.cliente_telefono, v.vendedor_nombre, ...(v.venta_items||[]).map(i => i.nombre + ' ' + (i.sku||''))].join(' ').toLowerCase();
+      if (!txt.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function render() {
+  const lista = filtrar();
+  const cerradas = lista.filter(v => v.estado === 'cerrada');
+  const total = cerradas.reduce((s,v) => s + Number(v.total), 0);
+  const unid = cerradas.reduce((s,v) => s + Number(v.unidades||0), 0);
+  $id('k-total').textContent = money(total);
+  $id('k-total-sub').textContent = cerradas.length ? `ticket promedio ${money(total / cerradas.length)}` : 'sin ventas en el período';
+  $id('k-n').textContent = cerradas.length;
+  $id('k-n-sub').textContent = `${lista.length - cerradas.length} anulada${lista.length - cerradas.length !== 1 ? 's' : ''}`;
+  $id('k-u').textContent = unid;
+  $id('k-u-sub').textContent = `${cerradas.reduce((s,v)=>s+Number(v.stock_afectado||0),0)} renglones descontaron stock`;
+  const porMedio = {};
+  cerradas.forEach(v => porMedio[v.medio_pago] = (porMedio[v.medio_pago]||0) + Number(v.total));
+  $id('k-medios').innerHTML = Object.entries(porMedio).sort((a,b)=>b[1]-a[1]).map(([m,t]) => `<div style="display:flex;justify-content:space-between;gap:8px"><span>${esc(MEDIOS[m]||m)}</span><b>${money(t)}</b></div>`).join('') || '—';
+  $id('filter-count').textContent = `${lista.length} venta${lista.length!==1?'s':''}`;
+
+  if (!lista.length) {
+    $id('tabla-body').innerHTML = `<tr class="fila-plana"><td colspan="8"><div class="empty-state"><div class="empty-state-icon">🧮</div><h3>Sin ventas</h3><p>No hay ventas del local en este período con esos filtros.</p><a class="btn btn-primary" href="/admin/vender">🛒 Vender</a></div></td></tr>`;
+    return;
+  }
+  $id('tabla-body').innerHTML = lista.map(v => `<tr class="${v.estado==='anulada'?'vta-estado-anulada':''}" data-id="${v.id}">
+    <td class="c-fecha" style="white-space:nowrap;color:var(--muted);font-size:12px">${Utils.datetime(v.fecha)}</td>
+    <td class="c-cod" style="font-family:monospace;font-size:12px">${esc(v.codigo)}</td>
+    <td class="c-cli"><div style="font-weight:500;font-size:13px">${esc(v.cliente_nombre || 'Consumidor final')}</div><div style="font-size:11.5px;color:var(--muted)">${esc(v.vendedor_nombre||'')}</div></td>
+    <td class="c-items" data-l="Ítems" style="font-size:12.5px;color:var(--muted)">${(v.venta_items||[]).slice(0,3).map(i => `${i.cantidad}× ${esc(i.nombre)}`).join('<br>')}${(v.venta_items||[]).length > 3 ? `<br>… y ${(v.venta_items||[]).length - 3} más` : ''}</td>
+    <td class="c-medio"><span class="vta-medio vta-medio-${esc(v.medio_pago)}">${esc(MEDIOS[v.medio_pago]||v.medio_pago)}</span></td>
+    <td class="c-total" style="text-align:right;font-weight:600">${money(v.total)}</td>
+    <td class="c-est">${v.estado === 'anulada' ? '<span class="badge badge-danger">Anulada</span>' : '<span class="badge badge-success">Cerrada</span>'}</td>
+    <td class="c-acc"><button type="button" class="btn btn-outline btn-sm" data-ver="${v.id}">Ver</button></td>
+  </tr>`).join('');
+}
+
+document.getElementById('tabla-body').addEventListener('click', e => {
+  const b = e.target.closest('[data-ver]'); if (!b) return;
+  abrir(Number(b.dataset.ver));
+});
+
+function puedeAnular(v) {
+  if (v.estado !== 'cerrada') return false;
+  if (perfil.rol === 'administrador') return true;
+  return v.vendedor_id === perfil.id && (Date.now() - new Date(v.fecha).getTime()) < 24*3600e3;
+}
+
+function abrir(id) {
+  const v = ventas.find(x => x.id === id); if (!v) return;
+  const bd = document.createElement('div'); bd.className = 'modal-backdrop';
+  bd.innerHTML = `<div class="modal modal-lg">
+    <div class="modal-header"><h3 class="modal-title">Venta ${esc(v.codigo)}</h3><button class="modal-close" id="_x">×</button></div>
+    <div class="modal-body">
+      <div class="vta-grid">
+        <div><b>Fecha</b>${Utils.datetime(v.fecha)}</div>
+        <div><b>Vendedor</b>${esc(v.vendedor_nombre||'—')}</div>
+        <div><b>Cliente</b>${esc(v.cliente_nombre||'Consumidor final')}${v.cliente_telefono ? ' · ' + esc(v.cliente_telefono) : ''}</div>
+        <div><b>Medio de pago</b><span class="vta-medio vta-medio-${esc(v.medio_pago)}">${esc(MEDIOS[v.medio_pago]||v.medio_pago)}</span></div>
+        ${v.notas ? `<div style="grid-column:1/-1"><b>Nota</b>${esc(v.notas)}</div>` : ''}
+        ${v.estado==='anulada' ? `<div style="grid-column:1/-1;color:var(--danger)"><b>Anulada</b>${Utils.datetime(v.anulada_en)} · ${esc(v.motivo_anulacion||'')}</div>` : ''}
+      </div>
+      <table class="vta-items"><thead><tr><th>Producto</th><th class="r">Cant.</th><th class="r">Precio</th><th class="r">Subtotal</th><th>Stock</th></tr></thead>
+      <tbody>${(v.venta_items||[]).sort((a,b)=>a.orden-b.orden).map(i => `<tr><td>${esc(i.nombre)}${i.sku?`<div style="font-size:11px;color:var(--muted)">${esc(i.sku)}</div>`:''}</td><td class="r">${i.cantidad}</td><td class="r">${money(i.precio_unitario)}</td><td class="r">${money(i.subtotal)}</td><td>${i.afecto_stock ? `<span class="ctrl ctrl-si">descontó → ${i.stock_posterior}</span>` : (i.producto_id ? '<span class="ctrl ctrl-no">sin tocar stock</span>' : '<span class="ctrl ctrl-libre">fuera del catálogo</span>')}</td></tr>`).join('')}</tbody></table>
+      <div style="text-align:right;font-size:14px">${Number(v.descuento)>0 ? `Subtotal ${money(v.subtotal)} · Descuento −${money(v.descuento)}<br>` : ''}<b style="font-size:18px">Total ${money(v.total)}</b></div>
+    </div>
+    <div class="modal-footer">
+      ${puedeAnular(v) ? `<button class="btn btn-danger" id="_anular">Anular venta</button>` : ''}
+      <button class="btn btn-outline" id="_ok">Cerrar</button>
+    </div></div>`;
+  document.body.appendChild(bd);
+  bd.querySelector('#_x').onclick = bd.querySelector('#_ok').onclick = () => bd.remove();
+  bd.querySelector('#_anular')?.addEventListener('click', async () => {
+    const motivo = prompt('¿Por qué se anula la venta? (el stock de los productos controlados vuelve a sumarse)');
+    if (motivo === null) return;
+    if (!motivo.trim()) { Utils.toast('Escribí el motivo', 'warning'); return; }
+    const { data, error } = await db.rpc('venta_anular', { p_venta_id: v.id, p_motivo: motivo.trim() });
+    if (error) { Utils.toast(error.hint || error.message, 'error', 7000); return; }
+    Utils.toast(`Venta anulada${data?.movimientos ? ` · ${data.movimientos} producto(s) repuestos` : ''}`, 'success');
+    bd.remove(); cargar();
+  });
+}
+
+document.getElementById('btn-export').addEventListener('click', () => {
+  const filas = [];
+  filtrar().forEach(v => (v.venta_items||[]).forEach(i => filas.push({
+    Fecha: Utils.datetime(v.fecha), Codigo: v.codigo, Estado: v.estado, Vendedor: v.vendedor_nombre||'', Cliente: v.cliente_nombre||'',
+    Medio: MEDIOS[v.medio_pago]||v.medio_pago, Producto: i.nombre, SKU: i.sku||'', Cantidad: i.cantidad, Precio: i.precio_unitario, Subtotal: i.subtotal,
+    'Afecto stock': i.afecto_stock ? 'sí' : 'no', 'Total venta': v.total, Descuento: v.descuento
+  })));
+  if (!filas.length) { Utils.toast('No hay nada para exportar', 'warning'); return; }
+  Utils.exportCSV(filas, `ventas-local-${$id('f-desde').value}_${$id('f-hasta').value}.csv`);
+});
+document.getElementById('btn-refrescar').addEventListener('click', cargar);
+
+async function initPage() {
+  perfil = await Auth.init();
+  if (!perfil) return;
+  await Layout.init('ventas', 'Ventas del local');
+  setRango('hoy');
+}
+initPage();
+</script>
+  <script src="/admin/js/assistant.js"></script>
+  <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/admin/sw.js').catch(()=>{}); }</script>
+</body>
+</html>

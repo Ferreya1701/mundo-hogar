@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#0A2E63">
   <link rel="icon" type="image/png" href="/images/marca/favicon.png">
   <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
-  <title>Carga de stock — Mundo Hogar Admin</title>
+  <title>Contar stock — Mundo Hogar Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/admin/css/admin.css">
@@ -34,65 +34,50 @@
     <main class="page-content">
       <div class="page-header">
         <div>
-          <h1>Carga de stock</h1>
+          <h1>Contar stock</h1>
           <p id="subtitle">Cargando catálogo...</p>
+        </div>
+        <div class="page-header-actions">
+          <button type="button" class="btn btn-outline btn-sm" id="btn-nuevo">+ Producto que no está</button>
         </div>
       </div>
 
       <div class="card mb-3" style="border-left:4px solid var(--info)">
         <div class="card-body" style="font-size:13px;color:var(--muted)">
-          Escribí la cantidad de cada producto que tengas en depósito y guardá todo junto.
-          Cada carga queda asentada como un movimiento con tu usuario, fecha y motivo:
-          el stock nunca se sobrescribe a mano.
-          <br><br>
-          El <b>mínimo</b> es opcional y sirve para que el sistema te avise cuando quede poco.
-          Si lo dejás en cero, ese producto no genera alerta.
+          Recorré el depósito con el celular y escribí <b>cuántas unidades hay</b> de cada producto (el total, no lo que sumás).
+          Al guardar, el producto queda con <b>stock controlado</b>: cada venta del local lo descuenta y la tienda lo vende si hay.
+          Los que todavía no contaste se venden igual en el local, pero sin tocar stock, y en la web dicen "Consultar".
+          Contar <b>0</b> también vale: significa "no hay".
         </div>
       </div>
+
+      <div class="card mb-3" id="aviso-sql" hidden style="border-left:4px solid var(--danger)">
+        <div class="card-body" style="font-size:13px"><b>Falta ejecutar <code>sql/013-local-compras-stock.sql</code></b> en Supabase para usar el conteo (ver GUIA-STOCK-Y-VENTAS.md).</div>
+      </div>
+
+      <div class="chips chips-filtro" id="chips"></div>
 
       <div class="filters-bar">
         <div class="search-bar">
           <span class="search-icon">🔍</span>
-          <input type="search" id="q" placeholder="Buscar por nombre o SKU..." aria-label="Buscar productos">
+          <input type="search" id="q" placeholder="Buscar por nombre, SKU o código…" aria-label="Buscar productos" autocomplete="off">
         </div>
-        <select id="filtro-cat" aria-label="Filtrar por categoría">
-          <option value="">Todas las categorías</option>
-        </select>
-        <label class="toggle-wrap">
-          <div class="toggle"><input type="checkbox" id="solo-sin-stock" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></div>
-          <span class="toggle-label">Solo los que están en cero</span>
-        </label>
+        <button type="button" class="btn btn-outline btn-scan" id="btn-scan" hidden>📷 Escanear</button>
+        <select id="filtro-cat" aria-label="Filtrar por categoría"><option value="">Todas las categorías</option></select>
         <span class="filter-count" id="filter-count" role="status"></span>
       </div>
 
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Producto</th>
-              <th>SKU</th>
-              <th style="text-align:right">Stock hoy</th>
-              <th style="text-align:right;width:120px">Cantidad</th>
-              <th style="text-align:right;width:110px">Mínimo</th>
-              <th style="text-align:right">Queda en</th>
-            </tr>
-          </thead>
-          <tbody id="tabla-body">
-            <tr class="fila-plana"><td colspan="6" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr>
-          </tbody>
-        </table>
-      </div>
+      <div class="cnt-lista" id="lista"><div class="empty-state"><div class="spinner"></div></div></div>
+      <div style="text-align:center;margin-top:12px"><button type="button" class="btn btn-outline" id="btn-mas" hidden>Mostrar más</button></div>
 
-      <!-- Barra de guardado: acompaña siempre, como en el formulario de producto -->
-      <div class="barra-guardado barra-carga" id="barra-carga" hidden>
-        <span class="dirty-flag" id="resumen-carga"></span>
+      <div class="barra-guardado barra-carga" id="barra" hidden>
+        <span class="dirty-flag" id="resumen"></span>
         <button type="button" class="btn btn-outline" id="btn-descartar">Descartar</button>
-        <button type="button" class="btn btn-primary" id="btn-cargar">Guardar carga</button>
+        <button type="button" class="btn btn-primary" id="btn-guardar">Guardar conteo</button>
       </div>
 
-      <!-- Resultado de la última carga -->
       <div class="card mt-3" id="card-resultado" hidden>
-        <div class="card-header"><span class="card-title">Resultado de la carga</span></div>
+        <div class="card-header"><span class="card-title">Resultado del conteo</span></div>
         <div class="card-body" id="resultado-body"></div>
       </div>
     </main>
@@ -106,287 +91,345 @@
 <script src="/admin/js/auth.js"></script>
 <script src="/admin/js/utils.js"></script>
 <script src="/admin/js/layout.js"></script>
+<script src="/admin/js/scanner.js"></script>
 <script>
-let productos = [];
-let cats = {};
+/* Conteo de stock: número ABSOLUTO contado por producto → fn_stock_contar_lote.
+   Lo tipeado vive en `pendientes` (no en el DOM): filtrar/buscar re-renderiza. */
+let productos = [], cats = {};
+let filtro = 'sin_contar';
+let limite = 60;
+const pendientes = new Map();   // id → { cantidad, minimo, obs }
+const guardados = new Set();    // ids guardados en esta sesión (para pintarlos)
 
-/* Lo tipeado vive acá y no en el DOM: al filtrar se re-renderiza la tabla
-   y si no, se perdería lo cargado en los productos que dejan de verse. */
-const pendientes = new Map();   // id → { cantidad, minimo }
-
-function esc(v) {
-  return String(v ?? '')
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
+const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+const $id = id => document.getElementById(id);
 
 function msgError(error, accion = 'guardar') {
-  console.error('[carga-stock]', error);
-  const m = (error?.message || '').toLowerCase();
+  console.error('[contar]', error);
+  const m = (error?.message || error?.error || '').toLowerCase();
   if (!navigator.onLine || m.includes('failed to fetch') || m.includes('networkerror'))
-    return 'Sin conexión. Lo que escribiste sigue acá: reintentá cuando vuelva internet.';
-  if (m.includes('jwt') || m.includes('expired'))
-    return 'Tu sesión venció. Iniciá sesión de nuevo y volvé a intentar.';
-  if (m.includes('sin_permiso') || m.includes('row-level security') || m.includes('policy'))
-    return 'No tenés permisos para mover stock.';
-  if (m.includes('stock insuficiente'))
-    return 'La cantidad dejaría el stock en negativo.';
-  return `No se pudo ${accion}. Probá de nuevo.`;
+    return 'Sin conexión. Lo que contaste sigue acá: reintentá cuando vuelva internet.';
+  if (m.includes('jwt') || m.includes('expired')) return 'Tu sesión venció. Iniciá sesión de nuevo y volvé a guardar.';
+  if (m.includes('could not find the function') || m.includes('schema cache')) return 'Falta ejecutar sql/013 en la base (ver GUIA-STOCK-Y-VENTAS.md).';
+  if (m.includes('sin_permiso') || m.includes('row-level security')) return 'No tenés permisos para contar stock.';
+  if (m.includes('producto_no_encontrado')) return 'El producto ya no existe.';
+  return error?.hint || `No se pudo ${accion}. Probá de nuevo.`;
 }
 
-const entrada = id => pendientes.get(id) || { cantidad:null, minimo:null };
+const entrada = id => pendientes.get(id) || { cantidad: null, minimo: null, obs: null };
 
-/* Cuánto se va a cargar y sobre cuántos productos. */
-function resumen() {
-  let items = 0, unidades = 0, minimos = 0;
-  pendientes.forEach((v, id) => {
-    const p = productos.find(x => x.id === id);
-    if (!p) return;
-    if (v.cantidad > 0) { items++; unidades += v.cantidad; }
-    if (v.minimo !== null && v.minimo !== p.stock_minimo) minimos++;
+function estadoDe(p) {
+  if (p.seguimiento_inventario === false) return 'libre';
+  if (!p.stock_controlado) return 'sin_contar';
+  if (p.stock_actual < 0) return 'negativo';
+  if (p.stock_minimo > 0 && p.stock_actual <= p.stock_minimo) return 'bajo';
+  return 'ok';
+}
+
+function contar() {
+  const c = { sin_contar:0, controlado:0, negativo:0, bajo:0, todos:0 };
+  productos.forEach(p => {
+    const e = estadoDe(p); if (e === 'libre') return;
+    c.todos++;
+    if (e === 'sin_contar') c.sin_contar++; else c.controlado++;
+    if (e === 'negativo') c.negativo++;
+    if (e === 'bajo') c.bajo++;
   });
-  return { items, unidades, minimos };
+  return c;
 }
+
+function renderChips() {
+  const c = contar();
+  const defs = [
+    ['sin_contar', 'Sin contar', c.sin_contar],
+    ['negativo', 'En negativo', c.negativo],
+    ['bajo', 'Stock bajo', c.bajo],
+    ['controlado', 'Controlados', c.controlado],
+    ['todos', 'Todos', c.todos]
+  ];
+  $id('chips').innerHTML = defs.map(([k, l, n]) => `<button type="button" class="chip${filtro===k?' active':''}" data-f="${k}">${l} <span class="chip-n">${n}</span></button>`).join('');
+  $id('subtitle').textContent = c.sin_contar
+    ? `${c.sin_contar} producto${c.sin_contar!==1?'s':''} sin contar · ${c.controlado} con stock controlado`
+    : `Todo el catálogo tiene stock controlado (${c.controlado} productos). ¡Bien!`;
+}
+$id('chips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; filtro = b.dataset.f; limite = 60; renderChips(); render(); });
 
 function visibles() {
-  const q = document.getElementById('q').value.toLowerCase().trim();
-  const cat = document.getElementById('filtro-cat').value;
-  const soloCero = document.getElementById('solo-sin-stock').checked;
+  const q = norm($id('q').value).trim();
+  const cat = $id('filtro-cat').value;
+  const digits = q.replace(/\D/g,'');
   return productos.filter(p => {
-    if (q && !(p.nombre||'').toLowerCase().includes(q) && !(p.sku||'').toLowerCase().includes(q)) return false;
+    if (estadoDe(p) === 'libre') return false;
+    if (pendientes.has(p.id)) return !q || coincide(p, q, digits);
     if (cat && String(p.categoria_id) !== cat) return false;
-    // Lo ya tipeado se sigue viendo aunque el filtro lo dejaría afuera
-    if (soloCero && p.stock_actual > 0 && !pendientes.has(p.id)) return false;
+    const e = estadoDe(p);
+    if (filtro === 'sin_contar' && e !== 'sin_contar') return false;
+    if (filtro === 'negativo' && e !== 'negativo') return false;
+    if (filtro === 'bajo' && e !== 'bajo') return false;
+    if (filtro === 'controlado' && e === 'sin_contar') return false;
+    if (q && !coincide(p, q, digits)) return false;
     return true;
   });
+}
+function coincide(p, q, digits) {
+  const n = norm(p.nombre), sku = norm(p.sku);
+  if (digits.length >= 8 && String(p.codigo_barras||'').replace(/\D/g,'') === digits) return true;
+  return q.split(/\s+/).filter(Boolean).every(w => n.includes(w) || sku.includes(w));
+}
+
+function badgeEstado(p) {
+  const e = estadoDe(p);
+  if (e === 'sin_contar') return '<span class="ctrl ctrl-no">sin contar</span>';
+  if (e === 'negativo') return '<span class="ctrl ctrl-neg">stock negativo: revisar</span>';
+  if (e === 'bajo') return '<span class="ctrl ctrl-si" style="background:var(--warning-bg);color:#92400E">controlado · bajo mínimo</span>';
+  return '<span class="ctrl ctrl-si">controlado</span>';
 }
 
 function render() {
   const lista = visibles();
-  const enCero = productos.filter(p => p.stock_actual <= 0).length;
-  document.getElementById('filter-count').textContent =
-    `${lista.length} en pantalla · ${enCero} sin stock de ${productos.length}`;
-
+  const el = $id('lista');
+  $id('filter-count').textContent = `${lista.length} en pantalla`;
   if (!lista.length) {
-    document.getElementById('tabla-body').innerHTML =
-      `<tr class="fila-plana"><td colspan="6"><div class="empty-state">
-        <div class="empty-state-icon">📦</div><h3>Sin resultados</h3>
-        <p>Ningún producto coincide con la búsqueda.</p></div></td></tr>`;
-    pintarBarra();
-    return;
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">${filtro==='sin_contar' ? '🎉' : '📦'}</div><h3>${filtro==='sin_contar' && !$id('q').value ? 'No queda nada sin contar' : 'Sin resultados'}</h3><p>${$id('q').value ? 'Ningún producto coincide con la búsqueda. Si es nuevo, usá "+ Producto que no está".' : 'Probá con otro filtro.'}</p></div>`;
+    $id('btn-mas').hidden = true; pintarBarra(); return;
   }
-
-  document.getElementById('tabla-body').innerHTML = lista.map(p => {
+  const slice = lista.slice(0, limite);
+  el.innerHTML = slice.map(p => {
     const v = entrada(p.id);
-    const minimo = v.minimo !== null ? v.minimo : p.stock_minimo;
-    const queda = p.stock_actual + (v.cantidad || 0);
-    const cambia = (v.cantidad || 0) > 0;
-    return `<tr${cambia ? ' class="fila-sel"' : ''}>
-      <td class="c-prod">
-        <div class="td-name">${esc(p.nombre)}</div>
-        <div class="td-sku">${esc(cats[p.categoria_id] || 'Sin categoría')}</div>
-      </td>
-      <td class="c-sku" data-l="SKU">${esc(p.sku || '—')}</td>
-      <td class="c-stock" data-l="Stock hoy">
-        <span class="stock-num ${Utils.stockClass(p.stock_actual, p.stock_minimo)}">${p.stock_actual}</span>
-      </td>
-      <td class="c-cant" data-l="Cantidad">
-        <input type="number" class="in-cant" inputmode="numeric" min="0" step="1"
-               data-id="${p.id}" value="${v.cantidad ?? ''}" placeholder="0"
-               aria-label="Cantidad a cargar de ${esc(p.nombre)}">
-      </td>
-      <td class="c-min" data-l="Mínimo">
-        <input type="number" class="in-min" inputmode="numeric" min="0" step="1"
-               data-id="${p.id}" value="${minimo || ''}" placeholder="0"
-               aria-label="Stock mínimo de ${esc(p.nombre)}">
-      </td>
-      <td class="c-queda" data-l="Queda en">
-        <span class="stock-num ${cambia ? 'stock-ok' : ''}">${queda}</span>
-      </td>
-    </tr>`;
+    const cant = v.cantidad;
+    const pend = pendientes.has(p.id);
+    const mini = v.minimo !== null ? v.minimo : (p.stock_minimo || '');
+    return `<div class="cnt-card${pend?' pend':''}${guardados.has(p.id)&&!pend?' guardado':''}" data-id="${p.id}">
+      <div>
+        <div class="cnt-nombre">${esc(p.nombre)}</div>
+        <div class="cnt-meta">${p.sku ? `<span>${esc(p.sku)}</span>` : ''}<span>${esc(cats[p.categoria_id]||'Sin categoría')}</span>${badgeEstado(p)}${p.ultimo_conteo_en ? `<span title="Último conteo">contado ${Utils.timeAgo(p.ultimo_conteo_en).toLowerCase()}</span>` : ''}<button type="button" class="pos-precio-btn" data-act="mas">más ▾</button></div>
+      </div>
+      <div class="cnt-der">
+        <div class="cnt-actual">${p.stock_controlado ? 'sistema' : 'sin contar'}<br><b class="stock-num ${Utils.stockClass(p.stock_actual, p.stock_minimo)}">${p.stock_actual}</b></div>
+        <div class="cnt-ctl">
+          <div class="qty-ctl"><button type="button" data-act="menos" aria-label="Menos">−</button><input type="number" inputmode="numeric" min="0" step="1" data-act="cant" value="${cant ?? ''}" placeholder="${p.stock_controlado ? p.stock_actual : '¿cuántos?'}" aria-label="Cantidad contada de ${esc(p.nombre)}"><button type="button" data-act="mas1" aria-label="Más">+</button></div>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm cnt-cero" data-act="cero" title="Confirmar que no hay ninguno">No hay (0)</button>
+      </div>
+      <div class="cnt-mas">
+        <label>Mínimo para avisar <input type="number" inputmode="numeric" min="0" data-act="min" value="${esc(mini)}" placeholder="0"></label>
+        <label style="flex:1;min-width:160px">Nota <input type="text" data-act="obs" maxlength="120" value="${esc(v.obs||'')}" placeholder="Ej: estante B, caja abierta" style="width:100%"></label>
+        ${p.stock_controlado ? `<button type="button" class="btn btn-ghost btn-sm" data-act="quitar-ctrl">Volver a "sin contar"</button>` : ''}
+        <a class="btn btn-ghost btn-sm" href="/admin/producto-form?id=${p.id}">✏️ Editar producto</a>
+      </div>
+    </div>`;
   }).join('');
-
+  $id('btn-mas').hidden = lista.length <= limite;
   pintarBarra();
 }
+$id('btn-mas').addEventListener('click', () => { limite += 60; render(); });
 
+function resumen() {
+  let n = 0, cambios = 0, minimos = 0;
+  pendientes.forEach((v, id) => {
+    const p = productos.find(x => x.id === id); if (!p) return;
+    if (v.cantidad !== null) { n++; if (v.cantidad !== p.stock_actual || !p.stock_controlado) cambios++; }
+    if (v.minimo !== null && v.minimo !== p.stock_minimo) minimos++;
+  });
+  return { n, cambios, minimos };
+}
 function pintarBarra() {
-  const { items, unidades, minimos } = resumen();
-  const barra = document.getElementById('barra-carga');
-  barra.hidden = items === 0 && minimos === 0;
+  const { n, minimos } = resumen();
+  $id('barra').hidden = n === 0 && minimos === 0;
   const partes = [];
-  if (items)   partes.push(`${unidades} unidad${unidades!==1?'es':''} en ${items} producto${items!==1?'s':''}`);
+  if (n) partes.push(`${n} producto${n!==1?'s':''} contado${n!==1?'s':''}`);
   if (minimos) partes.push(`${minimos} mínimo${minimos!==1?'s':''}`);
-  document.getElementById('resumen-carga').textContent = '● ' + partes.join(' · ') + ' sin guardar';
+  $id('resumen').textContent = '● ' + partes.join(' · ') + ' sin guardar';
 }
 
-/* Se escucha en el tbody y no en cada input: la tabla se re-renderiza y los
-   listeners individuales se perderían en cada filtrado. */
-document.getElementById('tabla-body').addEventListener('input', e => {
-  const el = e.target;
-  if (!el.matches('.in-cant, .in-min')) return;
-  const id = Number(el.dataset.id);
-  const p  = productos.find(x => x.id === id);
-  if (!p) return;
+function setPend(id, v) {
+  const p = productos.find(x => x.id === id);
+  const vacio = v.cantidad === null && (v.minimo === null || v.minimo === p.stock_minimo) && !v.obs;
+  if (vacio) pendientes.delete(id); else pendientes.set(id, v);
+}
 
+$id('lista').addEventListener('click', async e => {
+  if (/^(input|a|label)$/i.test(e.target.tagName)) return;   // escribir en un campo no es una acción
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  const card = b.closest('.cnt-card'); const id = Number(card.dataset.id);
+  const p = productos.find(x => x.id === id); if (!p) return;
+  const v = { ...entrada(id) };
+  const input = card.querySelector('[data-act=cant]');
+  if (b.dataset.act === 'mas') { card.classList.toggle('abierto'); return; }
+  if (b.dataset.act === 'quitar-ctrl') {
+    if (!await Utils.confirm(`${esc(p.nombre)} vuelve a "sin contar": la tienda deja de venderlo y las ventas del local no tocan su stock hasta que lo cuentes de nuevo.`, 'Quitar control de stock', 'Quitar')) return;
+    const { error } = await db.rpc('fn_stock_quitar_control', { p_producto_id: id });
+    if (error) { Utils.toast(msgError(error), 'error'); return; }
+    p.stock_controlado = false; renderChips(); render(); return;
+  }
+  if (b.dataset.act === 'cero') v.cantidad = 0;
+  if (b.dataset.act === 'mas1') v.cantidad = (v.cantidad ?? (p.stock_controlado ? p.stock_actual : 0)) + 1;
+  if (b.dataset.act === 'menos') v.cantidad = Math.max(0, (v.cantidad ?? (p.stock_controlado ? p.stock_actual : 0)) - 1);
+  setPend(id, v);
+  input.value = v.cantidad ?? '';
+  card.classList.toggle('pend', pendientes.has(id));
+  pintarBarra();
+  if (navigator.vibrate && b.dataset.act !== 'mas') navigator.vibrate(15);
+});
+$id('lista').addEventListener('input', e => {
+  const el = e.target; const act = el.dataset.act; if (!act) return;
+  const card = el.closest('.cnt-card'); const id = Number(card.dataset.id);
   const v = { ...entrada(id) };
   const crudo = el.value.trim();
-  const n = crudo === '' ? null : Math.max(0, Math.floor(Number(crudo)));
-
-  if (el.classList.contains('in-cant')) v.cantidad = (n && isFinite(n)) ? n : null;
-  else                                  v.minimo   = (crudo === '' || !isFinite(n)) ? null : n;
-
-  const sinCambios = (v.cantidad === null || v.cantidad === 0) &&
-                     (v.minimo === null || v.minimo === p.stock_minimo);
-  if (sinCambios) pendientes.delete(id); else pendientes.set(id, v);
-
-  // Se actualiza solo lo que depende del valor, sin re-renderizar (perdería el foco)
-  const fila = el.closest('tr');
-  const queda = p.stock_actual + (v.cantidad || 0);
-  const cel = fila.querySelector('.c-queda .stock-num');
-  cel.textContent = queda;
-  cel.className = 'stock-num' + ((v.cantidad || 0) > 0 ? ' stock-ok' : '');
-  fila.classList.toggle('fila-sel', (v.cantidad || 0) > 0);
+  if (act === 'cant') v.cantidad = crudo === '' ? null : Math.max(0, Math.floor(Number(crudo)) || 0);
+  if (act === 'min')  v.minimo = crudo === '' ? null : Math.max(0, Math.floor(Number(crudo)) || 0);
+  if (act === 'obs')  v.obs = crudo || null;
+  setPend(id, v);
+  card.classList.toggle('pend', pendientes.has(id));
   pintarBarra();
 });
-
-['q','filtro-cat','solo-sin-stock'].forEach(id =>
-  document.getElementById(id)?.addEventListener('input', render));
-
-document.getElementById('btn-descartar')?.addEventListener('click', async () => {
-  const { items, minimos } = resumen();
-  const ok = await Utils.confirm(
-    `Se van a descartar ${items ? `${items} cantidad${items!==1?'es':''}` : ''}${items&&minimos?' y ':''}${minimos ? `${minimos} mínimo${minimos!==1?'s':''}` : ''} sin guardar.`,
-    'Descartar lo cargado', 'Descartar');
-  if (!ok) return;
-  pendientes.clear();
-  render();
+// Enter en la cantidad: pasa al siguiente producto (como recorrer una estantería)
+$id('lista').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.target.dataset.act !== 'cant') return;
+  e.preventDefault();
+  const cards = [...document.querySelectorAll('.cnt-card')];
+  const i = cards.indexOf(e.target.closest('.cnt-card'));
+  const next = cards[i+1]?.querySelector('[data-act=cant]');
+  if (next) { next.focus(); next.scrollIntoView({ block:'center', behavior:'smooth' }); }
 });
 
-// Aviso del navegador si se va con trabajo sin guardar
-window.addEventListener('beforeunload', e => {
-  if (!pendientes.size) return;
-  e.preventDefault(); e.returnValue = '';
+['q','filtro-cat'].forEach(id => $id(id).addEventListener('input', () => { limite = 60; render(); }));
+$id('q').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const first = document.querySelector('.cnt-card [data-act=cant]');
+  if (first) { e.preventDefault(); first.focus(); }
 });
-
-document.getElementById('btn-cargar')?.addEventListener('click', async () => {
-  const { items, unidades, minimos } = resumen();
-  if (!items && !minimos) return;
-
-  const ok = await Utils.confirm(
-    `Se van a cargar <b>${unidades} unidad${unidades!==1?'es':''}</b> en <b>${items} producto${items!==1?'s':''}</b>` +
-    (minimos ? `, y actualizar ${minimos} mínimo${minimos!==1?'s':''}` : '') +
-    `.<br><br>Cada carga queda registrada como movimiento con tu usuario.`,
-    'Confirmar carga de stock', 'Guardar carga', false);
-  if (!ok) return;
-
-  const botones = document.querySelectorAll('#barra-carga button');
-  botones.forEach(b => b.disabled = true);
-  Utils.showLoading('Registrando movimientos...');
-
-  const okItems = [], fallidos = [];
-  const trabajo = [...pendientes.entries()];
-
-  for (const [id, v] of trabajo) {
-    const p = productos.find(x => x.id === id);
-    if (!p) continue;
-
-    // El mínimo es un campo común: se actualiza con un UPDATE normal.
-    // El stock NO: la base lo blinda y solo se mueve por el RPC (sql/008).
-    if (v.minimo !== null && v.minimo !== p.stock_minimo) {
-      const { error } = await db.from('productos').update({ stock_minimo: v.minimo }).eq('id', id);
-      if (error) console.error('[carga-stock] minimo', error);
-      else p.stock_minimo = v.minimo;
-    }
-
-    if (!(v.cantidad > 0)) continue;
-
-    // carga_inicial solo si arranca en cero; si ya tenía stock es un ajuste.
-    const tipo = p.stock_actual <= 0 ? 'carga_inicial' : 'ajuste_positivo';
-    const { error } = await db.rpc('fn_registrar_movimiento', {
-      p_producto_id: id,
-      p_tipo: tipo,
-      p_cantidad: v.cantidad,
-      p_motivo: 'Carga asistida de stock',
-      p_observacion: null,
-      p_referencia: null
-    });
-
-    if (error) { console.error('[carga-stock]', error); fallidos.push({ p, v, error }); }
-    else {
-      p.stock_actual += v.cantidad;
-      okItems.push({ p, cantidad: v.cantidad, tipo });
-      pendientes.delete(id);
-    }
-  }
-
-  Utils.hideLoading();
-  botones.forEach(b => b.disabled = false);
-  render();
-  mostrarResultado(okItems, fallidos);
-
-  if (!fallidos.length) {
-    Utils.toast(`Stock cargado en ${okItems.length} producto${okItems.length!==1?'s':''}`, 'success');
-    await Utils.log('create', 'movimientos_inventario', okItems.map(x=>x.p.id).join(','),
-                    `Carga asistida de stock: ${okItems.length} producto(s)`);
-  } else if (okItems.length) {
-    Utils.toast(`${okItems.length} cargados, ${fallidos.length} fallaron. Lo que falló sigue en pantalla.`, 'warning', 8000);
-  } else {
-    Utils.toast('No se pudo registrar la carga. No se modificó ningún stock.', 'error', 7000);
-  }
-});
-
-function mostrarResultado(okItems, fallidos) {
-  const card = document.getElementById('card-resultado');
-  if (!okItems.length && !fallidos.length) { card.hidden = true; return; }
-  card.hidden = false;
-  const filas = [
-    ...okItems.map(x => `<div class="res-item ok">✅ <b>${esc(x.p.nombre)}</b> — cargadas ${x.cantidad} u. · queda en ${x.p.stock_actual}
-      ${x.tipo === 'ajuste_positivo' ? '<span class="badge badge-info">ajuste</span>' : ''}</div>`),
-    ...fallidos.map(x => `<div class="res-item err">❌ <b>${esc(x.p.nombre)}</b> — ${esc(msgError(x.error, 'cargar'))}</div>`)
-  ];
-  document.getElementById('resultado-body').innerHTML = filas.join('');
+if (MHScanner.disponible()) {
+  $id('btn-scan').hidden = false;
+  $id('btn-scan').addEventListener('click', () => MHScanner.abrir(codigo => {
+    $id('q').value = codigo; filtro = 'todos'; renderChips(); render();
+    const first = document.querySelector('.cnt-card [data-act=cant]');
+    if (first) first.focus(); else Utils.toast(`Ningún producto tiene el código ${codigo}. Podés crearlo con "+ Producto que no está".`, 'warning', 6000);
+  }));
 }
 
-async function cargarDatos() {
-  const [{ data: catData, error: e1 }, { data: prodData, error: e2 }] = await Promise.all([
-    db.from('categorias').select('id,nombre').order('orden'),
-    db.from('productos')
-      .select('id,nombre,sku,categoria_id,stock_actual,stock_minimo')
-      .eq('estado','activo').neq('seguimiento_inventario', false)
-      .order('nombre')
-  ]);
+window.addEventListener('beforeunload', e => { if (!pendientes.size) return; e.preventDefault(); e.returnValue = ''; });
 
-  if (e1 || e2) {
-    Utils.toast(msgError(e1 || e2, 'cargar el catálogo'), 'error');
-    document.getElementById('tabla-body').innerHTML =
-      `<tr class="fila-plana"><td colspan="6"><div class="empty-state">
-        <div class="empty-state-icon">⚠️</div><h3>No se pudo cargar el catálogo</h3>
-        <button type="button" class="btn btn-outline" onclick="location.reload()">↺ Reintentar</button>
-      </div></td></tr>`;
+$id('btn-descartar').addEventListener('click', async () => {
+  if (!await Utils.confirm('Se descarta lo contado que todavía no se guardó.', 'Descartar conteo', 'Descartar')) return;
+  pendientes.clear(); render();
+});
+
+$id('btn-guardar').addEventListener('click', async () => {
+  const { n, minimos } = resumen();
+  if (!n && !minimos) return;
+  const ok = await Utils.confirm(`Se guarda el conteo de <b>${n} producto${n!==1?'s':''}</b>${minimos ? ` y ${minimos} mínimo${minimos!==1?'s':''}` : ''}.<br><br>Cada diferencia con el sistema queda asentada como movimiento con tu usuario, y los productos pasan a <b>stock controlado</b>.`, 'Guardar conteo', 'Guardar', false);
+  if (!ok) return;
+  document.querySelectorAll('#barra button').forEach(b => b.disabled = true);
+  Utils.showLoading('Guardando conteo…');
+
+  // 1) Mínimos: campo común, UPDATE directo
+  for (const [id, v] of pendientes) {
+    const p = productos.find(x => x.id === id); if (!p) continue;
+    if (v.minimo !== null && v.minimo !== p.stock_minimo) {
+      const { error } = await db.from('productos').update({ stock_minimo: v.minimo }).eq('id', id);
+      if (!error) p.stock_minimo = v.minimo;
+    }
+  }
+  // 2) Conteos: todo en una llamada; la base procesa uno por uno
+  const items = [...pendientes.entries()].filter(([,v]) => v.cantidad !== null).map(([id, v]) => ({ producto_id: id, cantidad: v.cantidad, observacion: v.obs || null }));
+  const okItems = [], fallidos = [];
+  if (items.length) {
+    const { data, error } = await db.rpc('fn_stock_contar_lote', { p_items: items });
+    if (error) {
+      Utils.hideLoading(); document.querySelectorAll('#barra button').forEach(b => b.disabled = false);
+      Utils.toast(msgError(error), 'error', 8000); return;
+    }
+    (data.items || []).forEach(r => {
+      const p = productos.find(x => x.id === Number(r.producto_id)); if (!p) return;
+      if (r.ok) {
+        p.stock_actual = r.stock_actual; p.stock_controlado = true; p.ultimo_conteo_en = new Date().toISOString();
+        okItems.push({ p, r }); pendientes.delete(p.id); guardados.add(p.id);
+      } else fallidos.push({ p, r });
+    });
+  } else { pendientes.clear(); }
+  pendientes.forEach((v, id) => { if (v.cantidad === null) pendientes.delete(id); });
+
+  Utils.hideLoading(); document.querySelectorAll('#barra button').forEach(b => b.disabled = false);
+  renderChips(); render();
+  const card = $id('card-resultado'); card.hidden = false;
+  $id('resultado-body').innerHTML = [
+    ...okItems.map(({p, r}) => `<div class="res-item ok">✅ <b>${esc(p.nombre)}</b> — ${r.diferencia === 0 ? 'sin diferencia' : (r.diferencia > 0 ? `+${r.diferencia}` : r.diferencia)} · stock ${r.stock_actual}${r.ya_estaba_controlado ? '' : ' <span class="badge badge-success">ahora controlado</span>'}</div>`),
+    ...fallidos.map(({p, r}) => `<div class="res-item err">❌ <b>${esc(p.nombre)}</b> — ${esc(msgError(r, 'contar'))}</div>`)
+  ].join('') || '<div class="res-item ok">Mínimos actualizados.</div>';
+  if (!fallidos.length) Utils.toast(`Conteo guardado: ${okItems.length} producto${okItems.length!==1?'s':''}`, 'success');
+  else Utils.toast(`${okItems.length} guardados, ${fallidos.length} fallaron. Lo que falló sigue en pantalla.`, 'warning', 8000);
+});
+
+/* ── Alta rápida de un producto que no está ── */
+$id('btn-nuevo').addEventListener('click', () => {
+  const bd = document.createElement('div'); bd.className = 'modal-backdrop';
+  bd.innerHTML = `<div class="modal" style="max-width:440px">
+    <div class="modal-header"><h3 class="modal-title">Producto que no está en el sistema</h3><button class="modal-close" id="_x">×</button></div>
+    <div class="modal-body cnt-nuevo-form">
+      <div class="form-group"><label>Nombre <span class="req">*</span></label><input type="text" id="n-nombre" maxlength="160" placeholder="Ej: Freidora de aire 5 L" value="${esc($id('q').value.replace(/^\d{8,}$/, ''))}"></div>
+      <div class="grid-2">
+        <div class="form-group"><label>Categoría</label><select id="n-cat"><option value="">Sin categoría</option>${Object.entries(cats).map(([id,n]) => `<option value="${id}">${esc(n)}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Cantidad contada</label><input type="number" id="n-cant" inputmode="numeric" min="0" placeholder="0"></div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group"><label>Código de barras</label><input type="text" id="n-barras" inputmode="numeric" maxlength="40" value="${esc(/^\d{8,}$/.test($id('q').value.trim()) ? $id('q').value.trim() : '')}"></div>
+        <div class="form-group"><label>Precio de venta</label><input type="number" id="n-precio" inputmode="decimal" min="0" step="0.01" placeholder="opcional"></div>
+      </div>
+      <label class="toggle-wrap"><div class="toggle"><input type="checkbox" id="n-publicar"><div class="toggle-track"></div><div class="toggle-thumb"></div></div><span class="toggle-label">Publicarlo ya en la tienda (sin foto se ve con imagen genérica)</span></label>
+      <div class="form-hint">El SKU se genera solo (MH-00123). Después podés completar foto, descripción y precios en Productos.</div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" id="_no">Cancelar</button><button class="btn btn-primary" id="_ok">Crear y contar</button></div></div>`;
+  document.body.appendChild(bd);
+  bd.querySelector('#_x').onclick = bd.querySelector('#_no').onclick = () => bd.remove();
+  setTimeout(() => bd.querySelector('#n-nombre').focus(), 30);
+  bd.querySelector('#_ok').addEventListener('click', async () => {
+    const nombre = bd.querySelector('#n-nombre').value.trim();
+    if (nombre.length < 2) { Utils.toast('Escribí el nombre', 'warning'); return; }
+    const btn = bd.querySelector('#_ok'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+    const { data, error } = await db.rpc('producto_crear_rapido', { p: {
+      nombre, categoria_id: bd.querySelector('#n-cat').value || null,
+      codigo_barras: bd.querySelector('#n-barras').value.trim() || null,
+      precio_minorista: bd.querySelector('#n-precio').value || null,
+      estado: bd.querySelector('#n-publicar').checked ? 'activo' : 'inactivo'
+    }});
+    if (error) { btn.disabled = false; btn.textContent = 'Crear y contar'; Utils.toast(msgError(error, 'crear el producto'), 'error', 7000); return; }
+    const cant = bd.querySelector('#n-cant').value;
+    const nuevo = { id: data.id, nombre: data.nombre, sku: data.sku, codigo_barras: bd.querySelector('#n-barras').value.trim() || null, categoria_id: Number(bd.querySelector('#n-cat').value) || null, stock_actual: 0, stock_minimo: 0, stock_controlado: false, seguimiento_inventario: true, ultimo_conteo_en: null };
+    productos.push(nuevo); productos.sort((a,b) => norm(a.nombre).localeCompare(norm(b.nombre)));
+    if (cant !== '' && Number(cant) >= 0) pendientes.set(nuevo.id, { cantidad: Math.floor(Number(cant)), minimo: null, obs: null });
+    bd.remove(); $id('q').value = nombre; filtro = 'todos'; renderChips(); render();
+    Utils.toast(`Producto creado (${data.sku}). ${cant !== '' ? 'Guardá el conteo para cargar el stock.' : ''}`, 'success', 5000);
+  });
+});
+
+async function cargarDatos() {
+  const [{ data: catData, error: e1 }, prodRes] = await Promise.all([
+    db.from('categorias').select('id,nombre').order('orden'),
+    db.from('productos').select('id,nombre,sku,codigo_barras,categoria_id,stock_actual,stock_minimo,stock_controlado,ultimo_conteo_en,seguimiento_inventario,estado').neq('estado','archivado').order('nombre')
+  ]);
+  if (e1 || prodRes.error) {
+    if ((prodRes.error?.message||'').includes('stock_controlado')) $id('aviso-sql').hidden = false;
+    Utils.toast(msgError(e1 || prodRes.error, 'cargar el catálogo'), 'error');
+    $id('lista').innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>No se pudo cargar el catálogo</h3><button type="button" class="btn btn-outline" onclick="location.reload()">↺ Reintentar</button></div>`;
     return;
   }
-
-  const sel = document.getElementById('filtro-cat');
-  (catData||[]).forEach(c => {
-    cats[c.id] = c.nombre;
-    sel.insertAdjacentHTML('beforeend', `<option value="${c.id}">${esc(c.nombre)}</option>`);
-  });
-
-  productos = prodData || [];
-  document.getElementById('subtitle').textContent =
-    `${productos.filter(p => p.stock_actual <= 0).length} productos sin stock cargado, de ${productos.length} con seguimiento`;
-  render();
+  const sel = $id('filtro-cat');
+  (catData||[]).forEach(c => { cats[c.id] = c.nombre; sel.insertAdjacentHTML('beforeend', `<option value="${c.id}">${esc(c.nombre)}</option>`); });
+  productos = prodRes.data || [];
+  const pre = new URLSearchParams(location.search).get('producto');
+  if (pre) { filtro = 'todos'; const p = productos.find(x => x.id === Number(pre)); if (p) $id('q').value = p.nombre; }
+  renderChips(); render();
 }
 
 async function initPage() {
   const profile = await Auth.init();
   if (!profile) return;
   if (!['administrador','encargado_stock'].includes(profile.rol)) {
-    Utils.toast('Sin permisos para mover stock', 'error');
-    window.location.href = '/admin/dashboard';
-    return;
+    Utils.toast('Sin permisos para contar stock', 'error'); window.location.href = '/admin/dashboard'; return;
   }
-  await Layout.init('carga-stock', 'Carga de stock');
+  await Layout.init('carga-stock', 'Contar stock');
   await cargarDatos();
 }
 initPage();

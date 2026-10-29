@@ -62,8 +62,10 @@
         <div class="kpi-card" data-href="/admin/productos"><div class="kpi-icon gold">🛍️</div><div class="kpi-label">Productos activos</div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-sub" id="kpi-activos">—</div></div>
         <div class="kpi-card" data-href="/admin/productos?precio=sin"><div class="kpi-icon amber">💲</div><div class="kpi-label">Sin precio</div><div class="kpi-value" id="kpi-sin-precio">—</div><div class="kpi-sub">clic para cargarlos</div></div>
         <div class="kpi-card" data-href="/admin/productos?destacados=1"><div class="kpi-icon violet">⭐</div><div class="kpi-label">Destacados</div><div class="kpi-value" id="kpi-destacados">—</div><div class="kpi-sub">visibles en portada</div></div>
+        <div class="kpi-card" data-href="/admin/ventas"><div class="kpi-icon green">🛒</div><div class="kpi-label">Ventas del local hoy</div><div class="kpi-value" id="kpi-ventas-hoy">—</div><div class="kpi-sub" id="kpi-ventas-sub">—</div></div>
         <div class="kpi-card" data-href="/admin/alertas"><div class="kpi-icon red">⚠️</div><div class="kpi-label">Sin stock</div><div class="kpi-value" id="kpi-sin-stock">—</div><div class="kpi-sub" id="kpi-bajo-sub">—</div></div>
-        <div class="kpi-card" data-href="/admin/pedidos?estado=nueva"><div class="kpi-icon blue">💬</div><div class="kpi-label">Solicitudes nuevas</div><div class="kpi-value" id="kpi-solicitudes">—</div><div class="kpi-sub" id="kpi-sol-sub">—</div></div>
+        <div class="kpi-card" data-href="/admin/carga-stock"><div class="kpi-icon blue">📥</div><div class="kpi-label">Sin contar</div><div class="kpi-value" id="kpi-sin-contar">—</div><div class="kpi-sub">productos sin stock controlado</div></div>
+        <div class="kpi-card" data-href="/admin/pedidos?estado=nueva"><div class="kpi-icon blue">💬</div><div class="kpi-label">Pedidos web nuevos</div><div class="kpi-value" id="kpi-solicitudes">—</div><div class="kpi-sub" id="kpi-sol-sub">—</div></div>
         <div class="kpi-card" data-href="/admin/movimientos"><div class="kpi-icon green">📦</div><div class="kpi-label">Movimientos hoy</div><div class="kpi-value" id="kpi-mov-hoy">—</div><div class="kpi-sub" id="kpi-mov-mes">—</div></div>
       </div>
 
@@ -72,8 +74,10 @@
         <div class="card-header"><span class="card-title">⚡ Acciones rápidas</span></div>
         <div class="card-body">
           <div class="quick-actions">
+            <a class="quick-action" href="/admin/vender"><span class="qa-ic">🛒</span>Vender en el local</a>
+            <a class="quick-action" href="/admin/carga-stock"><span class="qa-ic">📥</span>Contar stock</a>
+            <a class="quick-action" href="/admin/compras"><span class="qa-ic">🚢</span>Compras y llegadas</a>
             <a class="quick-action" href="/admin/producto-form"><span class="qa-ic">🛍️</span>Agregar producto</a>
-            <a class="quick-action" href="/admin/inventario"><span class="qa-ic">📦</span>Registrar movimiento</a>
             <a class="quick-action" href="/admin/pedidos"><span class="qa-ic">💬</span>Ver pedidos</a>
             <a class="quick-action" href="/admin/alertas"><span class="qa-ic">🔔</span>Alertas de stock</a>
             <a class="quick-action" href="/admin/categorias"><span class="qa-ic">🏷️</span>Categorías</a>
@@ -154,14 +158,17 @@ async function loadData() {
   hoy.setHours(0,0,0,0);
   const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString();
 
+  // stock_controlado existe desde sql/013; si la base no lo tiene, se pide sin esa columna
+  let prodRes = await db.from('productos').select('id,nombre,stock_actual,stock_minimo,estado,precio_minorista,imagen_principal_url,categoria_id,destacado,stock_controlado,seguimiento_inventario,categorias(nombre)').order('stock_actual');
+  if (prodRes.error) prodRes = await db.from('productos').select('id,nombre,stock_actual,stock_minimo,estado,precio_minorista,imagen_principal_url,categoria_id,destacado,categorias(nombre)').order('stock_actual');
+  const ventasRes = await db.from('ventas').select('total').gte('fecha', hoy.toISOString()).eq('estado','cerrada');
+  const ventasHoy = ventasRes.error ? null : (ventasRes.data || []);
   const [
-    { data: productos },
     { count: movHoy },
     { count: movMes },
     { data: movRecientes },
     solicitudesRes
   ] = await Promise.all([
-    db.from('productos').select('id,nombre,stock_actual,stock_minimo,estado,precio_minorista,imagen_principal_url,categoria_id,destacado,categorias(nombre)').order('stock_actual'),
     db.from('movimientos_inventario').select('id', {count:'exact',head:true}).gte('created_at', hoy.toISOString()),
     db.from('movimientos_inventario').select('id', {count:'exact',head:true}).gte('created_at', inicioMes),
     db.from('movimientos_inventario')
@@ -170,15 +177,18 @@ async function loadData() {
     db.from('solicitudes').select('id,estado,cliente_nombre,codigo,created_at').order('created_at',{ascending:false}).limit(200)
   ]);
 
+  const productos = prodRes.data || [];
   const solicitudes = solicitudesRes.error ? [] : (solicitudesRes.data || []);
   const activosList = (productos||[]).filter(p=>p.estado==='activo');
+  const controlado = p => p.stock_controlado !== false && p.seguimiento_inventario !== false;
+  const sinContar  = activosList.filter(p => p.stock_controlado === false && p.seguimiento_inventario !== false).length;
   const activos     = activosList.length;
   const sinPrecio   = activosList.filter(p=>!(p.precio_minorista>0)).length;
   const sinImagen   = activosList.filter(p=>!p.imagen_principal_url).length;
   const sinCat      = activosList.filter(p=>!p.categoria_id).length;
   const destacados  = activosList.filter(p=>p.destacado).length;
-  const sinStock    = activosList.filter(p=>p.stock_actual<=0).length;
-  const stockBajo   = activosList.filter(p=>p.stock_minimo>0&&p.stock_actual<=p.stock_minimo&&p.stock_actual>0).length;
+  const sinStock    = activosList.filter(p=>controlado(p)&&p.stock_actual<=0).length;
+  const stockBajo   = activosList.filter(p=>controlado(p)&&p.stock_minimo>0&&p.stock_actual<=p.stock_minimo&&p.stock_actual>0).length;
   const solNuevas   = solicitudes.filter(s=>s.estado==='nueva').length;
 
   document.getElementById('kpi-total').textContent      = activos;
@@ -186,7 +196,15 @@ async function loadData() {
   document.getElementById('kpi-sin-precio').textContent = sinPrecio;
   document.getElementById('kpi-destacados').textContent = destacados;
   document.getElementById('kpi-sin-stock').textContent  = sinStock;
-  document.getElementById('kpi-bajo-sub').textContent   = stockBajo ? `+ ${stockBajo} con stock bajo` : 'stock = 0';
+  document.getElementById('kpi-bajo-sub').textContent   = stockBajo ? `+ ${stockBajo} con stock bajo` : 'controlados en 0';
+  document.getElementById('kpi-sin-contar').textContent = sinContar;
+  if (ventasHoy === null) {
+    document.getElementById('kpi-ventas-hoy').textContent = '—';
+    document.getElementById('kpi-ventas-sub').textContent = 'falta ejecutar sql/013';
+  } else {
+    document.getElementById('kpi-ventas-hoy').textContent = Utils.currency(ventasHoy.reduce((s,v)=>s+Number(v.total||0),0));
+    document.getElementById('kpi-ventas-sub').textContent = `${ventasHoy.length} venta${ventasHoy.length!==1?'s':''} · clic para ver`;
+  }
   document.getElementById('kpi-solicitudes').textContent = solNuevas;
   document.getElementById('kpi-sol-sub').textContent    = `${solicitudes.length} en total`;
   document.getElementById('kpi-mov-hoy').textContent    = movHoy||0;
@@ -197,7 +215,8 @@ async function loadData() {
     { n: sinPrecio, crit: sinPrecio > activos*0.4, txt: `producto${sinPrecio!==1?'s':''} sin precio`, btn: 'Cargar precios', href: '/admin/productos?precio=sin' },
     { n: sinImagen, crit: false, txt: `producto${sinImagen!==1?'s':''} sin imagen`, btn: 'Ver', href: '/admin/productos?imagen=sin' },
     { n: sinCat, crit: false, txt: `producto${sinCat!==1?'s':''} sin categoría`, btn: 'Ver', href: '/admin/productos?cat=sin' },
-    { n: sinStock, crit: sinStock > 0, txt: `producto${sinStock!==1?'s':''} sin stock cargado`, btn: 'Ver alertas', href: '/admin/alertas' },
+    { n: sinStock, crit: sinStock > 0, txt: `producto${sinStock!==1?'s':''} sin stock`, btn: 'Ver alertas', href: '/admin/alertas' },
+    { n: sinContar, crit: false, txt: `producto${sinContar!==1?'s':''} sin contar (la web los muestra "a consultar")`, btn: 'Contar', href: '/admin/carga-stock' },
     { n: solNuevas, crit: solNuevas > 3, txt: `solicitud${solNuevas!==1?'es':''} sin atender`, btn: 'Responder', href: '/admin/pedidos?estado=nueva' }
   ];
   const conProblema = problemas.filter(p=>p.n>0);
@@ -222,8 +241,8 @@ async function loadData() {
   // ── Recomendaciones (basadas en los datos reales) ──
   const recs = [];
   if (sinPrecio > 0) recs.push(`Cargá los <b>${sinPrecio} precios que faltan</b>: un precio visible vende más que "Consultar precio".`);
-  if (sinStock === activos) recs.push(`Todavía no hay <b>stock cargado</b>. Registrá una "carga inicial" desde Inventario para activar las alertas automáticas.`);
-  else if (stockBajo > 0) recs.push(`Hay <b>${stockBajo} producto${stockBajo!==1?'s':''} con stock bajo</b>: revisalos antes de quedarte sin mercadería.`);
+  if (sinContar > 0) recs.push(`Hay <b>${sinContar} producto${sinContar!==1?'s':''} sin contar</b>: contalos desde el celular en <b>Contar stock</b> para que la tienda los venda y la caja descuente stock.`);
+  if (stockBajo > 0) recs.push(`Hay <b>${stockBajo} producto${stockBajo!==1?'s':''} con stock bajo</b>: revisalos antes de quedarte sin mercadería.`);
   if (solNuevas > 0) recs.push(`Respondé las <b>${solNuevas} solicitud${solNuevas!==1?'es':''} nueva${solNuevas!==1?'s':''}</b>: contestar rápido cierra más ventas.`);
   if (destacados < 6) recs.push(`Tenés solo <b>${destacados} destacados</b>. Marcá 8–12 productos con buen precio para llenar la portada.`);
   const conPrecioNoDest = activosList.filter(p=>p.precio_minorista>0 && !p.destacado).length;
@@ -257,7 +276,7 @@ async function loadData() {
   // ── Alertas de stock ──
   const alertasEl = document.getElementById('alertas-body');
   const alertasList = activosList
-    .filter(p => p.stock_actual <= 0 || (p.stock_minimo > 0 && p.stock_actual <= p.stock_minimo))
+    .filter(p => controlado(p) && (p.stock_actual <= 0 || (p.stock_minimo > 0 && p.stock_actual <= p.stock_minimo)))
     .slice(0, 8);
   alertasEl.innerHTML = alertasList.length
     ? '<div>' + alertasList.map(p=>`

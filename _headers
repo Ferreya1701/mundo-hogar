@@ -21,3 +21,8 @@
 
 /admin/js/*
   Cache-Control: public, max-age=300
+
+# El panel usa la cámara del celular para leer códigos de barras (Vender, Contar stock).
+/admin/*
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(), microphone=(), camera=(self)

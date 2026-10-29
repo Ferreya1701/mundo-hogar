@@ -129,6 +129,9 @@ Una vez logueado como administrador:
 | Crear/editar productos           | ✅ | ✅ | ❌ |
 | Eliminar productos               | ✅ | ❌ | ❌ |
 | Registrar movimientos de stock   | ✅ | ✅ | ❌ |
+| Contar stock / cargar compras    | ✅ | ✅ | ❌ |
+| Vender en el local (caja)        | ✅ | ✅ | ✅ |
+| Anular ventas                    | ✅ todas | solo propias < 24 h | solo propias < 24 h |
 | Ver historial de movimientos     | ✅ | ✅ | ✅ |
 | Ver alertas de stock             | ✅ | ✅ | ✅ |
 | Gestionar categorías             | ✅ | ❌ | ❌ |
@@ -186,7 +189,25 @@ Una vez logueado como administrador:
 - Editar nombre, rol y estado de usuarios
 - Instrucciones para crear nuevos usuarios vía Supabase
 
-### Pedidos y cobros (`/admin/pedidos.html`)
+### Vender en el local (`/admin/vender`)
+- Caja: buscar por nombre, SKU o código de barras (lector USB o cámara del celular), ticket con
+  cantidades, precio editable, descuento, medio de pago, cliente opcional, ticket por WhatsApp
+- Descuenta stock solo de los productos con **stock controlado**; los demás se venden sin tocar stock
+- Si el sistema dice 0 y el producto está, se vende igual y queda en negativo para revisar
+- Requiere `sql/013-local-compras-stock.sql`. Guía: `GUIA-STOCK-Y-VENTAS.md`
+
+### Ventas del local (`/admin/ventas`)
+- Listado por rango de fechas, medio de pago, vendedor; KPIs; detalle; anular (repone stock); CSV
+
+### Contar stock (`/admin/carga-stock`)
+- Conteo absoluto desde el celular: filtro "Sin contar", escaneo de códigos, alta rápida de productos
+- Al guardar, el producto queda con stock controlado (la tienda lo vende si hay)
+
+### Compras y llegadas (`/admin/compras`)
+- Pegar/subir la lista del proveedor (Excel, CSV, foto o PDF con IA) → coincidencias con el catálogo →
+  lo que no existe se crea como producto → al recibir, entra el stock y queda controlado
+
+### Pedidos web y cobros (`/admin/pedidos.html`)
 - Pedidos que llegan desde el carrito (antes "Solicitudes WhatsApp"), con estado del pedido y del pago
 - Chip "Para revisar": comprobantes que esperan confirmación o rechazo
 - Confirmar pago (pasa el pedido a confirmado y descuenta stock), rechazar comprobante, registrar
@@ -240,6 +261,10 @@ Una vez logueado como administrador:
 | Historial        | `/admin/movimientos.html`              |
 | Alertas          | `/admin/alertas.html`                  |
 | Usuarios         | `/admin/usuarios.html`                 |
+| Vender (caja)    | `/admin/vender`                        |
+| Ventas del local | `/admin/ventas`                        |
+| Contar stock     | `/admin/carga-stock`                   |
+| Compras          | `/admin/compras`                       |
 | Pedidos y cobros | `/admin/pedidos`                       |
 | Cuentas de cobro | `/admin/cuentas-cobro`                 |
 

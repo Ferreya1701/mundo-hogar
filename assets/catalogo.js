@@ -188,15 +188,26 @@ window.MH = (function () {
   const _fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 2 });
   const fmtPrice = (n) => isValidPrice(n) ? _fmt.format(n) : null;
 
-  // Disponibilidad: el bloqueo por stock solo aplica a productos con precio
-  // cargado (ficha gestionada). Sin precio, el flujo es consulta/cotización y
-  // no se afirma disponibilidad (el stock aún no se cargó en esta fase).
-  function isAvailable(p) {
-    if (!hasPrice(p)) return true;
-    if (p.seguimiento === false || p.permiteSinStock === true) return true;
-    if (typeof p.stock === 'number' && p.stock <= 0) return false;
-    return true;
+  // Disponibilidad (misma regla que disponibilidad_web en la base, sql/013):
+  //   'cotizar'   → sin precio: se pide cotización por WhatsApp
+  //   'ok'        → se puede agregar al carrito
+  //   'consultar' → tiene precio pero el stock todavía no se contó en el
+  //                 local (stock_controlado = false): no se vende online,
+  //                 se consulta por WhatsApp
+  //   'sin_stock' → stock controlado y no queda disponible
+  // "disponible" = stock físico − comprometido por pedidos web esperando pago.
+  function availability(p) {
+    if (!hasPrice(p)) return 'cotizar';
+    if (p.seguimiento === false || p.permiteSinStock === true) return 'ok';
+    if (p.controlado === false) return 'consultar';
+    var d = typeof p.disponible === 'number' ? p.disponible : p.stock;
+    if (typeof d === 'number' && d <= 0) return 'sin_stock';
+    return 'ok';
   }
+  // Compatibilidad: true salvo que esté controlado y sin stock
+  function isAvailable(p) { return availability(p) !== 'sin_stock'; }
+  // ¿Se puede agregar al carrito desde la web?
+  function canBuy(p) { var a = availability(p); return a === 'ok' || a === 'cotizar'; }
 
   // ── Analítica (no-op si GA4/Meta no están instalados) ──
   // Nunca enviar datos personales (nombre, teléfono, dirección) en estos eventos.
@@ -215,8 +226,12 @@ window.MH = (function () {
     const url = window.SUPABASE_URL;
     const key = window.SUPABASE_PUBLISHABLE_KEY || window.SUPABASE_ANON_KEY;
     if (!url || !key) return null;
-    const endpoint = `${url}/rest/v1/productos?select=id,nombre,slug,descripcion,descripcion_corta,imagen_principal_url,destacado,es_nuevo,orden,sku,marca,precio_minorista,precio_oferta,en_oferta,stock_actual,permite_venta_sin_stock,seguimiento_inventario,categorias(slug)&estado=eq.activo&order=orden.asc`;
-    const res = await fetch(endpoint, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+    const base = 'id,nombre,slug,descripcion,descripcion_corta,imagen_principal_url,destacado,es_nuevo,orden,sku,marca,precio_minorista,precio_oferta,en_oferta,stock_actual,permite_venta_sin_stock,seguimiento_inventario,categorias(slug)';
+    const hdr = { headers: { apikey: key, Authorization: `Bearer ${key}` } };
+    // stock_controlado y stock_disponible existen desde sql/013; si la base
+    // todavía no lo tiene, se pide el catálogo sin esas columnas.
+    let res = await fetch(`${url}/rest/v1/productos?select=${base},stock_controlado,stock_disponible&estado=eq.activo&order=orden.asc`, hdr);
+    if (!res.ok) res = await fetch(`${url}/rest/v1/productos?select=${base}&estado=eq.activo&order=orden.asc`, hdr);
     if (!res.ok) throw new Error('Supabase respondió ' + res.status);
     const rows = await res.json();
     return rows.map(p => ({
@@ -236,6 +251,8 @@ window.MH = (function () {
       precioOferta: p.precio_oferta != null ? Number(p.precio_oferta) : null,
       enOferta: !!p.en_oferta,
       stock: typeof p.stock_actual === 'number' ? p.stock_actual : null,
+      disponible: typeof p.stock_disponible === 'number' ? p.stock_disponible : (typeof p.stock_actual === 'number' ? p.stock_actual : null),
+      controlado: typeof p.stock_controlado === 'boolean' ? p.stock_controlado : undefined,
       permiteSinStock: !!p.permite_venta_sin_stock,
       seguimiento: p.seguimiento_inventario !== false,
       activo: true,
@@ -296,18 +313,20 @@ window.MH = (function () {
     if (conOferta) badges.push('<span class="badge badge-oferta">Oferta</span>');
     if (p.destacado) badges.push('<span class="badge badge-dest">Destacado</span>');
     if (p._nuevo) badges.push('<span class="badge badge-new">Nuevo</span>');
-    const disponible = isAvailable(p);
-    if (!disponible) badges.push('<span class="badge badge-nostock">Sin stock</span>');
+    const disp = availability(p);
+    if (disp === 'sin_stock') badges.push('<span class="badge badge-nostock">Sin stock</span>');
     const nombreAttr = (p.nombre || '').replace(/"/g, '&quot;');
-    const wa = waLink(`Hola! Me interesa ${p.nombre}. ¿Tienen stock y precio?`);
+    const wa = waLink(`Hola! Me interesa ${p.nombre}${p.sku ? ` (código ${p.sku})` : ''}. ¿Tienen stock y precio?`);
 
     const precioHTML = precio !== null
-      ? `<div class="mh-price">${conOferta ? `<s class="mh-price-old">${fmtPrice(p.precio)}</s>` : ''}<b>${fmtPrice(precio)}</b></div>`
+      ? `<div class="mh-price">${conOferta ? `<s class="mh-price-old">${fmtPrice(p.precio)}</s>` : ''}<b>${fmtPrice(precio)}</b></div>${disp === 'consultar' ? '<div class="mh-stock-note">Stock a consultar</div>' : ''}`
       : `<div class="mh-price mh-price-ask">Consultar precio</div>`;
 
     let ctaHTML;
-    if (!disponible) {
+    if (disp === 'sin_stock') {
       ctaHTML = `<a class="btn btn-wa btn-sm" href="${wa}" target="_blank" rel="noopener" aria-label="Consultar disponibilidad de ${nombreAttr}">Consultar</a>`;
+    } else if (disp === 'consultar') {
+      ctaHTML = `<a class="btn btn-wa btn-sm" href="${wa}" target="_blank" rel="noopener" aria-label="Consultar stock de ${nombreAttr} por WhatsApp">Consultar stock</a>`;
     } else if (precio !== null) {
       ctaHTML = `<button class="btn btn-primary btn-sm mh-add" type="button" aria-label="Agregar ${nombreAttr} al carrito">Agregar</button>
         <a class="btn btn-wa btn-sm btn-icon" href="${wa}" target="_blank" rel="noopener" aria-label="Consultar ${nombreAttr} por WhatsApp">WA</a>`;
@@ -516,6 +535,6 @@ window.MH = (function () {
     loadProducts, createCard, skeletons, initCarousel, initReveal, stagger,
     initCounters, animateCount, initScrollProgress,
     loadSettings, loadContent, applyContent, syncWaLinks, isValidPrice, effectivePrice, hasPrice, fmtPrice,
-    isAvailable, track, Cart
+    isAvailable, availability, canBuy, track, Cart
   };
 })();

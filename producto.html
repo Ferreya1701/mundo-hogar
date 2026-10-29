@@ -113,8 +113,10 @@
     const url = window.SUPABASE_URL, key = window.SUPABASE_PUBLISHABLE_KEY || window.SUPABASE_ANON_KEY;
     if (!url || !key) return null;
     const sel = 'id,nombre,slug,descripcion,descripcion_corta,imagen_principal_url,destacado,es_nuevo,sku,marca,precio_minorista,precio_oferta,en_oferta,stock_actual,permite_venta_sin_stock,seguimiento_inventario,material,color,garantia,peso,alto,ancho,profundidad,unidad,categorias(slug),producto_imagenes(url,alt,orden,es_principal)';
-    const res = await fetch(`${url}/rest/v1/productos?select=${encodeURIComponent(sel)}&slug=eq.${encodeURIComponent(slug)}&estado=eq.activo&limit=1`,
-      { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+    const hdr = { headers: { apikey: key, Authorization: `Bearer ${key}` } };
+    // stock_controlado / stock_disponible existen desde sql/013
+    let res = await fetch(`${url}/rest/v1/productos?select=${encodeURIComponent(sel + ',stock_controlado,stock_disponible')}&slug=eq.${encodeURIComponent(slug)}&estado=eq.activo&limit=1`, hdr);
+    if (!res.ok) res = await fetch(`${url}/rest/v1/productos?select=${encodeURIComponent(sel)}&slug=eq.${encodeURIComponent(slug)}&estado=eq.activo&limit=1`, hdr);
     if (!res.ok) return null;
     const rows = await res.json();
     if (!rows.length) return null;
@@ -127,6 +129,8 @@
       precioOferta: r.precio_oferta != null ? Number(r.precio_oferta) : null,
       enOferta: !!r.en_oferta,
       stock: typeof r.stock_actual === 'number' ? r.stock_actual : null,
+      disponible: typeof r.stock_disponible === 'number' ? r.stock_disponible : (typeof r.stock_actual === 'number' ? r.stock_actual : null),
+      controlado: typeof r.stock_controlado === 'boolean' ? r.stock_controlado : undefined,
       permiteSinStock: !!r.permite_venta_sin_stock,
       seguimiento: r.seguimiento_inventario !== false,
       material: r.material, color: r.color, garantia: r.garantia,
@@ -202,10 +206,15 @@
   }
 
   // ── Stock ──
-  const disponible = MH.isAvailable(p);
+  const disp = MH.availability(p);
+  const disponible = disp === 'ok' || disp === 'cotizar';
   const st = $('#pd-stock');
-  if (!disponible) { st.hidden = false; st.className = 'pd-stock out'; st.textContent = 'Sin stock por el momento — consultá disponibilidad'; }
-  else if (p.seguimiento && typeof p.stock === 'number' && p.stock > 0) { st.hidden = false; st.className = 'pd-stock ok'; st.textContent = 'Disponible'; }
+  if (disp === 'sin_stock') { st.hidden = false; st.className = 'pd-stock out'; st.textContent = 'Sin stock por el momento — consultá disponibilidad'; }
+  else if (disp === 'consultar') { st.hidden = false; st.className = 'pd-stock'; st.textContent = 'Stock a consultar: escribinos por WhatsApp y te confirmamos al instante'; }
+  else if (disp === 'ok' && p.seguimiento && !p.permiteSinStock && typeof p.disponible === 'number') {
+    st.hidden = false; st.className = 'pd-stock ok';
+    st.textContent = p.disponible <= 3 ? `¡Últimas ${p.disponible} unidad${p.disponible === 1 ? '' : 'es'}!` : 'Disponible';
+  }
 
   // ── CTAs: cantidad + carrito + WhatsApp ──
   const wa = MH.waLink(`Hola! Me interesa ${p.nombre}${p.sku ? ` (código ${p.sku})` : ''}. ¿Tienen stock y precio?`);
@@ -222,7 +231,9 @@
   $('#pd-ctas').innerHTML = ctas;
   const cant = $('#q-cant');
   if (cant) {
-    const clamp = () => { cant.value = Math.max(1, Math.min(99, parseInt(cant.value, 10) || 1)); };
+    const maxCant = (disp === 'ok' && p.seguimiento && !p.permiteSinStock && typeof p.disponible === 'number') ? Math.max(1, Math.min(99, p.disponible)) : 99;
+    cant.max = maxCant;
+    const clamp = () => { cant.value = Math.max(1, Math.min(maxCant, parseInt(cant.value, 10) || 1)); };
     $('#q-menos').addEventListener('click', () => { cant.value = (parseInt(cant.value,10)||1) - 1; clamp(); });
     $('#q-mas').addEventListener('click', () => { cant.value = (parseInt(cant.value,10)||1) + 1; clamp(); });
     cant.addEventListener('change', clamp);

@@ -19,6 +19,11 @@ window.MHAssistant = (function () {
   function seccion() {
     const p = location.pathname;
     if (p.includes('dashboard'))     return 'dashboard';
+    if (p.includes('vender'))        return 'vender';
+    if (p.includes('ventas'))        return 'ventas';
+    if (p.includes('compras'))       return 'compras';
+    if (p.includes('carga-stock'))   return 'carga-stock';
+    if (p.includes('pedidos'))       return 'solicitudes';
     if (p.includes('solicitudes'))   return 'solicitudes';
     if (p.includes('producto-form')) return 'producto-form';
     if (p.includes('productos'))     return 'productos';
@@ -100,7 +105,7 @@ window.MHAssistant = (function () {
       let h = '';
       if (d.sinStock.length) h += `<b>${d.sinStock.length} sin stock</b> (crítico):${listado(d.sinStock, 5)}`;
       if (d.stockBajo.length) h += `<b>${d.stockBajo.length} con stock bajo</b>:${listado(d.stockBajo, 5)}`;
-      h += `Para reponer: registrá una <b>entrada por compra</b> desde Inventario.${link('/admin/alertas', '🔔 Ver alertas')}${link('/admin/inventario', '📥 Registrar entrada')}`;
+      h += `Para reponer: cargá la compra en <b>Compras y llegadas</b> (al recibirla entra el stock) o una entrada suelta desde Inventario.${link('/admin/alertas', '🔔 Ver alertas')}${link('/admin/compras', '🚢 Compras')}`;
       return h;
     },
     async solicitudes() {
@@ -152,12 +157,20 @@ window.MHAssistant = (function () {
     { k: /texto|portada|titulo|título|hero/i, t: 'Los <b>textos de la portada</b> (título, subtítulo, sección mayorista, envíos, pagos) se editan desde Configuración → "Textos de la página". En el título, usá "|" antes de la parte que va en naranja.' + link('/admin/configuracion', '⚙️ Editar textos') },
     { k: /usuario|vendedor|empleado|acceso/i, t: 'Para <b>dar acceso a otra persona</b>: Usuarios → invitala con su email y elegí el rol (Administrador: todo · Encargado de stock: productos y stock · Vendedor: solo consulta y solicitudes).' + link('/admin/usuarios', '👥 Ir a Usuarios') },
     { k: /alerta.*(significa|explic)|significa.*alerta|que es.*alerta/i, t: 'Las <b>alertas de stock</b> avisan cuando un producto llega a 0 (crítico, rojo) o queda por debajo de su "stock mínimo" (bajo, amarillo). El stock mínimo lo definís en cada producto; cuando se cruza, aparece acá y en el Dashboard.' },
+    { k: /vend(o|er)|caja|cobr(o|ar)|ticket|mostrador/i, t: 'Para <b>vender en el local</b>: Vender → buscá el producto (nombre, SKU o código de barras; con lector USB escaneá y listo) → se suma al ticket → medio de pago → Cobrar. Los productos con <b>stock controlado</b> se descuentan al instante; los que todavía no se contaron se venden igual sin tocar stock. Si el sistema dice 0 y el producto está, se vende igual y queda en negativo para revisarlo.' + link('/admin/vender', '🛒 Vender') },
+    { k: /cont(ar|eo)|stock controlado|sin contar|inventari(o|ar)/i, t: 'Para <b>contar stock</b>: Contar stock → recorré el depósito con el celular y escribí cuántas unidades hay de cada producto (el total, no lo que sumás; 0 también vale). Al guardar quedan con stock controlado: la tienda los vende si hay y la caja los descuenta. Los que no contaste se muestran "a consultar" en la web.' + link('/admin/carga-stock', '📥 Contar stock') },
+    { k: /compra|pedido al proveedor|china|contenedor|lleg(ó|o|ada)|recib(ir|ido)/i, t: 'Para <b>cargar una compra</b>: Compras y llegadas → + Nueva compra → pegá la lista del proveedor (o subí el Excel / foto con IA) → el sistema sugiere a qué producto corresponde cada renglón y lo que no existe se crea como producto nuevo → cuando llega, "Recibir" carga el stock y deja los productos controlados.' + link('/admin/compras', '🚢 Compras') },
+    { k: /negativo/i, t: 'Un <b>stock negativo</b> significa que en el local se vendieron más unidades de las que el sistema conocía: había mercadería sin contar. Solución: ir a Contar stock → filtro "En negativo" → escribir cuántas quedan de verdad.' + link('/admin/carga-stock', '📥 Contar stock') },
     { k: /instalar|app|escritorio|acceso directo/i, t: 'El panel se puede <b>instalar como app</b>: en Chrome, menú ⋮ → "Instalar Mundo Hogar — Administrador". Queda con el logo en el escritorio y abre directo al panel.' }
   ];
 
   /* ── Sugerencias por sección ── */
   const SUGERENCIAS = {
     dashboard:     ['¿Qué necesita atención?', '¿Qué productos no tienen precio?', '¿Hay solicitudes pendientes?'],
+    vender:        ['¿Cómo vendo en el local?', '¿Qué pasa si el sistema dice 0?', '¿Qué productos hay que reponer?'],
+    ventas:        ['¿Cómo anulo una venta?', '¿Qué movimientos hubo esta semana?'],
+    compras:       ['¿Cómo cargo una compra?', '¿Cómo recibo la mercadería?'],
+    'carga-stock': ['¿Cómo cuento el stock?', '¿Qué es un stock negativo?'],
     productos:     ['¿Qué productos están incompletos?', '¿Cómo cargo un precio?', '¿Qué debería destacar?'],
     'producto-form': ['¿Cómo subo la imagen?', '¿Cómo creo una oferta?', '¿Qué es el stock mínimo?'],
     categorias:    ['¿Hay categorías vacías?', '¿Cómo creo una categoría?'],
