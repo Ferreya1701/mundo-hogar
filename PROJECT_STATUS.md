@@ -22,12 +22,15 @@
   la `.webp` y cae al `.jpg` si falta (`MH.webpUrl` / `MH.setImg`). Al sumar fotos nuevas, generar ambas.
 - Cloudflare redirige `x.html` → `x` y `/productos` → `/productos/` (conserva los parámetros).
 
-## Stock real: ventas en el local, compras y conteo (2026-10-29) — CÓDIGO LISTO, SQL PENDIENTE DE EJECUTAR
+## Stock real: ventas en el local, compras y conteo (2026-10-29) — DESPLEGADO; SQL EJECUTADO EN PRODUCCIÓN
 Guía: `GUIA-STOCK-Y-VENTAS.md`. Objetivo: que el stock sea confiable para vender online.
-- **`sql/013-local-compras-stock.sql`** — ESCRITO Y PROBADO (`scripts/test-stock-sql.mjs`, 109 pruebas en
-  PGlite), **todavía NO ejecutado en producción**. Hasta ejecutarlo, las páginas nuevas del panel muestran
-  "falta ejecutar sql/013" y la tienda/dashboard/alertas/carrito degradan al comportamiento anterior
-  (piden las columnas nuevas y, si no existen, repiten sin ellas).
+- **`sql/013-local-compras-stock.sql`** — EJECUTADO EN PRODUCCIÓN el 2026-10-29 (`npx supabase db query
+  --linked`), probado antes con `scripts/test-stock-sql.mjs` (109 pruebas en PGlite). Verificado en vivo:
+  142 productos, 0 controlados (nada contado todavía), 11 RPC nuevas, `pg_trgm@extensions`; el catálogo
+  anónimo ya devuelve `stock_controlado`, `stock_disponible` y `disponibilidad_web` ("consultar" en todos
+  hasta que se cuenten); `venta_registrar` anónima → 401 permission denied; `ventas` anónima → vacío.
+  Si alguna vez la base se reconstruye sin el 013, el panel avisa "falta ejecutar sql/013" y la tienda
+  degrada al comportamiento anterior (pide las columnas nuevas y, si no existen, repite sin ellas).
   Qué agrega: `productos.stock_controlado` (+ `stock_controlado_en`, `ultimo_conteo_en`, `sku_proveedor`);
   conteo absoluto `fn_stock_contar` / `fn_stock_contar_lote` / `fn_stock_quitar_control`; alta rápida
   `producto_crear_rapido` (SKU `MH-00001`, slug único, nace inactivo); `ventas` + `venta_items` con
@@ -160,9 +163,9 @@ modelo de datos, roadmap, propuesta ejecutiva, demo HTML).
 - `vercel.json` / `scripts/server.js` — mismas reglas para el espejo de Vercel y el servidor local.
 
 ## Próxima acción
-0. **Ejecutar `sql/013-local-compras-stock.sql` en producción** (`npx supabase db query --linked
-   --project-ref zydotmaolgddwenwywyc -f sql/013-local-compras-stock.sql`) y desplegar
-   `leer-lista-compra`. Después: contar stock por sector desde el celular y vender desde la caja.
+0. ~~Ejecutar `sql/013` en producción~~ — HECHO 2026-10-29. Falta desplegar `leer-lista-compra`
+   (`npx supabase functions deploy leer-lista-compra --project-ref zydotmaolgddwenwywyc --no-verify-jwt --use-api`).
+   Después: contar stock por sector desde el celular (Contar stock → "Sin contar") y vender desde la caja.
 1. Cargar el secreto `ANTHROPIC_API_KEY` en Supabase (lectura automática de comprobantes y
    asistente del panel), cargar las cuentas reales, borrar la cuenta y el pedido de prueba, y
    recién después prender `carrito_activo` desde Configuración (ver `GUIA-COBROS.md`).
