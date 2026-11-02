@@ -22,7 +22,7 @@
   la `.webp` y cae al `.jpg` si falta (`MH.webpUrl` / `MH.setImg`). Al sumar fotos nuevas, generar ambas.
 - Cloudflare redirige `x.html` → `x` y `/productos` → `/productos/` (conserva los parámetros).
 
-## Panel: nombres, limpieza, ticket y etiquetas (2026-11-02) — EN CÓDIGO, FALTA PUSH/DEPLOY
+## Panel: nombres, limpieza, ticket y etiquetas (2026-11-02) — DESPLEGADO
 
 - **Menú renombrado** (`admin/js/layout.js`): Inicio, Caja, Ventas, Pedidos web, Clientes, Cuentas
   bancarias, Productos, Categorías, Contar stock, Compras, Ajuste manual, Movimientos de stock,
@@ -73,7 +73,7 @@ Guía: `GUIA-STOCK-Y-VENTAS.md`. Objetivo: que el stock sea confiable para vende
 - **Tienda:** `MH.availability(p)` → ok / sin_stock / consultar / cotizar (`assets/catalogo.js`); tarjeta
   y ficha muestran "Consultar stock" para productos sin controlar; ficha limita la cantidad al disponible
   y dice "¡Últimas N!"; carrito avisa y, ante 'sin_stock' del servidor, ajusta cantidades y lo explica.
-- **Edge Function `supabase/functions/leer-lista-compra/index.ts`** — NO desplegada todavía. Lee foto/PDF/
+- **Edge Function `supabase/functions/leer-lista-compra/index.ts`** — DESPLEGADA 2026-11-02 (`--no-verify-jwt`, valida sesión y rol sola). Lee foto/PDF/
   texto de la lista del proveedor con Claude (`claude-opus-5`, salida JSON con esquema, fallbacks por
   defecto) y devuelve renglones en español. Requiere el mismo `ANTHROPIC_API_KEY` que falta.
 - **Hosting:** `_headers` y `vercel.json` permiten la cámara en `/admin/*` (Permissions-Policy).
@@ -183,9 +183,9 @@ modelo de datos, roadmap, propuesta ejecutiva, demo HTML).
 - `vercel.json` / `scripts/server.js` — mismas reglas para el espejo de Vercel y el servidor local.
 
 ## Próxima acción
-0. ~~Ejecutar `sql/013` en producción~~ — HECHO 2026-10-29. Falta desplegar `leer-lista-compra` y
-   `asistente` (`npx supabase functions deploy <nombre> --project-ref zydotmaolgddwenwywyc --no-verify-jwt --use-api`;
-   el modo automático de Claude Code no puede correrlo: lo corre el dueño con `!`).
+0. ~~Ejecutar `sql/013` en producción~~ — HECHO 2026-10-29. ~~Desplegar `leer-lista-compra`~~ — HECHO
+   2026-11-02. Falta `asistente` (`npx supabase functions deploy asistente --project-ref zydotmaolgddwenwywyc --no-verify-jwt --use-api --yes`;
+   el modo automático de Claude Code no puede correrlo: lo corre el dueño con `!` y `--yes`).
    Después: contar stock por sector desde el celular (Contar stock → "Sin contar") y vender desde la caja.
 0b. Probar en producción el ticket impreso (Caja → cobrar → Imprimir) y las etiquetas (Productos → 🏷️)
    con la impresora real; ajustar medidas en `impresion.js` (`FORMATOS`) si el rollo es otro.
