@@ -183,9 +183,9 @@ modelo de datos, roadmap, propuesta ejecutiva, demo HTML).
 - `vercel.json` / `scripts/server.js` — mismas reglas para el espejo de Vercel y el servidor local.
 
 ## Próxima acción
-0. ~~Ejecutar `sql/013` en producción~~ — HECHO 2026-10-29. ~~Desplegar `leer-lista-compra`~~ — HECHO
-   2026-11-02. Falta `asistente` (`npx supabase functions deploy asistente --project-ref zydotmaolgddwenwywyc --no-verify-jwt --use-api --yes`;
-   el modo automático de Claude Code no puede correrlo: lo corre el dueño con `!` y `--yes`).
+0. ~~Ejecutar `sql/013` en producción~~ — HECHO 2026-10-29. ~~Desplegar `leer-lista-compra` y `asistente`~~ — HECHO
+   2026-11-02 (las tres Edge Functions están en producción; los deploys los corre el dueño con
+   `! npx supabase functions deploy <nombre> ... --yes`, el modo automático de Claude Code no puede).
    Después: contar stock por sector desde el celular (Contar stock → "Sin contar") y vender desde la caja.
 0b. Probar en producción el ticket impreso (Caja → cobrar → Imprimir) y las etiquetas (Productos → 🏷️)
    con la impresora real; ajustar medidas en `impresion.js` (`FORMATOS`) si el rollo es otro.
