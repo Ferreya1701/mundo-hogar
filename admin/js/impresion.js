@@ -1,0 +1,204 @@
+/* ============================================================
+   Impresión desde el panel: ticket de venta (rollo de 80 mm) y
+   etiquetas con código de barras (rollo 50×30 mm u hoja A4 de 24).
+
+   Se imprime desde un iframe oculto: no abre pestañas, no lo frena
+   el bloqueador de ventanas emergentes y funciona en la app instalada.
+   Los códigos se dibujan con JsBarcode (CDN); si no carga, la etiqueta
+   sale igual con el código escrito en texto.
+   ============================================================ */
+const MHImprimir = (() => {
+  const JSBARCODE = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js';
+  const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const money = n => new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS', minimumFractionDigits:0, maximumFractionDigits:2 }).format(Number(n || 0));
+  const fecha = d => { const x = d ? new Date(d) : new Date(); return x.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' }) + ' ' + x.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' }); };
+  const MEDIOS = { efectivo:'Efectivo', transferencia:'Transferencia', debito:'Débito', credito:'Crédito', mercadopago:'Mercado Pago', cuenta_corriente:'Cuenta corriente', otro:'Otro' };
+
+  let tienda = null;
+  async function datosTienda() {
+    if (tienda) return tienda;
+    try {
+      const { data } = await db.from('site_settings').select('nombre_tienda,direccion,telefono,whatsapp,horarios').eq('id', 1).maybeSingle();
+      tienda = data || {};
+    } catch (e) { tienda = {}; }
+    return tienda;
+  }
+
+  /* Manda un documento HTML completo a imprimir. `html` ya trae su <style>. */
+  function imprimirHTML(html) {
+    document.getElementById('_mh_print')?.remove();
+    const f = document.createElement('iframe');
+    f.id = '_mh_print'; f.setAttribute('aria-hidden', 'true'); f.title = 'Impresión';
+    f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+    document.body.appendChild(f);
+    const d = f.contentDocument;
+    d.open(); d.write(html); d.close();
+    // El documento avisa cuando está listo (códigos dibujados) y recién ahí se imprime.
+    // Si nunca avisa (CDN caído), igual se imprime a los 2,5 s.
+    let hecho = false;
+    const go = () => { if (hecho) return; hecho = true; try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) { console.error('[imprimir]', e); } };
+    f.contentWindow.__mhListo = go;
+    setTimeout(go, 2500);
+    try { f.contentWindow.addEventListener('afterprint', () => setTimeout(() => f.remove(), 500)); } catch (e) {}
+    setTimeout(() => f.remove(), 120000);
+  }
+
+  /* ── Ticket de venta ──
+     Acepta tanto lo que devuelve venta_registrar (items) como una fila
+     de `ventas` con venta_items. No es factura: lo dice al pie. */
+  async function ticket(v) {
+    if (!v) return;
+    const t = await datosTienda();
+    const items = (v.items || v.venta_items || []).slice().sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+    const vendedor = v.vendedor_nombre || v.vendedor || '';
+    const tel = t.whatsapp || t.telefono || '';
+    const filas = items.map(i => {
+      const cant = Number(i.cantidad || 0), pu = Number(i.precio_unitario ?? (cant ? Number(i.subtotal || 0) / cant : 0));
+      return `<tr><td colspan="2">${esc(i.nombre)}</td></tr>
+        <tr><td class="d">${cant} × ${money(pu)}</td><td class="r">${money(i.subtotal ?? cant * pu)}</td></tr>`;
+    }).join('');
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Ticket ${esc(v.codigo || '')}</title>
+<style>
+  @page { size: 80mm auto; margin: 3mm 4mm; }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: #000; background: #fff; font: 12px/1.35 "Courier New", Courier, monospace; width: 72mm; }
+  h1 { font-size: 16px; margin: 0; text-align: center; letter-spacing: .02em; }
+  .c { text-align: center; } .m { color: #333; font-size: 11px; }
+  .sep { border-top: 1px dashed #000; margin: 6px 0; }
+  table { width: 100%; border-collapse: collapse; } td { padding: 1px 0; vertical-align: top; }
+  .r { text-align: right; white-space: nowrap; } .d { padding-left: 8px; color: #333; }
+  .tot td { font-size: 14px; font-weight: bold; padding-top: 3px; }
+  .anulada { border: 2px solid #000; padding: 4px; text-align: center; font-weight: bold; font-size: 15px; margin: 6px 0; }
+</style></head><body>
+  <h1>${esc(t.nombre_tienda || 'Mundo Hogar')}</h1>
+  ${t.direccion ? `<div class="c m">${esc(t.direccion)}</div>` : ''}
+  ${tel ? `<div class="c m">Tel/WhatsApp: ${esc(tel)}</div>` : ''}
+  <div class="sep"></div>
+  <div><b>${esc(v.codigo || '')}</b> &nbsp; ${esc(fecha(v.fecha))}</div>
+  ${vendedor ? `<div class="m">Atendió: ${esc(vendedor)}</div>` : ''}
+  <div class="m">Cliente: ${esc(v.cliente_nombre || 'Consumidor final')}</div>
+  ${v.estado === 'anulada' ? '<div class="anulada">VENTA ANULADA</div>' : ''}
+  <div class="sep"></div>
+  <table>${filas}</table>
+  <div class="sep"></div>
+  <table>
+    ${Number(v.descuento) > 0 ? `<tr><td>Subtotal</td><td class="r">${money(v.subtotal)}</td></tr><tr><td>Descuento</td><td class="r">−${money(v.descuento)}</td></tr>` : ''}
+    <tr class="tot"><td>TOTAL</td><td class="r">${money(v.total)}</td></tr>
+    <tr><td>Pago</td><td class="r">${esc(MEDIOS[v.medio_pago] || v.medio_pago || '')}</td></tr>
+  </table>
+  <div class="sep"></div>
+  <div class="c">¡Gracias por tu compra!</div>
+  ${t.horarios ? `<div class="c m">${esc(t.horarios)}</div>` : ''}
+  <div class="c m" style="margin-top:6px">Comprobante interno · no válido como factura</div>
+  <script>window.__mhListo && window.__mhListo();</script>
+</body></html>`;
+    imprimirHTML(html);
+  }
+
+  /* ── Etiquetas ──
+     items: [{ id, nombre, sku, codigo_barras, precio, cantidad }]
+     El código impreso es el de barras si lo tiene; si no, el SKU (la caja
+     lo reconoce igual al escanearlo). Siempre CODE128: lo lee cualquier
+     lector y acepta tanto números como "MH-00123". */
+  const FORMATOS = {
+    rollo: { nombre: 'Rollo 50 × 30 mm (impresora de etiquetas)', css: `
+      @page { size: 50mm 30mm; margin: 0; }
+      .et { width: 50mm; height: 30mm; padding: 1.5mm 2mm; page-break-after: always; }
+      .et:last-child { page-break-after: auto; }` },
+    hoja: { nombre: 'Hoja A4 · 24 etiquetas de 70 × 37 mm (3 × 8)', css: `
+      @page { size: A4 portrait; margin: 0; }
+      body { width: 210mm; display: flex; flex-wrap: wrap; align-content: flex-start; }
+      .et { width: 70mm; height: 37mm; padding: 2.5mm 3mm; }` }
+  };
+  function valorCodigo(p) {
+    const bar = String(p.codigo_barras || '').trim();
+    if (bar) return { valor: bar, esSku: false };
+    const sku = String(p.sku || '').trim();
+    if (sku) return { valor: sku, esSku: true };
+    return null;
+  }
+  function etiquetas(items, op = {}) {
+    const formato = FORMATOS[op.formato] ? op.formato : 'rollo';
+    const conPrecio = op.precio !== false;
+    const lista = [];
+    items.forEach(p => { for (let k = 0; k < Math.max(0, Math.min(500, Number(p.cantidad) || 0)); k++) lista.push(p); });
+    if (!lista.length) return false;
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Etiquetas</title>
+<style>
+  * { box-sizing: border-box; } body { margin: 0; color: #000; background: #fff; font-family: Arial, Helvetica, sans-serif; }
+  .et { display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+  .n { font-size: 9pt; line-height: 1.15; font-weight: 600; max-height: 2.3em; overflow: hidden; }
+  .p { font-size: 13pt; font-weight: 700; line-height: 1; margin: 1mm 0; }
+  .b { text-align: center; } .b svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+  .t { font-size: 8pt; text-align: center; letter-spacing: .04em; font-family: "Courier New", monospace; }
+  .s { font-size: 7pt; color: #333; text-align: center; }
+  ${FORMATOS[formato].css}
+</style></head><body>
+${lista.map(p => { const c = valorCodigo(p); return `<div class="et">
+  <div class="n">${esc(p.nombre)}</div>
+  ${conPrecio && Number(p.precio) > 0 ? `<div class="p">${money(p.precio)}</div>` : ''}
+  <div class="b">${c ? `<svg class="bc" data-v="${esc(c.valor)}"></svg><div class="t">${esc(c.valor)}</div>` : '<div class="s">sin código: cargá SKU o código de barras</div>'}</div>
+  ${c && !c.esSku && p.sku ? `<div class="s">${esc(p.sku)}</div>` : ''}
+</div>`; }).join('')}
+<script>
+  function listo() { window.__mhListo && window.__mhListo(); }
+  function dibujar() {
+    try {
+      document.querySelectorAll('svg.bc').forEach(el => {
+        try { JsBarcode(el, el.dataset.v, { format: 'CODE128', displayValue: false, height: ${formato === 'rollo' ? 34 : 40}, width: 1.4, margin: 0 }); }
+        catch (e) { el.outerHTML = '<div class="s">código no imprimible</div>'; }
+      });
+    } catch (e) {}
+    listo();
+  }
+  var s = document.createElement('script'); s.src = '${JSBARCODE}'; s.onload = dibujar;
+  s.onerror = function () { document.querySelectorAll('svg.bc').forEach(el => el.remove()); listo(); };
+  document.head.appendChild(s);
+</script>
+</body></html>`;
+    imprimirHTML(html);
+    return true;
+  }
+
+  /* Pregunta cuántas de cada una y en qué formato, y después imprime. */
+  function pedirEtiquetas(items) {
+    items = (items || []).filter(Boolean);
+    if (!items.length) { Utils.toast('No hay productos para etiquetar', 'warning'); return; }
+    const pref = (() => { try { return JSON.parse(localStorage.getItem('mh_etiquetas') || '{}'); } catch (e) { return {}; } })();
+    const bd = document.createElement('div'); bd.className = 'modal-backdrop';
+    bd.innerHTML = `<div class="modal modal-lg">
+      <div class="modal-header"><h3 class="modal-title">🏷️ Imprimir etiquetas</h3><button class="modal-close" id="_x" aria-label="Cerrar">×</button></div>
+      <div class="modal-body">
+        <div class="form-grid form-grid-2" style="margin-bottom:12px">
+          <div class="form-group"><label>Formato</label><select id="_fmt">${Object.entries(FORMATOS).map(([k, f]) => `<option value="${k}"${(pref.formato || 'rollo') === k ? ' selected' : ''}>${esc(f.nombre)}</option>`).join('')}</select></div>
+          <label class="toggle-wrap" style="align-self:end"><div class="toggle"><input type="checkbox" id="_precio"${pref.precio === false ? '' : ' checked'}><div class="toggle-track"></div><div class="toggle-thumb"></div></div><span class="toggle-label">Imprimir el precio</span></label>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Producto</th><th>Código que se imprime</th><th style="width:110px;text-align:right">Cantidad</th></tr></thead>
+          <tbody>${items.map((p, i) => { const c = valorCodigo(p); return `<tr>
+            <td><div style="font-weight:500">${esc(p.nombre)}</div>${Number(p.precio) > 0 ? `<div style="font-size:11.5px;color:var(--muted)">${money(p.precio)}</div>` : '<div style="font-size:11.5px;color:var(--warning)">sin precio</div>'}</td>
+            <td style="font-family:monospace;font-size:12px">${c ? esc(c.valor) + (c.esSku ? ' <span class="badge badge-muted">SKU</span>' : '') : '<span class="badge badge-danger">sin código</span>'}</td>
+            <td style="text-align:right"><input type="number" class="_cant" data-i="${i}" inputmode="numeric" min="0" max="500" value="${Math.max(1, Math.min(500, Number(p.cantidad) || 1))}" style="width:90px;text-align:right"></td>
+          </tr>`; }).join('')}</tbody>
+        </table></div>
+        <div class="form-hint" style="margin-top:8px">Al imprimir, elegí la impresora de etiquetas (rollo) o la común (hoja) y desactivá "ajustar a la página". La caja reconoce tanto el código de barras como el SKU al escanear.</div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-outline" id="_no">Cancelar</button><button class="btn btn-primary" id="_ok">🖨️ Imprimir</button></div></div>`;
+    document.body.appendChild(bd);
+    const cerrar = () => bd.remove();
+    bd.querySelector('#_x').onclick = bd.querySelector('#_no').onclick = cerrar;
+    const total = () => [...bd.querySelectorAll('._cant')].reduce((s, i) => s + (Math.max(0, parseInt(i.value, 10) || 0)), 0);
+    const pintar = () => { const n = total(); bd.querySelector('#_ok').textContent = `🖨️ Imprimir ${n} etiqueta${n !== 1 ? 's' : ''}`; };
+    bd.addEventListener('input', pintar); pintar();
+    bd.querySelector('#_ok').addEventListener('click', () => {
+      const formato = bd.querySelector('#_fmt').value, precio = bd.querySelector('#_precio').checked;
+      try { localStorage.setItem('mh_etiquetas', JSON.stringify({ formato, precio })); } catch (e) {}
+      const lista = items.map((p, i) => ({ ...p, cantidad: Math.max(0, parseInt(bd.querySelector(`._cant[data-i="${i}"]`).value, 10) || 0) })).filter(p => p.cantidad > 0);
+      if (!etiquetas(lista, { formato, precio })) { Utils.toast('Poné al menos una cantidad', 'warning'); return; }
+      cerrar();
+    });
+  }
+
+  return { ticket, etiquetas, pedirEtiquetas };
+})();
+window.MHImprimir = MHImprimir;

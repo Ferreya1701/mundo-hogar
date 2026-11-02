@@ -123,17 +123,19 @@ function estadoDe(p) {
   if (p.seguimiento_inventario === false) return 'libre';
   if (!p.stock_controlado) return 'sin_contar';
   if (p.stock_actual < 0) return 'negativo';
+  if (p.stock_actual === 0) return 'cero';
   if (p.stock_minimo > 0 && p.stock_actual <= p.stock_minimo) return 'bajo';
   return 'ok';
 }
 
 function contar() {
-  const c = { sin_contar:0, controlado:0, negativo:0, bajo:0, todos:0 };
+  const c = { sin_contar:0, controlado:0, negativo:0, cero:0, bajo:0, todos:0 };
   productos.forEach(p => {
     const e = estadoDe(p); if (e === 'libre') return;
     c.todos++;
     if (e === 'sin_contar') c.sin_contar++; else c.controlado++;
     if (e === 'negativo') c.negativo++;
+    if (e === 'cero') c.cero++;
     if (e === 'bajo') c.bajo++;
   });
   return c;
@@ -144,6 +146,7 @@ function renderChips() {
   const defs = [
     ['sin_contar', 'Sin contar', c.sin_contar],
     ['negativo', 'En negativo', c.negativo],
+    ['cero', 'Sin stock', c.cero],
     ['bajo', 'Stock bajo', c.bajo],
     ['controlado', 'Controlados', c.controlado],
     ['todos', 'Todos', c.todos]
@@ -166,6 +169,7 @@ function visibles() {
     const e = estadoDe(p);
     if (filtro === 'sin_contar' && e !== 'sin_contar') return false;
     if (filtro === 'negativo' && e !== 'negativo') return false;
+    if (filtro === 'cero' && e !== 'cero') return false;
     if (filtro === 'bajo' && e !== 'bajo') return false;
     if (filtro === 'controlado' && e === 'sin_contar') return false;
     if (q && !coincide(p, q, digits)) return false;
@@ -182,6 +186,7 @@ function badgeEstado(p) {
   const e = estadoDe(p);
   if (e === 'sin_contar') return '<span class="ctrl ctrl-no">sin contar</span>';
   if (e === 'negativo') return '<span class="ctrl ctrl-neg">stock negativo: revisar</span>';
+  if (e === 'cero') return '<span class="ctrl ctrl-neg">sin stock: reponer</span>';
   if (e === 'bajo') return '<span class="ctrl ctrl-si" style="background:var(--warning-bg);color:#92400E">controlado · bajo mínimo</span>';
   return '<span class="ctrl ctrl-si">controlado</span>';
 }
@@ -418,7 +423,10 @@ async function cargarDatos() {
   const sel = $id('filtro-cat');
   (catData||[]).forEach(c => { cats[c.id] = c.nombre; sel.insertAdjacentHTML('beforeend', `<option value="${c.id}">${esc(c.nombre)}</option>`); });
   productos = prodRes.data || [];
-  const pre = new URLSearchParams(location.search).get('producto');
+  const qs = new URLSearchParams(location.search);
+  const f = qs.get('filtro');
+  if (f && ['sin_contar','negativo','cero','bajo','controlado','todos'].includes(f)) filtro = f;
+  const pre = qs.get('producto');
   if (pre) { filtro = 'todos'; const p = productos.find(x => x.id === Number(pre)); if (p) $id('q').value = p.nombre; }
   renderChips(); render();
 }

@@ -22,6 +22,26 @@
   la `.webp` y cae al `.jpg` si falta (`MH.webpUrl` / `MH.setImg`). Al sumar fotos nuevas, generar ambas.
 - Cloudflare redirige `x.html` → `x` y `/productos` → `/productos/` (conserva los parámetros).
 
+## Panel: nombres, limpieza, ticket y etiquetas (2026-11-02) — EN CÓDIGO, FALTA PUSH/DEPLOY
+
+- **Menú renombrado** (`admin/js/layout.js`): Inicio, Caja, Ventas, Pedidos web, Clientes, Cuentas
+  bancarias, Productos, Categorías, Contar stock, Compras, Ajuste manual, Movimientos de stock,
+  Usuarios, Configuración. Los ids y las URLs no cambian; títulos, asistente y guías actualizados.
+- **Alertas de Stock eliminada como página**: Contar stock suma el chip "Sin stock" y acepta
+  `?filtro=` (`sin_contar|negativo|cero|bajo|controlado|todos`). `admin/alertas.html` queda como
+  redirección a `/admin/carga-stock?filtro=cero`. Inicio y asistente apuntan ahí.
+- **Ajuste manual** (`inventario.html`): se quitaron los tipos que duplicaban Caja/Compras/Contar
+  (`entrada_compra`, `salida_venta`, `carga_inicial`, `transferencia`, `correccion`). La función
+  `fn_registrar_movimiento` los sigue aceptando; solo no se ofrecen en el formulario.
+- **Formulario de producto**: sin campo "stock inicial" (un producto nuevo nace con 0 y "sin contar";
+  el stock entra por conteo o compra). Se muestra el stock actual en solo lectura.
+- **Productos**: sin borrado permanente (queda archivar). Se agregó `codigo_barras` al select.
+- **Impresión** (`admin/js/impresion.js`, iframe oculto, sin pestañas): ticket de venta de 80 mm
+  (Caja al cobrar y `F8`; Ventas → detalle) con datos de `site_settings`; etiquetas CODE128
+  (código de barras o SKU) en rollo 50×30 o A4 3×8, desde Productos (fila o selección) y desde el
+  detalle de una compra. JsBarcode desde jsdelivr; si no carga, sale el código en texto.
+- **Repo**: scripts de importación de julio borrados; informes de junio/julio movidos a `historico/`.
+
 ## Stock real: ventas en el local, compras y conteo (2026-10-29) — DESPLEGADO; SQL EJECUTADO EN PRODUCCIÓN
 Guía: `GUIA-STOCK-Y-VENTAS.md`. Objetivo: que el stock sea confiable para vender online.
 - **`sql/013-local-compras-stock.sql`** — EJECUTADO EN PRODUCCIÓN el 2026-10-29 (`npx supabase db query
@@ -163,9 +183,12 @@ modelo de datos, roadmap, propuesta ejecutiva, demo HTML).
 - `vercel.json` / `scripts/server.js` — mismas reglas para el espejo de Vercel y el servidor local.
 
 ## Próxima acción
-0. ~~Ejecutar `sql/013` en producción~~ — HECHO 2026-10-29. Falta desplegar `leer-lista-compra`
-   (`npx supabase functions deploy leer-lista-compra --project-ref zydotmaolgddwenwywyc --no-verify-jwt --use-api`).
+0. ~~Ejecutar `sql/013` en producción~~ — HECHO 2026-10-29. Falta desplegar `leer-lista-compra` y
+   `asistente` (`npx supabase functions deploy <nombre> --project-ref zydotmaolgddwenwywyc --no-verify-jwt --use-api`;
+   el modo automático de Claude Code no puede correrlo: lo corre el dueño con `!`).
    Después: contar stock por sector desde el celular (Contar stock → "Sin contar") y vender desde la caja.
+0b. Probar en producción el ticket impreso (Caja → cobrar → Imprimir) y las etiquetas (Productos → 🏷️)
+   con la impresora real; ajustar medidas en `impresion.js` (`FORMATOS`) si el rollo es otro.
 1. Cargar el secreto `ANTHROPIC_API_KEY` en Supabase (lectura automática de comprobantes y
    asistente del panel), cargar las cuentas reales, borrar la cuenta y el pedido de prueba, y
    recién después prender `carrito_activo` desde Configuración (ver `GUIA-COBROS.md`).

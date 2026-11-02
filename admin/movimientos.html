@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#0A2E63">
   <link rel="icon" type="image/png" href="/images/marca/favicon.png">
   <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
-  <title>Historial de Movimientos — Mundo Hogar Admin</title>
+  <title>Movimientos de stock — Mundo Hogar Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/admin/css/admin.css">
@@ -31,7 +31,7 @@
     </header>
     <main class="page-content">
       <div class="page-header">
-        <div><h1>Historial de Movimientos</h1><p>Registro completo de entradas y salidas de stock</p></div>
+        <div><h1>Movimientos de stock</h1><p>Todo lo que entró y salió: ventas, compras, conteos y ajustes</p></div>
         <div class="page-header-actions">
           <button class="btn btn-outline btn-sm" id="btn-export">⬇ Exportar CSV</button>
         </div>
@@ -210,7 +210,7 @@ document.getElementById('btn-limpiar')?.addEventListener('click', () => {
 async function initPage() {
   const profile = await Auth.init();
   if (!profile) return;
-  await Layout.init('movimientos','Historial de Movimientos');
+  await Layout.init('movimientos','Movimientos de stock');
 
   // Default: último mes
   const hoy   = new Date();

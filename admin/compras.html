@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#0A2E63">
   <link rel="icon" type="image/png" href="/images/marca/favicon.png">
   <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
-  <title>Compras y llegadas — Mundo Hogar Admin</title>
+  <title>Compras — Mundo Hogar Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/admin/css/admin.css">
@@ -36,7 +36,7 @@
       <!-- ═══════ LISTADO ═══════ -->
       <section id="vista-lista">
         <div class="page-header">
-          <div><h1>Compras y llegadas</h1><p>Pedidos al proveedor: la lista entra tal cual, lo nuevo se crea como producto y al llegar se carga el stock.</p></div>
+          <div><h1>Compras</h1><p>Pedidos al proveedor: la lista entra tal cual, lo nuevo se crea como producto y al llegar se carga el stock.</p></div>
           <div class="page-header-actions">
             <button type="button" class="btn btn-primary" id="btn-nueva">+ Nueva compra</button>
           </div>
@@ -172,6 +172,7 @@ YW-AF5  Air fryer 5L  20  25.50"></textarea>
 <script src="/admin/js/supabase-client.js"></script>
 <script src="/admin/js/auth.js"></script>
 <script src="/admin/js/utils.js"></script>
+<script src="/admin/js/impresion.js"></script>
 <script src="/admin/js/layout.js"></script>
 <script>
 const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -233,7 +234,7 @@ async function abrirCompra(id, modoRecibir) {
   Utils.showLoading('Cargando compra…');
   const [{ data: c, error: e1 }, { data: items, error: e2 }, { data: recs }] = await Promise.all([
     db.from('compras').select('*').eq('id', id).maybeSingle(),
-    db.from('compra_items').select('*, productos(id,nombre,sku,stock_actual,stock_controlado,estado,seguimiento_inventario)').eq('compra_id', id).order('orden'),
+    db.from('compra_items').select('*, productos(id,nombre,sku,codigo_barras,precio_minorista,precio_oferta,en_oferta,stock_actual,stock_controlado,estado,seguimiento_inventario)').eq('compra_id', id).order('orden'),
     db.from('compra_recepciones').select('*, compra_recepcion_items(*)').eq('compra_id', id).order('fecha', { ascending: false })
   ]);
   Utils.hideLoading();
@@ -273,11 +274,13 @@ async function abrirCompra(id, modoRecibir) {
     <div class="modal-footer" style="flex-wrap:wrap">
       ${abierta && c.estado !== 'recibido_parcial' ? `<button class="btn btn-ghost" data-est="${c.estado === 'en_transito' ? 'pedido' : 'en_transito'}">${c.estado === 'en_transito' ? 'Volver a "pedido"' : '🚢 Marcar en tránsito'}</button><button class="btn btn-ghost" data-est="cancelado" style="color:var(--danger)">Cancelar compra</button>` : ''}
       <span style="flex:1"></span>
+      ${(items||[]).some(i => i.productos) ? `<button class="btn btn-outline" id="_etiquetas" title="Etiquetas con código de barras para lo que llegó">🏷️ Etiquetas</button>` : ''}
       <button class="btn btn-outline" id="_ok">Cerrar</button>
       ${abierta ? `<button class="btn btn-outline" id="_todo">Llegó todo</button><button class="btn btn-primary" id="_recibir">📦 Registrar recepción</button>` : ''}
     </div></div>`;
   document.body.appendChild(bd);
   bd.querySelector('#_x').onclick = bd.querySelector('#_ok').onclick = () => bd.remove();
+  bd.querySelector('#_etiquetas')?.addEventListener('click', () => MHImprimir.pedirEtiquetas((items||[]).filter(i => i.productos).map(i => { const p = i.productos; return { id: p.id, nombre: p.nombre, sku: p.sku, codigo_barras: p.codigo_barras, precio: (p.en_oferta && Number(p.precio_oferta) > 0) ? Number(p.precio_oferta) : Number(p.precio_minorista || 0), cantidad: i.cantidad_recibida || i.cantidad_pedida || 1 }; })));
   bd.querySelector('#_todo')?.addEventListener('click', () => bd.querySelectorAll('tr[data-item]').forEach(tr => { const i = items.find(x => x.id === Number(tr.dataset.item)); const inp = tr.querySelector('.rec-llego'); if (inp && !inp.disabled) inp.value = pend(i); }));
   bd.querySelectorAll('[data-est]').forEach(b => b.addEventListener('click', async () => {
     const est = b.dataset.est;
@@ -655,7 +658,7 @@ async function initPage() {
   perfil = await Auth.init();
   if (!perfil) return;
   if (!['administrador','encargado_stock'].includes(perfil.rol)) { Utils.toast('Sin permisos para cargar compras', 'error'); window.location.href = '/admin/dashboard'; return; }
-  await Layout.init('compras', 'Compras y llegadas');
+  await Layout.init('compras', 'Compras');
   const { data: catData } = await db.from('categorias').select('id,nombre').eq('activo', true).order('orden');
   (catData||[]).forEach(c => { cats[c.id] = c.nombre; $id('c-cat').insertAdjacentHTML('beforeend', `<option value="${c.id}">${esc(c.nombre)}</option>`); });
   await cargarCompras();

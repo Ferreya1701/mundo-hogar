@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#0A2E63">
   <link rel="icon" type="image/png" href="/images/marca/favicon.png">
   <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
-  <title>Dashboard — Mundo Hogar Admin</title>
+  <title>Inicio — Mundo Hogar Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/admin/css/admin.css">
@@ -62,8 +62,8 @@
         <div class="kpi-card" data-href="/admin/productos"><div class="kpi-icon gold">🛍️</div><div class="kpi-label">Productos activos</div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-sub" id="kpi-activos">—</div></div>
         <div class="kpi-card" data-href="/admin/productos?precio=sin"><div class="kpi-icon amber">💲</div><div class="kpi-label">Sin precio</div><div class="kpi-value" id="kpi-sin-precio">—</div><div class="kpi-sub">clic para cargarlos</div></div>
         <div class="kpi-card" data-href="/admin/productos?destacados=1"><div class="kpi-icon violet">⭐</div><div class="kpi-label">Destacados</div><div class="kpi-value" id="kpi-destacados">—</div><div class="kpi-sub">visibles en portada</div></div>
-        <div class="kpi-card" data-href="/admin/ventas"><div class="kpi-icon green">🛒</div><div class="kpi-label">Ventas del local hoy</div><div class="kpi-value" id="kpi-ventas-hoy">—</div><div class="kpi-sub" id="kpi-ventas-sub">—</div></div>
-        <div class="kpi-card" data-href="/admin/alertas"><div class="kpi-icon red">⚠️</div><div class="kpi-label">Sin stock</div><div class="kpi-value" id="kpi-sin-stock">—</div><div class="kpi-sub" id="kpi-bajo-sub">—</div></div>
+        <div class="kpi-card" data-href="/admin/ventas"><div class="kpi-icon green">🛒</div><div class="kpi-label">Ventas de hoy</div><div class="kpi-value" id="kpi-ventas-hoy">—</div><div class="kpi-sub" id="kpi-ventas-sub">—</div></div>
+        <div class="kpi-card" data-href="/admin/carga-stock?filtro=cero"><div class="kpi-icon red">⚠️</div><div class="kpi-label">Sin stock</div><div class="kpi-value" id="kpi-sin-stock">—</div><div class="kpi-sub" id="kpi-bajo-sub">—</div></div>
         <div class="kpi-card" data-href="/admin/carga-stock"><div class="kpi-icon blue">📥</div><div class="kpi-label">Sin contar</div><div class="kpi-value" id="kpi-sin-contar">—</div><div class="kpi-sub">productos sin stock controlado</div></div>
         <div class="kpi-card" data-href="/admin/pedidos?estado=nueva"><div class="kpi-icon blue">💬</div><div class="kpi-label">Pedidos web nuevos</div><div class="kpi-value" id="kpi-solicitudes">—</div><div class="kpi-sub" id="kpi-sol-sub">—</div></div>
         <div class="kpi-card" data-href="/admin/movimientos"><div class="kpi-icon green">📦</div><div class="kpi-label">Movimientos hoy</div><div class="kpi-value" id="kpi-mov-hoy">—</div><div class="kpi-sub" id="kpi-mov-mes">—</div></div>
@@ -74,12 +74,11 @@
         <div class="card-header"><span class="card-title">⚡ Acciones rápidas</span></div>
         <div class="card-body">
           <div class="quick-actions">
-            <a class="quick-action" href="/admin/vender"><span class="qa-ic">🛒</span>Vender en el local</a>
+            <a class="quick-action" href="/admin/vender"><span class="qa-ic">🛒</span>Caja</a>
             <a class="quick-action" href="/admin/carga-stock"><span class="qa-ic">📥</span>Contar stock</a>
-            <a class="quick-action" href="/admin/compras"><span class="qa-ic">🚢</span>Compras y llegadas</a>
+            <a class="quick-action" href="/admin/compras"><span class="qa-ic">🚢</span>Compras</a>
             <a class="quick-action" href="/admin/producto-form"><span class="qa-ic">🛍️</span>Agregar producto</a>
             <a class="quick-action" href="/admin/pedidos"><span class="qa-ic">💬</span>Ver pedidos</a>
-            <a class="quick-action" href="/admin/alertas"><span class="qa-ic">🔔</span>Alertas de stock</a>
             <a class="quick-action" href="/admin/categorias"><span class="qa-ic">🏷️</span>Categorías</a>
             <button class="quick-action" type="button" onclick="window.MHAssistant&&MHAssistant.open()"><span class="qa-ic">✨</span>Asistente MH</button>
           </div>
@@ -122,7 +121,7 @@
         <div class="card">
           <div class="card-header">
             <span class="card-title">⚠️ Alertas de stock</span>
-            <a href="/admin/alertas" class="btn btn-ghost btn-sm">Ver todas</a>
+            <a href="/admin/carga-stock?filtro=cero" class="btn btn-ghost btn-sm">Ver todas</a>
           </div>
           <div id="alertas-body">
             <div class="page-loading"><div class="spinner"></div></div>
@@ -215,7 +214,7 @@ async function loadData() {
     { n: sinPrecio, crit: sinPrecio > activos*0.4, txt: `producto${sinPrecio!==1?'s':''} sin precio`, btn: 'Cargar precios', href: '/admin/productos?precio=sin' },
     { n: sinImagen, crit: false, txt: `producto${sinImagen!==1?'s':''} sin imagen`, btn: 'Ver', href: '/admin/productos?imagen=sin' },
     { n: sinCat, crit: false, txt: `producto${sinCat!==1?'s':''} sin categoría`, btn: 'Ver', href: '/admin/productos?cat=sin' },
-    { n: sinStock, crit: sinStock > 0, txt: `producto${sinStock!==1?'s':''} sin stock`, btn: 'Ver alertas', href: '/admin/alertas' },
+    { n: sinStock, crit: sinStock > 0, txt: `producto${sinStock!==1?'s':''} sin stock`, btn: 'Ver', href: '/admin/carga-stock?filtro=cero' },
     { n: sinContar, crit: false, txt: `producto${sinContar!==1?'s':''} sin contar (la web los muestra "a consultar")`, btn: 'Contar', href: '/admin/carga-stock' },
     { n: solNuevas, crit: solNuevas > 3, txt: `solicitud${solNuevas!==1?'es':''} sin atender`, btn: 'Responder', href: '/admin/pedidos?estado=nueva' }
   ];
@@ -283,7 +282,7 @@ async function loadData() {
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border)">
         <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${p.nombre}</div>
         <span class="stock-num ${Utils.stockClass(p.stock_actual,p.stock_minimo)}">${p.stock_actual}</span>
-        <a href="/admin/inventario?producto=${p.id}" class="btn btn-outline btn-sm" data-tip="Registrar entrada">📥</a>
+        <a href="/admin/carga-stock?producto=${p.id}" class="btn btn-outline btn-sm" data-tip="Contar / reponer">📥</a>
       </div>`).join('') + '</div>'
     : '<div class="empty-state"><div class="empty-state-icon">✅</div><p>Sin alertas de stock</p></div>';
 
@@ -317,7 +316,7 @@ document.getElementById('kpi-grid').addEventListener('click', e => {
 async function initPage() {
   const profile = await Auth.init();
   if (!profile) return;
-  await Layout.init('dashboard', 'Dashboard');
+  await Layout.init('dashboard', 'Inicio');
 
   const greet = new Date().getHours() < 12 ? 'Buenos días' : new Date().getHours() < 19 ? 'Buenas tardes' : 'Buenas noches';
   document.getElementById('welcome-msg').textContent = `${greet}, ${profile.nombre.split(' ')[0]}`;

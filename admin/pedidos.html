@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#0A2E63">
   <link rel="icon" type="image/png" href="/images/marca/favicon.png">
   <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
-  <title>Pedidos y cobros — Mundo Hogar Admin</title>
+  <title>Pedidos web — Mundo Hogar Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/admin/css/admin.css">
@@ -81,7 +81,7 @@
 
     <main class="page-content">
       <div class="page-header">
-        <div><h1>Pedidos y cobros</h1><p id="subtitle">Pedidos de la tienda, pagos por transferencia y comprobantes</p></div>
+        <div><h1>Pedidos web</h1><p id="subtitle">Pedidos de la tienda, pagos por transferencia y comprobantes</p></div>
         <div class="page-header-actions">
           <button class="btn btn-outline btn-sm" id="btn-export">⬇ Exportar CSV</button>
           <button class="btn btn-outline btn-sm" id="btn-refrescar">↻ Actualizar</button>
@@ -625,7 +625,7 @@ document.getElementById('btn-export').addEventListener('click', () => {
 (async function () {
   perfil = await Auth.init();
   if (!perfil) return;
-  await Layout.init('pedidos', 'Pedidos y cobros');
+  await Layout.init('pedidos', 'Pedidos web');
   const params = new URLSearchParams(location.search);
   const estadoURL = params.get('estado');
   if (estadoURL && ESTADOS[estadoURL]) document.getElementById('filtro-estado').value = estadoURL;

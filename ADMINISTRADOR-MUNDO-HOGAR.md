@@ -124,16 +124,16 @@ Una vez logueado como administrador:
 
 | Permiso                         | Administrador | Encargado de Stock | Vendedor |
 |----------------------------------|:-------------:|:------------------:|:--------:|
-| Ver dashboard                    | ✅ | ✅ | ✅ |
+| Ver inicio                       | ✅ | ✅ | ✅ |
 | Ver productos                    | ✅ | ✅ | ✅ |
 | Crear/editar productos           | ✅ | ✅ | ❌ |
-| Eliminar productos               | ✅ | ❌ | ❌ |
-| Registrar movimientos de stock   | ✅ | ✅ | ❌ |
+| Archivar productos               | ✅ | ✅ | ❌ |
+| Ajuste manual de stock           | ✅ | ✅ | ❌ |
 | Contar stock / cargar compras    | ✅ | ✅ | ❌ |
-| Vender en el local (caja)        | ✅ | ✅ | ✅ |
+| Caja (vender en el local)        | ✅ | ✅ | ✅ |
 | Anular ventas                    | ✅ todas | solo propias < 24 h | solo propias < 24 h |
-| Ver historial de movimientos     | ✅ | ✅ | ✅ |
-| Ver alertas de stock             | ✅ | ✅ | ✅ |
+| Ver movimientos de stock         | ✅ | ✅ | ✅ |
+| Ver qué reponer (Contar stock)   | ✅ | ✅ | ❌ |
 | Gestionar categorías             | ✅ | ❌ | ❌ |
 | Gestionar usuarios               | ✅ | ❌ | ❌ |
 
@@ -141,23 +141,24 @@ Una vez logueado como administrador:
 
 ## 7. Módulos del panel
 
-### Dashboard (`/admin/dashboard.html`)
-- KPIs: total productos, sin stock, stock bajo, movimientos del día
-- Gráfico de productos por categoría
-- Alertas y últimos movimientos
+### Inicio (`/admin/dashboard`)
+- KPIs: productos, sin precio, ventas de hoy, sin stock, sin contar, pedidos web nuevos
+- Accesos rápidos, salud del catálogo, recomendaciones, actividad reciente
+- Alertas de stock (las 8 más urgentes; "Ver todas" abre Contar stock con el filtro "Sin stock")
 
 ### Productos (`/admin/productos.html`)
 - Lista con búsqueda, filtros por categoría/estado/stock
 - Paginación (20 por página)
 - Exportar CSV
 - Importar desde JSON existente
-- Activar/desactivar/archivar
-- Eliminar (con confirmación)
+- Activar/desactivar/archivar (no hay borrado permanente: una venta o compra puede apuntar al producto)
+- Etiquetas con código de barras (🏷️ por fila o en la selección múltiple)
 
 ### Formulario de Producto (`/admin/producto-form.html`)
 - Crear nuevo o editar existente
 - Imagen: URL manual o subida a Supabase Storage
-- Campos completos: precios, stock, especificaciones, etc.
+- Campos completos: precios, especificaciones, etc. El stock solo se muestra: se carga por
+  Contar stock o al recibir una compra (un producto nuevo nace con 0 y "sin contar")
 - Auto-generador de SKU
 - Auto-generador de slug (URL)
 
@@ -166,48 +167,47 @@ Una vez logueado como administrador:
 - Muestra cantidad de productos por categoría
 - Protegida: solo Administrador
 
-### Inventario (`/admin/inventario.html`)
-- Registro rápido de movimientos
-- Búsqueda de producto en tiempo real
-- Preview del stock antes/después
-- 11 tipos de movimiento disponibles
+### Ajuste manual (`/admin/inventario`)
+- Solo para lo que no pasa por Caja, Compras ni Contar stock: devolución de cliente, mercadería
+  que apareció, producto dañado, pérdida, devolución a proveedor, ajuste negativo
+- Búsqueda de producto en tiempo real y preview del stock antes/después
 - Vista de movimientos del día
 
-### Historial (`/admin/movimientos.html`)
-- Historial completo de todos los movimientos
+### Movimientos de stock (`/admin/movimientos`)
+- Historial completo de todos los movimientos (ventas, compras, conteos y ajustes)
 - Filtros: tipo, fecha desde/hasta, producto
 - Exportar CSV
 - Los movimientos son inmutables (no se pueden borrar)
-
-### Alertas de Stock (`/admin/alertas.html`)
-- Tabs: Sin stock / Stock bajo / Todos
-- KPIs rápidos de estado
-- Exportar lista de alertas
 
 ### Usuarios (`/admin/usuarios.html`)
 - Solo visible para Administradores
 - Editar nombre, rol y estado de usuarios
 - Instrucciones para crear nuevos usuarios vía Supabase
 
-### Vender en el local (`/admin/vender`)
-- Caja: buscar por nombre, SKU o código de barras (lector USB o cámara del celular), ticket con
-  cantidades, precio editable, descuento, medio de pago, cliente opcional, ticket por WhatsApp
+### Caja (`/admin/vender`)
+- Buscar por nombre, SKU o código de barras (lector USB o cámara del celular), ticket con
+  cantidades, precio editable, descuento, medio de pago, cliente opcional
+- Al cobrar: imprimir ticket (rollo de 80 mm, `F8`), mandarlo por WhatsApp o copiarlo
 - Descuenta stock solo de los productos con **stock controlado**; los demás se venden sin tocar stock
 - Si el sistema dice 0 y el producto está, se vende igual y queda en negativo para revisar
 - Requiere `sql/013-local-compras-stock.sql`. Guía: `GUIA-STOCK-Y-VENTAS.md`
 
-### Ventas del local (`/admin/ventas`)
-- Listado por rango de fechas, medio de pago, vendedor; KPIs; detalle; anular (repone stock); CSV
+### Ventas (`/admin/ventas`)
+- Listado por rango de fechas, medio de pago, vendedor; KPIs; detalle con "Imprimir ticket";
+  anular (repone stock); CSV
 
 ### Contar stock (`/admin/carga-stock`)
-- Conteo absoluto desde el celular: filtro "Sin contar", escaneo de códigos, alta rápida de productos
+- Conteo absoluto desde el celular: filtros "Sin contar", "En negativo", "Sin stock", "Stock bajo";
+  escaneo de códigos, alta rápida de productos. Reemplaza a la vieja página de Alertas
+  (`/admin/alertas` redirige acá con el filtro "Sin stock")
 - Al guardar, el producto queda con stock controlado (la tienda lo vende si hay)
 
-### Compras y llegadas (`/admin/compras`)
+### Compras (`/admin/compras`)
 - Pegar/subir la lista del proveedor (Excel, CSV, foto o PDF con IA) → coincidencias con el catálogo →
   lo que no existe se crea como producto → al recibir, entra el stock y queda controlado
+- En el detalle de la compra: 🏷️ Etiquetas imprime códigos de barras de lo que llegó
 
-### Pedidos web y cobros (`/admin/pedidos.html`)
+### Pedidos web (`/admin/pedidos`)
 - Pedidos que llegan desde el carrito (antes "Solicitudes WhatsApp"), con estado del pedido y del pago
 - Chip "Para revisar": comprobantes que esperan confirmación o rechazo
 - Confirmar pago (pasa el pedido a confirmado y descuenta stock), rechazar comprobante, registrar
@@ -252,21 +252,21 @@ Una vez logueado como administrador:
 | Página           | URL                                    |
 |------------------|----------------------------------------|
 | Login            | `/admin/`                              |
-| Dashboard        | `/admin/dashboard.html`                |
+| Inicio           | `/admin/dashboard`                     |
 | Productos        | `/admin/productos.html`                |
 | Nuevo producto   | `/admin/producto-form.html`            |
 | Editar producto  | `/admin/producto-form.html?id=123`     |
 | Categorías       | `/admin/categorias.html`               |
-| Registrar stock  | `/admin/inventario.html`               |
-| Historial        | `/admin/movimientos.html`              |
-| Alertas          | `/admin/alertas.html`                  |
+| Ajuste manual    | `/admin/inventario`                    |
+| Movimientos      | `/admin/movimientos`                   |
 | Usuarios         | `/admin/usuarios.html`                 |
-| Vender (caja)    | `/admin/vender`                        |
-| Ventas del local | `/admin/ventas`                        |
+| Caja             | `/admin/vender`                        |
+| Ventas           | `/admin/ventas`                        |
 | Contar stock     | `/admin/carga-stock`                   |
 | Compras          | `/admin/compras`                       |
-| Pedidos y cobros | `/admin/pedidos`                       |
-| Cuentas de cobro | `/admin/cuentas-cobro`                 |
+| Pedidos web      | `/admin/pedidos`                       |
+| Cuentas bancarias| `/admin/cuentas-cobro`                 |
+| Clientes         | `/admin/crm`                           |
 
 ---
 

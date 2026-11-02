@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#0A2E63">
   <link rel="icon" type="image/png" href="/images/marca/favicon.png">
   <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
-  <title>Ventas del local — Mundo Hogar Admin</title>
+  <title>Ventas — Mundo Hogar Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/admin/css/admin.css">
@@ -33,7 +33,7 @@
 
     <main class="page-content">
       <div class="page-header">
-        <div><h1>Ventas del local</h1><p id="subtitle">Lo que se cobró en el mostrador. Los pedidos de la tienda están en Pedidos web.</p></div>
+        <div><h1>Ventas</h1><p id="subtitle">Lo que se cobró en el mostrador. Los pedidos de la tienda están en Pedidos web.</p></div>
         <div class="page-header-actions">
           <button class="btn btn-outline btn-sm" id="btn-export">⬇ Exportar CSV</button>
           <button class="btn btn-outline btn-sm" id="btn-refrescar">↻ Actualizar</button>
@@ -82,6 +82,7 @@
 <script src="/admin/js/auth.js"></script>
 <script src="/admin/js/utils.js"></script>
 <script src="/admin/js/layout.js"></script>
+<script src="/admin/js/impresion.js"></script>
 <script>
 const MEDIOS = { efectivo:'Efectivo', transferencia:'Transferencia', debito:'Débito', credito:'Crédito', mercadopago:'Mercado Pago', cuenta_corriente:'Cuenta corriente', otro:'Otro' };
 const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -201,10 +202,13 @@ function abrir(id) {
     </div>
     <div class="modal-footer">
       ${puedeAnular(v) ? `<button class="btn btn-danger" id="_anular">Anular venta</button>` : ''}
+      <span style="flex:1"></span>
+      <button class="btn btn-outline" id="_imprimir">🖨️ Imprimir ticket</button>
       <button class="btn btn-outline" id="_ok">Cerrar</button>
     </div></div>`;
   document.body.appendChild(bd);
   bd.querySelector('#_x').onclick = bd.querySelector('#_ok').onclick = () => bd.remove();
+  bd.querySelector('#_imprimir').addEventListener('click', () => MHImprimir.ticket(v));
   bd.querySelector('#_anular')?.addEventListener('click', async () => {
     const motivo = prompt('¿Por qué se anula la venta? (el stock de los productos controlados vuelve a sumarse)');
     if (motivo === null) return;
@@ -231,7 +235,7 @@ document.getElementById('btn-refrescar').addEventListener('click', cargar);
 async function initPage() {
   perfil = await Auth.init();
   if (!perfil) return;
-  await Layout.init('ventas', 'Ventas del local');
+  await Layout.init('ventas', 'Ventas');
   setRango('hoy');
 }
 initPage();

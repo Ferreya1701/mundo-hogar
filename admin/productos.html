@@ -104,6 +104,7 @@
         <button type="button" class="btn btn-outline btn-sm" data-masiva="precios">💲 Ajustar precios</button>
         <button type="button" class="btn btn-outline btn-sm" data-masiva="destacar">⭐ Destacar</button>
         <button type="button" class="btn btn-outline btn-sm" data-masiva="no-destacar">☆ Quitar destacado</button>
+        <button type="button" class="btn btn-outline btn-sm" data-masiva="etiquetas">🏷️ Etiquetas</button>
         <button type="button" class="btn btn-outline btn-sm" data-masiva="exportar">⬇ Exportar selección</button>
         <button type="button" class="btn btn-ghost btn-sm" data-masiva="cancelar">✕ Deseleccionar</button>
       </div>
@@ -230,6 +231,7 @@
 <script src="/admin/js/supabase-client.js"></script>
 <script src="/admin/js/auth.js"></script>
 <script src="/admin/js/utils.js"></script>
+<script src="/admin/js/impresion.js"></script>
 <script src="/admin/js/layout.js"></script>
 <script>
 let allProducts = [];
@@ -239,7 +241,6 @@ const PER = 20;
 /* Permisos del usuario. La autoridad real sigue siendo RLS en la base;
    esto solo evita ofrecer botones que van a terminar en "sin permisos". */
 let puedeEditar = false;    // administrador | encargado_stock
-let puedeBorrar = false;    // administrador
 
 /* Selección para acciones masivas. Vive fuera del render porque
    renderTable() reconstruye el HTML de la tabla en cada cambio. */
@@ -495,10 +496,9 @@ function renderTable() {
           <button type="button" class="btn btn-ghost btn-sm" data-accion="estado" data-id="${p.id}"
                   data-tip="${p.estado==='activo'?'Ocultar de la tienda':'Publicar en la tienda'}"
                   aria-label="${p.estado==='activo'?'Ocultar de la tienda':'Publicar en la tienda'} ${nombre}">
-            ${p.estado==='activo'?'⏸️':'▶️'}</button>` : ''}
-          ${puedeBorrar ? `
-          <button type="button" class="btn btn-ghost btn-sm act-eliminar" data-accion="eliminar" data-id="${p.id}"
-                  data-tip="Eliminar" aria-label="Eliminar ${nombre}">🗑️</button>` : ''}
+            ${p.estado==='activo'?'⏸️':'▶️'}</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-accion="etiqueta" data-id="${p.id}"
+                  data-tip="Imprimir etiqueta con código" aria-label="Imprimir etiqueta de ${nombre}">🏷️</button>` : ''}
         </div>
       </td>
     </tr>`;
@@ -530,8 +530,8 @@ document.getElementById('tabla-body').addEventListener('click', e => {
 
   if (accion === 'destacar')      toggleDestacado(prod);
   else if (accion === 'estado')   toggleEstado(prod);
-  else if (accion === 'eliminar') confirmarEliminar(prod);
   else if (accion === 'precio')   abrirEdicionPrecio(el, prod);
+  else if (accion === 'etiqueta') MHImprimir.pedirEtiquetas([paraEtiqueta(prod)]);
 });
 
 /* ── Edición rápida de precio ───────────────────────────────────
@@ -672,20 +672,8 @@ async function toggleEstado(prod) {
   await Utils.log('update', 'productos', prod.id, `Estado cambiado a ${nuevoEstado}`);
 }
 
-async function confirmarEliminar(prod) {
-  const nombre = esc(prod.nombre);
-  const msg = prod.stock_actual > 0
-    ? `<b>${nombre}</b> tiene ${prod.stock_actual} unidades en stock. ¿Seguro que querés eliminarlo permanentemente?`
-    : `¿Eliminar permanentemente <b>${nombre}</b>?`;
-  const ok = await Utils.confirm(msg, 'Eliminar producto');
-  if (!ok) return;
-  const { error } = await db.from('productos').delete().eq('id', prod.id);
-  if (error) { Utils.toast(msgError(error, 'eliminar el producto'), 'error'); return; }
-  allProducts = allProducts.filter(p => p.id !== prod.id);
-  renderTable();
-  Utils.toast('Producto eliminado', 'success');
-  await Utils.log('delete', 'productos', prod.id, `Producto eliminado: ${prod.nombre}`);
-}
+
+const paraEtiqueta = p => ({ id: p.id, nombre: p.nombre, sku: p.sku, codigo_barras: p.codigo_barras, precio: (p.en_oferta && Number(p.precio_oferta) > 0) ? Number(p.precio_oferta) : Number(p.precio_minorista || 0), cantidad: 1 });
 
 /* ── Acciones masivas ───────────────────────────────────────────
    Toda acción confirma primero diciendo a cuántos productos afecta, y
@@ -719,6 +707,8 @@ document.getElementById('barra-masiva')?.addEventListener('click', async e => {
   }
 
   if (accion === 'precios') { abrirModalPrecios(); return; }
+
+  if (accion === 'etiquetas') { MHImprimir.pedirEtiquetas(allProducts.filter(p => seleccion.has(p.id)).map(paraEtiqueta)); return; }
 
   const cfg = MASIVAS[accion];
   if (!cfg) return;
@@ -908,7 +898,7 @@ async function cargarCategorias() {
 
 async function cargarProductos() {
   const { data, error } = await db.from('productos')
-    .select('id,nombre,slug,sku,marca,categoria_id,stock_actual,stock_minimo,estado,precio_minorista,precio_oferta,en_oferta,destacado,imagen_principal_url,created_at')
+    .select('id,nombre,slug,sku,codigo_barras,marca,categoria_id,stock_actual,stock_minimo,estado,precio_minorista,precio_oferta,en_oferta,destacado,imagen_principal_url,created_at')
     .order('nombre');
   if (error) {
     Utils.toast(msgError(error, 'cargar los productos'), 'error');
@@ -1070,7 +1060,6 @@ async function initPage() {
   // La base es la que manda (RLS); esto solo evita mostrar botones que
   // van a devolver "sin permisos" y aclara el modo de solo lectura.
   puedeEditar = ['administrador','encargado_stock'].includes(profile.rol);
-  puedeBorrar = profile.rol === 'administrador';
   if (!puedeEditar) {
     document.getElementById('btn-importar')?.remove();
     document.querySelector('.page-header-actions a.btn-primary')?.remove();

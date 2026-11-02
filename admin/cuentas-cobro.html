@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#0A2E63">
   <link rel="icon" type="image/png" href="/images/marca/favicon.png">
   <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
-  <title>Cuentas de cobro — Mundo Hogar Admin</title>
+  <title>Cuentas bancarias — Mundo Hogar Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/admin/css/admin.css">
@@ -47,7 +47,7 @@
 
     <main class="page-content">
       <div class="page-header">
-        <div><h1>Cuentas de cobro</h1><p id="subtitle">A qué cuentas transfieren los clientes, cuánto entró en cada una y la liquidación mensual</p></div>
+        <div><h1>Cuentas bancarias</h1><p id="subtitle">A qué cuentas transfieren los clientes, cuánto entró en cada una y la liquidación mensual</p></div>
         <div class="page-header-actions">
           <button class="btn btn-primary btn-sm" id="btn-nueva">+ Nueva cuenta</button>
           <button class="btn btn-outline btn-sm" id="btn-refrescar">↻ Actualizar</button>
@@ -444,7 +444,7 @@ $id('btn-refrescar').addEventListener('click', async () => { await cargarConfig(
   const profile = await Auth.init();
   if (!profile) return;
   await Auth.requireRole(['administrador']);
-  await Layout.init('cuentas-cobro', 'Cuentas de cobro');
+  await Layout.init('cuentas-cobro', 'Cuentas bancarias');
   const hoy = new Date();
   $id('mov-mes').value = hoy.toISOString().slice(0, 7);
   const ant = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);

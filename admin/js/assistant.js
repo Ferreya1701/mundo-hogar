@@ -30,7 +30,6 @@ window.MHAssistant = (function () {
     if (p.includes('categorias'))    return 'categorias';
     if (p.includes('inventario'))    return 'inventario';
     if (p.includes('movimientos'))   return 'movimientos';
-    if (p.includes('alertas'))       return 'alertas';
     if (p.includes('usuarios'))      return 'usuarios';
     if (p.includes('configuracion')) return 'configuracion';
     return 'panel';
@@ -105,7 +104,7 @@ window.MHAssistant = (function () {
       let h = '';
       if (d.sinStock.length) h += `<b>${d.sinStock.length} sin stock</b> (crítico):${listado(d.sinStock, 5)}`;
       if (d.stockBajo.length) h += `<b>${d.stockBajo.length} con stock bajo</b>:${listado(d.stockBajo, 5)}`;
-      h += `Para reponer: cargá la compra en <b>Compras y llegadas</b> (al recibirla entra el stock) o una entrada suelta desde Inventario.${link('/admin/alertas', '🔔 Ver alertas')}${link('/admin/compras', '🚢 Compras')}`;
+      h += `Para reponer: cargá la compra en <b>Compras</b> (al recibirla entra el stock). Si ya tenés la mercadería y solo falta contarla, usá Contar stock.${link('/admin/carga-stock?filtro=cero', '🔔 Ver qué reponer')}${link('/admin/compras', '🚢 Compras')}`;
       return h;
     },
     async solicitudes() {
@@ -120,7 +119,7 @@ window.MHAssistant = (function () {
     },
     async movimientos() {
       const d = await datos();
-      if (!d.movimientos.length) return 'No se registraron movimientos de stock en los últimos 7 días. Se registran desde <b>Registrar Movimiento</b>.' + link('/admin/inventario', '📦 Registrar');
+      if (!d.movimientos.length) return 'No hubo movimientos de stock en los últimos 7 días. Se generan al vender en Caja, recibir una compra o contar stock.' + link('/admin/vender', '🛒 Caja');
       const entradas = d.movimientos.filter(m => ['carga_inicial', 'entrada_compra', 'ajuste_positivo', 'devolucion_cliente'].includes(m.tipo)).length;
       return `En los últimos 7 días hubo <b>${d.movimientos.length} movimientos</b> (${entradas} entradas, ${d.movimientos.length - entradas} salidas/ajustes). Los últimos:<ul>${d.movimientos.slice(0, 5).map(m => `<li>${esc(m.productos?.nombre || '—')} · ${esc(m.tipo.replace(/_/g, ' '))}</li>`).join('')}</ul>${link('/admin/movimientos', '📋 Ver historial')}`;
     },
@@ -148,7 +147,7 @@ window.MHAssistant = (function () {
     { k: /(cargo|creo|agrego|añado|nuevo).*(producto)|producto nuevo/i, t: 'Para <b>crear un producto</b>: Productos → "+ Nuevo Producto". Completá nombre, categoría, precio minorista y stock inicial, subí la foto (clic o arrastrar) y Guardar. Con "Destacado" activado aparece en la portada.' + link('/admin/producto-form', '+ Crear producto') },
     { k: /(edito|cambio|modifico).*(precio|producto)|precio.*(cambiar|editar|cargar|poner)/i, t: 'Para <b>cambiar un precio</b>: Productos → lápiz ✏️ del producto → campo "Precio minorista" (número sin puntos, ej: 234000) → Guardar. El cambio se ve al instante en la tienda.' + link('/admin/productos', '🛍️ Ir a Productos') },
     { k: /(creo|agrego|nueva).*(categor)/i, t: 'Para <b>crear una categoría</b>: Categorías → completá el nombre (el slug se genera solo) → Guardar. Después asignásela a los productos desde su formulario.' + link('/admin/categorias', '🏷️ Ir a Categorías') },
-    { k: /(registro|cargo|hago).*(movimiento|stock|entrada|salida)|reponer stock|sumar stock/i, t: 'Para <b>registrar stock</b>: Registrar Movimiento → elegí el tipo (entrada por compra, salida por venta, ajuste…) → buscá el producto → cantidad. Vas a ver el "antes → después" antes de confirmar. Todo queda en el Historial.' + link('/admin/inventario', '📦 Registrar movimiento') },
+    { k: /(registro|cargo|hago).*(movimiento|stock|entrada|salida)|reponer stock|sumar stock/i, t: 'El stock se mueve solo desde tres lugares: <b>Caja</b> (lo vendido se descuenta), <b>Compras</b> (lo que llega se suma) y <b>Contar stock</b> (escribís cuántos hay). Para una rotura, una pérdida o una devolución usá <b>Ajuste manual</b>. Todo queda en Movimientos de stock.' + link('/admin/inventario', '🛠 Ajuste manual') },
     { k: /(subo|cambio|agrego).*(imagen|foto)/i, t: 'Para <b>subir una imagen</b>: Productos → ✏️ del producto → sección "Imagen principal" → hacé clic o arrastrá el archivo (JPG/PNG/WebP, máx. 5 MB) → Guardar.' },
     { k: /no aparece|no se ve|no se muestra/i, t: 'Si un producto <b>no aparece en la tienda</b>, revisá: 1) Estado = "Activo" (inactivo/archivado no se muestran), 2) que tenga categoría asignada, 3) recargá la página de la tienda. Si sigue sin verse, decime el nombre y lo reviso.' },
     { k: /(oculto|pauso|desactivo|publico).*(producto)/i, t: 'Para <b>ocultar/publicar</b> un producto rápido: en Productos usá el botón ⏸️/▶️ de la fila. Ocultar no borra nada: lo podés volver a publicar cuando quieras.' },
@@ -156,10 +155,10 @@ window.MHAssistant = (function () {
     { k: /whatsapp.*(cambio|numero|número)|numero.*whatsapp/i, t: 'Para <b>cambiar el número de WhatsApp</b> de toda la tienda: Configuración → "WhatsApp" → guardá. Todos los botones de la web pasan a usar el número nuevo al instante.' + link('/admin/configuracion', '⚙️ Ir a Configuración') },
     { k: /texto|portada|titulo|título|hero/i, t: 'Los <b>textos de la portada</b> (título, subtítulo, sección mayorista, envíos, pagos) se editan desde Configuración → "Textos de la página". En el título, usá "|" antes de la parte que va en naranja.' + link('/admin/configuracion', '⚙️ Editar textos') },
     { k: /usuario|vendedor|empleado|acceso/i, t: 'Para <b>dar acceso a otra persona</b>: Usuarios → invitala con su email y elegí el rol (Administrador: todo · Encargado de stock: productos y stock · Vendedor: solo consulta y solicitudes).' + link('/admin/usuarios', '👥 Ir a Usuarios') },
-    { k: /alerta.*(significa|explic)|significa.*alerta|que es.*alerta/i, t: 'Las <b>alertas de stock</b> avisan cuando un producto llega a 0 (crítico, rojo) o queda por debajo de su "stock mínimo" (bajo, amarillo). El stock mínimo lo definís en cada producto; cuando se cruza, aparece acá y en el Dashboard.' },
+    { k: /alerta.*(significa|explic)|significa.*alerta|que es.*alerta/i, t: 'Las <b>alertas de stock</b> avisan cuando un producto llega a 0 (crítico, rojo) o queda por debajo de su "stock mínimo" (bajo, amarillo). El stock mínimo lo definís en cada producto; cuando se cruza, aparece en Inicio y en Contar stock con el filtro "Sin stock" o "Stock bajo".' },
     { k: /vend(o|er)|caja|cobr(o|ar)|ticket|mostrador/i, t: 'Para <b>vender en el local</b>: Vender → buscá el producto (nombre, SKU o código de barras; con lector USB escaneá y listo) → se suma al ticket → medio de pago → Cobrar. Los productos con <b>stock controlado</b> se descuentan al instante; los que todavía no se contaron se venden igual sin tocar stock. Si el sistema dice 0 y el producto está, se vende igual y queda en negativo para revisarlo.' + link('/admin/vender', '🛒 Vender') },
     { k: /cont(ar|eo)|stock controlado|sin contar|inventari(o|ar)/i, t: 'Para <b>contar stock</b>: Contar stock → recorré el depósito con el celular y escribí cuántas unidades hay de cada producto (el total, no lo que sumás; 0 también vale). Al guardar quedan con stock controlado: la tienda los vende si hay y la caja los descuenta. Los que no contaste se muestran "a consultar" en la web.' + link('/admin/carga-stock', '📥 Contar stock') },
-    { k: /compra|pedido al proveedor|china|contenedor|lleg(ó|o|ada)|recib(ir|ido)/i, t: 'Para <b>cargar una compra</b>: Compras y llegadas → + Nueva compra → pegá la lista del proveedor (o subí el Excel / foto con IA) → el sistema sugiere a qué producto corresponde cada renglón y lo que no existe se crea como producto nuevo → cuando llega, "Recibir" carga el stock y deja los productos controlados.' + link('/admin/compras', '🚢 Compras') },
+    { k: /compra|pedido al proveedor|china|contenedor|lleg(ó|o|ada)|recib(ir|ido)/i, t: 'Para <b>cargar una compra</b>: Compras → + Nueva compra → pegá la lista del proveedor (o subí el Excel / foto con IA) → el sistema sugiere a qué producto corresponde cada renglón y lo que no existe se crea como producto nuevo → cuando llega, "Recibir" carga el stock y deja los productos controlados.' + link('/admin/compras', '🚢 Compras') },
     { k: /negativo/i, t: 'Un <b>stock negativo</b> significa que en el local se vendieron más unidades de las que el sistema conocía: había mercadería sin contar. Solución: ir a Contar stock → filtro "En negativo" → escribir cuántas quedan de verdad.' + link('/admin/carga-stock', '📥 Contar stock') },
     { k: /instalar|app|escritorio|acceso directo/i, t: 'El panel se puede <b>instalar como app</b>: en Chrome, menú ⋮ → "Instalar Mundo Hogar — Administrador". Queda con el logo en el escritorio y abre directo al panel.' }
   ];
@@ -174,9 +173,8 @@ window.MHAssistant = (function () {
     productos:     ['¿Qué productos están incompletos?', '¿Cómo cargo un precio?', '¿Qué debería destacar?'],
     'producto-form': ['¿Cómo subo la imagen?', '¿Cómo creo una oferta?', '¿Qué es el stock mínimo?'],
     categorias:    ['¿Hay categorías vacías?', '¿Cómo creo una categoría?'],
-    inventario:    ['¿Cómo registro una entrada?', '¿Qué productos hay que reponer?'],
+    inventario:    ['¿Cuándo uso un ajuste manual?', '¿Qué productos hay que reponer?'],
     movimientos:   ['¿Qué movimientos hubo esta semana?', '¿Cómo corrijo un stock mal cargado?'],
-    alertas:       ['¿Qué significa cada alerta?', '¿Qué debería reponer primero?'],
     solicitudes:   ['¿Cuántas solicitudes hay sin atender?', '¿Cómo respondo una solicitud?'],
     usuarios:      ['¿Cómo agrego un vendedor?', '¿Qué puede hacer cada rol?'],
     configuracion: ['¿Cómo cambio el WhatsApp?', '¿Cómo edito los textos de la portada?'],

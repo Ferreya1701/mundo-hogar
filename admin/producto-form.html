@@ -187,9 +187,9 @@
                     </label>
                   </div>
                   <div class="form-group" id="stock-fields">
-                    <label>Stock inicial <span class="req" id="stock-inicial-label" style="display:none">*</span></label>
-                    <input type="number" id="stock_actual" placeholder="0" min="0" step="1">
-                    <span class="form-hint">Solo para nuevo producto. Los movimientos posteriores se hacen desde "Inventario"</span>
+                    <label>Stock</label>
+                    <div style="font-size:14px;padding:6px 0"><b id="stock-actual-txt">0</b> <span class="form-hint" id="stock-hint" style="display:inline">unidades · un producto nuevo nace sin stock</span></div>
+                    <span class="form-hint">El stock no se escribe acá: se carga contándolo en <a href="/admin/carga-stock">Contar stock</a> o al recibir una <a href="/admin/compras">compra</a>. Así queda registro de cada movimiento.</span>
                   </div>
                   <div class="form-group">
                     <label>Stock mínimo (alerta)</label>
@@ -272,7 +272,7 @@ document.getElementById('link-volver').href = URL_LISTADO;
 const CAMPOS = ['nombre','categoria_id','marca','sku','codigo_barras','descripcion_corta','descripcion',
   'precio_costo','precio_minorista','precio_mayorista','precio_oferta','en_oferta',
   'material','color','garantia','peso','alto','ancho','profundidad','proveedor','ubicacion','observaciones',
-  'estado','destacado','es_nuevo','seguimiento_inventario','stock_actual','stock_minimo','unidad',
+  'estado','destacado','es_nuevo','seguimiento_inventario','stock_minimo','unidad',
   'permite_venta_sin_stock','imagen_principal_url'];
 
 let baseline = null;      // foto del formulario tal como quedó al cargar/guardar
@@ -352,17 +352,16 @@ async function cargarCategorias() {
   (data||[]).forEach(c => sel.innerHTML += `<option value="${c.id}">${c.nombre}</option>`);
 }
 
-/* En edición el stock no se toca desde acá: la base lo blinda (sql/008)
-   y solo se mueve por Inventario. Se deshabilita de verdad, no solo se
-   atenúa, para que nadie escriba un número que se va a rechazar. */
-function bloquearCamposStock() {
-  const cont = document.getElementById('stock-fields');
-  cont.style.opacity = '0.55';
-  cont.title = 'Para modificar el stock usá el módulo Inventario';
-  const input = document.getElementById('stock_actual');
-  input.disabled = true;
-  input.parentElement.querySelector('.form-hint').textContent =
-    'El stock se modifica desde Inventario, que deja registro del movimiento.';
+/* El stock nunca se escribe desde acá: la base lo blinda (sql/008) y solo
+   se mueve por conteo, compra, venta o ajuste manual. Acá solo se muestra. */
+function mostrarStock(p) {
+  const txt = document.getElementById('stock-actual-txt');
+  const hint = document.getElementById('stock-hint');
+  if (!p) { txt.textContent = '0'; hint.textContent = 'unidades · un producto nuevo nace sin stock'; return; }
+  txt.textContent = p.stock_actual ?? 0;
+  txt.className = 'stock-num ' + Utils.stockClass(p.stock_actual, p.stock_minimo);
+  hint.textContent = p.seguimiento_inventario === false ? 'sin control de stock'
+    : p.stock_controlado ? 'unidades · stock controlado' : 'unidades · todavía sin contar';
 }
 
 async function cargarProducto() {
@@ -376,7 +375,6 @@ async function cargarProducto() {
 
   document.getElementById('form-title').textContent = 'Editar Producto';
   document.getElementById('form-subtitle').textContent = data.nombre;
-  bloquearCamposStock();
 
   setVal('nombre', data.nombre); setVal('categoria_id', data.categoria_id);
   setVal('marca', data.marca); setVal('sku', data.sku); setVal('codigo_barras', data.codigo_barras);
@@ -384,7 +382,7 @@ async function cargarProducto() {
   setVal('precio_costo', data.precio_costo); setVal('precio_minorista', data.precio_minorista);
   setVal('precio_mayorista', data.precio_mayorista); setVal('precio_oferta', data.precio_oferta);
   setCheck('en_oferta', data.en_oferta);
-  setVal('stock_actual', data.stock_actual); setVal('stock_minimo', data.stock_minimo);
+  mostrarStock(data); setVal('stock_minimo', data.stock_minimo);
   setVal('unidad', data.unidad); setVal('ubicacion', data.ubicacion); setVal('proveedor', data.proveedor);
   setCheck('seguimiento_inventario', data.seguimiento_inventario);
   setCheck('permite_venta_sin_stock', data.permite_venta_sin_stock);
@@ -508,25 +506,11 @@ async function guardar(volverAlListado) {
   if (isEdit) {
     ({ error, data } = await db.from('productos').update(payload).eq('id',editId).select().single());
   } else {
-    // stock_actual arranca en 0: la carga inicial se asienta SOLO por fn_registrar_movimiento
-    // (si se precargaba acá y el RPC volvía a sumarla, el stock quedaba duplicado — bug corregido 2026-07-13).
-    const stockInicial = int(val('stock_actual'));
+    // Un producto nuevo nace con stock 0 y "sin contar": el stock entra
+    // después por Contar stock o al recibir una compra (sql/008 y sql/013).
     payload.stock_actual = 0;
     payload.created_by = currentProfile?.id;
     ({ error, data } = await db.from('productos').insert(payload).select().single());
-
-    if (!error && data && stockInicial > 0) {
-      const { error: errMov } = await db.rpc('fn_registrar_movimiento', {
-        p_producto_id: data.id, p_tipo: 'carga_inicial',
-        p_cantidad: stockInicial, p_motivo: 'Carga inicial al crear producto'
-      });
-      // El producto quedó creado; solo falló el asiento de stock. Se avisa
-      // en vez de dar por bueno un stock que no se registró.
-      if (errMov) {
-        console.error('[producto-form] carga inicial', errMov);
-        Utils.toast('El producto se creó, pero no se pudo cargar el stock inicial. Registralo desde Inventario.', 'warning', 7000);
-      }
-    }
   }
 
   bloquearBotones(false);
@@ -540,7 +524,7 @@ async function guardar(volverAlListado) {
     isEdit = true;
     document.getElementById('form-title').textContent = 'Editar Producto';
     document.getElementById('form-subtitle').textContent = data.nombre;
-    bloquearCamposStock();
+    mostrarStock(data);
     history.replaceState(null, '',
       `/admin/producto-form?id=${editId}` + (volverQS ? `&volver=${encodeURIComponent(volverQS)}` : ''));
   }

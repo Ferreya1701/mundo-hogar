@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#0A2E63">
   <link rel="icon" type="image/png" href="/images/marca/favicon.png">
   <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
-  <title>Registrar Movimiento — Mundo Hogar Admin</title>
+  <title>Ajuste manual — Mundo Hogar Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/admin/css/admin.css">
@@ -33,7 +33,15 @@
 
     <main class="page-content">
       <div class="page-header">
-        <div><h1>Registrar Movimiento de Stock</h1><p>Entrada, salida o ajuste de inventario</p></div>
+        <div><h1>Ajuste manual de stock</h1><p>Roturas, pérdidas, devoluciones y correcciones. Las ventas se registran en Caja y la mercadería que llega, en Compras.</p></div>
+      </div>
+
+      <div class="card mb-3" style="border-left:4px solid var(--info)">
+        <div class="card-body" style="font-size:13px;color:var(--muted)">
+          Usá esta pantalla solo para lo que no pasa por otro lado: una rotura, algo que faltó o apareció, una devolución.
+          Lo que se vende se registra en <a href="/admin/vender">Caja</a>, lo que llega del proveedor en <a href="/admin/compras">Compras</a>,
+          y para dejar un producto con la cantidad real es más fácil <a href="/admin/carga-stock">Contar stock</a>.
+        </div>
       </div>
 
       <div class="split-2">
@@ -48,21 +56,14 @@
                 <label>Tipo de movimiento <span class="req">*</span></label>
                 <select id="tipo" required>
                   <optgroup label="Entradas (+)">
-                    <option value="entrada_compra">📥 Entrada por compra</option>
                     <option value="devolucion_cliente">↩️ Devolución de cliente</option>
-                    <option value="ajuste_positivo">➕ Ajuste positivo</option>
-                    <option value="carga_inicial">🔄 Carga inicial / corrección</option>
+                    <option value="ajuste_positivo">➕ Apareció mercadería (ajuste +)</option>
                   </optgroup>
                   <optgroup label="Salidas (−)">
-                    <option value="salida_venta">📤 Salida por venta</option>
+                    <option value="producto_danado">💔 Producto dañado / roto</option>
+                    <option value="perdida">❌ Pérdida / faltante</option>
                     <option value="devolucion_proveedor">↪️ Devolución a proveedor</option>
-                    <option value="producto_danado">💔 Producto dañado</option>
-                    <option value="perdida">❌ Pérdida / merma</option>
                     <option value="ajuste_negativo">➖ Ajuste negativo</option>
-                  </optgroup>
-                  <optgroup label="Neutros">
-                    <option value="transferencia">🔃 Transferencia</option>
-                    <option value="correccion">✏️ Corrección de stock</option>
                   </optgroup>
                 </select>
               </div>
@@ -165,7 +166,7 @@ async function cargarProductos() {
   allProds = data || [];
   filtrarProductos('');
 
-  // Si venimos desde Alertas/Dashboard con ?producto=ID, preseleccionarlo
+  // Si venimos con ?producto=ID, preseleccionarlo
   const preId = new URLSearchParams(location.search).get('producto');
   if (preId && allProds.some(p => p.id === parseInt(preId))) {
     document.getElementById('producto_id').value = preId;
@@ -206,8 +207,8 @@ function updatePreview() {
   const qty  = parseInt(document.getElementById('cantidad').value) || 0;
   if (!qty) { document.getElementById('preview-result').style.display='none'; return; }
 
-  const entradas = ['carga_inicial','entrada_compra','ajuste_positivo','devolucion_cliente'];
-  const salidas  = ['salida_venta','ajuste_negativo','devolucion_proveedor','producto_danado','perdida'];
+  const entradas = ['ajuste_positivo','devolucion_cliente'];
+  const salidas  = ['ajuste_negativo','devolucion_proveedor','producto_danado','perdida'];
   let delta = entradas.includes(tipo) ? qty : salidas.includes(tipo) ? -qty : qty;
   const despues = selectedProd.stock_actual + delta;
 
@@ -304,7 +305,7 @@ async function initPage() {
   if (!['administrador','encargado_stock'].includes(profile.rol)) {
     window.location.href='/admin/dashboard'; return;
   }
-  await Layout.init('inventario','Registrar Movimiento');
+  await Layout.init('inventario','Ajuste manual');
   await Promise.all([cargarProductos(), cargarMovHoy()]);
 }
 initPage();

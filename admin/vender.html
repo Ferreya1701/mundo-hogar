@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#0A2E63">
   <link rel="icon" type="image/png" href="/images/marca/favicon.png">
   <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
-  <title>Vender en el local — Mundo Hogar Admin</title>
+  <title>Caja — Mundo Hogar Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/admin/css/admin.css">
@@ -34,7 +34,7 @@
     <main class="page-content">
       <div class="page-header">
         <div>
-          <h1>Vender en el local</h1>
+          <h1>Caja</h1>
           <p class="pos-hoy" id="pos-hoy">Cargando…</p>
         </div>
       </div>
@@ -96,6 +96,7 @@
 <script src="/admin/js/utils.js"></script>
 <script src="/admin/js/layout.js"></script>
 <script src="/admin/js/scanner.js"></script>
+<script src="/admin/js/impresion.js"></script>
 <script>
 /* ============================================================
    Caja del local. Lo que se vende acá descuenta stock SOLO de los
@@ -418,6 +419,7 @@ document.getElementById('ticket-body').addEventListener('click', async e => {
   if (b.id === 'btn-cobrar') { cobrar(); return; }
   if (b.dataset.ok === 'nueva') { ultimaVenta = null; renderTicket(); document.getElementById('q').focus(); return; }
   if (b.dataset.ok === 'wa') { enviarWA(); return; }
+  if (b.dataset.ok === 'imprimir') { MHImprimir.ticket(ultimaVenta); return; }
   if (b.dataset.ok === 'copiar') { Utils.copy(textoTicket(ultimaVenta), 'Ticket copiado'); return; }
   if (b.dataset.medio) { medio = b.dataset.medio; guardarTicket(); renderTicket(); return; }
   const linea = b.closest('.pos-linea'); if (!linea) return;
@@ -544,6 +546,7 @@ function renderVentaOk() {
       ${avisos.length ? `<div class="pos-aviso" style="display:block;text-align:left;padding:8px 10px">⚠ Stock en negativo: ${avisos.map(a => `<b>${esc(a.nombre)}</b> (${a.stock})`).join(', ')}. Revisalo en <a href="/admin/carga-stock">Contar stock</a>.</div>` : ''}
       <div class="pos-ok-acciones">
         <button type="button" class="btn btn-primary" data-ok="nueva">Nueva venta</button>
+        <button type="button" class="btn btn-outline" data-ok="imprimir">🖨️ Imprimir ticket</button>
         <button type="button" class="btn btn-outline" data-ok="wa">💬 Mandar ticket por WhatsApp</button>
         <button type="button" class="btn btn-ghost" data-ok="copiar">Copiar ticket</button>
       </div>
@@ -554,12 +557,13 @@ function renderVentaOk() {
 document.addEventListener('keydown', e => {
   if (e.key === 'F2' || (e.key === '/' && !/input|textarea|select/i.test(e.target.tagName))) { e.preventDefault(); document.getElementById('q').focus(); }
   if (e.key === 'F9' && ticket.length && !ultimaVenta) { e.preventDefault(); cobrar(); }
+  if (e.key === 'F8' && ultimaVenta) { e.preventDefault(); MHImprimir.ticket(ultimaVenta); }
 });
 
 async function initPage() {
   perfil = await Auth.init();
   if (!perfil) return;
-  await Layout.init('vender', 'Vender en el local');
+  await Layout.init('vender', 'Caja');
   cargarTicket();
   await cargarDatos();
 }

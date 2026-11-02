@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#0A2E63">
   <link rel="icon" type="image/png" href="/images/marca/favicon.png">
   <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
-  <title>CRM de clientes — Mundo Hogar Admin</title>
+  <title>Clientes — Mundo Hogar Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/admin/css/admin.css">
@@ -181,7 +181,7 @@
 
     <main class="page-content">
       <div class="page-header">
-        <div><h1>CRM de clientes</h1><p id="subtitle">Consultas, seguimientos y ventas de todos los canales</p></div>
+        <div><h1>Clientes</h1><p id="subtitle">Consultas, seguimientos y ventas de todos los canales</p></div>
         <div class="page-header-actions" id="acciones">
           <button class="btn btn-outline btn-sm" id="btn-export">⬇ Exportar</button>
           <button class="btn btn-outline btn-sm" id="btn-refrescar">↻ Actualizar</button>
@@ -1452,7 +1452,7 @@ esAncho.addEventListener('change', () => { if (state.vista === 'embudo') render(
   const profile = await Auth.init();
   if (!profile) return;
   miPerfil = profile;
-  await Layout.init('crm', 'CRM de clientes');
+  await Layout.init('crm', 'Clientes');
 
   // La base es la barrera real (RLS); esto evita mostrar una pantalla
   // que solo devolvería "sin permisos".

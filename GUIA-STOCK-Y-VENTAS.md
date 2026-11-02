@@ -55,7 +55,7 @@ Para administrador y encargado de stock.
 - "Volver a sin contar" (en "más ▾"): deshace el control si se contó mal; la web deja de
   venderlo hasta volver a contarlo.
 
-## 3. Vender en el local (caja) — `/admin/vender`
+## 3. Caja (vender en el local) — `/admin/vender`
 
 Para todo el staff (administrador, vendedor, encargado de stock).
 
@@ -65,26 +65,28 @@ Para todo el staff (administrador, vendedor, encargado de stock).
    de pago (efectivo, transferencia, débito, crédito, Mercado Pago, cuenta corriente, otro),
    cliente opcional (nombre y teléfono para mandarle el ticket por WhatsApp), nota interna.
 3. **Cobrar** → confirmación con el detalle → venta `VL-AAMMDD-XXXX`. Pantalla final con el
-   ticket, "Mandar por WhatsApp", "Copiar" y "Nueva venta". El ticket sin cobrar se guarda en
+   ticket, "Imprimir ticket" (rollo de 80 mm, atajo `F8`), "Mandar por WhatsApp", "Copiar" y
+   "Nueva venta". El ticket impreso es un comprobante interno, no una factura. El ticket sin cobrar se guarda en
    el navegador: si se recarga la página no se pierde.
 - Productos **sin precio**: al tocarlos pide el precio. **Ítem fuera del catálogo** (abajo):
   nombre y precio, no toca stock.
 - Productos con stock controlado se descuentan al cobrar (movimiento `salida_venta` con
   referencia `VL-…`). Si el sistema dice menos de lo que se vende, avisa y vende igual: el
   stock queda negativo para revisar (nunca frena la caja).
-- Atajos de teclado: `/` o `F2` buscador, `F9` cobrar. En celular el ticket es un panel
+- Atajos de teclado: `/` o `F2` buscador, `F9` cobrar, `F8` imprimir la última venta. En celular el ticket es un panel
   deslizable abajo con el total.
 
-## 4. Ventas del local — `/admin/ventas`
+## 4. Ventas — `/admin/ventas`
 
 Rangos rápidos (hoy, ayer, semana, mes, fechas), filtros por medio de pago, vendedor y
 estado, buscador por código/cliente/producto. KPIs: total cobrado, ticket promedio, unidades,
-desglose por medio de pago. Detalle con los renglones y si descontaron stock. **Anular**:
+desglose por medio de pago. Detalle con los renglones y si descontaron stock, con "Imprimir
+ticket". **Anular**:
 repone el stock de los renglones que lo descontaron (`devolucion_cliente`). Un vendedor
 anula solo sus ventas de las últimas 24 h; el administrador, cualquiera. Exportar CSV (un
 renglón por producto).
 
-## 5. Compras y llegadas — `/admin/compras`
+## 5. Compras — `/admin/compras`
 
 Para administrador y encargado de stock.
 
@@ -110,7 +112,8 @@ En la compra → **Recibir**: viene precargado lo que falta por renglón; se pue
 estaban contados y de los que quedaban unidades viejas en el local; se suman como conteo. Todo
 producto recibido queda con **stock controlado**, con su costo en pesos actualizado (si hay
 tipo de cambio) y su código del proveedor guardado para que la próxima lista lo encuentre solo.
-Cada entrada queda en el Historial con referencia `OC-…`.
+Cada entrada queda en Movimientos de stock con referencia `OC-…`. Desde el detalle de la compra,
+**🏷️ Etiquetas** imprime códigos de barras para lo que llegó (ver sección 8).
 
 Estados: pedido → en tránsito → llegó parte → recibido. Cancelar solo si no se recibió nada.
 
@@ -121,12 +124,31 @@ Estados: pedido → en tránsito → llegó parte → recibido. Cancelar solo si
 3. Ir contando por sector con el celular (Contar stock → "Sin contar"). Lo contado ya se vende
    online. Prender el carrito de la tienda (Configuración) cuando haya una base razonable.
 4. Cada compra a China: cargar la lista al hacer el pedido; al llegar, "Recibir".
-5. Revisar cada tanto Alertas → "Sin contar" y "En negativo".
+5. Revisar cada tanto Contar stock → "Sin contar", "En negativo" y "Sin stock".
 
 ## 7. Qué NO hace (todavía)
 
 - No factura ni habla con ARCA (igual que los cobros).
 - No hay caja por turno (apertura/cierre, arqueo): el resumen por día y medio de pago está en
-  Ventas del local.
+  Ventas.
+- No hay devolución parcial: se anula la venta completa y se vuelve a cobrar lo que queda.
 - Un solo depósito. El borrador multi-depósito sigue en `sql/borradores-no-ejecutados/`.
 - Los pedidos web que salen solo por WhatsApp (sin elegir pagar) no reservan stock.
+
+## 8. Etiquetas con código de barras
+
+Los productos que llegan de China suelen venir sin código propio. Para que la caja los escanee:
+
+- **Productos** → 🏷️ en la fila, o seleccionar varios → "🏷️ Etiquetas".
+- **Compras** → abrir la compra → "🏷️ Etiquetas": precarga la cantidad recibida de cada renglón.
+- Se imprime el **código de barras** del producto si lo tiene; si no, el **SKU** (`MH-00123`). La caja
+  reconoce los dos al escanear. Siempre en formato CODE128.
+- Formatos: rollo de 50 × 30 mm (impresora de etiquetas) u hoja A4 de 24 etiquetas de 70 × 37 mm
+  (3 × 8, papel autoadhesivo). Con o sin precio. Al imprimir, desactivar "ajustar a la página".
+- Si no carga la librería de códigos (sin internet), la etiqueta sale igual con el código en texto.
+
+## 9. Ajuste manual — `/admin/inventario`
+
+Solo para lo que no pasa por Caja, Compras ni Contar stock: devolución de cliente, mercadería que
+apareció, producto dañado, pérdida, devolución a proveedor, ajuste negativo. Para dejar un producto en
+la cantidad real es más fácil contarlo.
