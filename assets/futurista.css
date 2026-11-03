@@ -1,0 +1,226 @@
+/* ============================================================
+   Mundo Hogar — tema futurista para las páginas internas
+   (productos, categoría, ficha, carrito, pedido).
+
+   Se carga DESPUÉS de catalogo.css y de los <style> de cada página:
+   a igual especificidad gana lo último, así no hace falta !important
+   (salvo en los colores en línea que arma el JS, ver el final).
+
+   Misma paleta que el inicio (index.html). Allá el azul y el naranja
+   se levantan de luminancia porque los tonos de la web clara no tienen
+   contraste suficiente sobre un fondo oscuro.
+   ============================================================ */
+:root{
+  --bg:#1F3050;
+  --bg-2:#2A3D63;
+  --ink:#E8EEF9;
+  --muted:#AFBDD2;
+  /* catalogo.css usa --navy para títulos y --blue para texto y enlaces */
+  --navy:#F2F6FD;
+  --blue:#8CC0FF;
+  --blue-dark:#B6D6FF;
+  /* los fondos azules sí necesitan el tono saturado */
+  --blue-glow:#2E8BFF;
+  --blue-bg:#1763C6;
+  --orange:#FF8A2B;
+  --orange-dark:#E0660C;
+  --border:rgba(255,255,255,.14);
+  --glass:rgba(255,255,255,.055);
+  --shadow-sm:0 2px 8px rgba(2,8,22,.3);
+  --shadow:0 8px 28px rgba(2,8,22,.4);
+  --shadow-lg:0 18px 48px rgba(2,8,22,.5);
+  --t:.28s cubic-bezier(.2,.7,.3,1);
+}
+body{background:var(--bg);color:var(--ink);overflow-x:hidden}
+h1,h2,h3{letter-spacing:-.03em}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.22)}
+::placeholder{color:#8FA0BC}
+
+/* ── Fondo: luz de marca y trama fina (estáticos: son muchas tarjetas) ── */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(52vw 52vw at -4vw -6vw,rgba(23,99,198,.55),transparent 66%),
+    radial-gradient(44vw 44vw at 96vw 8vh,rgba(255,138,43,.2),transparent 66%),
+    radial-gradient(60vw 60vw at 48vw 96vh,rgba(46,139,255,.16),transparent 68%)}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;
+  background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:88px 88px;
+  -webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 30%,transparent 78%);
+  mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 30%,transparent 78%)}
+
+/* ── Barra superior ───────────────────────────────────────── */
+.fx-hdr{position:sticky;top:0;z-index:200;background:rgba(31,48,80,.78);backdrop-filter:blur(16px) saturate(1.4);border-bottom:1px solid var(--border)}
+.fx-hd{display:flex;align-items:center;gap:18px;height:68px}
+.brand{display:flex;align-items:center;gap:11px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;letter-spacing:-.02em;color:var(--navy)}
+.brand img{width:34px;height:34px;border-radius:9px;background:#fff;padding:2px}
+.brand small{display:block;font:500 11.5px/1.35 'JetBrains Mono',ui-monospace,monospace;color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
+.find{display:flex;align-items:center;gap:10px;height:44px;padding:0 15px;border:1px solid var(--border);border-radius:13px;background:var(--glass);
+  transition:border-color var(--t),background var(--t)}
+.find:focus-within{border-color:var(--blue-glow);background:rgba(46,139,255,.08)}
+.find svg{flex-shrink:0;color:var(--muted);transition:color var(--t)}
+.find:focus-within svg{color:var(--blue)}
+.find input{width:170px;border:0;background:none;outline:0;font:inherit;font-size:14px;color:var(--ink)}
+@media(max-width:1120px){.find input{width:112px}}
+nav.top{display:flex;gap:4px;margin-left:auto}
+nav.top a{padding:9px 14px;border-radius:10px;font-size:14px;font-weight:600;color:var(--muted);transition:color var(--t),background var(--t)}
+nav.top a:hover,nav.top a[aria-current]{color:var(--ink);background:var(--glass)}
+.cta-wa{display:inline-flex;align-items:center;gap:8px;padding:11px 17px;border-radius:11px;font-weight:700;font-size:14px;
+  background:linear-gradient(135deg,#25D366,#12A150);color:#061018;box-shadow:0 8px 26px rgba(37,211,102,.28)}
+.burger{display:none;width:44px;height:44px;border:1px solid var(--border);border-radius:11px;background:var(--glass);color:var(--ink);cursor:pointer}
+#mnav{display:none;border-top:1px solid var(--border);padding:10px 20px 16px}
+#mnav.open{display:block}
+#mnav a{display:block;padding:13px 10px;border-radius:10px;font-weight:600;color:var(--muted);transition:all var(--t)}
+#mnav a:hover,#mnav a:focus-visible,#mnav a[aria-current]{background:var(--glass);color:var(--ink)}
+#mnav .find{display:none}
+@media(max-width:900px){
+  nav.top,.fx-hd .find{display:none}
+  .burger{display:grid;place-items:center}
+  .cta-wa{margin-left:auto}
+  .cta-wa span{display:none}
+  .fx-hd{gap:10px}
+  #mnav .find{display:flex;margin:0 0 10px}
+  #mnav .find input{width:100%}
+}
+
+/* ── Menú vertical flotante (izquierda), solo escritorio ───── */
+/* Va fuera del <header>: backdrop-filter convierte al header en el bloque
+   contenedor de todo lo position:fixed que tenga adentro. */
+.sidenav{position:fixed;left:18px;top:50%;transform:translateY(-50%);z-index:250;display:none;perspective:900px}
+.sn-in{display:flex;flex-direction:column;gap:6px;padding:12px 10px;
+  background:rgba(42,61,99,.82);backdrop-filter:blur(14px) saturate(1.3);
+  border:1px solid var(--border);border-radius:20px;
+  box-shadow:0 18px 40px rgba(2,8,22,.45),inset 0 1px 0 rgba(255,255,255,.08);
+  transform:rotateY(7deg);transform-style:preserve-3d;
+  transition:transform .45s cubic-bezier(.2,.7,.3,1),box-shadow .45s}
+.sidenav:hover .sn-in{transform:rotateY(0deg);box-shadow:0 26px 54px rgba(2,8,22,.55),inset 0 1px 0 rgba(255,255,255,.1)}
+.sn-a{position:relative;display:flex;align-items:center;width:46px;height:46px;border-radius:13px;color:var(--muted);
+  transform-style:preserve-3d;transition:transform .28s cubic-bezier(.2,.7,.3,1),background .28s,color .28s,width .28s}
+.sn-a svg{flex-shrink:0;margin:0 13px}
+.sn-a span{white-space:nowrap;font-size:13.5px;font-weight:700;opacity:0;width:0;overflow:hidden;transition:opacity .22s,width .28s}
+.sn-a[aria-current]{background:rgba(46,139,255,.2);color:#fff}
+.sn-a:hover,.sn-a:focus-visible{width:176px;background:linear-gradient(135deg,var(--blue-glow),var(--blue-bg));color:#fff;
+  transform:translateZ(26px) translateX(5px);box-shadow:0 10px 22px rgba(23,99,198,.4)}
+.sn-a:hover span,.sn-a:focus-visible span{opacity:1;width:auto;padding-right:16px}
+.sn-a.is-wa:hover,.sn-a.is-wa:focus-visible{background:linear-gradient(135deg,#25D366,#128C7E);box-shadow:0 10px 22px rgba(37,211,102,.38)}
+.sn-sep{height:1px;background:var(--border);margin:4px 8px}
+.sn-find{display:flex;align-items:center;height:46px;width:46px;border-radius:13px;background:var(--glass);color:var(--muted);
+  transform-style:preserve-3d;transition:width .34s cubic-bezier(.2,.7,.3,1),transform .28s,background .28s}
+.sn-find svg{flex-shrink:0;margin:0 13px;transition:color .28s}
+.sn-find input{width:0;border:0;background:none;outline:0;font:inherit;font-size:13.5px;color:var(--ink);padding:0;transition:width .34s cubic-bezier(.2,.7,.3,1)}
+.sn-find:hover,.sn-find:focus-within{width:230px;background:rgba(46,139,255,.12);transform:translateZ(26px) translateX(5px);box-shadow:0 10px 22px rgba(2,8,22,.4)}
+.sn-find:hover input,.sn-find:focus-within input{width:168px;padding-right:14px}
+.sn-find:focus-within svg{color:var(--blue)}
+@media(min-width:1101px){
+  .sidenav{display:block}
+  .fx-hdr nav.top,.fx-hdr .fx-hd .find{display:none}
+  .cta-wa{margin-left:auto}
+  /* El contenido arranca a la derecha del menú */
+  .container{padding-left:max(20px,calc(104px - (100vw - 1240px) / 2))}
+}
+@media(prefers-reduced-motion:reduce){.sn-in,.sn-a,.sn-find{transition:none}.sn-in{transform:none}}
+
+/* ── Botones ──────────────────────────────────────────────── */
+.btn{border-radius:13px}
+.btn-primary{background:linear-gradient(135deg,var(--orange),var(--orange-dark));color:#120700;box-shadow:0 12px 34px rgba(255,138,43,.34)}
+.btn-primary:hover{background:linear-gradient(135deg,#FF9A45,var(--orange-dark));box-shadow:0 18px 44px rgba(255,138,43,.46)}
+.btn-blue{background:linear-gradient(135deg,var(--blue-glow),var(--blue-bg));color:#fff;box-shadow:0 10px 28px rgba(23,99,198,.45)}
+.btn-blue:hover{background:linear-gradient(135deg,#4A9BFF,#1F70DA);box-shadow:0 16px 38px rgba(23,99,198,.55)}
+.btn-outline{background:var(--glass);color:var(--ink);border-color:var(--border)}
+.btn-outline:hover{background:rgba(46,139,255,.12);color:#fff;border-color:rgba(46,139,255,.6);box-shadow:none}
+.btn-wa{background:linear-gradient(135deg,#25D366,#12A150);color:#061018}
+.btn-wa:hover{background:linear-gradient(135deg,#2BE070,#14B15A);box-shadow:0 14px 30px rgba(37,211,102,.4)}
+.link-more:hover{color:var(--orange)}
+
+/* ── Encabezados de página ────────────────────────────────── */
+.page-head,.cat-banner{background:linear-gradient(135deg,rgba(23,99,198,.3),rgba(255,255,255,.03));border-bottom:1px solid var(--border)}
+.page-head::after,.cat-banner::after{animation:none;background:radial-gradient(circle,rgba(255,138,43,.26),transparent 62%)}
+.eyebrow{font-family:'JetBrains Mono',ui-monospace,monospace;font-weight:500;letter-spacing:.16em}
+.eyebrow::before{width:26px;height:1px;background:linear-gradient(90deg,var(--orange),transparent)}
+
+/* ── Barra de filtros ─────────────────────────────────────── */
+@media(min-width:561px){.toolbar{top:68px}}
+.toolbar{background:rgba(31,48,80,.88);backdrop-filter:blur(14px);border-bottom-color:var(--border)}
+
+/* ── Tarjetas ─────────────────────────────────────────────── */
+.mh-card{background:var(--glass);border-color:var(--border)}
+.mh-card:hover{border-color:rgba(46,139,255,.55);box-shadow:var(--shadow-lg)}
+.mh-card-imgwrap{background:#fff}   /* las fotos de producto son sobre blanco */
+.mh-stock-note{color:var(--muted)}
+.cat-card{background:#16233C}
+.mh-arrow{background:rgba(42,61,99,.92);border-color:var(--border);color:#fff}
+.mh-arrow:hover{background:var(--blue-bg);border-color:var(--blue-bg)}
+.badge-new{background:var(--blue-bg)}
+.badge-dest{color:#120700}   /* el naranja ahora es claro: texto blanco no alcanza contraste */
+
+/* ── Filtros, campos y formularios ────────────────────────── */
+.chip{background:var(--glass);border-color:var(--border);color:var(--ink)}
+.chip:hover{border-color:rgba(46,139,255,.6);color:#fff}
+.chip.active{background:linear-gradient(135deg,var(--blue-glow),var(--blue-bg));border-color:transparent;color:#fff}
+.input,.select,.field input,.field select,.field textarea{background:var(--glass);border-color:var(--border);color:var(--ink)}
+.input:focus,.select:focus,.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue-glow);background:rgba(46,139,255,.08)}
+.select option{background:#1F3050;color:#E8EEF9}
+.field .req,.field-error{color:#FF9A93}
+.field.invalid input,.field.invalid select{border-color:#FF7A70}
+.radio-cards label:has(input:checked){background:rgba(46,139,255,.14);color:#fff}
+.form-ok{background:rgba(37,211,102,.12);border-color:rgba(37,211,102,.4);color:#8EF0B8}
+.form-fail{background:rgba(255,90,80,.12);border-color:rgba(255,90,80,.4);color:#FFB3AD}
+.qty{background:var(--glass);border-color:var(--border)}
+.qty button{background:transparent;color:var(--blue)}
+.qty button:hover{background:rgba(46,139,255,.15)}
+.qty input{background:transparent;color:var(--ink)}
+
+/* ── Estados ──────────────────────────────────────────────── */
+.skel{background:linear-gradient(100deg,rgba(255,255,255,.04) 30%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.04) 70%);background-size:200% 100%}
+.empty-state svg{color:var(--muted)}
+
+/* ── Ficha de producto ────────────────────────────────────── */
+.pd-main-img,.pd-thumbs img{background:#fff;border-color:var(--border)}
+.pd-thumbs img.active,.pd-thumbs img:hover{border-color:var(--blue-glow)}
+.pd-meta span{background:var(--glass)}
+.pd-stock.ok{color:#6EE7A0}
+.pd-stock.out{color:#FF9A93}
+.pd-info-box{background:var(--glass);border-color:var(--border)}
+
+/* ── Carrito ──────────────────────────────────────────────── */
+.cart-item,.cart-box{background:var(--glass);border-color:var(--border)}
+.cart-item img{background:#fff}
+.cart-remove:hover{color:#FF9A93}
+.cart-pending{background:rgba(255,138,43,.12);border-color:rgba(255,138,43,.4);color:#FFC27A}
+
+/* ── Seguimiento del pedido ───────────────────────────────── */
+.card{background:var(--glass);border-color:var(--border)}
+.pill-gris{background:rgba(255,255,255,.1);color:#D5DEEC}
+.pill-azul{background:rgba(46,139,255,.18);color:#9CC9FF}
+.pill-amb{background:rgba(255,138,43,.16);color:#FFC27A}
+.pill-verde{background:rgba(37,211,102,.16);color:#8EF0B8}
+.pill-rojo{background:rgba(255,90,80,.16);color:#FFB3AD}
+.pill-vio{background:rgba(150,110,255,.18);color:#CDB8FF}
+.items td{border-bottom-color:var(--border)}
+.pay-dato{background:var(--glass)}
+.copy{background:var(--glass)}
+.aviso-info{background:rgba(46,139,255,.14);color:#9CC9FF}
+.aviso-ok{background:rgba(37,211,102,.14);color:#8EF0B8}
+.aviso-warn{background:rgba(255,138,43,.14);color:#FFC27A}
+.aviso-err{background:rgba(255,90,80,.14);color:#FFB3AD}
+.steps li::before{background:var(--blue-bg)}
+.spin{border-color:rgba(255,255,255,.2);border-top-color:var(--blue-glow)}
+
+/* ── Pie de página ────────────────────────────────────────── */
+.mh-footer{background:transparent;border-top:1px solid var(--border);color:var(--muted)}
+.mh-footer a{color:var(--muted)}
+.mh-footer-bottom{color:var(--muted)}
+
+/* ── Aviso de modo prueba (carrito oculto al público) ── */
+.mh-preview::before{background:var(--blue-bg);font-family:'Inter',system-ui,sans-serif}
+
+/* ── Flotantes ────────────────────────────────────────────── */
+#mh-cart-fab{background:linear-gradient(135deg,var(--blue-glow),var(--blue-bg))}
+#mh-cart-fab:hover{background:linear-gradient(135deg,#4A9BFF,#1F70DA)}
+#mh-cart-fab .mh-cart-count{border-color:var(--bg);color:#120700}
+
+/* ── Colores en línea que arma el JS de cada página ───────────
+   Estaban pensados para fondos claros; acá se levantan para el oscuro. */
+[style*="#B91C1C"],[style*="#8A241C"]{color:#FF9A93!important}
+[style*="#B45309"],[style*="#8A4B12"]{color:#FFC27A!important}
+[style*="#14663A"]{color:#8EF0B8!important}
+[style*="#0D3A7A"]{color:#9CC9FF!important}

@@ -6,7 +6,7 @@
 <title>Productos | Catálogo completo — Mundo Hogar</title>
 <meta name="description" content="Catálogo completo de Mundo Hogar: electrodomésticos, muebles, herramientas, tecnología, cuidado personal, salud y seguridad. Buscá, filtrá y consultá precios por WhatsApp.">
 <meta name="robots" content="index, follow">
-<meta name="theme-color" content="#0A2E63">
+<meta name="theme-color" content="#1F3050">
 <link rel="canonical" href="https://mundohogarstf.com/productos">
 <link rel="icon" type="image/png" href="/images/marca/favicon.png">
 <meta property="og:type" content="website">
@@ -19,16 +19,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/catalogo.css">
 <style>
-#hdr{position:sticky;top:0;z-index:200;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
-.hdr-inner{max-width:var(--maxw);margin:0 auto;padding:0 20px;height:66px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-.logo{display:flex;align-items:center;gap:10px}
-.logo-badge{width:38px;height:38px;border-radius:50%;object-fit:contain;flex-shrink:0}
-.logo-txt b{display:block;font-family:'Plus Jakarta Sans';font-weight:800;color:var(--navy);font-size:16px;line-height:1}
-.logo-txt span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-.nav{display:flex;align-items:center;gap:4px}
-.nav a{padding:9px 13px;border-radius:8px;font-size:14px;font-weight:600;color:var(--ink);transition:all var(--t)}
-.nav a:hover,.nav a.active{color:var(--blue);background:#eef4fc}
-@media(max-width:760px){.nav{display:none}}
 .page-head{position:relative;overflow:hidden;background:linear-gradient(135deg,#0A2E63,#1763C6);color:#fff;padding:30px 0 26px}
 .page-head::after{content:"";position:absolute;right:-90px;top:-90px;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(244,122,31,.5),transparent 62%);animation:heroBlob 9s ease-in-out infinite}
 @keyframes heroBlob{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-4%,4%) scale(1.08)}}
@@ -42,22 +32,61 @@
 .results-info{font-size:14px;color:var(--muted);font-weight:600}
 @media(max-width:560px){.toolbar{top:0}}
 </style>
+<link rel="stylesheet" href="/assets/futurista.css">
 </head>
 <body>
 
-<header id="hdr">
-  <div class="hdr-inner">
-    <a href="/" class="logo" aria-label="Mundo Hogar - Inicio"><img class="logo-badge" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="38" height="38"><span class="logo-txt"><b>Mundo Hogar</b><span>Mayorista &amp; Minorista</span></span></a>
-    <nav class="nav" aria-label="Navegación principal">
-      <a href="/">Inicio</a>
+<header class="fx-hdr" id="hdr">
+  <div class="container fx-hd">
+    <a class="brand" href="/" aria-label="Mundo Hogar - Inicio">
+      <img src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="34" height="34">
+      <span>Mundo Hogar<small>Santa Fe Capital</small></span>
+    </a>
+    <label class="find">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+      <input type="search" id="q-top" placeholder="Buscar productos…" aria-label="Buscar productos" maxlength="80" autocomplete="off">
+    </label>
+    <nav class="top" aria-label="Navegación principal">
       <a href="/#categorias">Categorías</a>
-      <a href="/productos" class="active" aria-current="page">Productos</a>
+      <a href="/productos" aria-current="page">Productos</a>
       <a href="/#mayorista">Mayorista</a>
-      <a href="/#contacto">Contacto</a>
+      <a href="/#faq">Ayuda</a>
     </nav>
-    <a class="btn btn-wa btn-sm" href="https://wa.me/5493426481326?text=Hola!%20Quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">WhatsApp</a>
+    <a class="cta-wa" href="https://wa.me/5493426481326?text=Hola!%20Quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1-.3-.1-.5-.1-.6.2l-.9 1.1c-.2.2-.3.2-.6.1-1.6-.8-2.7-1.5-3.8-3.4-.3-.5.3-.5.8-1.5.1-.2 0-.3 0-.5 0-.1-.6-1.5-.9-2-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.8.8-1 1.8-1 2.9 0 1.5 1.1 2.9 1.2 3.1.2.2 2.1 3.3 5.2 4.6 1.9.8 2.6.9 3.5.7.5-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3z"/></svg>
+      <span>WhatsApp</span>
+    </a>
+    <button class="burger" id="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mnav">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
   </div>
+  <nav id="mnav" aria-label="Menú">
+    <label class="find"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg><input type="search" id="q-mov" placeholder="Buscar productos…" aria-label="Buscar productos" maxlength="80" autocomplete="off"></label>
+    <a href="/">Inicio</a>
+    <a href="/#categorias">Categorías</a>
+    <a href="/productos" aria-current="page">Productos</a>
+    <a href="/#mayorista">Mayorista</a>
+    <a href="/#faq">Ayuda</a>
+  </nav>
 </header>
+
+<!-- Menú vertical flotante: solo >1100px. Debajo manda el menú de celular. -->
+<nav class="sidenav" aria-label="Navegación lateral">
+  <div class="sn-in">
+    <label class="sn-find">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+      <input type="search" id="q-side" placeholder="Buscar productos…" aria-label="Buscar productos" maxlength="80" autocomplete="off">
+    </label>
+    <div class="sn-sep"></div>
+    <a class="sn-a" href="/"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.8V21h14V9.8"/></svg><span>Inicio</span></a>
+    <a class="sn-a" href="/#categorias"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg><span>Categorías</span></a>
+    <a class="sn-a" href="/productos" aria-current="page"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.9 8.4 12 13 3.1 8.4 12 3.8z"/><path d="M3.1 8.4v7.2L12 20.2l8.9-4.6V8.4"/><line x1="12" y1="13" x2="12" y2="20.2"/></svg><span>Productos</span></a>
+    <a class="sn-a" href="/#mayorista"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="3.5" width="14" height="12" rx="1.4"/><path d="M15.5 8h4L22.5 11v4.5h-7"/><circle cx="5.5" cy="18.5" r="2.3"/><circle cx="18" cy="18.5" r="2.3"/></svg><span>Mayorista</span></a>
+    <a class="sn-a" href="/#faq"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.6 2.2c-.8.4-1.2 1-1.2 1.9"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg><span>Ayuda</span></a>
+    <div class="sn-sep"></div>
+    <a class="sn-a is-wa" href="https://wa.me/5493426481326?text=Hola!%20Quiero%20hacer%20una%20consulta." target="_blank" rel="noopener"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1-.3-.1-.5-.1-.6.2l-.9 1.1c-.2.2-.3.2-.6.1-1.6-.8-2.7-1.5-3.8-3.4-.3-.5.3-.5.8-1.5.1-.2 0-.3 0-.5 0-.1-.6-1.5-.9-2-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.8.8-1 1.8-1 2.9 0 1.5 1.1 2.9 1.2 3.1.2.2 2.1 3.3 5.2 4.6 1.9.8 2.6.9 3.5.7.5-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3z"/></svg><span>WhatsApp</span></a>
+  </div>
+</nav>
 
 <div class="page-head">
   <div class="container">
@@ -244,5 +273,6 @@ function renderMore() {
   applyFilters();
 })();
 </script>
+<script src="/assets/futurista.js" defer></script>
 </body>
 </html>
