@@ -184,7 +184,7 @@ function renderMore() {
     chips.querySelectorAll('.chip[data-cat]').forEach(x=>x.classList.remove('active'));
     b.classList.add('active'); state.cat = b.dataset.cat; syncURL(); applyFilters();
   });
-  $('#q').addEventListener('input', e => { state.q = e.target.value; applyFilters(); });
+  $('#q').addEventListener('input', e => { state.q = e.target.value; syncURL(); applyFilters(); });
   $('#sort').addEventListener('change', e => { state.sort = e.target.value; applyFilters(); });
   $('#clear').addEventListener('click', () => {
     state = { q:'', cat:'all', sort:'destacados', solo:'' };
@@ -194,7 +194,12 @@ function renderMore() {
   });
   moreBtn.addEventListener('click', renderMore);
 
-  function syncURL(){ const u=new URL(location); if(state.cat==='all')u.searchParams.delete('cat');else u.searchParams.set('cat',state.cat); history.replaceState(null,'',u); }
+  function syncURL(){
+    const u=new URL(location);
+    if(state.cat==='all')u.searchParams.delete('cat');else u.searchParams.set('cat',state.cat);
+    if(!state.q.trim())u.searchParams.delete('q');else u.searchParams.set('q',state.q.trim());
+    history.replaceState(null,'',u);
+  }
 
   // estado de carga
   grid.innerHTML = MH.skeletons(8);
@@ -225,12 +230,17 @@ function renderMore() {
     applyFilters();
   });
 
-  // categoría inicial desde ?cat=
-  const initCat = new URL(location).searchParams.get('cat');
+  // estado inicial desde la URL: ?cat= y ?q=
+  const params = new URL(location).searchParams;
+  const initCat = params.get('cat');
   if (initCat && MH.CAT_BY_SLUG[initCat]) {
     state.cat = initCat;
     chips.querySelectorAll('.chip').forEach(x=>x.classList.toggle('active', x.dataset.cat===initCat));
   }
+  // El buscador del menú manda acá con ?q=. Sin esto llegaba la URL con el
+  // término pero el listado salía sin filtrar y la caja vacía.
+  const initQ = (params.get('q') || '').slice(0, 80);
+  if (initQ) { state.q = initQ; $('#q').value = initQ; }
   applyFilters();
 })();
 </script>
