@@ -2,7 +2,7 @@
 const Layout = {
   NAV: [
     { id:'dashboard',  label:'Inicio',              icon:'📊', href:'/admin/dashboard',      section:'Principal' },
-    { id:'vender',     label:'Caja',                icon:'🛒', href:'/admin/vender',         section:'Ventas' },
+    { id:'vender',     label:'Crear venta',         icon:'🛒', href:'/admin/vender',         section:'Ventas' },
     { id:'ventas',     label:'Ventas',              icon:'🧮', href:'/admin/ventas',         section:'Ventas' },
     { id:'pedidos',    label:'Pedidos web',         icon:'🧾', href:'/admin/pedidos',        section:'Ventas' },
     { id:'crm',        label:'Clientes',            icon:'🤝', href:'/admin/crm',            section:'Ventas', roles:['administrador','vendedor'] },

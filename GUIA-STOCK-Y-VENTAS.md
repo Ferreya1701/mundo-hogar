@@ -55,7 +55,7 @@ Para administrador y encargado de stock.
 - "Volver a sin contar" (en "más ▾"): deshace el control si se contó mal; la web deja de
   venderlo hasta volver a contarlo.
 
-## 3. Caja (vender en el local) — `/admin/vender`
+## 3. Crear venta (vender en el local) — `/admin/vender`
 
 Para todo el staff (administrador, vendedor, encargado de stock).
 
@@ -149,6 +149,6 @@ Los productos que llegan de China suelen venir sin código propio. Para que la c
 
 ## 9. Ajuste manual — `/admin/inventario`
 
-Solo para lo que no pasa por Caja, Compras ni Contar stock: devolución de cliente, mercadería que
+Solo para lo que no pasa por Crear venta, Compras ni Contar stock: devolución de cliente, mercadería que
 apareció, producto dañado, pérdida, devolución a proveedor, ajuste negativo. Para dejar un producto en
 la cantidad real es más fácil contarlo.

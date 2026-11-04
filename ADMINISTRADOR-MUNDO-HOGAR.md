@@ -130,7 +130,7 @@ Una vez logueado como administrador:
 | Archivar productos               | ✅ | ✅ | ❌ |
 | Ajuste manual de stock           | ✅ | ✅ | ❌ |
 | Contar stock / cargar compras    | ✅ | ✅ | ❌ |
-| Caja (vender en el local)        | ✅ | ✅ | ✅ |
+| Crear venta (vender en el local) | ✅ | ✅ | ✅ |
 | Anular ventas                    | ✅ todas | solo propias < 24 h | solo propias < 24 h |
 | Ver movimientos de stock         | ✅ | ✅ | ✅ |
 | Ver qué reponer (Contar stock)   | ✅ | ✅ | ❌ |
@@ -168,7 +168,7 @@ Una vez logueado como administrador:
 - Protegida: solo Administrador
 
 ### Ajuste manual (`/admin/inventario`)
-- Solo para lo que no pasa por Caja, Compras ni Contar stock: devolución de cliente, mercadería
+- Solo para lo que no pasa por Crear venta, Compras ni Contar stock: devolución de cliente, mercadería
   que apareció, producto dañado, pérdida, devolución a proveedor, ajuste negativo
 - Búsqueda de producto en tiempo real y preview del stock antes/después
 - Vista de movimientos del día
@@ -184,7 +184,7 @@ Una vez logueado como administrador:
 - Editar nombre, rol y estado de usuarios
 - Instrucciones para crear nuevos usuarios vía Supabase
 
-### Caja (`/admin/vender`)
+### Crear venta (`/admin/vender`)
 - Buscar por nombre, SKU o código de barras (lector USB o cámara del celular), ticket con
   cantidades, precio editable, descuento, medio de pago, cliente opcional
 - Al cobrar: imprimir ticket (rollo de 80 mm, `F8`), mandarlo por WhatsApp o copiarlo
@@ -260,7 +260,7 @@ Una vez logueado como administrador:
 | Ajuste manual    | `/admin/inventario`                    |
 | Movimientos      | `/admin/movimientos`                   |
 | Usuarios         | `/admin/usuarios.html`                 |
-| Caja             | `/admin/vender`                        |
+| Crear venta      | `/admin/vender`                        |
 | Ventas           | `/admin/ventas`                        |
 | Contar stock     | `/admin/carga-stock`                   |
 | Compras          | `/admin/compras`                       |
