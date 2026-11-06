@@ -85,6 +85,9 @@ Cloudflare despliega automáticamente cada push a `main` (Workers, proyecto `mun
 
 ## 4. Crear primer administrador
 
+> Esto se hace **una sola vez**, para el primer administrador. Los demás accesos se crean desde el
+> panel (**Usuarios → + Nuevo acceso**), sin entrar a Supabase: ver `GUIA-USUARIOS.md`.
+
 ### Paso 1 — Crear usuario en Supabase
 
 1. Ir a **Authentication → Users → Add user**
@@ -181,8 +184,11 @@ Una vez logueado como administrador:
 
 ### Usuarios (`/admin/usuarios.html`)
 - Solo visible para Administradores
-- Editar nombre, rol y estado de usuarios
-- Instrucciones para crear nuevos usuarios vía Supabase
+- **+ Nuevo acceso**: nombre, email y rol. El panel muestra una contraseña temporal una sola vez;
+  la persona la cambia por una propia al entrar (`/admin/clave`).
+- **🔑 Clave nueva** por fila (contraseña temporal nueva) y **✏️ Editar** (nombre, rol, cuenta activa).
+- Rol y estado solo los cambia un administrador, y nunca los suyos propios (lo hace cumplir la base).
+- Requiere `sql/014-accesos.sql` y la Edge Function `usuarios`. Guía: `GUIA-USUARIOS.md`
 
 ### Crear venta (`/admin/vender`)
 - Buscar por nombre, SKU o código de barras (lector USB o cámara del celular), ticket con
