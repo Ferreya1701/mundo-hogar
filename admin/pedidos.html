@@ -588,7 +588,9 @@ async function cargar() {
 
 async function cargarCuentasYSettings() {
   const [{ data: c }, { data: st }] = await Promise.all([
-    db.from('cuentas_cobro').select('*').order('orden').order('id'),
+    // Vista con lo que se le pasa al cliente (sql/015); si la base no la tiene, la tabla
+    db.from('cuentas_cobro_staff').select('*').order('orden').order('id')
+      .then(r => r.error ? db.from('cuentas_cobro').select('*').order('orden').order('id') : r),
     db.from('site_settings').select('cobros_activos, cobros_plazo_horas, cobros_auto_confirmar').eq('id', 1).maybeSingle()
   ]);
   cuentas = c || [];

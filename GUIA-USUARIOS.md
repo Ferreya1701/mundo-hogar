@@ -42,3 +42,18 @@ Si la web sube antes que la función, el panel avisa "Falta instalar la función
   contraseña es temporal), `admin/js/layout.js` (botón 🔑).
 - Pruebas: `node scripts/test-accesos-sql.mjs` (36, Postgres real con PGlite) y
   `node scripts/test-usuarios-fn.mjs` (17).
+
+## Qué ve cada rol (sql/015, 2026-11-06)
+| | Administrador | Encargado de stock | Vendedor |
+|---|---|---|---|
+| Ventas del local | Todas | Todas | **Solo las suyas** |
+| Pedidos web, comprobantes | Sí (confirma pagos) | Sí | Sí |
+| Clientes (CRM) | Sí | No | Sí |
+| Productos y stock | Edita | Edita, cuenta, compras | Ve |
+| Costo y proveedor de productos, compras | Sí | Sí | **No** |
+| Cuentas bancarias | Completas (CUIT, límites) | Nombre, titular y alias | Nombre, titular y alias |
+| Historial de actividad | Sí | No | No |
+| Usuarios, configuración, categorías | Sí | No | No |
+
+Una cuenta **desactivada** no lee nada, aunque entre por fuera del panel. Lo hace cumplir la base de
+datos (no solo la pantalla). Pruebas: `node scripts/test-permisos-sql.mjs`.

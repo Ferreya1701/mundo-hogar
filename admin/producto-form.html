@@ -364,6 +364,24 @@ function mostrarStock(p) {
     : p.stock_controlado ? 'unidades · stock controlado' : 'unidades · todavía sin contar';
 }
 
+/* ── Costo y proveedor: viven aparte (sql/015, producto_costos) ──
+   Solo los leen y escriben administrador y encargado de stock; la tienda y
+   los vendedores no los ven. Si la base todavía no tiene el 015, se usan las
+   columnas viejas de productos para no perder el dato. */
+const sinTablaCostos = e => !!e && (e.code === '42P01' || e.code === 'PGRST205' || /producto_costos/.test(e.message || ''));
+async function leerCostos(id, prod) {
+  const { data, error } = await db.from('producto_costos').select('precio_costo,proveedor').eq('producto_id', id).maybeSingle();
+  if (sinTablaCostos(error)) return { precio_costo: prod.precio_costo, proveedor: prod.proveedor };
+  return data || { precio_costo: null, proveedor: null };
+}
+async function guardarCostos(id, precio_costo, proveedor) {
+  if (!id) return null;
+  const { error } = await db.from('producto_costos')
+    .upsert({ producto_id: Number(id), precio_costo, proveedor }, { onConflict: 'producto_id' });
+  if (!sinTablaCostos(error)) return error;
+  return (await db.from('productos').update({ precio_costo, proveedor }).eq('id', id)).error;
+}
+
 async function cargarProducto() {
   if (!isEdit) return;
   const { data, error } = await db.from('productos').select('*').eq('id',editId).single();
@@ -379,11 +397,13 @@ async function cargarProducto() {
   setVal('nombre', data.nombre); setVal('categoria_id', data.categoria_id);
   setVal('marca', data.marca); setVal('sku', data.sku); setVal('codigo_barras', data.codigo_barras);
   setVal('descripcion_corta', data.descripcion_corta); setVal('descripcion', data.descripcion);
-  setVal('precio_costo', data.precio_costo); setVal('precio_minorista', data.precio_minorista);
+  setVal('precio_minorista', data.precio_minorista);
   setVal('precio_mayorista', data.precio_mayorista); setVal('precio_oferta', data.precio_oferta);
   setCheck('en_oferta', data.en_oferta);
   mostrarStock(data); setVal('stock_minimo', data.stock_minimo);
-  setVal('unidad', data.unidad); setVal('ubicacion', data.ubicacion); setVal('proveedor', data.proveedor);
+  setVal('unidad', data.unidad); setVal('ubicacion', data.ubicacion);
+  const costos = await leerCostos(editId, data);
+  setVal('precio_costo', costos.precio_costo); setVal('proveedor', costos.proveedor);
   setCheck('seguimiento_inventario', data.seguimiento_inventario);
   setCheck('permite_venta_sin_stock', data.permite_venta_sin_stock);
   setVal('estado', data.estado);
@@ -478,7 +498,6 @@ async function guardar(volverAlListado) {
     codigo_barras: val('codigo_barras')||null,
     descripcion_corta: val('descripcion_corta')||null,
     descripcion: val('descripcion')||null,
-    precio_costo: num(val('precio_costo')),
     precio_minorista: num(val('precio_minorista')),
     precio_mayorista: num(val('precio_mayorista')),
     precio_oferta: num(val('precio_oferta')),
@@ -486,7 +505,6 @@ async function guardar(volverAlListado) {
     stock_minimo: int(val('stock_minimo')),
     unidad: val('unidad')||'unidad',
     ubicacion: val('ubicacion')||null,
-    proveedor: val('proveedor')||null,
     seguimiento_inventario: document.getElementById('seguimiento_inventario').checked,
     permite_venta_sin_stock: document.getElementById('permite_venta_sin_stock').checked,
     estado: val('estado')||'activo',
@@ -516,6 +534,9 @@ async function guardar(volverAlListado) {
   bloquearBotones(false);
 
   if (error) { Utils.toast(msgError(error), 'error', 6000); return false; }
+
+  const eCostos = await guardarCostos(data?.id || editId, num(val('precio_costo')), val('proveedor') || null);
+  if (eCostos) Utils.toast('El producto se guardó, pero no el costo ni el proveedor: ' + msgError(eCostos), 'warning', 7000);
 
   // Tras un alta se pasa a modo edición: si vuelven a tocar "Guardar"
   // se actualiza el mismo producto en vez de crear un duplicado.

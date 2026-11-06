@@ -22,6 +22,23 @@
   la `.webp` y cae al `.jpg` si falta (`MH.webpUrl` / `MH.setImg`). Al sumar fotos nuevas, generar ambas.
 - Cloudflare redirige `x.html` → `x` y `/productos` → `/productos/` (conserva los parámetros).
 
+## Qué ve cada rol (2026-11-06) — WEB SUBIDA; FALTA CORRER sql/015
+- Auditoría: varias tablas solo pedían "estar logueado" (`auth.uid() IS NOT NULL`). Además el costo y
+  el proveedor de los productos activos eran legibles por cualquiera con la clave pública (estaban
+  vacíos: no se filtró nada). `sql/015-permisos-por-rol.sql`:
+  - **E** staff = cuenta activa con rol (`fn_get_user_role() IS NOT NULL`): desactivado no lee nada.
+  - **A** ventas/venta_items: el vendedor ve solo las suyas; admin y encargado todas.
+  - **B** compras*: solo admin + encargado (`fn_es_staff_stock()`). Costo y proveedor viven en
+    `producto_costos` (RLS admin + encargado); `productos.precio_costo/proveedor` quedan siempre NULL
+    (trigger `tr_productos_mudar_costos` muda lo que se escriba ahí: compras del 013, importación).
+  - **C** `cuentas_cobro` completa solo admin; el resto usa la vista `cuentas_cobro_staff`
+    (nombre, titular, alias o CBU si no hay alias). Pedidos web y Crear venta leen la vista.
+  - **D** historial_actividad: lee solo admin; registra cualquier staff activo.
+- Pantallas: producto-form lee/escribe costos en `producto_costos` (si no existe la tabla, usa las
+  columnas viejas); Ventas/Inicio/Crear venta dicen "Mis ventas" al vendedor.
+- Pruebas: `node scripts/test-permisos-sql.mjs` (57). `test-cobros-sql.mjs` tiene 2 fallas previas
+  que no son de esto: un comprobante de prueba con fecha fija 23/10/2026 hoy queda "anterior al pedido".
+
 ## Accesos al panel desde Usuarios (2026-11-06) — EN PRODUCCIÓN
 - **Agujero cerrado:** el registro público de Supabase estaba abierto (`disable_signup: false`) y el
   trigger del 001 tomaba el rol de los datos de quien se registra → cualquiera podía crearse

@@ -235,7 +235,13 @@ document.getElementById('btn-refrescar').addEventListener('click', cargar);
 async function initPage() {
   perfil = await Auth.init();
   if (!perfil) return;
-  await Layout.init('ventas', 'Ventas');
+  await Layout.init('ventas', perfil.rol === 'vendedor' ? 'Mis ventas' : 'Ventas');
+  // El vendedor solo ve sus ventas (sql/015): sin filtro por vendedor
+  if (perfil.rol === 'vendedor') {
+    document.querySelector('.page-header h1').textContent = 'Mis ventas';
+    $id('subtitle').textContent = 'Lo que cobraste vos en el mostrador. Los pedidos de la tienda están en Pedidos web.';
+    $id('f-vend').hidden = true;
+  }
   setRango('hoy');
 }
 initPage();
