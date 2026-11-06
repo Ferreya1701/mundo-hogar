@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/admin/manifest.json">
+  <meta name="theme-color" content="#0A2E63">
+  <link rel="icon" type="image/png" href="/images/marca/favicon.png">
+  <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
+  <title>Mi contraseña — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+  <style>
+    .clave-aviso { background:var(--info-bg, #EAF2FF); color:var(--night); border-radius:var(--r); padding:10px 14px; font-size:13px; line-height:1.5; margin-bottom:16px; }
+    .clave-ok    { background:var(--success-bg, #E8F7EE); color:var(--success, #1E7B45); border-radius:var(--r); padding:10px 14px; font-size:13px; margin-bottom:16px; }
+    .clave-pie   { text-align:center; margin-top:16px; font-size:13px; }
+    .clave-pie a, .clave-pie button { color:var(--muted); background:none; border:0; cursor:pointer; font:inherit; text-decoration:underline; }
+    .clave-ayuda { font-size:12px; color:var(--muted); margin-top:4px; }
+  </style>
+</head>
+<body>
+
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <img class="login-logo-icon" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="52" height="52">
+      <h1 id="titulo">Cambiar mi contraseña</h1>
+      <p id="quien">&nbsp;</p>
+    </div>
+
+    <div class="clave-aviso" id="aviso-temporal" hidden>
+      Entraste con una <strong>contraseña temporal</strong>. Elegí una tuya para seguir: solo la vas a saber vos.
+    </div>
+    <div class="login-err" id="error"></div>
+    <div class="clave-ok" id="listo" hidden>✓ Contraseña guardada. Te llevamos al panel…</div>
+
+    <form class="login-form" id="form" novalidate>
+      <!-- Para que el gestor de contraseñas la guarde con el email correcto -->
+      <input type="email" id="usuario" autocomplete="username" hidden>
+      <div class="form-group">
+        <label for="nueva">Contraseña nueva</label>
+        <input type="password" id="nueva" required minlength="8" autocomplete="new-password" placeholder="Mínimo 8 caracteres">
+        <div class="clave-ayuda">Mejor una frase o mezcla de letras y números. No uses la de tu mail.</div>
+      </div>
+      <div class="form-group">
+        <label for="repetir">Repetila</label>
+        <input type="password" id="repetir" required minlength="8" autocomplete="new-password">
+      </div>
+      <label class="toggle-wrap" style="font-size:13px">
+        <input type="checkbox" id="mostrar"> <span>Mostrar lo que escribo</span>
+      </label>
+      <button type="submit" class="btn btn-primary btn-lg" id="guardar" style="width:100%;justify-content:center;">
+        Guardar contraseña
+      </button>
+    </form>
+
+    <div class="clave-pie">
+      <a href="/admin/dashboard" id="volver">Volver al panel</a>
+      <button type="button" id="salir" hidden>Salir</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+
+function mensajeError(e) {
+  const m = String(e?.message || ''), c = String(e?.code || '');
+  if (c === 'same_password' || /different from the old/i.test(m)) return 'Tiene que ser distinta a la contraseña anterior.';
+  if (c === 'weak_password' || /weak|at least/i.test(m))          return 'Es muy débil: usá al menos 8 caracteres y mezclá letras y números.';
+  if (c === 'reauthentication_needed' || /reauthenticat/i.test(m)) return 'Por seguridad, salí, volvé a entrar y cambiala apenas ingreses.';
+  if (/session|jwt|expired/i.test(m))                              return 'Tu sesión venció. Volvé a entrar.';
+  return 'No se pudo guardar. Probá de nuevo en un rato.';
+}
+
+function mostrarError(msg) { $('error').textContent = msg; $('error').style.display = msg ? 'block' : 'none'; }
+
+(async function () {
+  const profile = await Auth.init();          // sin sesión o inactivo: Auth lo saca
+  if (!profile) return;
+  const temporal = profile.debe_cambiar_clave === true;
+
+  $('quien').textContent = profile.email || '';
+  $('usuario').value = profile.email || '';
+  if (temporal) {
+    $('titulo').textContent = 'Elegí tu contraseña';
+    $('aviso-temporal').hidden = false;
+    $('volver').hidden = true;                // no hay panel hasta que la elija
+    $('salir').hidden = false;
+  }
+  $('salir').addEventListener('click', () => Auth.logout());
+  $('mostrar').addEventListener('change', e => {
+    $('nueva').type = $('repetir').type = e.target.checked ? 'text' : 'password';
+  });
+  $('nueva').focus();
+
+  $('form').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const nueva = $('nueva').value, repetir = $('repetir').value;
+    if (nueva.length < 8)   return mostrarError('Tiene que tener al menos 8 caracteres.');
+    if (nueva !== repetir)  return mostrarError('Las dos no coinciden. Escribilas de nuevo.');
+    mostrarError('');
+
+    const btn = $('guardar');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Guardando…';
+    const { error } = await db.auth.updateUser({ password: nueva });
+    if (error) {
+      mostrarError(mensajeError(error));
+      btn.disabled = false; btn.textContent = 'Guardar contraseña';
+      return;
+    }
+    // La contraseña ya cambió: si bajar la marca falla, a lo sumo la pide otra vez.
+    if (temporal) await db.from('profiles').update({ debe_cambiar_clave: false }).eq('id', profile.id);
+    try { sessionStorage.removeItem('mhPerfil'); } catch (e) {}
+    $('form').hidden = true;
+    $('listo').hidden = false;
+    setTimeout(() => { window.location.href = '/admin/dashboard'; }, 1200);
+  });
+})();
+</script>
+<script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/admin/sw.js').catch(()=>{}); }</script>
+</body>
+</html>

@@ -32,7 +32,7 @@
       <div class="page-header">
         <div><h1>Gestión de Usuarios</h1><p>Administrá los accesos al panel</p></div>
         <div class="page-header-actions">
-          <button class="btn btn-primary" id="btn-nuevo">+ Invitar usuario</button>
+          <button class="btn btn-primary" id="btn-nuevo">+ Nuevo acceso</button>
         </div>
       </div>
 
@@ -40,15 +40,15 @@
       <div class="grid-3" style="margin-bottom:20px">
         <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px">
           <div style="font-weight:700;margin-bottom:4px">👑 Administrador</div>
-          <div style="font-size:12px;color:var(--muted)">Acceso completo: productos, stock, categorías, usuarios, configuración</div>
+          <div style="font-size:12px;color:var(--muted)">Todo: ventas, stock, productos, cuentas bancarias, usuarios y configuración</div>
         </div>
         <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px">
           <div style="font-weight:700;margin-bottom:4px">📦 Encargado de Stock</div>
-          <div style="font-size:12px;color:var(--muted)">Puede gestionar productos y registrar movimientos de inventario</div>
+          <div style="font-size:12px;color:var(--muted)">Productos, conteo, compras y ajustes de stock. También puede vender</div>
         </div>
         <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px">
           <div style="font-weight:700;margin-bottom:4px">👁️ Vendedor</div>
-          <div style="font-size:12px;color:var(--muted)">Solo puede ver productos, stock y alertas (lectura)</div>
+          <div style="font-size:12px;color:var(--muted)">Vende en el local y atiende pedidos web y clientes (CRM). Ve productos y stock</div>
         </div>
       </div>
 
@@ -73,16 +73,13 @@
       <!-- Instrucciones para agregar usuario -->
       <div class="card mt-3" style="border-left:4px solid var(--info)">
         <div class="card-body">
-          <div style="font-weight:600;margin-bottom:8px">ℹ️ Cómo agregar un nuevo usuario</div>
+          <div style="font-weight:600;margin-bottom:8px">ℹ️ Cómo dar un acceso</div>
           <ol style="font-size:13px;color:var(--muted);line-height:2;padding-left:18px">
-            <li>Ir a <strong>Supabase Dashboard → Authentication → Users → Add user</strong></li>
-            <li>Crear el usuario con email y contraseña temporal</li>
-            <li>Volver aquí y cambiar su rol desde "Editar"</li>
-            <li>El usuario inicia sesión y cambia su contraseña</li>
+            <li><strong>+ Nuevo acceso</strong>: nombre, email y rol</li>
+            <li>El panel te muestra una <strong>contraseña temporal</strong> una sola vez: pasásela en persona o por un gestor de contraseñas (no por WhatsApp)</li>
+            <li>La persona entra en <strong>mundohogarstf.com/admin</strong> y el panel le pide elegir una propia</li>
+            <li>¿Se la olvidó? <strong>🔑 Clave nueva</strong> en su fila. ¿Ya no trabaja? <strong>Editar</strong> → desactivar</li>
           </ol>
-          <a href="https://supabase.com/dashboard" target="_blank" class="btn btn-outline btn-sm" style="margin-top:12px">
-            Abrir Supabase Dashboard ↗
-          </a>
         </div>
       </div>
     </main>
@@ -127,6 +124,70 @@
   </div>
 </div>
 
+<!-- Modal nuevo acceso -->
+<div id="modal-nuevo" class="modal-backdrop" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Nuevo acceso</h3>
+      <button class="modal-close" data-cerrar="modal-nuevo" aria-label="Cerrar">✕</button>
+    </div>
+    <form id="form-nuevo" novalidate>
+      <div class="modal-body">
+        <div class="form-grid" style="gap:14px">
+          <div class="form-group">
+            <label for="nuevo-nombre">Nombre</label>
+            <input type="text" id="nuevo-nombre" maxlength="80" placeholder="Ej: José Piva" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="nuevo-email">Email</label>
+            <input type="email" id="nuevo-email" placeholder="nombre@gmail.com" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="nuevo-rol">Rol</label>
+            <select id="nuevo-rol">
+              <option value="vendedor">Vendedor</option>
+              <option value="encargado_stock">Encargado de Stock</option>
+              <option value="administrador">Administrador</option>
+            </select>
+          </div>
+        </div>
+        <div class="login-err" id="nuevo-error" style="margin-top:14px"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-cerrar="modal-nuevo">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="btn-crear">Crear acceso</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal contraseña temporal (se muestra una sola vez) -->
+<div id="modal-clave" class="modal-backdrop" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="clave-titulo">Acceso creado</h3>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">
+        Pasale estos datos a la persona. <strong>La contraseña no se vuelve a mostrar</strong>:
+        al entrar, el panel le pide elegir una propia.
+      </p>
+      <div style="background:var(--bg, #F5F2EE);border-radius:var(--r);padding:14px;font-size:14px;line-height:1.9">
+        <div>Panel: <strong>mundohogarstf.com/admin</strong></div>
+        <div>Email: <strong id="clave-email"></strong></div>
+        <div>Contraseña temporal: <strong id="clave-valor" style="font-family:ui-monospace,Consolas,monospace;font-size:16px;letter-spacing:.5px"></strong></div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:10px">
+        Pasala en persona o por un gestor de contraseñas. Evitá WhatsApp o mail.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" id="btn-copiar-clave">📋 Copiar datos</button>
+      <button type="button" class="btn btn-primary" id="btn-clave-listo">Listo, ya la pasé</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="/supabase-config.js"></script>
 <script src="/admin/js/supabase-client.js"></script>
@@ -136,6 +197,48 @@
 <script>
 let users = [];
 let currentUserId = null;
+const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const abrir  = id => { document.getElementById(id).style.display = 'flex'; };
+const cerrar = id => { document.getElementById(id).style.display = 'none'; };
+document.querySelectorAll('[data-cerrar]').forEach(b => b.addEventListener('click', () => cerrar(b.dataset.cerrar)));
+
+// Errores de la Edge Function "usuarios" en castellano
+const ERRORES_FN = {
+  email_existente:      'Ese email ya tiene un acceso. Buscalo en la lista: si está inactivo, activalo desde Editar.',
+  email_invalido:       'Revisá el email: parece incompleto.',
+  nombre_invalido:      'Poné el nombre (hasta 80 letras).',
+  rol_invalido:         'Elegí un rol.',
+  no_autorizado:        'Solo un administrador puede dar accesos. Volvé a entrar al panel.',
+  es_tu_cuenta:         'Tu propia contraseña la cambiás con 🔑 arriba a la derecha.',
+  usuario_no_encontrado:'Ese usuario ya no existe. Recargá la página.',
+  perfil_sin_activar:   'La cuenta se creó pero quedó inactiva. Activala desde Editar y usá 🔑 Clave nueva.',
+};
+async function llamarUsuarios(body) {
+  const { data, error } = await db.functions.invoke('usuarios', { body });
+  if (!error) return { data };
+  let codigo = null;
+  try { codigo = (await error.context?.json?.())?.error; } catch (_) {}
+  if (codigo && ERRORES_FN[codigo]) return { error: ERRORES_FN[codigo] };
+  if (error.name === 'FunctionsFetchError' || error.name === 'FunctionsRelayError' || error.context?.status === 404)
+    return { error: 'Falta instalar la función "usuarios" en Supabase (ver GUIA-USUARIOS.md).' };
+  return { error: 'No se pudo completar. Probá de nuevo en un rato.' };
+}
+
+function mostrarClave(titulo, email, clave) {
+  document.getElementById('clave-titulo').textContent = titulo;
+  document.getElementById('clave-email').textContent = email;
+  document.getElementById('clave-valor').textContent = clave;
+  abrir('modal-clave');
+}
+document.getElementById('btn-copiar-clave').addEventListener('click', () => {
+  const email = document.getElementById('clave-email').textContent;
+  const clave = document.getElementById('clave-valor').textContent;
+  Utils.copy(`Panel: https://mundohogarstf.com/admin\nEmail: ${email}\nContraseña temporal: ${clave}\n(al entrar te pide elegir una propia)`, 'Datos copiados');
+});
+document.getElementById('btn-clave-listo').addEventListener('click', () => {
+  document.getElementById('clave-valor').textContent = '';   // que no quede en pantalla
+  cerrar('modal-clave');
+});
 
 async function loadUsers() {
   const { data, error } = await db.from('profiles').select('*').order('created_at');
@@ -158,17 +261,19 @@ function renderTable() {
         <div class="d-flex align-center gap-2">
           <div style="width:34px;height:34px;border-radius:50%;background:var(--gold);color:var(--night);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${initials}</div>
           <div>
-            <div style="font-weight:500">${u.nombre||'—'}</div>
+            <div style="font-weight:500">${esc(u.nombre)||'—'}</div>
             ${esCurrent?'<div style="font-size:11px;color:var(--muted)">(vos)</div>':''}
+            ${u.debe_cambiar_clave?'<div style="font-size:11px;color:var(--muted)">Todavía no eligió su contraseña</div>':''}
           </div>
         </div>
       </td>
-      <td style="font-size:12.5px;color:var(--muted)">${u.email||'—'}</td>
+      <td style="font-size:12.5px;color:var(--muted)">${esc(u.email)||'—'}</td>
       <td>${Utils.rolBadge(u.rol)}</td>
       <td>${u.activo?'<span class="badge badge-success">Activo</span>':'<span class="badge badge-danger">Inactivo</span>'}</td>
       <td style="font-size:12px;color:var(--muted)">${Utils.timeAgo(u.ultimo_acceso)}</td>
-      <td>
-        <button class="btn btn-ghost btn-sm" onclick="abrirEdit('${u.id}')" ${esCurrent?'disabled title="No podés editarte a vos mismo"':''}>✏️ Editar</button>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" onclick="abrirEdit('${esc(u.id)}')" ${esCurrent?'disabled title="No podés editarte a vos mismo"':''}>✏️ Editar</button>
+        ${esCurrent ? '' : `<button class="btn btn-ghost btn-sm" onclick="claveNueva('${esc(u.id)}')" title="Generar una contraseña temporal nueva">🔑 Clave nueva</button>`}
       </td>
     </tr>`;
   }).join('');
@@ -196,15 +301,53 @@ document.getElementById('btn-save-edit')?.addEventListener('click', async () => 
   btn.disabled = true;
   const { error } = await db.from('profiles').update({ nombre, rol, activo }).eq('id',id);
   btn.disabled = false;
-  if (error) { Utils.toast('Error: '+error.message,'error'); return; }
+  if (error) { Utils.toast('Error: '+(error.hint || error.message),'error'); return; }
   document.getElementById('modal-edit').style.display = 'none';
   Utils.toast('Usuario actualizado','success');
   await loadUsers();
 });
 
 document.getElementById('btn-nuevo')?.addEventListener('click', () => {
-  Utils.toast('Para crear usuarios: Supabase Dashboard → Authentication → Users → Add user','info',6000);
+  document.getElementById('form-nuevo').reset();
+  document.getElementById('nuevo-error').style.display = 'none';
+  abrir('modal-nuevo');
+  document.getElementById('nuevo-nombre').focus();
 });
+
+document.getElementById('form-nuevo').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const err = document.getElementById('nuevo-error');
+  const mostrar = msg => { err.textContent = msg; err.style.display = 'block'; };
+  const nombre = document.getElementById('nuevo-nombre').value.trim();
+  const email  = document.getElementById('nuevo-email').value.trim().toLowerCase();
+  const rol    = document.getElementById('nuevo-rol').value;
+  if (!nombre) return mostrar('Poné el nombre.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return mostrar('Revisá el email: parece incompleto.');
+
+  const btn = document.getElementById('btn-crear');
+  btn.disabled = true; btn.textContent = 'Creando…';
+  const { data, error } = await llamarUsuarios({ accion: 'crear', nombre, email, rol });
+  btn.disabled = false; btn.textContent = 'Crear acceso';
+  if (error) return mostrar(error);
+
+  cerrar('modal-nuevo');
+  Utils.log('crear', 'usuario', data.id, `Nuevo acceso: ${nombre} (${email}) como ${rol}`);
+  mostrarClave(`Acceso creado para ${nombre}`, data.email, data.clave);
+  await loadUsers();
+});
+
+async function claveNueva(id) {
+  const u = users.find(x => x.id === id);
+  if (!u) return;
+  if (!confirm(`¿Generar una contraseña temporal nueva para ${u.nombre}?\n\nLa que usa ahora deja de funcionar.`)) return;
+  Utils.showLoading('Generando contraseña…');
+  const { data, error } = await llamarUsuarios({ accion: 'restablecer', id });
+  Utils.hideLoading();
+  if (error) { Utils.toast(error, 'error', 6000); return; }
+  Utils.log('restablecer_clave', 'usuario', id, `Contraseña temporal nueva para ${u.nombre} (${u.email})`);
+  mostrarClave(`Contraseña nueva para ${u.nombre}`, data.email, data.clave);
+  await loadUsers();
+}
 
 async function initPage() {
   const profile = await Auth.init();

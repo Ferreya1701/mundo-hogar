@@ -108,8 +108,13 @@ const Layout = {
       if (e.key === 'Escape' && sb.classList.contains('mobile-open')) this.toggleSidebar(true);
     });
 
-    document.getElementById('logout-btn')
-      ?.addEventListener('click', () => Auth.logout());
+    const salir = document.getElementById('logout-btn');
+    salir?.addEventListener('click', () => Auth.logout());
+    // "Mi contraseña" al lado de Salir, en todas las páginas del panel
+    if (salir && !document.getElementById('clave-btn')) {
+      salir.insertAdjacentHTML('beforebegin',
+        '<a id="clave-btn" href="/admin/clave" class="btn btn-ghost btn-sm" title="Cambiar mi contraseña" aria-label="Cambiar mi contraseña">🔑</a>');
+    }
   }
 };
 

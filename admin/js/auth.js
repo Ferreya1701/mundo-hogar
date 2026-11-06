@@ -67,6 +67,13 @@ const Auth = {
       return null;
     }
 
+    // Entró con una contraseña temporal (alta o restablecida desde Usuarios):
+    // antes de usar el panel tiene que elegir una propia.
+    if (profile.debe_cambiar_clave === true && !location.pathname.startsWith('/admin/clave')) {
+      window.location.href = '/admin/clave';
+      return null;
+    }
+
     // Actualizar último acceso (non-blocking)
     db.from('profiles')
       .update({ ultimo_acceso: new Date().toISOString() })

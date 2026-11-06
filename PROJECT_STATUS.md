@@ -22,6 +22,17 @@
   la `.webp` y cae al `.jpg` si falta (`MH.webpUrl` / `MH.setImg`). Al sumar fotos nuevas, generar ambas.
 - Cloudflare redirige `x.html` → `x` y `/productos` → `/productos/` (conserva los parámetros).
 
+## Accesos al panel desde Usuarios (2026-11-06) — SIN DESPLEGAR
+- **Agujero cerrado:** el registro público de Supabase estaba abierto (`disable_signup: false`) y el
+  trigger del 001 tomaba el rol de los datos de quien se registra → cualquiera podía crearse
+  administrador. Además `profiles_update_own` dejaba que un vendedor se pusiera rol admin.
+  `sql/014-accesos.sql`: cuentas nuevas nacen inactivas/vendedor; rol y estado solo los cambia otro
+  administrador (guardia `fn_profiles_proteger`). Hay que APAGAR "Allow new users to sign up".
+- **Alta desde el panel:** Edge Function `usuarios` (crear / restablecer con contraseña temporal,
+  solo admins activos) + `admin/clave.html` (elegir/cambiar contraseña; `debe_cambiar_clave` obliga
+  a pasar por ahí) + botón 🔑 al lado de Salir. Nombres escapados en Usuarios (antes, XSS posible).
+- **Pendiente:** apagar el registro público, correr 014, desplegar `usuarios`, push. Ver `GUIA-USUARIOS.md`.
+
 ## Panel: nombres, limpieza, ticket y etiquetas (2026-11-02) — DESPLEGADO
 
 - **Menú renombrado** (`admin/js/layout.js`): Inicio, Caja, Ventas, Pedidos web, Clientes, Cuentas
