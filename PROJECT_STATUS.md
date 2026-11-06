@@ -22,7 +22,7 @@
   la `.webp` y cae al `.jpg` si falta (`MH.webpUrl` / `MH.setImg`). Al sumar fotos nuevas, generar ambas.
 - Cloudflare redirige `x.html` → `x` y `/productos` → `/productos/` (conserva los parámetros).
 
-## Accesos al panel desde Usuarios (2026-11-06) — función desplegada, falta cerrar el registro
+## Accesos al panel desde Usuarios (2026-11-06) — EN PRODUCCIÓN
 - **Agujero cerrado:** el registro público de Supabase estaba abierto (`disable_signup: false`) y el
   trigger del 001 tomaba el rol de los datos de quien se registra → cualquiera podía crearse
   administrador. Además `profiles_update_own` dejaba que un vendedor se pusiera rol admin.
@@ -32,10 +32,10 @@
   solo admins activos) + `admin/clave.html` (elegir/cambiar contraseña; `debe_cambiar_clave` obliga
   a pasar por ahí) + botón 🔑 al lado de Salir. Nombres escapados en Usuarios (antes, XSS posible).
 - **Hecho 2026-11-06:** Edge Function `usuarios` desplegada (ping ok; sin sesión responde 401) y web en `main`.
-- **Pendiente (lo hace el dueño):** 1) apagar "Allow new users to sign up" en Supabase → Authentication →
-  Sign In / Providers; 2) correr `sql/014-accesos.sql` en el SQL Editor. Hasta entonces, cualquiera
-  con la clave pública de la tienda puede registrarse y el trigger viejo le da el rol que pida.
-  Ver `GUIA-USUARIOS.md`.
+- **Hecho 2026-11-06 (dueño):** registro público apagado (verificado desde afuera: `/auth/v1/signup`
+  responde 422 `signup_disabled`) y `sql/014` corrido (la columna `debe_cambiar_clave` existe).
+  Falta solo probarlo de punta a punta: crear un vendedor de prueba, entrar con la temporal, elegir
+  contraseña, 🔑 Clave nueva, desactivarlo. Ver `GUIA-USUARIOS.md`.
 
 ## Panel: nombres, limpieza, ticket y etiquetas (2026-11-02) — DESPLEGADO
 
