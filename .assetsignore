@@ -5,6 +5,7 @@
 .wrangler
 node_modules
 wrangler.jsonc
+worker/
 vercel.json
 *.md
 sql/

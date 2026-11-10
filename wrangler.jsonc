@@ -1,11 +1,15 @@
-// Cloudflare Workers (solo archivos estáticos, sin código de servidor).
+// Cloudflare Workers: archivos estáticos + un Worker mínimo solo para /producto/*
+// (worker/index.js completa los metadatos de la ficha para WhatsApp y buscadores).
 // Las reglas de rutas y encabezados viven en _redirects y _headers.
 {
   "name": "mundo-hogar",
+  "main": "worker/index.js",
   "compatibility_date": "2026-09-01",
   "assets": {
     "directory": ".",
+    "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "html_handling": "auto-trailing-slash"
+    "html_handling": "auto-trailing-slash",
+    "run_worker_first": ["/producto/*"]
   }
 }

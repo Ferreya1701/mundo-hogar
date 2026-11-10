@@ -187,9 +187,12 @@
   const catSlug = p.categoria;
   document.querySelector('meta[name="description"]').content =
     (p.descripcionCorta || p.descripcion || p.nombre).slice(0, 155);
-  const canon = document.createElement('link');
-  canon.rel = 'canonical'; canon.href = `https://mundohogarstf.com/producto/${p.slug}`;
-  document.head.appendChild(canon);
+  // El Worker (worker/index.js) ya la pone en el HTML; acá solo si faltara (espejo de Vercel, servidor local).
+  if (!document.querySelector('link[rel="canonical"]')) {
+    const canon = document.createElement('link');
+    canon.rel = 'canonical'; canon.href = `https://mundohogarstf.com/producto/${p.slug}`;
+    document.head.appendChild(canon);
+  }
 
   // ── Breadcrumb ──
   if (catSlug) $('#crumbs').innerHTML =
