@@ -1,6 +1,6 @@
 # PROJECT_STATUS — Mundo Hogar / TIAF
 
-> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-11 (permisos tildables, ticket fiscal).
+> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-11 (permisos tildables, ticket fiscal, caja).
 
 ## Hosting (desde 2026-10-16): Cloudflare Workers
 - **Producción:** `https://mundohogarstf.com` servido por **Cloudflare Workers** (solo archivos
@@ -22,6 +22,16 @@
   la `.webp` y cae al `.jpg` si falta (`MH.webpUrl` / `MH.setImg`). Al sumar fotos nuevas, generar ambas.
 - Cloudflare redirige `x.html` → `x` y `/productos` → `/productos/` (conserva los parámetros).
 
+## Caja diaria (2026-11-11) — EN EL REPO; FALTA CORRER sql/018 (después del 017)
+- `sql/018-caja.sql`: apertura con fondo, ventas que entran solas por disparador (efectivo al cajón,
+  otros medios aparte, cuenta corriente no), ingresos/egresos con concepto, anulación con inverso,
+  cierre con diferencia obligatoriamente explicada, retiro y fondo. Nunca frena una venta: con la caja
+  cerrada el movimiento queda pendiente y se suma al abrir. 6 permisos nuevos `caja.*`.
+- Pantalla `admin/caja.html` (menú Ventas → Caja); aviso en Crear venta si está cerrada; cierre
+  imprimible (`MHImprimir.cierreCaja`).
+- Pruebas: `node scripts/test-caja-sql.mjs` (75), `node scripts/test-ticket.mjs` (54).
+  Detalle: `GUIA-STOCK-Y-VENTAS.md` §11.
+
 ## Ticket y recibo con datos fiscales (2026-11-11) — EN EL REPO; FALTA CORRER sql/017 (después del 016)
 - `sql/017-datos-fiscales.sql`: columnas en `site_settings` (cuit validado con dígito verificador,
   domicilio_fiscal, ingresos_brutos, inicio_actividades, condicion_iva, ticket_pie), cargadas con los
@@ -29,7 +39,7 @@
 - `admin/js/impresion.js`: ticket nuevo (logo + datos fiscales + fecha con segundos + cliente/retira)
   y `MHImprimir.recibo()` para los pagos de cuenta corriente. Sin el 017 imprime como antes.
 - "Retira" se muestra si la venta lo trae; el campo se agrega a la venta en la etapa de cuentas corrientes.
-- Pruebas: `node scripts/test-ticket.mjs` (37). Detalle: `GUIA-STOCK-Y-VENTAS.md` §10.
+- Pruebas: `node scripts/test-ticket.mjs`. Detalle: `GUIA-STOCK-Y-VENTAS.md` §10.
 
 ## Permisos tildables por rol (2026-11-11) — EN EL REPO; FALTA CORRER sql/016 (después del 015)
 - `sql/016-permisos-tildables.sql`: tablas `permisos` + `rol_permisos`, `fn_tiene_permiso(clave)`,

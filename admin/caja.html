@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/admin/manifest.json">
+  <meta name="theme-color" content="#0A2E63">
+  <link rel="icon" type="image/png" href="/images/marca/favicon.png">
+  <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
+  <title>Caja — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+  <style>
+    .caja-estado { display:inline-flex; align-items:center; gap:6px; font-weight:600; }
+    .caja-estado .punto { width:9px; height:9px; border-radius:50%; background:var(--danger); }
+    .caja-estado.abierta .punto { background:var(--success); }
+    .kpi-esperado { border:2px solid var(--gold); }
+    .kpi-esperado .kpi-value { color:var(--night); }
+    .split-caja { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+    @media (max-width: 900px) { .split-caja { grid-template-columns:1fr; } }
+    .mini-tabla td, .mini-tabla th { padding:7px 10px; font-size:13px; }
+    .mini-tabla td.r, .mini-tabla th.r { text-align:right; white-space:nowrap; }
+    .monto-ing { color:#15803D; font-weight:600; white-space:nowrap; }
+    .monto-egr { color:#B91C1C; font-weight:600; white-space:nowrap; }
+    tr.anulado td { text-decoration:line-through; color:var(--muted); }
+    tr.anulado td.acc { text-decoration:none; }
+    .dif-0 { color:#15803D; } .dif-mas { color:#1D4ED8; } .dif-menos { color:#B91C1C; }
+    .cierre-linea { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed var(--border); font-size:14px; }
+    .cierre-linea b { font-size:16px; }
+    .aviso-pend { background:var(--warning-bg); color:#92400E; border-radius:var(--r); padding:10px 14px; font-size:13px; margin-bottom:14px; }
+    .grande input { font-size:20px; font-weight:600; }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><img class="sidebar-brand-icon" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="32" height="32"><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/" target="_blank" class="btn btn-ghost btn-sm">🌐 Ver Tienda</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1>Caja</h1><p id="subtitulo">Cargando…</p></div>
+        <div class="page-header-actions" id="acciones"></div>
+      </div>
+      <div id="contenido"><div class="spinner" style="margin:40px auto"></div></div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script src="/admin/js/impresion.js"></script>
+<script>
+/* ============================================================
+   Caja diaria (sql/018). Las ventas entran solas; acá se abre,
+   se cargan ingresos y egresos que no son ventas y se cierra
+   contando el efectivo. Todo lo controla la base (permisos caja.*).
+   ============================================================ */
+const $id = id => document.getElementById(id);
+const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const money = n => new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS', minimumFractionDigits:0, maximumFractionDigits:2 }).format(Number(n || 0));
+// Montos como los escribe la gente: "12.500", "12500,50", "12500.5", "$ 12.500"
+const num = v => {
+  let s = String(v ?? '').trim().replace(/[\s$]/g, '');
+  if (!s) return NaN;
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+  const n = Number(s);
+  return Number.isFinite(n) ? n : NaN;
+};
+const hora = d => new Date(d).toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit', hour12:false, timeZone:'America/Argentina/Buenos_Aires' });
+const MEDIOS = { efectivo:'Efectivo', transferencia:'Transferencia', debito:'Débito', credito:'Crédito', mercadopago:'Mercado Pago', otro:'Otro' };
+
+let perfil = null;
+let resumen = null;      // caja_resumen()
+let movs = [];
+let conceptos = [];
+let vista = 'hoy';       // 'hoy' | 'historial'
+
+const puede = k => Auth.puede(k, perfil);
+
+function msgError(e, accion) {
+  const m = (e?.message || '').toLowerCase();
+  if (m.includes('could not find the function') || m.includes('schema cache') || m.includes('does not exist'))
+    return 'Falta ejecutar sql/018-caja.sql en la base de datos.';
+  if (!navigator.onLine || m.includes('failed to fetch')) return 'Sin conexión. Probá de nuevo.';
+  return e?.hint || `No se pudo ${accion}.`;
+}
+
+/* ── Carga ─────────────────────────────────────────── */
+async function cargar() {
+  const [r, c] = await Promise.all([
+    db.rpc('caja_resumen'),
+    db.from('caja_conceptos').select('id, nombre, tipo, clave, activo, orden').order('orden').order('nombre'),
+  ]);
+  if (r.error) { $id('contenido').innerHTML = vacio('🔒', msgError(r.error, 'cargar la caja')); $id('subtitulo').textContent = ''; return; }
+  resumen = r.data;
+  conceptos = c.data || [];
+  movs = [];
+  if (resumen.abierta) {
+    const m = await db.from('caja_movimientos').select('*').eq('sesion_id', resumen.sesion.id).order('id', { ascending: false });
+    movs = m.data || [];
+  }
+  render();
+}
+
+const vacio = (icono, texto, extra = '') => `<div class="empty-state"><div class="empty-state-icon">${icono}</div><h3>${esc(texto)}</h3>${extra}</div>`;
+
+/* ── Pantalla ──────────────────────────────────────── */
+function render() {
+  const ab = resumen.abierta;
+  $id('subtitulo').innerHTML = ab
+    ? `<span class="caja-estado abierta"><span class="punto"></span>Abierta</span> desde las ${hora(resumen.sesion.abierta_en)} · abrió ${esc(resumen.sesion.abierta_por_nombre || '—')}`
+    : `<span class="caja-estado"><span class="punto"></span>Cerrada</span>`;
+
+  let acc = '';
+  if (ab && puede('caja.movimientos')) acc += `<button class="btn btn-outline" data-acc="ingreso">+ Ingreso</button><button class="btn btn-outline" data-acc="egreso">− Egreso</button>`;
+  if (ab && puede('caja.abrir_cerrar')) acc += `<button class="btn btn-primary" data-acc="cerrar">Cerrar caja</button>`;
+  if (puede('caja.historial')) acc += `<button class="btn btn-ghost" data-acc="historial">📚 Cajas anteriores</button>`;
+  if (puede('caja.conceptos')) acc += `<button class="btn btn-ghost" data-acc="conceptos">🏷️ Conceptos</button>`;
+  $id('acciones').innerHTML = acc;
+
+  ab ? renderAbierta() : renderCerrada();
+}
+
+function renderCerrada() {
+  const pend = resumen.pendientes || { cantidad: 0, efectivo: 0 };
+  const fondo = resumen.ultimo_fondo;
+  let h = '';
+  if (pend.cantidad > 0) h += `<div class="aviso-pend">Hay <b>${pend.cantidad}</b> movimiento${pend.cantidad !== 1 ? 's' : ''} de ventas hechas con la caja cerrada (${money(pend.efectivo)} en efectivo). Se suman solos al abrir.</div>`;
+  if (!puede('caja.abrir_cerrar')) {
+    $id('contenido').innerHTML = h + vacio('🔒', 'La caja está cerrada', '<p>Pedile a quien tenga permiso que la abra. Las ventas se pueden hacer igual.</p>');
+    return;
+  }
+  h += `<div class="card" style="max-width:460px">
+    <div class="card-header"><span class="card-title">Abrir la caja</span></div>
+    <div class="card-body">
+      <form id="form-abrir" class="form-grid" style="gap:14px" novalidate>
+        <div class="form-group grande">
+          <label>Efectivo en el cajón</label>
+          <input type="text" id="ab-monto" inputmode="decimal" value="${fondo != null ? Number(fondo) : ''}" placeholder="0" autocomplete="off">
+          ${fondo != null ? `<span class="form-hint">El último cierre dejó <b>${money(fondo)}</b> de fondo.</span>` : '<span class="form-hint">Primera apertura: contá el efectivo que hay.</span>'}
+        </div>
+        <div class="form-group" id="ab-notas-wrap" ${fondo != null ? 'hidden' : ''}>
+          <label>Nota ${fondo != null ? '<span class="req">*</span>' : '(opcional)'}</label>
+          <input type="text" id="ab-notas" maxlength="300" placeholder="${fondo != null ? '¿Por qué no coincide con el fondo del cierre?' : ''}">
+        </div>
+        <button type="submit" class="btn btn-primary">Abrir caja</button>
+      </form>
+    </div></div>`;
+  $id('contenido').innerHTML = h;
+  const monto = $id('ab-monto');
+  monto.focus(); monto.select();
+  monto.addEventListener('input', () => {
+    if (fondo == null) return;
+    $id('ab-notas-wrap').hidden = Math.abs(num(monto.value) - Number(fondo)) < 0.005;
+  });
+  $id('form-abrir').addEventListener('submit', async e => {
+    e.preventDefault();
+    const v = num(monto.value);
+    if (!(v >= 0)) { Utils.toast('Poné cuánto efectivo hay (0 o más)', 'warning'); return; }
+    const btn = e.submitter; btn.disabled = true;
+    const { data, error } = await db.rpc('caja_abrir', { p_monto_inicial: v, p_notas: $id('ab-notas').value || null });
+    btn.disabled = false;
+    if (error) { Utils.toast(msgError(error, 'abrir la caja'), 'error'); if (/nota_requerida/.test(error.message)) { $id('ab-notas-wrap').hidden = false; $id('ab-notas').focus(); } return; }
+    Utils.toast(`Caja abierta${data.pendientes_sumados ? ` · se sumaron ${data.pendientes_sumados} movimientos pendientes` : ''}`, 'success');
+    await cargar();
+  });
+}
+
+function renderAbierta() {
+  const ef = resumen.efectivo;
+  const otros = resumen.por_medio.filter(m => m.medio !== 'efectivo');
+  let h = `<div class="kpi-grid">
+    <div class="kpi-card kpi-esperado"><div class="kpi-icon gold">💵</div><div class="kpi-label">Efectivo que debería haber</div><div class="kpi-value">${money(ef.esperado)}</div><div class="kpi-sub">inicial + ingresos − egresos</div></div>
+    <div class="kpi-card"><div class="kpi-icon blue">🔓</div><div class="kpi-label">Inicial</div><div class="kpi-value">${money(ef.inicial)}</div></div>
+    <div class="kpi-card"><div class="kpi-icon green">⬆️</div><div class="kpi-label">Ingresos en efectivo</div><div class="kpi-value">${money(ef.ingresos)}</div></div>
+    <div class="kpi-card"><div class="kpi-icon red">⬇️</div><div class="kpi-label">Egresos en efectivo</div><div class="kpi-value">${money(ef.egresos)}</div></div>
+  </div>
+  <div class="split-caja">
+    <div class="card"><div class="card-header"><span class="card-title">Otros medios (no están en el cajón)</span></div>
+      <div class="card-body" style="padding:0">${otros.length ? `<table class="mini-tabla" style="width:100%"><thead><tr><th>Medio</th><th class="r">Ingresos</th><th class="r">Egresos</th><th class="r">Neto</th></tr></thead><tbody>
+        ${otros.map(m => `<tr><td>${esc(MEDIOS[m.medio] || m.medio)}</td><td class="r">${money(m.ingresos)}</td><td class="r">${money(m.egresos)}</td><td class="r"><b>${money(m.neto)}</b></td></tr>`).join('')}
+      </tbody></table>` : '<p style="padding:14px 18px;color:var(--muted);font-size:13px">Todavía nada por transferencia, tarjeta ni Mercado Pago.</p>'}</div></div>
+    <div class="card"><div class="card-header"><span class="card-title">Ventas y gastos</span></div>
+      <div class="card-body" style="padding:0"><table class="mini-tabla" style="width:100%"><tbody>
+        <tr><td>Ventas (${resumen.ventas.cantidad})</td><td class="r"><b>${money(resumen.ventas.total)}</b></td></tr>
+        ${resumen.por_concepto.map(c => `<tr><td>${esc(c.concepto)}</td><td class="r ${c.tipo === 'ingreso' ? 'monto-ing' : 'monto-egr'}">${c.tipo === 'ingreso' ? '+' : '−'}${money(c.total)}</td></tr>`).join('')}
+      </tbody></table></div></div>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Hora</th><th>Concepto</th><th>Detalle</th><th>Medio</th><th>Quién</th><th style="text-align:right">Monto</th><th></th></tr></thead>
+    <tbody>${movs.length ? movs.map(filaMov).join('') : '<tr><td colspan="7" class="text-center" style="padding:30px;color:var(--muted)">Sin movimientos todavía.</td></tr>'}</tbody>
+  </table></div>`;
+  $id('contenido').innerHTML = h;
+}
+
+function filaMov(m) {
+  const ing = m.tipo === 'ingreso';
+  const puedeAnular = puede('caja.anular') && m.origen === 'manual' && !m.anulado;
+  return `<tr class="${m.anulado ? 'anulado' : ''}">
+    <td>${hora(m.fecha)}</td>
+    <td>${esc(m.concepto_nombre)}</td>
+    <td style="max-width:280px">${esc(m.descripcion || '')}${m.anulado ? `<div style="font-size:11.5px;text-decoration:none">Anulado: ${esc(m.motivo_anulacion)}</div>` : ''}</td>
+    <td>${esc(MEDIOS[m.medio_pago] || m.medio_pago)}</td>
+    <td style="font-size:12.5px">${esc(m.usuario_nombre || '')}</td>
+    <td style="text-align:right" class="${ing ? 'monto-ing' : 'monto-egr'}">${ing ? '+' : '−'}${money(m.monto)}</td>
+    <td class="acc">${puedeAnular ? `<button class="btn btn-ghost btn-sm" data-anular="${m.id}" title="Anular">✕</button>` : ''}</td>
+  </tr>`;
+}
+
+/* ── Ingreso / egreso ──────────────────────────────── */
+function modalMovimiento(tipo) {
+  const lista = conceptos.filter(c => c.tipo === tipo && c.activo && !c.clave);
+  const bd = document.createElement('div'); bd.className = 'modal-backdrop';
+  bd.innerHTML = `<div class="modal" style="max-width:440px">
+    <div class="modal-header"><h3 class="modal-title">${tipo === 'ingreso' ? '+ Ingreso' : '− Egreso'} de caja</h3><button class="modal-close" data-x aria-label="Cerrar">×</button></div>
+    <form class="modal-body form-grid" style="gap:14px" novalidate>
+      <div class="form-group"><label>Concepto <span class="req">*</span></label>
+        <select id="mv-con" required><option value="">Elegí…</option>${lista.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('')}</select></div>
+      <div class="form-group grande"><label>Monto <span class="req">*</span></label><input type="text" id="mv-monto" inputmode="decimal" placeholder="0" autocomplete="off"></div>
+      <div class="form-group"><label>Medio</label>
+        <select id="mv-medio">${Object.entries(MEDIOS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+        <span class="form-hint">Solo el efectivo cambia lo que tiene que haber en el cajón.</span></div>
+      <div class="form-group"><label>Detalle</label><input type="text" id="mv-desc" maxlength="300" placeholder="${tipo === 'egreso' ? 'Ej: bolsas y cinta' : 'Ej: cambio que trajo el dueño'}"></div>
+      <div class="modal-footer" style="padding:0;border:0"><button type="button" class="btn btn-outline" data-x>Cancelar</button><button type="submit" class="btn btn-primary">Guardar</button></div>
+    </form></div>`;
+  document.body.appendChild(bd);
+  const cerrar = () => bd.remove();
+  bd.querySelectorAll('[data-x]').forEach(b => b.onclick = cerrar);
+  bd.querySelector('#mv-con').focus();
+  bd.querySelector('form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const monto = num(bd.querySelector('#mv-monto').value);
+    if (!bd.querySelector('#mv-con').value) { Utils.toast('Elegí un concepto', 'warning'); return; }
+    if (!(monto > 0)) { Utils.toast('Poné un monto mayor a cero', 'warning'); return; }
+    const btn = e.submitter; btn.disabled = true;
+    const { error } = await db.rpc('caja_movimiento_registrar', { p: {
+      tipo, concepto_id: Number(bd.querySelector('#mv-con').value), monto,
+      medio_pago: bd.querySelector('#mv-medio').value, descripcion: bd.querySelector('#mv-desc').value || null } });
+    btn.disabled = false;
+    if (error) { Utils.toast(msgError(error, 'guardar el movimiento'), 'error'); return; }
+    cerrar(); Utils.toast(tipo === 'ingreso' ? 'Ingreso cargado' : 'Egreso cargado', 'success');
+    await cargar();
+  });
+}
+
+async function anularMovimiento(id) {
+  const m = movs.find(x => x.id === id);
+  const motivo = await pedirTexto(`Anular "${m?.concepto_nombre}" por ${money(m?.monto)}`, 'Motivo de la anulación', 'Queda registrado el movimiento inverso, con este motivo.');
+  if (!motivo) return;
+  const { error } = await db.rpc('caja_movimiento_anular', { p_id: id, p_motivo: motivo });
+  if (error) { Utils.toast(msgError(error, 'anular'), 'error'); return; }
+  Utils.toast('Movimiento anulado', 'success');
+  await cargar();
+}
+
+function pedirTexto(titulo, etiqueta, ayuda) {
+  return new Promise(resolve => {
+    const bd = document.createElement('div'); bd.className = 'modal-backdrop';
+    bd.innerHTML = `<div class="modal" style="max-width:420px"><div class="modal-header"><h3 class="modal-title">${esc(titulo)}</h3></div>
+      <form class="modal-body form-grid" style="gap:12px" novalidate>
+        <div class="form-group"><label>${esc(etiqueta)} <span class="req">*</span></label><input type="text" id="_t" maxlength="300" autocomplete="off"><span class="form-hint">${esc(ayuda)}</span></div>
+        <div class="modal-footer" style="padding:0;border:0"><button type="button" class="btn btn-outline" id="_no">Cancelar</button><button type="submit" class="btn btn-danger">Anular</button></div>
+      </form></div>`;
+    document.body.appendChild(bd);
+    const inp = bd.querySelector('#_t'); inp.focus();
+    bd.querySelector('#_no').onclick = () => { bd.remove(); resolve(null); };
+    bd.querySelector('form').onsubmit = e => { e.preventDefault(); const v = inp.value.trim(); if (!v) { inp.focus(); return; } bd.remove(); resolve(v); };
+  });
+}
+
+/* ── Cierre ────────────────────────────────────────── */
+function modalCierre() {
+  const esperado = Number(resumen.efectivo.esperado);
+  const inicial = Number(resumen.efectivo.inicial);
+  const bd = document.createElement('div'); bd.className = 'modal-backdrop';
+  bd.innerHTML = `<div class="modal" style="max-width:480px">
+    <div class="modal-header"><h3 class="modal-title">Cerrar la caja</h3><button class="modal-close" data-x aria-label="Cerrar">×</button></div>
+    <form class="modal-body form-grid" style="gap:14px" novalidate>
+      <div class="cierre-linea"><span>Efectivo que debería haber</span><b>${money(esperado)}</b></div>
+      <div class="form-group grande"><label>Efectivo contado <span class="req">*</span></label><input type="text" id="ci-contado" inputmode="decimal" placeholder="Contá los billetes" autocomplete="off"></div>
+      <div class="cierre-linea"><span>Diferencia</span><b id="ci-dif">—</b></div>
+      <div class="form-group" id="ci-notas-wrap" hidden><label>¿Qué pasó? <span class="req">*</span></label><input type="text" id="ci-notas" maxlength="500" placeholder="Ej: faltó dar un vuelto, se pagó un flete sin cargar…"></div>
+      <div class="form-group"><label>Queda en el cajón para mañana (fondo)</label><input type="text" id="ci-fondo" inputmode="decimal" value="${inicial}" autocomplete="off"></div>
+      <div class="cierre-linea"><span>Se retira</span><b id="ci-retiro">—</b></div>
+      <div class="modal-footer" style="padding:0;border:0"><button type="button" class="btn btn-outline" data-x>Cancelar</button><button type="submit" class="btn btn-primary">Cerrar caja</button></div>
+    </form></div>`;
+  document.body.appendChild(bd);
+  const cerrar = () => bd.remove();
+  bd.querySelectorAll('[data-x]').forEach(b => b.onclick = cerrar);
+  const inC = bd.querySelector('#ci-contado'), inF = bd.querySelector('#ci-fondo');
+  const pintar = () => {
+    const c = num(inC.value), f = num(inF.value);
+    const dif = c - esperado;
+    const elDif = bd.querySelector('#ci-dif');
+    if (!(c >= 0)) { elDif.textContent = '—'; elDif.className = ''; bd.querySelector('#ci-retiro').textContent = '—'; bd.querySelector('#ci-notas-wrap').hidden = true; return; }
+    elDif.textContent = Math.abs(dif) < 0.005 ? 'Coincide ✓' : (dif > 0 ? `Sobran ${money(dif)}` : `Faltan ${money(-dif)}`);
+    elDif.className = Math.abs(dif) < 0.005 ? 'dif-0' : (dif > 0 ? 'dif-mas' : 'dif-menos');
+    bd.querySelector('#ci-notas-wrap').hidden = Math.abs(dif) < 0.005;
+    bd.querySelector('#ci-retiro').textContent = f >= 0 && f <= c ? money(c - f) : 'el fondo no puede superar lo contado';
+  };
+  inC.addEventListener('input', () => { if (num(inF.value) > num(inC.value)) inF.value = Math.max(0, num(inC.value) || 0); pintar(); });
+  inF.addEventListener('input', pintar);
+  inC.focus();
+  bd.querySelector('form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const c = num(inC.value), f = num(inF.value);
+    if (!(c >= 0)) { Utils.toast('Poné el efectivo que contaste', 'warning'); inC.focus(); return; }
+    if (!(f >= 0) || f > c) { Utils.toast('El fondo tiene que estar entre 0 y lo contado', 'warning'); inF.focus(); return; }
+    const notas = bd.querySelector('#ci-notas').value.trim();
+    if (Math.abs(c - esperado) >= 0.005 && !notas) { Utils.toast('Explicá la diferencia', 'warning'); bd.querySelector('#ci-notas').focus(); return; }
+    const btn = e.submitter; btn.disabled = true;
+    const sesionId = resumen.sesion.id;
+    const { data, error } = await db.rpc('caja_cerrar', { p_contado: c, p_fondo: f, p_notas: notas || null });
+    btn.disabled = false;
+    if (error) { Utils.toast(msgError(error, 'cerrar la caja'), 'error'); return; }
+    cerrar();
+    const d = Number(data.diferencia);
+    Utils.toast(d === 0 ? 'Caja cerrada · coincide' : `Caja cerrada · ${d > 0 ? 'sobraron' : 'faltaron'} ${money(Math.abs(d))}`, d === 0 ? 'success' : 'warning', 6000);
+    if (await Utils.confirm('¿Imprimir el cierre de caja?', 'Caja cerrada', 'Imprimir', false)) imprimirCierre(sesionId);
+    await cargar();
+  });
+}
+
+async function imprimirCierre(sesionId) {
+  const [r, m] = await Promise.all([
+    db.rpc('caja_resumen', { p_sesion_id: sesionId }),
+    db.from('caja_movimientos').select('*').eq('sesion_id', sesionId).order('id'),
+  ]);
+  if (r.error) { Utils.toast(msgError(r.error, 'imprimir'), 'error'); return; }
+  MHImprimir.cierreCaja(r.data, m.data || []);
+}
+
+/* ── Cajas anteriores ──────────────────────────────── */
+async function verHistorial() {
+  vista = 'historial';
+  $id('acciones').innerHTML = `<button class="btn btn-outline" data-acc="hoy">← Volver a la caja</button>`;
+  $id('subtitulo').textContent = 'Cierres de los últimos 90 días';
+  $id('contenido').innerHTML = '<div class="spinner" style="margin:40px auto"></div>';
+  const desde = new Date(Date.now() - 90 * 864e5).toISOString();
+  const { data, error } = await db.from('caja_sesiones').select('*').gte('abierta_en', desde).order('abierta_en', { ascending: false });
+  if (error) { $id('contenido').innerHTML = vacio('🔒', msgError(error, 'cargar el historial')); return; }
+  const dif = x => x == null ? '—' : `<span class="${Number(x) === 0 ? 'dif-0' : Number(x) > 0 ? 'dif-mas' : 'dif-menos'}">${Number(x) === 0 ? '✓' : (Number(x) > 0 ? '+' : '−') + money(Math.abs(x))}</span>`;
+  $id('contenido').innerHTML = data.length ? `<div class="table-wrap"><table>
+    <thead><tr><th>Día</th><th>Abrió</th><th>Cerró</th><th style="text-align:right">Inicial</th><th style="text-align:right">Esperado</th><th style="text-align:right">Contado</th><th style="text-align:right">Diferencia</th><th style="text-align:right">Retiro</th><th></th></tr></thead>
+    <tbody>${data.map(s => `<tr>
+      <td>${Utils.date(s.abierta_en)}</td>
+      <td style="font-size:12.5px">${hora(s.abierta_en)} · ${esc(s.abierta_por_nombre || '')}</td>
+      <td style="font-size:12.5px">${s.cerrada_en ? `${hora(s.cerrada_en)} · ${esc(s.cerrada_por_nombre || '')}` : '<span class="badge badge-success">abierta</span>'}</td>
+      <td style="text-align:right">${money(s.monto_inicial)}</td>
+      <td style="text-align:right">${s.efectivo_esperado != null ? money(s.efectivo_esperado) : '—'}</td>
+      <td style="text-align:right">${s.efectivo_contado != null ? money(s.efectivo_contado) : '—'}</td>
+      <td style="text-align:right" title="${esc(s.notas_cierre || '')}">${dif(s.diferencia)}</td>
+      <td style="text-align:right">${s.retiro != null ? money(s.retiro) : '—'}</td>
+      <td>${s.cerrada_en ? `<button class="btn btn-ghost btn-sm" data-imprimir="${s.id}" title="Imprimir cierre">🖨️</button>` : ''}</td>
+    </tr>`).join('')}</tbody></table></div>` : vacio('📚', 'Todavía no hay cierres');
+}
+
+/* ── Conceptos ─────────────────────────────────────── */
+function modalConceptos() {
+  const bd = document.createElement('div'); bd.className = 'modal-backdrop';
+  const pintar = () => {
+    const fila = c => `<tr><td>${esc(c.nombre)}</td><td>${c.tipo === 'ingreso' ? '<span class="badge badge-success">Ingreso</span>' : '<span class="badge badge-danger">Egreso</span>'}</td>
+      <td>${c.clave ? '<span class="badge badge-muted">del sistema</span>' : `<label class="toggle-wrap"><div class="toggle"><input type="checkbox" data-activo="${c.id}" ${c.activo ? 'checked' : ''}><div class="toggle-track"></div><div class="toggle-thumb"></div></div></label>`}</td></tr>`;
+    bd.querySelector('tbody').innerHTML = conceptos.map(fila).join('');
+  };
+  bd.innerHTML = `<div class="modal modal-lg"><div class="modal-header"><h3 class="modal-title">Conceptos de caja</h3><button class="modal-close" data-x aria-label="Cerrar">×</button></div>
+    <div class="modal-body">
+      <form id="cn-form" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap" novalidate>
+        <input type="text" id="cn-nombre" maxlength="60" placeholder="Nuevo concepto" style="flex:1;min-width:160px">
+        <select id="cn-tipo"><option value="egreso">Egreso</option><option value="ingreso">Ingreso</option></select>
+        <button class="btn btn-primary" type="submit">Agregar</button>
+      </form>
+      <div class="table-wrap"><table><thead><tr><th>Concepto</th><th>Tipo</th><th>Activo</th></tr></thead><tbody></tbody></table></div>
+      <div class="form-hint" style="margin-top:8px">Los conceptos no se borran (los movimientos viejos los usan): se desactivan y dejan de aparecer para elegir.</div>
+    </div></div>`;
+  document.body.appendChild(bd);
+  pintar();
+  bd.querySelectorAll('[data-x]').forEach(b => b.onclick = () => { bd.remove(); cargar(); });
+  bd.querySelector('#cn-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const nombre = bd.querySelector('#cn-nombre').value.trim();
+    if (nombre.length < 2) return;
+    const { data, error } = await db.from('caja_conceptos').insert({ nombre, tipo: bd.querySelector('#cn-tipo').value, orden: 50 }).select().single();
+    if (error) { Utils.toast(/duplicate|unique/i.test(error.message) ? 'Ya existe un concepto con ese nombre' : msgError(error, 'agregar el concepto'), 'error'); return; }
+    conceptos.push(data); bd.querySelector('#cn-nombre').value = ''; pintar();
+  });
+  bd.addEventListener('change', async e => {
+    const cb = e.target.closest('[data-activo]'); if (!cb) return;
+    const { error } = await db.from('caja_conceptos').update({ activo: cb.checked }).eq('id', Number(cb.dataset.activo));
+    if (error) { Utils.toast(msgError(error, 'guardar'), 'error'); cb.checked = !cb.checked; return; }
+    conceptos.find(c => c.id === Number(cb.dataset.activo)).activo = cb.checked;
+  });
+}
+
+/* ── Eventos ───────────────────────────────────────── */
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-acc]');
+  if (a) {
+    const k = a.dataset.acc;
+    if (k === 'ingreso' || k === 'egreso') modalMovimiento(k);
+    else if (k === 'cerrar') modalCierre();
+    else if (k === 'historial') verHistorial();
+    else if (k === 'conceptos') modalConceptos();
+    else if (k === 'hoy') { vista = 'hoy'; cargar(); }
+    return;
+  }
+  const an = e.target.closest('[data-anular]');
+  if (an) { anularMovimiento(Number(an.dataset.anular)); return; }
+  const im = e.target.closest('[data-imprimir]');
+  if (im) imprimirCierre(Number(im.dataset.imprimir));
+});
+
+async function initPage() {
+  perfil = await Auth.init();
+  if (!perfil) return;
+  if (!Auth.requirePermiso('caja.ver', perfil)) return;
+  await Layout.init('caja', 'Caja');
+  await cargar();
+}
+initPage();
+</script>
+<script src="/admin/js/assistant.js"></script>
+<script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/admin/sw.js').catch(()=>{}); }</script>
+</body>
+</html>

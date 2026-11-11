@@ -169,6 +169,54 @@ const MHImprimir = (() => {
 </body></html>`;
   }
 
+  /* ── Cierre de caja (HTML puro) ──
+     res: lo que devuelve caja_resumen(id); movs: sus caja_movimientos. */
+  function htmlCierreCaja(res, movs = [], t = {}) {
+    const s = res.sesion || {}, ef = res.efectivo || {};
+    const MED = { ...MEDIOS };
+    const dif = Number(s.diferencia || 0);
+    const manuales = movs.filter(m => !m.venta_id && m.origen !== 'cierre');
+    const otros = (res.por_medio || []).filter(m => m.medio !== 'efectivo');
+    const fila = (a, b, cls = '') => `<tr class="${cls}"><td>${a}</td><td class="r">${b}</td></tr>`;
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Cierre de caja</title>
+<style>${ESTILO_80}</style></head><body>
+  ${encabezado(t, 'CIERRE DE CAJA')}
+  <div class="dato">Apertura: ${esc(fechaHora(s.abierta_en))}</div>
+  <div class="m">Abrió: ${esc(s.abierta_por_nombre || '')}</div>
+  <div class="dato">Cierre: ${esc(s.cerrada_en ? fechaHora(s.cerrada_en) : '— (abierta)')}</div>
+  ${s.cerrada_por_nombre ? `<div class="m">Cerró: ${esc(s.cerrada_por_nombre)}</div>` : ''}
+  <div class="sep"></div>
+  <div class="tipo">EFECTIVO</div>
+  <table>
+    ${fila('Inicial', money(ef.inicial))}
+    ${fila('Ingresos', '+' + money(ef.ingresos))}
+    ${fila('Egresos', '−' + money(ef.egresos))}
+    ${fila('Esperado', money(ef.esperado), 'tot')}
+    ${s.efectivo_contado != null ? fila('Contado', money(s.efectivo_contado), 'tot') : ''}
+    ${s.efectivo_contado != null ? fila('Diferencia', dif === 0 ? 'coincide' : (dif > 0 ? '+' : '−') + money(Math.abs(dif))) : ''}
+    ${s.retiro != null ? fila('Retiro', money(s.retiro)) : ''}
+    ${s.fondo_siguiente != null ? fila('Fondo que queda', money(s.fondo_siguiente)) : ''}
+  </table>
+  ${s.notas_cierre ? `<div class="m">Nota: ${esc(s.notas_cierre)}</div>` : ''}
+  ${otros.length ? `<div class="sep"></div><div class="tipo">OTROS MEDIOS</div><table>
+    ${otros.map(m => fila(esc(MED[m.medio] || m.medio), money(m.neto))).join('')}</table>` : ''}
+  <div class="sep"></div>
+  <table>${fila(`Ventas (${Number(res.ventas?.cantidad || 0)})`, money(res.ventas?.total))}</table>
+  ${manuales.length ? `<div class="sep"></div><div class="tipo">INGRESOS Y EGRESOS</div><table>
+    ${manuales.map(m => `<tr><td colspan="2">${esc(m.concepto_nombre)}${m.descripcion ? ' · ' + esc(m.descripcion) : ''}${m.anulado ? ' (anulado)' : ''}</td></tr>
+      <tr><td class="d">${esc(MED[m.medio_pago] || m.medio_pago)}</td><td class="r">${m.tipo === 'ingreso' ? '+' : '−'}${money(m.monto)}</td></tr>`).join('')}
+  </table>` : ''}
+  <div class="firma">Firma</div>
+  ${SCRIPT_LISTO}
+</body></html>`;
+  }
+
+  async function cierreCaja(res, movs) {
+    if (!res) return;
+    const t = { ...(await datosTienda()), _origen: location.origin };
+    imprimirHTML(htmlCierreCaja(res, movs, t));
+  }
+
   async function ticket(v) {
     if (!v) return;
     const t = { ...(await datosTienda()), _origen: location.origin };
@@ -288,6 +336,6 @@ ${lista.map(p => { const c = valorCodigo(p); return `<div class="et">
   // Después de editar los datos del negocio: la próxima impresión los vuelve a leer
   const refrescar = () => { tienda = null; };
 
-  return { ticket, recibo, refrescar, etiquetas, pedirEtiquetas, _html: { ticket: htmlTicket, recibo: htmlRecibo, cuitFmt, fechaHora } };
+  return { ticket, recibo, cierreCaja, refrescar, etiquetas, pedirEtiquetas, _html: { ticket: htmlTicket, recibo: htmlRecibo, cierreCaja: htmlCierreCaja, cuitFmt, fechaHora } };
 })();
 window.MHImprimir = MHImprimir;

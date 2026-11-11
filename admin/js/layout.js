@@ -4,6 +4,7 @@ const Layout = {
     { id:'dashboard',  label:'Inicio',              icon:'📊', href:'/admin/dashboard',      section:'Principal' },
     { id:'vender',     label:'Crear venta',         icon:'🛒', href:'/admin/vender',         section:'Ventas', permiso:'ventas.crear' },
     { id:'ventas',     label:'Ventas',              icon:'🧮', href:'/admin/ventas',         section:'Ventas' },
+    { id:'caja',       label:'Caja',                icon:'💵', href:'/admin/caja',           section:'Ventas', permiso:'caja.ver' },
     { id:'pedidos',    label:'Pedidos web',         icon:'🧾', href:'/admin/pedidos',        section:'Ventas' },
     { id:'crm',        label:'Clientes',            icon:'🤝', href:'/admin/crm',            section:'Ventas', permiso:'clientes.gestionar' },
     { id:'cuentas-cobro', label:'Cuentas bancarias',icon:'🏦', href:'/admin/cuentas-cobro',  section:'Ventas', adminOnly:true },

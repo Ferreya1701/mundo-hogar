@@ -39,6 +39,10 @@
         </div>
       </div>
 
+      <div class="card mb-3" id="aviso-caja" hidden style="border-left:4px solid var(--warning);padding:10px 14px;font-size:13px">
+        💵 <b>La caja está cerrada.</b> Podés vender igual: el cobro queda pendiente y entra cuando se abra la caja.
+        <a href="/admin/caja" id="aviso-caja-link" hidden>Abrir la caja →</a>
+      </div>
       <div class="card mb-3" id="aviso-sql" hidden style="border-left:4px solid var(--danger)">
         <div class="card-body" style="font-size:13px">
           <b>Falta activar las ventas en la base de datos.</b> Ejecutá <code>sql/013-local-compras-stock.sql</code> en Supabase (ver GUIA-STOCK-Y-VENTAS.md). Hasta entonces esta pantalla no puede registrar ventas.
@@ -188,6 +192,14 @@ async function cargarHoy() {
   (data||[]).forEach(v => porMedio[v.medio_pago] = (porMedio[v.medio_pago]||0) + Number(v.total||0));
   el.innerHTML = `<span>${!Auth.puede('ventas.ver_todas', perfil) ? 'Tus ventas de hoy' : 'Hoy'}: <b>${n}</b> venta${n!==1?'s':''}</span><span><b>${money(total)}</b></span>` +
     Object.entries(porMedio).map(([m,t]) => `<span>${esc(MEDIOS[m]||m)}: ${money(t)}</span>`).join('');
+}
+
+/* Aviso si la caja está cerrada (sql/018). No frena nada: solo avisa. */
+async function avisoCaja() {
+  const { data, error } = await db.rpc('caja_esta_abierta');
+  if (error || data !== false) return;
+  document.getElementById('aviso-caja').hidden = false;
+  document.getElementById('aviso-caja-link').hidden = !Auth.puede('caja.abrir_cerrar', perfil);
 }
 
 /* ── Categorías ── */
@@ -568,6 +580,7 @@ async function initPage() {
   if (!Auth.requirePermiso('ventas.crear', perfil)) return;
   await Layout.init('vender', 'Crear venta');
   cargarTicket();
+  avisoCaja();
   await cargarDatos();
 }
 initPage();

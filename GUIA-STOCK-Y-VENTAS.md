@@ -168,4 +168,37 @@ inicio 01/07/2015, Responsable Inscripto) solo si están vacíos.
 - Los dos dicen al pie "Comprobante interno · no válido como factura".
 - Se imprime cuando cargó el logo (o a los 2,5 s si no carga), así no sale sin logo.
 - Código: `admin/js/impresion.js` (`MHImprimir.ticket`, `MHImprimir.recibo`). Pruebas:
-  `node scripts/test-ticket.mjs` (37).
+  `node scripts/test-ticket.mjs` (también cubre el cierre de caja).
+
+## 11. Caja diaria — `/admin/caja` (sql/018, 2026-11-11)
+**Abrir:** se pone el efectivo que hay en el cajón (viene sugerido el fondo que dejó el último
+cierre; si no coincide, pide una nota). **Cerrar:** se cuenta el efectivo; la pantalla muestra lo que
+debería haber y la diferencia. Si no coincide hay que explicar qué pasó. Se elige cuánto queda de
+fondo para mañana; el resto queda como "Retiro al cierre". Al cerrar se puede imprimir el cierre (80 mm).
+
+- **Ventas:** entran solas. Efectivo suma al cajón; transferencia, débito, crédito, Mercado Pago y
+  "otro" se ven aparte ("no están en el cajón"). **Cuenta corriente no entra** (entra cuando el
+  cliente paga). Anular una venta saca la devolución por el mismo medio.
+- **La caja nunca frena una venta.** Con la caja cerrada se vende igual (Crear venta avisa) y el
+  cobro queda pendiente: se suma solo a la próxima apertura.
+- **Ingresos y egresos:** botones "+ Ingreso" / "− Egreso" con concepto (compras menores, retiro del
+  dueño, sueldos, servicios, fletes…). "Otros" exige detalle. Solo con la caja abierta.
+- **Nada se borra ni se edita.** Un movimiento manual mal cargado se **anula** con motivo: queda
+  tachado y aparece el inverso. Las ventas se anulan desde Ventas.
+- **Cajas anteriores:** lista de cierres con esperado, contado, diferencia y retiro, y reimpresión.
+- **Conceptos:** se agregan y se desactivan (no se borran); renombrar no cambia los movimientos viejos.
+
+| Permiso (Admin → Permisos) | Vendedor | Encargado |
+|---|---|---|
+| Ver la caja del día | ✔ | ✔ |
+| Abrir y cerrar la caja | ✔ | |
+| Cargar ingresos y egresos | ✔ | |
+| Anular movimientos de caja | | |
+| Ver cajas anteriores | | |
+| Editar conceptos de caja | | |
+
+Por dentro: `caja_sesiones`, `caja_movimientos`, `caja_conceptos`. Las ventas llegan por el disparador
+`tr_ventas_caja` → `fn_caja_sincronizar_venta`, que compara lo que la venta debería haber dejado en
+caja con lo que dejó y asienta la diferencia (sirve para alta, anulación y la futura edición de
+ventas). Funciones: `caja_abrir`, `caja_cerrar`, `caja_movimiento_registrar`,
+`caja_movimiento_anular`, `caja_resumen`, `caja_esta_abierta`. Pruebas: `node scripts/test-caja-sql.mjs` (75).

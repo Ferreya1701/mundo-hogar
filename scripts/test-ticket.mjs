@@ -88,6 +88,39 @@ tiene('saldo actual', r, 'SALDO ACTUAL</td><td class="r">$ 50.000');
 tiene('lugar para firmar', r, 'Firma y aclaración');
 noTiene('sin saldo no se muestra la cuenta', recibo({ cliente_nombre: 'X', monto: 1 }, TIENDA), 'SALDO ACTUAL');
 
+grupo('Cierre de caja');
+const cierre = ctx.MHImprimir._html.cierreCaja({
+  sesion: { abierta_en: '2026-11-11T12:00:00Z', abierta_por_nombre: 'Vero', cerrada_en: '2026-11-11T23:00:00Z', cerrada_por_nombre: 'Vero',
+            efectivo_contado: 12000, diferencia: -900, retiro: 7000, fondo_siguiente: 5000, notas_cierre: 'faltó un vuelto' },
+  efectivo: { inicial: 10000, ingresos: 7500, egresos: 4600, esperado: 12900 },
+  por_medio: [{ medio: 'efectivo', neto: 2900 }, { medio: 'transferencia', neto: 3000 }],
+  ventas: { cantidad: 3, total: 9500 },
+}, [{ origen: 'manual', concepto_nombre: 'Compras menores', descripcion: 'Bolsas', medio_pago: 'efectivo', tipo: 'egreso', monto: 2000 },
+    { origen: 'venta', venta_id: 1, concepto_nombre: 'Venta', medio_pago: 'efectivo', tipo: 'ingreso', monto: 5000 },
+    { origen: 'cierre', concepto_nombre: 'Retiro al cierre', medio_pago: 'efectivo', tipo: 'egreso', monto: 7000 }], TIENDA);
+tiene('título', cierre, 'CIERRE DE CAJA');
+tiene('esperado', cierre, 'Esperado</td><td class="r">$ 12.900');
+tiene('contado', cierre, 'Contado</td><td class="r">$ 12.000');
+tiene('faltante', cierre, 'Diferencia</td><td class="r">−$ 900');
+tiene('fondo que queda', cierre, 'Fondo que queda</td><td class="r">$ 5.000');
+tiene('otros medios', cierre, 'Transferencia</td><td class="r">$ 3.000');
+tiene('egreso manual con detalle', cierre, 'Compras menores · Bolsas');
+noTiene('las ventas no se listan una por una', cierre, '<td colspan="2">Venta');
+noTiene('el retiro no se repite como egreso', cierre, 'Retiro al cierre');
+
+grupo('Montos escritos a mano (caja.html)');
+const cajaHtml = fs.readFileSync(path.join(RAIZ, 'admin/caja.html'), 'utf8');
+const fuenteNum = cajaHtml.match(/const num = v => \{[\s\S]*?\n\};/)[0];
+const num = new Function(fuenteNum + '; return num;')();
+t('"12.500" → 12500', num('12.500'), 12500);
+t('"12500,50" → 12500.5', num('12500,50'), 12500.5);
+t('"12.500,50" → 12500.5', num('12.500,50'), 12500.5);
+t('"12500.5" → 12500.5', num('12500.5'), 12500.5);
+t('"$ 1.200.000" → 1200000', num('$ 1.200.000'), 1200000);
+t('"0" → 0', num('0'), 0);
+t('vacío → no es número', Number.isNaN(num('')), true);
+t('texto → no es número', Number.isNaN(num('mil')), true);
+
 // ── sql/017 ──
 grupo('sql/017 — datos fiscales');
 let PGlite;
