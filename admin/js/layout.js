@@ -11,6 +11,7 @@ const Layout = {
     { id:'cuentas-cobro', label:'Cuentas bancarias',icon:'🏦', href:'/admin/cuentas-cobro',  section:'Ventas', adminOnly:true },
     { id:'productos',  label:'Productos',            icon:'🛍️', href:'/admin/productos',      section:'Catálogo' },
     { id:'categorias', label:'Categorías',           icon:'🏷️', href:'/admin/categorias',     section:'Catálogo' },
+    { id:'importar',   label:'Importar artículos',   icon:'📥', href:'/admin/importar',       section:'Catálogo', permiso:'productos.editar' },
     { id:'carga-stock',label:'Contar stock',         icon:'📥', href:'/admin/carga-stock',    section:'Stock', permiso:'stock.contar' },
     { id:'compras',    label:'Compras',             icon:'🚢', href:'/admin/compras',        section:'Stock', permiso:'compras.gestionar' },
     { id:'inventario', label:'Ajuste manual',       icon:'📦', href:'/admin/inventario',     section:'Stock', permiso:'stock.ajustar' },

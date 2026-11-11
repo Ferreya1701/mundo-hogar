@@ -22,6 +22,15 @@
   la `.webp` y cae al `.jpg` si falta (`MH.webpUrl` / `MH.setImg`). Al sumar fotos nuevas, generar ambas.
 - Cloudflare redirige `x.html` → `x` y `/productos` → `/productos/` (conserva los parámetros).
 
+## Importar artículos del sistema anterior (2026-11-11) — EN EL REPO; FALTA CORRER sql/021
+- `sql/021-importar-articulos.sql`: `productos.codigo_anterior` (único) y `productos_importar()` en
+  tandas: crea inactivos con stock de referencia sin contar, vincula a productos existentes, no duplica
+  al reimportar, actualiza precios por código. Pantalla `admin/importar.html` (lee el CSV en el
+  navegador: el repo es público y los datos no se versionan). Guía: `GUIA-IMPORTAR-ARTICULOS.md`.
+- Catálogo recibido 11/11/2026 (PDF "Stock de Artículos"): 972 artículos, 28 rubros (ACCESORIOS 793),
+  sin precios; "marca" mezcla marcas y orígenes. ~80 se parecen a productos de la web (revisar a mano).
+- Pruebas: `node scripts/test-importar-sql.mjs` (23).
+
 ## Quitar productos de una venta (2026-11-11) — EN EL REPO; FALTA CORRER sql/020 (después del 019)
 - `sql/020-editar-venta.sql`: `venta_quitar_items` devuelve stock, recalcula el total y los
   disparadores de caja (018) y cuenta corriente (019) devuelven la diferencia. Registro en
@@ -31,9 +40,10 @@
 - Pruebas: `node scripts/test-editar-venta-sql.mjs` (33).
 
 ## Orden para correr en producción (proyecto nuevo de São Paulo)
-`015` (si no se corrió) → `016` → `017` → `018` → `019` → `020`. Después: volver a desplegar la Edge
-Function `leer-lista-compra`, cargar recargos por categoría y los saldos iniciales de las cuentas
-corrientes (ajuste "Saldo inicial"). Pendiente: cotizar envíos fuera de Santa Fe (espera empresa de
+`015` (si no se corrió) → `016` → `017` → `018` → `019` → `020` → `021`. Después: volver a desplegar la Edge
+Function `leer-lista-compra`, importar el catálogo del sistema viejo (Catálogo → Importar artículos),
+cargar recargos por categoría y los saldos iniciales de las cuentas corrientes (ajuste "Saldo inicial").
+Falta del sistema viejo: **lista de precios** (se importa con la misma pantalla, codigo + precio). Pendiente: cotizar envíos fuera de Santa Fe (espera empresa de
 transporte).
 
 ## Cuentas corrientes (2026-11-11) — EN EL REPO; FALTA CORRER sql/019 (después del 018)

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/admin/manifest.json">
+  <meta name="theme-color" content="#0A2E63">
+  <link rel="icon" type="image/png" href="/images/marca/favicon.png">
+  <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
+  <title>Importar artículos — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+  <style>
+    .paso { margin-bottom:18px; }
+    .paso h2 { font-size:15px; font-weight:700; color:var(--night); margin-bottom:4px; }
+    .paso > p { font-size:13px; color:var(--muted); margin-bottom:10px; }
+    .r { text-align:right; white-space:nowrap; }
+    .sub { font-size:11.5px; color:var(--muted); }
+    .mini td, .mini th { padding:6px 10px; font-size:13px; }
+    .mini select { min-height:32px; font-size:13px; max-width:260px; }
+    tr.excluido td { color:var(--muted); text-decoration:line-through; }
+    tr.excluido td.sel, tr.excluido td.acc { text-decoration:none; }
+    .barra { position:sticky; bottom:0; background:linear-gradient(transparent, var(--bg) 25%); padding:14px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .barra .res { margin-right:auto; font-size:13px; }
+    .prog { height:8px; background:var(--border); border-radius:4px; overflow:hidden; width:240px; }
+    .prog > div { height:100%; background:var(--gold); width:0; transition:width .3s; }
+    .dup select { max-width:300px; }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><img class="sidebar-brand-icon" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="32" height="32"><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/" target="_blank" class="btn btn-ghost btn-sm">🌐 Ver Tienda</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1>Importar artículos</h1><p>Pasar el catálogo del sistema anterior o actualizar precios desde una planilla (CSV).</p></div>
+      </div>
+
+      <div class="card paso">
+        <div class="card-body">
+          <h2>1. Elegí el archivo</h2>
+          <p>Planilla CSV con columnas <b>codigo</b>, <b>descripcion</b>, marca, rubro, stock y/o <b>precio</b>. Se lee en esta computadora: no se sube nada hasta que confirmes.
+            Para una lista de precios alcanza con <b>codigo</b> y <b>precio</b>.</p>
+          <input type="file" id="archivo" accept=".csv,text/csv">
+          <div id="info-archivo" class="sub" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <div id="pasos" hidden>
+        <div class="card paso" id="paso-rubros"><div class="card-body">
+          <h2>2. Rubros → categorías</h2>
+          <p>A qué categoría de la tienda va cada rubro. Lo que quede "sin categoría" se puede ordenar después en Productos.</p>
+          <div class="table-wrap"><table class="mini"><thead><tr><th>Rubro</th><th class="r">Artículos</th><th>Categoría</th></tr></thead><tbody id="t-rubros"></tbody></table></div>
+        </div></div>
+
+        <div class="card paso" id="paso-marcas"><div class="card-body">
+          <h2>3. ¿Qué es cada "marca"?</h2>
+          <p>En el sistema anterior este campo mezcla marcas reales (Kanji, Ultracomb…) con orígenes o proveedores (Buenos Aires, Córdoba…). Lo que sea proveedor se guarda aparte, no se muestra en la tienda.</p>
+          <div class="table-wrap"><table class="mini"><thead><tr><th>Valor</th><th class="r">Artículos</th><th>Es…</th></tr></thead><tbody id="t-marcas"></tbody></table></div>
+        </div></div>
+
+        <div class="card paso"><div class="card-body">
+          <h2>4. Revisá los artículos</h2>
+          <p>Destildá lo que no sea un producto (envíos, servicios). En <b>posibles duplicados</b> elegí si es el mismo producto que ya está en la web (se vincula, no se crea otro).</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+            <div class="search-bar" style="flex:1;min-width:200px"><span class="search-icon">🔍</span><input type="search" id="q" placeholder="Buscar…" autocomplete="off"></div>
+            <div class="chips" id="filtros"></div>
+          </div>
+          <div class="table-wrap"><table class="mini">
+            <thead><tr><th style="width:34px"></th><th>Código</th><th>Descripción</th><th>Categoría</th><th class="r">Stock</th><th class="r">Precio</th><th>Qué pasa</th></tr></thead>
+            <tbody id="t-art"></tbody>
+          </table></div>
+          <div id="pag" style="margin-top:10px"></div>
+        </div></div>
+      </div>
+
+      <div class="barra" id="barra" hidden>
+        <div class="res" id="resumen"></div>
+        <div class="prog" id="prog" hidden><div></div></div>
+        <button class="btn btn-primary" id="btn-importar">Importar</button>
+      </div>
+      <div id="resultado"></div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script>
+/* ============================================================
+   Importar artículos (sql/021). Todo se arma acá en el navegador;
+   la base recibe tandas de 150 en productos_importar().
+   ============================================================ */
+const $id = id => document.getElementById(id);
+const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const money = n => new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS', minimumFractionDigits:0, maximumFractionDigits:2 }).format(Number(n || 0));
+const norm = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+const TAM_PAG = 100, TANDA = 150;
+const LS = 'mh_importar_v1';
+
+// Montos y cantidades como vienen en planillas argentinas
+const num = v => {
+  let s = String(v ?? '').trim().replace(/[\s$]/g, '');
+  if (!s) return null;
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  else if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+};
+
+/* ── CSV ───────────────────────────────────────────── */
+function parseCSV(texto) {
+  texto = texto.replace(/^﻿/, '');
+  const primera = texto.split(/\r?\n/, 1)[0];
+  const sep = (primera.match(/;/g) || []).length > (primera.match(/,/g) || []).length ? ';' : ',';
+  const filas = []; let fila = [], campo = '', comillas = false;
+  for (let i = 0; i < texto.length; i++) {
+    const c = texto[i];
+    if (comillas) {
+      if (c === '"' && texto[i + 1] === '"') { campo += '"'; i++; }
+      else if (c === '"') comillas = false;
+      else campo += c;
+    } else if (c === '"') comillas = true;
+    else if (c === sep) { fila.push(campo); campo = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && texto[i + 1] === '\n') i++;
+      fila.push(campo); campo = '';
+      if (fila.some(x => x.trim() !== '')) filas.push(fila);
+      fila = [];
+    } else campo += c;
+  }
+  fila.push(campo); if (fila.some(x => x.trim() !== '')) filas.push(fila);
+  return filas;
+}
+const ALIAS = {
+  codigo: ['codigo', 'cod', 'code', 'articulo', 'id articulo'],
+  descripcion: ['descripcion', 'nombre', 'detalle', 'articulo descripcion', 'producto'],
+  marca: ['marca'],
+  rubro: ['rubro', 'categoria', 'familia'],
+  stock: ['stock', 'cantidad', 'existencia'],
+  precio: ['precio', 'precio venta', 'precio de venta', 'precio minorista', 'pvp', 'precio final', 'lista'],
+  observaciones: ['observaciones', 'variantes', 'notas'],
+};
+function columnas(cab) {
+  const n = cab.map(norm), out = {};
+  for (const [k, alias] of Object.entries(ALIAS)) {
+    const i = n.findIndex(h => alias.includes(h));
+    if (i >= 0) out[k] = i;
+  }
+  return out;
+}
+
+/* ── Estado ────────────────────────────────────────── */
+let perfil = null, cats = [], prods = [];
+let filas = [];          // [{ i, codigo, descripcion, marca, rubro, stock, precio, obs, incluir, existente, sugerido, vincular }]
+let mapRubro = {}, mapMarca = {};
+let filtro = 'todos', pagina = 1;
+const pref = (() => { try { return JSON.parse(localStorage.getItem(LS) || '{}'); } catch (e) { return {}; } })();
+const guardarPref = () => { try { localStorage.setItem(LS, JSON.stringify({ rubros: mapRubro, marcas: mapMarca })); } catch (e) {} };
+
+const ORIGENES = ['buenos aires', 'cordoba', 'rosario', 'litoral', 'santa fe', 'mendoza', 'tucuman', 'parana', 'importado'];
+const SIN_MARCA = ['ninguna', 'sin marca', 'varios', 'generico', '-', ''];
+const NO_PRODUCTO = /^(envio|envios|flete|servicio|sena|seña|ajuste|recargo|descuento|interes)\b/i;
+
+// Parecido entre dos nombres (palabras en común), 0 a 1
+const palabras = s => new Set(norm(s).split(' ').filter(w => w.length > 2));
+function parecido(a, b) {
+  const A = palabras(a), B = palabras(b);
+  if (!A.size || !B.size) return 0;
+  let n = 0; A.forEach(w => { if (B.has(w)) n++; });
+  return n / (A.size + B.size - n);
+}
+
+/* ── Leer el archivo ───────────────────────────────── */
+$id('archivo').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  let texto = await f.text();
+  if (texto.includes('�')) {   // no era UTF-8: planillas viejas de Excel
+    texto = new TextDecoder('windows-1252').decode(await f.arrayBuffer());
+  }
+  const t = parseCSV(texto);
+  if (t.length < 2) { Utils.toast('El archivo está vacío', 'error'); return; }
+  const col = columnas(t[0]);
+  if (col.codigo == null) { Utils.toast('No encuentro la columna "codigo" en el archivo', 'error', 7000); return; }
+  if (col.descripcion == null && col.precio == null) { Utils.toast('Falta la columna "descripcion" (o "precio" si es una lista de precios)', 'error', 7000); return; }
+
+  const porCodigo = new Map(prods.filter(p => p.codigo_anterior).map(p => [p.codigo_anterior.trim().toLowerCase(), p]));
+  const libres = prods.filter(p => !p.codigo_anterior);
+  filas = t.slice(1).map((r, i) => {
+    const g = k => col[k] != null ? String(r[col[k]] ?? '').trim() : '';
+    const codigo = g('codigo'), descripcion = g('descripcion');
+    const existente = porCodigo.get(codigo.toLowerCase()) || null;
+    // Hasta 3 productos de la web que se le parecen; con 80% o más se vincula solo (se puede cambiar)
+    let sugerido = null, vincular = null;
+    if (!existente && descripcion) {
+      const cand = libres.map(p => ({ id: p.id, nombre: p.nombre, sku: p.sku, score: parecido(descripcion, p.nombre) }))
+        .filter(c => c.score >= 0.34).sort((a, b) => b.score - a.score).slice(0, 3);
+      if (cand.length) { sugerido = { ...cand[0], opciones: cand }; if (cand[0].score >= 0.8) vincular = cand[0].id; }
+    }
+    return { i, codigo, descripcion, marca: g('marca'), rubro: g('rubro') || '(sin rubro)', stock: num(g('stock')), precio: num(g('precio')),
+             obs: g('observaciones'), incluir: !!codigo && !NO_PRODUCTO.test(descripcion), existente, sugerido, vincular };
+  }).filter(f => f.codigo || f.descripcion);
+  filas.forEach((f, k) => f.i = k);   // índice estable para los controles de la tabla
+
+  // Rubros y marcas con lo recordado o una sugerencia
+  mapRubro = {}; mapMarca = {};
+  for (const r of new Set(filas.map(f => f.rubro))) {
+    const recordado = pref.rubros?.[r];
+    const parecida = cats.find(c => norm(c.nombre) === norm(r)) || cats.find(c => norm(r).includes(norm(c.nombre)) || norm(c.nombre).includes(norm(r)));
+    mapRubro[r] = recordado !== undefined && (recordado === '' || cats.some(c => String(c.id) === String(recordado))) ? recordado : (parecida ? String(parecida.id) : '');
+  }
+  for (const m of new Set(filas.map(f => f.marca))) {
+    const k = norm(m);
+    mapMarca[m] = pref.marcas?.[m] || (SIN_MARCA.includes(k) ? 'ignorar' : ORIGENES.includes(k) ? 'proveedor' : 'marca');
+  }
+  $id('info-archivo').innerHTML = `<b>${filas.length}</b> renglones · columnas: ${Object.keys(col).join(', ')}` +
+    (col.precio == null ? ' · <span style="color:var(--warning)">sin precios (los productos nuevos quedan sin precio)</span>' : '');
+  $id('pasos').hidden = false; $id('barra').hidden = false; $id('resultado').innerHTML = '';
+  $id('paso-rubros').hidden = col.rubro == null; $id('paso-marcas').hidden = col.marca == null;
+  pagina = 1; renderTodo();
+});
+
+/* ── Pantalla ──────────────────────────────────────── */
+const nombreCat = id => cats.find(c => String(c.id) === String(id))?.nombre || '';
+const optsCat = sel => `<option value="">Sin categoría</option>` + cats.map(c => `<option value="${c.id}"${String(sel) === String(c.id) ? ' selected' : ''}>${esc(c.nombre)}</option>`).join('');
+
+function renderTodo() { renderRubros(); renderMarcas(); renderFiltros(); renderArticulos(); renderResumen(); }
+
+function renderRubros() {
+  const n = {}; filas.forEach(f => n[f.rubro] = (n[f.rubro] || 0) + 1);
+  $id('t-rubros').innerHTML = Object.entries(n).sort((a, b) => b[1] - a[1]).map(([r, c]) =>
+    `<tr><td>${esc(r)}</td><td class="r">${c}</td><td><select data-rubro="${esc(r)}">${optsCat(mapRubro[r])}</select></td></tr>`).join('');
+}
+function renderMarcas() {
+  const n = {}; filas.forEach(f => n[f.marca] = (n[f.marca] || 0) + 1);
+  $id('t-marcas').innerHTML = Object.entries(n).sort((a, b) => b[1] - a[1]).map(([m, c]) =>
+    `<tr><td>${esc(m || '(vacío)')}</td><td class="r">${c}</td><td><select data-marca="${esc(m)}">
+      ${[['marca', 'Marca'], ['proveedor', 'Proveedor / origen'], ['ignorar', 'Ignorar']].map(([k, v]) => `<option value="${k}"${mapMarca[m] === k ? ' selected' : ''}>${v}</option>`).join('')}
+    </select></td></tr>`).join('');
+}
+
+const tipoDe = f => !f.incluir ? 'excluido' : f.existente ? 'existente' : f.vincular ? 'vincular' : f.sugerido ? 'duplicado' : 'nuevo';
+const FILTROS = [['todos', 'Todos'], ['nuevo', 'Nuevos'], ['duplicado', 'Posibles duplicados'], ['vincular', 'Se vinculan'], ['existente', 'Ya importados'], ['excluido', 'Excluidos']];
+function renderFiltros() {
+  const n = {}; filas.forEach(f => { const t = tipoDe(f); n[t] = (n[t] || 0) + 1; });
+  n.todos = filas.length;
+  n.duplicado = filas.filter(f => f.incluir && !f.existente && f.sugerido).length;
+  $id('filtros').innerHTML = FILTROS.filter(([k]) => k === 'todos' || n[k])
+    .map(([k, v]) => `<button class="chip${filtro === k ? ' active' : ''}" data-f="${k}">${v} <span class="chip-n">${n[k] || 0}</span></button>`).join('');
+}
+
+function visibles() {
+  const q = norm($id('q').value);
+  return filas.filter(f => {
+    // "Posibles duplicados" muestra también los ya decididos, para poder cambiar de opinión
+    if (filtro === 'duplicado') { if (!f.incluir || f.existente || !f.sugerido) return false; }
+    else if (filtro !== 'todos' && tipoDe(f) !== filtro) return false;
+    return !q || norm(`${f.codigo} ${f.descripcion} ${f.marca} ${f.rubro}`).includes(q);
+  });
+}
+
+function queHace(f) {
+  if (!f.incluir) return '<span class="sub">no se importa</span>';
+  if (f.existente) return `<span class="badge badge-muted">ya importado</span> <span class="sub">actualiza ${esc(f.existente.sku || '')}</span>`;
+  if (f.sugerido) return `<div class="dup"><select data-vinc="${f.i}">
+      <option value="">Crear producto nuevo</option>
+      ${f.sugerido.opciones.map(o => `<option value="${o.id}"${f.vincular === o.id ? ' selected' : ''}>Es el mismo que: ${esc(o.nombre)} (${Math.round(o.score * 100)}%)</option>`).join('')}
+    </select></div>`;
+  return '<span class="badge badge-success">nuevo</span>';
+}
+
+function renderArticulos() {
+  const lista = visibles();
+  const paginas = Math.max(1, Math.ceil(lista.length / TAM_PAG));
+  pagina = Math.min(pagina, paginas);
+  const pag = lista.slice((pagina - 1) * TAM_PAG, pagina * TAM_PAG);
+  $id('t-art').innerHTML = pag.length ? pag.map(f => `<tr class="${f.incluir ? '' : 'excluido'}">
+    <td class="sel"><input type="checkbox" data-incl="${f.i}" ${f.incluir ? 'checked' : ''} ${f.codigo ? '' : 'disabled'} aria-label="Importar ${esc(f.descripcion)}"></td>
+    <td style="font-family:monospace;font-size:12px">${esc(f.codigo) || '<span style="color:var(--danger)">falta</span>'}</td>
+    <td>${esc(f.descripcion)}<div class="sub">${esc(f.marca)}${f.obs ? ' · ' + esc(f.obs) : ''}</div></td>
+    <td class="sub">${esc(nombreCat(mapRubro[f.rubro]) || '—')}<div>${esc(f.rubro)}</div></td>
+    <td class="r">${f.stock == null ? '—' : f.stock < 0 ? `<span title="Negativo en el sistema anterior: entra como 0" style="color:var(--danger)">${f.stock} → 0</span>` : f.stock}</td>
+    <td class="r">${f.precio ? money(f.precio) : '—'}</td>
+    <td class="acc">${queHace(f)}</td></tr>`).join('')
+    : '<tr><td colspan="7" class="text-center" style="padding:24px;color:var(--muted)">Nada con ese filtro.</td></tr>';
+  Utils.renderPagination($id('pag'), pagina, lista.length, TAM_PAG, p => { pagina = p; renderArticulos(); });
+}
+
+function renderResumen() {
+  const inc = filas.filter(f => f.incluir);
+  const n = t => inc.filter(f => tipoDe(f) === t).length;
+  $id('resumen').innerHTML = `<b>${inc.length}</b> a importar: ${n('nuevo') + n('duplicado')} nuevos · ${n('vincular')} se vinculan · ${n('existente')} ya importados` +
+    (n('duplicado') ? ` · <span style="color:var(--warning)">${n('duplicado')} posibles duplicados sin revisar (se crean nuevos)</span>` : '');
+  $id('btn-importar').textContent = `Importar ${inc.length} artículo${inc.length !== 1 ? 's' : ''}`;
+  $id('btn-importar').disabled = !inc.length;
+}
+
+/* ── Eventos ───────────────────────────────────────── */
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.rubro !== undefined) { mapRubro[t.dataset.rubro] = t.value; guardarPref(); renderArticulos(); }
+  else if (t.dataset.marca !== undefined) { mapMarca[t.dataset.marca] = t.value; guardarPref(); }
+  else if (t.dataset.incl !== undefined) { filas[Number(t.dataset.incl)].incluir = t.checked; renderFiltros(); renderArticulos(); renderResumen(); }
+  else if (t.dataset.vinc !== undefined) { filas[Number(t.dataset.vinc)].vincular = t.value ? Number(t.value) : null; renderFiltros(); renderResumen(); }
+});
+$id('filtros').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (!b) return; filtro = b.dataset.f; pagina = 1; renderFiltros(); renderArticulos(); });
+$id('q').addEventListener('input', () => { pagina = 1; renderArticulos(); });
+
+/* ── Importar ──────────────────────────────────────── */
+function paraEnviar(f) {
+  const tipo = mapMarca[f.marca];
+  return {
+    codigo: f.codigo, nombre: f.descripcion,
+    marca: tipo === 'marca' ? f.marca : null,
+    proveedor: tipo === 'proveedor' ? f.marca : null,
+    categoria_id: mapRubro[f.rubro] ? Number(mapRubro[f.rubro]) : null,
+    stock: f.stock, precio: f.precio,
+    vincular_producto_id: f.existente ? null : f.vincular,
+  };
+}
+
+$id('btn-importar').addEventListener('click', async () => {
+  const inc = filas.filter(f => f.incluir);
+  const dudas = inc.filter(f => tipoDe(f) === 'duplicado').length;
+  const ok = await Utils.confirm(
+    `Se van a importar <b>${inc.length}</b> artículos.` +
+    (dudas ? `<br><br>Hay <b>${dudas}</b> posibles duplicados sin revisar: se crean como productos nuevos.` : '') +
+    '<br><br>Los nuevos entran <b>inactivos</b> (no se ven en la tienda) con el stock como referencia, sin contar. Se pueden vender en el local.',
+    'Importar artículos', 'Importar', false);
+  if (!ok) return;
+  const btn = $id('btn-importar'); btn.disabled = true;
+  const prog = $id('prog'); prog.hidden = false;
+  const tot = { creados: 0, actualizados: 0, vinculados: 0, errores: 0 }, items = [];
+  for (let k = 0; k < inc.length; k += TANDA) {
+    const tanda = inc.slice(k, k + TANDA);
+    const { data, error } = await db.rpc('productos_importar', { p: { items: tanda.map(paraEnviar) } });
+    if (error) {
+      const m = (error.message || '').toLowerCase();
+      Utils.toast(m.includes('could not find') || m.includes('schema cache') ? 'Falta ejecutar sql/021-importar-articulos.sql en la base de datos.' : (error.hint || error.message), 'error', 8000);
+      break;
+    }
+    for (const x of Object.keys(tot)) tot[x] += data[x] || 0;
+    data.items.forEach((r, j) => items.push({ ...r, descripcion: tanda[j].descripcion }));
+    prog.firstElementChild.style.width = `${Math.round(100 * Math.min(k + TANDA, inc.length) / inc.length)}%`;
+  }
+  btn.disabled = false;
+  const errores = items.filter(r => r.accion === 'error');
+  $id('resultado').innerHTML = `<div class="card"><div class="card-body">
+    <h2 style="font-size:15px;margin-bottom:6px">Listo</h2>
+    <p>${tot.creados} productos nuevos · ${tot.vinculados} vinculados a productos que ya estaban · ${tot.actualizados} actualizados · ${tot.errores} con error.</p>
+    ${errores.length ? `<div class="table-wrap" style="margin-top:10px"><table class="mini"><thead><tr><th>Código</th><th>Artículo</th><th>Problema</th></tr></thead><tbody>
+      ${errores.map(r => `<tr><td>${esc(r.codigo || '—')}</td><td>${esc(r.descripcion)}</td><td>${esc(r.detalle || r.error)}</td></tr>`).join('')}</tbody></table></div>` : ''}
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+      <button class="btn btn-outline" id="btn-csv-res">⬇ Descargar resultado</button>
+      <a class="btn btn-primary" href="/admin/productos">Ver productos</a>
+    </div></div></div>`;
+  $id('btn-csv-res').onclick = () => Utils.exportCSV(items.map(r => ({ codigo: r.codigo, articulo: r.descripcion, resultado: r.accion, sku: r.sku || '', problema: r.detalle || r.error || '' })),
+    `importacion-${new Date().toISOString().slice(0, 10)}.csv`);
+  Utils.toast(`Importación terminada: ${tot.creados} nuevos, ${tot.errores} con error`, tot.errores ? 'warning' : 'success', 7000);
+  await cargarBase();
+});
+
+async function cargarBase() {
+  const [c, p] = await Promise.all([
+    db.from('categorias').select('id, nombre').order('orden').order('nombre'),
+    db.from('productos').select('id, nombre, sku, codigo_anterior, estado').neq('estado', 'archivado').limit(10000),
+  ]);
+  if (p.error && /codigo_anterior/.test(p.error.message || '')) {
+    $id('info-archivo').innerHTML = '<span style="color:var(--danger)">Falta ejecutar <code>sql/021-importar-articulos.sql</code> en la base de datos.</span>';
+    $id('archivo').disabled = true; return;
+  }
+  cats = c.data || []; prods = p.data || [];
+}
+
+async function initPage() {
+  perfil = await Auth.init();
+  if (!perfil) return;
+  if (!Auth.requirePermiso('productos.editar', perfil)) return;
+  await Layout.init('importar', 'Importar artículos');
+  await cargarBase();
+}
+initPage();
+</script>
+<script src="/admin/js/assistant.js"></script>
+<script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/admin/sw.js').catch(()=>{}); }</script>
+</body>
+</html>
