@@ -163,10 +163,10 @@ function render() {
     <td class="c-fecha" style="white-space:nowrap;color:var(--muted);font-size:12px">${Utils.datetime(v.fecha)}</td>
     <td class="c-cod" style="font-family:monospace;font-size:12px">${esc(v.codigo)}</td>
     <td class="c-cli"><div style="font-weight:500;font-size:13px">${esc(v.cliente_nombre || 'Consumidor final')}</div><div style="font-size:11.5px;color:var(--muted)">${esc(v.vendedor_nombre||'')}</div></td>
-    <td class="c-items" data-l="Ítems" style="font-size:12.5px;color:var(--muted)">${(v.venta_items||[]).slice(0,3).map(i => `${i.cantidad}× ${esc(i.nombre)}`).join('<br>')}${(v.venta_items||[]).length > 3 ? `<br>… y ${(v.venta_items||[]).length - 3} más` : ''}</td>
+    <td class="c-items" data-l="Ítems" style="font-size:12.5px;color:var(--muted)">${(() => { const it = (v.venta_items||[]).filter(i => i.cantidad > 0); return it.slice(0,3).map(i => `${i.cantidad}× ${esc(i.nombre)}`).join('<br>') + (it.length > 3 ? `<br>… y ${it.length - 3} más` : ''); })()}</td>
     <td class="c-medio"><span class="vta-medio vta-medio-${esc(v.medio_pago)}">${esc(MEDIOS[v.medio_pago]||v.medio_pago)}</span></td>
     <td class="c-total" style="text-align:right;font-weight:600">${money(v.total)}</td>
-    <td class="c-est">${v.estado === 'anulada' ? '<span class="badge badge-danger">Anulada</span>' : '<span class="badge badge-success">Cerrada</span>'}</td>
+    <td class="c-est">${v.estado === 'anulada' ? '<span class="badge badge-danger">Anulada</span>' : '<span class="badge badge-success">Cerrada</span>'}${Number(v.ediciones) > 0 ? ' <span class="badge badge-warning" title="Se quitaron productos después de la venta">Modificada</span>' : ''}</td>
     <td class="c-acc"><button type="button" class="btn btn-outline btn-sm" data-ver="${v.id}">Ver</button></td>
   </tr>`).join('');
 }
@@ -175,6 +175,15 @@ document.getElementById('tabla-body').addEventListener('click', e => {
   const b = e.target.closest('[data-ver]'); if (!b) return;
   abrir(Number(b.dataset.ver));
 });
+
+// Quitar productos (sql/020): mismas reglas que anular, con sus propios permisos
+function puedeEditar(v) {
+  if (v.estado !== 'cerrada') return false;
+  if ((v.venta_items || []).filter(i => i.cantidad > 0).reduce((s, i) => s + i.cantidad, 0) < 2) return false;  // con 1 unidad: anular
+  if (Auth.puede('ventas.editar_todas', perfil)) return true;
+  if (!Auth.puede('ventas.editar_propias', perfil)) return false;
+  return v.vendedor_id === perfil.id && (Date.now() - new Date(v.fecha).getTime()) < 24*3600e3;
+}
 
 function puedeAnular(v) {
   if (v.estado !== 'cerrada') return false;
@@ -200,11 +209,13 @@ function abrir(id) {
         ${v.estado==='anulada' ? `<div style="grid-column:1/-1;color:var(--danger)"><b>Anulada</b>${Utils.datetime(v.anulada_en)} · ${esc(v.motivo_anulacion||'')}</div>` : ''}
       </div>
       <table class="vta-items"><thead><tr><th>Producto</th><th class="r">Cant.</th><th class="r">Precio</th><th class="r">Subtotal</th><th>Stock</th></tr></thead>
-      <tbody>${(v.venta_items||[]).sort((a,b)=>a.orden-b.orden).map(i => `<tr><td>${esc(i.nombre)}${i.sku?`<div style="font-size:11px;color:var(--muted)">${esc(i.sku)}</div>`:''}</td><td class="r">${i.cantidad}</td><td class="r">${money(i.precio_unitario)}${Number(i.recargo_unitario) > 0 ? `<div style="font-size:11px;color:var(--muted)">incl. +${money(i.recargo_unitario)} cta. cte.</div>` : ''}</td><td class="r">${money(i.subtotal)}</td><td>${i.afecto_stock ? `<span class="ctrl ctrl-si">descontó → ${i.stock_posterior}</span>` : (i.producto_id ? '<span class="ctrl ctrl-no">sin tocar stock</span>' : '<span class="ctrl ctrl-libre">fuera del catálogo</span>')}</td></tr>`).join('')}</tbody></table>
+      <tbody>${(v.venta_items||[]).sort((a,b)=>a.orden-b.orden).map(i => `<tr${i.cantidad === 0 ? ' style="color:var(--muted);text-decoration:line-through"' : ''}><td>${esc(i.nombre)}${i.cantidad_original != null && i.cantidad_original !== i.cantidad ? `<div style="font-size:11px;color:var(--warning);text-decoration:none">se quitaron ${i.cantidad_original - i.cantidad} de ${i.cantidad_original}</div>` : ''}${i.sku?`<div style="font-size:11px;color:var(--muted)">${esc(i.sku)}</div>`:''}</td><td class="r">${i.cantidad}</td><td class="r">${money(i.precio_unitario)}${Number(i.recargo_unitario) > 0 ? `<div style="font-size:11px;color:var(--muted)">incl. +${money(i.recargo_unitario)} cta. cte.</div>` : ''}</td><td class="r">${money(i.subtotal)}</td><td>${i.afecto_stock ? `<span class="ctrl ctrl-si">descontó → ${i.stock_posterior}</span>` : (i.producto_id ? '<span class="ctrl ctrl-no">sin tocar stock</span>' : '<span class="ctrl ctrl-libre">fuera del catálogo</span>')}</td></tr>`).join('')}</tbody></table>
       <div style="text-align:right;font-size:14px">${Number(v.descuento)>0 ? `Subtotal ${money(v.subtotal)} · Descuento −${money(v.descuento)}<br>` : ''}<b style="font-size:18px">Total ${money(v.total)}</b></div>
+      <div id="_ediciones"></div>
     </div>
     <div class="modal-footer">
       ${puedeAnular(v) ? `<button class="btn btn-danger" id="_anular">Anular venta</button>` : ''}
+      ${puedeEditar(v) ? `<button class="btn btn-outline" id="_quitar">➖ Quitar productos</button>` : ''}
       <span style="flex:1"></span>
       <button class="btn btn-outline" id="_imprimir">🖨️ Imprimir ticket</button>
       <button class="btn btn-outline" id="_ok">Cerrar</button>
@@ -212,6 +223,8 @@ function abrir(id) {
   document.body.appendChild(bd);
   bd.querySelector('#_x').onclick = bd.querySelector('#_ok').onclick = () => bd.remove();
   bd.querySelector('#_imprimir').addEventListener('click', () => MHImprimir.ticket(v));
+  bd.querySelector('#_quitar')?.addEventListener('click', () => { bd.remove(); modalQuitar(v); });
+  if (Number(v.ediciones) > 0) cargarEdiciones(v.id, bd.querySelector('#_ediciones'));
   bd.querySelector('#_anular')?.addEventListener('click', async () => {
     const motivo = prompt(v.medio_pago === 'cuenta_corriente'
       ? '¿Por qué se anula la venta? (vuelve el stock de los productos controlados y se descuenta de la cuenta corriente del cliente)'
@@ -222,6 +235,83 @@ function abrir(id) {
     if (error) { Utils.toast(error.hint || error.message, 'error', 7000); return; }
     Utils.toast(`Venta anulada${data?.movimientos ? ` · ${data.movimientos} producto(s) repuestos` : ''}`, 'success');
     bd.remove(); cargar();
+  });
+}
+
+/* ── Historial de cambios de una venta ── */
+async function cargarEdiciones(ventaId, el) {
+  const { data, error } = await db.from('venta_ediciones').select('*').eq('venta_id', ventaId).order('fecha');
+  if (error || !data?.length) return;
+  el.innerHTML = `<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:6px">Productos quitados después de la venta</div>
+    ${data.map(e => `<div style="font-size:13px;margin-bottom:6px">${Utils.datetime(e.fecha)} · <b>${esc(e.usuario_nombre || '')}</b> · ${money(e.total_anterior)} → ${money(e.total_nuevo)}
+      <div style="color:var(--muted)">${(e.detalle || []).map(d => `−${d.quitadas} ${esc(d.nombre)}`).join(', ')} · “${esc(e.motivo)}”</div></div>`).join('')}
+  </div>`;
+}
+
+/* ── Quitar productos que el cliente al final no se llevó (sql/020) ── */
+function modalQuitar(v) {
+  const its = (v.venta_items || []).filter(i => i.cantidad > 0).sort((a, b) => a.orden - b.orden);
+  const quitar = Object.fromEntries(its.map(i => [i.id, 0]));
+  const bd = document.createElement('div'); bd.className = 'modal-backdrop';
+  const destino = v.medio_pago === 'cuenta_corriente'
+    ? 'se descuenta de la cuenta corriente del cliente'
+    : `sale de la caja como devolución (${esc(MEDIOS[v.medio_pago] || v.medio_pago)})`;
+  bd.innerHTML = `<div class="modal modal-lg"><div class="modal-header"><h3 class="modal-title">Quitar productos · ${esc(v.codigo)}</h3><button class="modal-close" data-x aria-label="Cerrar">×</button></div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Marcá cuántas unidades <b>no se lleva</b> el cliente. El stock vuelve solo y la diferencia ${destino}.</p>
+      <table class="vta-items"><thead><tr><th>Producto</th><th class="r">Vendidas</th><th class="r">Precio</th><th class="r" style="width:150px">Quitar</th></tr></thead>
+      <tbody>${its.map(i => `<tr><td>${esc(i.nombre)}</td><td class="r">${i.cantidad}</td><td class="r">${money(i.precio_unitario)}</td>
+        <td class="r"><div class="qty-ctl" style="justify-content:flex-end"><button type="button" data-q="-1" data-id="${i.id}" aria-label="Menos">−</button><input type="number" min="0" max="${i.cantidad}" value="0" data-id="${i.id}" aria-label="Unidades a quitar" style="width:52px;text-align:center"><button type="button" data-q="1" data-id="${i.id}" aria-label="Más">+</button></div></td></tr>`).join('')}</tbody></table>
+      <div style="text-align:right;margin-top:10px;font-size:14px" id="_res"></div>
+      <div class="form-group" style="margin-top:12px"><label>Motivo <span class="req">*</span></label><input type="text" id="_mot" maxlength="300" placeholder="Ej: al retirar no quiso la pava"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" data-x>Cancelar</button><button class="btn btn-primary" id="_ok" disabled>Quitar</button></div></div>`;
+  document.body.appendChild(bd);
+  bd.querySelectorAll('[data-x]').forEach(b => b.onclick = () => bd.remove());
+  const pintar = () => {
+    let menos = 0, unidades = 0, quedan = 0;
+    its.forEach(i => { menos += quitar[i.id] * Number(i.precio_unitario); unidades += quitar[i.id]; quedan += i.cantidad - quitar[i.id];
+      bd.querySelector(`input[data-id="${i.id}"]`).value = quitar[i.id]; });
+    const sub = its.reduce((s, i) => s + (i.cantidad - quitar[i.id]) * Number(i.precio_unitario), 0);
+    const nuevo = Math.max(0, sub - Math.min(Number(v.descuento || 0), sub));
+    const vacia = quedan === 0;
+    bd.querySelector('#_res').innerHTML = unidades
+      ? (vacia ? '<span style="color:var(--danger)">No puede quedar vacía: si no se lleva nada, anulá la venta.</span>'
+               : `Total ${money(v.total)} → <b>${money(nuevo)}</b> · ${v.medio_pago === 'cuenta_corriente' ? 'baja la deuda' : 'se devuelve'} <b>${money(Number(v.total) - nuevo)}</b>`)
+      : '<span style="color:var(--muted)">Elegí qué quitar.</span>';
+    bd.querySelector('#_ok').disabled = !unidades || vacia;
+    bd.querySelector('#_ok').textContent = unidades ? `Quitar ${unidades} unidad${unidades !== 1 ? 'es' : ''}` : 'Quitar';
+  };
+  bd.addEventListener('click', e => {
+    const b = e.target.closest('[data-q]'); if (!b) return;
+    const i = its.find(x => x.id === Number(b.dataset.id));
+    quitar[i.id] = Math.max(0, Math.min(i.cantidad, quitar[i.id] + Number(b.dataset.q))); pintar();
+  });
+  bd.addEventListener('input', e => {
+    const inp = e.target.closest('input[data-id]'); if (!inp) return;
+    const i = its.find(x => x.id === Number(inp.dataset.id));
+    quitar[i.id] = Math.max(0, Math.min(i.cantidad, parseInt(inp.value, 10) || 0));
+  });
+  bd.addEventListener('change', e => { if (e.target.closest('input[data-id]')) pintar(); });
+  pintar();
+  bd.querySelector('#_ok').addEventListener('click', async () => {
+    const motivo = bd.querySelector('#_mot').value.trim();
+    if (!motivo) { Utils.toast('Escribí el motivo', 'warning'); bd.querySelector('#_mot').focus(); return; }
+    const lista = its.filter(i => quitar[i.id] > 0).map(i => ({ item_id: i.id, quitar: quitar[i.id] }));
+    const btn = bd.querySelector('#_ok'); btn.disabled = true;
+    const { data, error } = await db.rpc('venta_quitar_items', { p_venta_id: v.id, p_items: lista, p_motivo: motivo });
+    if (error) {
+      btn.disabled = false;
+      const m = (error.message || '').toLowerCase();
+      Utils.toast(m.includes('could not find') || m.includes('schema cache') ? 'Falta ejecutar sql/020-editar-venta.sql en la base de datos.' : (error.hint || error.message), 'error', 7000);
+      return;
+    }
+    bd.remove();
+    Utils.toast(`Listo: ${data.medio_pago === 'cuenta_corriente' ? 'baja la deuda' : 'se devuelve'} ${money(data.diferencia)}`, 'success', 6000);
+    await cargar();
+    const nueva = ventas.find(x => x.id === v.id);
+    if (nueva && await Utils.confirm('¿Imprimir el ticket corregido para el cliente?', 'Venta modificada', '🖨️ Imprimir', false)) MHImprimir.ticket(nueva);
   });
 }
 

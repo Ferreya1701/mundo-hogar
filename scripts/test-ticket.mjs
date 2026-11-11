@@ -77,6 +77,12 @@ const sinFiscales = ticket(VENTA, { nombre_tienda: 'Mundo Hogar', direccion: 'Sa
 noTiene('sin sql/017: no imprime "CUIT:" vacío', sinFiscales, 'CUIT:');
 tiene('sin sql/017: usa la dirección común', sinFiscales, 'Santa Fe');
 
+grupo('Ticket de una venta corregida');
+const hed = ticket({ ...VENTA, ediciones: 1, editada_en: '2026-11-11T17:00:00Z', total: 45000,
+  items: [VENTA.items[0], { ...VENTA.items[1], cantidad: 0, cantidad_original: 2, subtotal: 0 }] }, TIENDA);
+noTiene('lo quitado del todo no se imprime', hed, 'Termo');
+tiene('avisa que se corrigió', hed, 'Corregida el 11/11/2026 14:00:00: se quitaron productos');
+
 grupo('Ticket de cuenta corriente');
 const hcc = ticket({ ...VENTA, medio_pago: 'cuenta_corriente', recargo_total: 20000, total: 337000,
   cuenta_corriente: { saldo_anterior: 100000, saldo_actual: 437000, proximo_vencimiento: '2026-12-10', a_pagar_proximo: 437000 } }, TIENDA);

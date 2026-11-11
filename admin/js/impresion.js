@@ -103,7 +103,9 @@ const MHImprimir = (() => {
      Acepta tanto lo que devuelve venta_registrar (items) como una fila
      de `ventas` con venta_items. No es factura: lo dice al pie. */
   function htmlTicket(v, t = {}) {
-    const items = (v.items || v.venta_items || []).slice().sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+    // Renglones que quedaron en 0 (se quitaron después de la venta, sql/020) no se imprimen
+    const items = (v.items || v.venta_items || []).filter(i => Number(i.cantidad) > 0)
+      .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
     const vendedor = v.vendedor_nombre || v.vendedor || '';
     const retira = (v.retira_nombre || '').trim();
     const cc = v.cuenta_corriente || null;   // solo al imprimir recién vendida (trae los saldos)
@@ -121,6 +123,7 @@ const MHImprimir = (() => {
   ${retira ? `<div class="dato">Retira: <b>${esc(retira)}</b></div>` : ''}
   ${vendedor ? `<div class="m">Atendió: ${esc(vendedor)}</div>` : ''}
   ${v.estado === 'anulada' ? '<div class="marca">VENTA ANULADA</div>' : ''}
+  ${v.estado !== 'anulada' && Number(v.ediciones) > 0 ? `<div class="m">Corregida el ${esc(fechaHora(v.editada_en))}: se quitaron productos</div>` : ''}
   <div class="sep"></div>
   <table>${filas}</table>
   <div class="sep"></div>

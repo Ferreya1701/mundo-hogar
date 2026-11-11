@@ -202,3 +202,27 @@ Por dentro: `caja_sesiones`, `caja_movimientos`, `caja_conceptos`. Las ventas ll
 caja con lo que dejó y asienta la diferencia (sirve para alta, anulación y la futura edición de
 ventas). Funciones: `caja_abrir`, `caja_cerrar`, `caja_movimiento_registrar`,
 `caja_movimiento_anular`, `caja_resumen`, `caja_esta_abierta`. Pruebas: `node scripts/test-caja-sql.mjs` (75).
+
+## 12. Quitar productos de una venta ya hecha (sql/020, 2026-11-11)
+Caso típico: un cliente de cuenta corriente pidió por teléfono, la vendedora hizo la venta y al
+retirar no se lleva todo. En **Ventas → Ver → "➖ Quitar productos"** se marca cuántas unidades de
+cada producto NO se lleva y el motivo (obligatorio).
+
+- El **stock** de lo quitado vuelve solo (si el producto descontaba stock).
+- El **total** se recalcula; el descuento se mantiene (sin pasar el nuevo subtotal) y el recargo de
+  cuenta corriente baja con lo quitado.
+- La **plata** se acomoda sola: venta cobrada → sale la devolución de la caja por el mismo medio;
+  cuenta corriente → baja la deuda del cliente.
+- La venta queda marcada **"Modificada"** y en su detalle se ve qué se quitó, cuándo, quién y por
+  qué. El ticket reimpreso sale sin lo quitado y con la leyenda "Corregida el …".
+- No se puede agregar productos ni cambiar precios (eso es una venta nueva), ni dejar la venta
+  vacía: si no se lleva nada, se **anula**. Una venta corregida se puede anular después normalmente.
+
+| Permiso | Vendedor | Encargado |
+|---|---|---|
+| Quitar productos de sus ventas (hasta 24 h) | ✔ | ✔ |
+| Quitar productos de cualquier venta | | |
+
+Por dentro: `venta_quitar_items(venta, [{item_id, quitar}], motivo)`, tabla `venta_ediciones`,
+`venta_items.cantidad_original` (un renglón puede quedar en 0). Pruebas:
+`node scripts/test-editar-venta-sql.mjs` (33).
