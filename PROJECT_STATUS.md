@@ -1,6 +1,6 @@
 # PROJECT_STATUS — Mundo Hogar / TIAF
 
-> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-11 (permisos tildables por rol).
+> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-11 (permisos tildables, ticket fiscal).
 
 ## Hosting (desde 2026-10-16): Cloudflare Workers
 - **Producción:** `https://mundohogarstf.com` servido por **Cloudflare Workers** (solo archivos
@@ -21,6 +21,15 @@
 - **Imágenes:** cada `.jpg` de `public/images/productos` tiene su `.webp` (máx. 1200 px). El sitio pide
   la `.webp` y cae al `.jpg` si falta (`MH.webpUrl` / `MH.setImg`). Al sumar fotos nuevas, generar ambas.
 - Cloudflare redirige `x.html` → `x` y `/productos` → `/productos/` (conserva los parámetros).
+
+## Ticket y recibo con datos fiscales (2026-11-11) — EN EL REPO; FALTA CORRER sql/017 (después del 016)
+- `sql/017-datos-fiscales.sql`: columnas en `site_settings` (cuit validado con dígito verificador,
+  domicilio_fiscal, ingresos_brutos, inicio_actividades, condicion_iva, ticket_pie), cargadas con los
+  datos del negocio solo si están vacías. Se editan en Configuración → Datos fiscales.
+- `admin/js/impresion.js`: ticket nuevo (logo + datos fiscales + fecha con segundos + cliente/retira)
+  y `MHImprimir.recibo()` para los pagos de cuenta corriente. Sin el 017 imprime como antes.
+- "Retira" se muestra si la venta lo trae; el campo se agrega a la venta en la etapa de cuentas corrientes.
+- Pruebas: `node scripts/test-ticket.mjs` (37). Detalle: `GUIA-STOCK-Y-VENTAS.md` §10.
 
 ## Permisos tildables por rol (2026-11-11) — EN EL REPO; FALTA CORRER sql/016 (después del 015)
 - `sql/016-permisos-tildables.sql`: tablas `permisos` + `rol_permisos`, `fn_tiene_permiso(clave)`,

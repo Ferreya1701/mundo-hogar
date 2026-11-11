@@ -88,6 +88,51 @@
           </div>
         </div>
 
+        <!-- Datos fiscales (tickets y recibos, sql/017) -->
+        <div class="card" id="card-fiscal">
+          <div class="card-header"><span class="card-title">🧾 Datos fiscales (tickets y recibos)</span></div>
+          <div class="card-body">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:14px">
+              Lo que sale impreso arriba de cada ticket de compra y recibo, debajo del logo y el nombre de la tienda.
+            </p>
+            <form id="form-fiscal" class="form-grid" style="gap:14px" novalidate>
+              <div class="form-group">
+                <label>CUIT</label>
+                <input type="text" id="f-cuit" placeholder="20-35653078-1" inputmode="numeric" maxlength="13">
+              </div>
+              <div class="form-group">
+                <label>Domicilio (el que va en el ticket)</label>
+                <input type="text" id="f-domicilio_fiscal" placeholder="Blas Parera 9961" maxlength="200">
+              </div>
+              <div class="form-group">
+                <label>Ingresos Brutos</label>
+                <input type="text" id="f-ingresos_brutos" placeholder="0116724067" maxlength="40">
+              </div>
+              <div class="form-group">
+                <label>Inicio de actividades</label>
+                <input type="date" id="f-inicio_actividades">
+              </div>
+              <div class="form-group">
+                <label>Condición frente al IVA</label>
+                <select id="f-condicion_iva">
+                  <option value="">—</option>
+                  <option value="responsable_inscripto">IVA Responsable Inscripto</option>
+                  <option value="monotributo">Responsable Monotributo</option>
+                  <option value="exento">IVA Exento</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Texto al pie del ticket (opcional)</label>
+                <textarea id="f-ticket_pie" rows="2" maxlength="300" placeholder="Cambios dentro de los 30 días con este ticket."></textarea>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button type="submit" class="btn btn-primary" id="btn-fiscal">Guardar datos fiscales</button>
+                <button type="button" class="btn btn-outline" id="btn-ticket-prueba">🖨️ Imprimir ticket de prueba</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
         <!-- Textos del sitio (site_content) -->
         <div class="card">
           <div class="card-header"><span class="card-title">📝 Textos de la página</span></div>
@@ -114,6 +159,7 @@
 <script src="/admin/js/auth.js"></script>
 <script src="/admin/js/utils.js"></script>
 <script src="/admin/js/layout.js"></script>
+<script src="/admin/js/impresion.js"></script>
 <script>
 const $id = s => document.getElementById(s);
 let contentRows = [];
@@ -140,6 +186,8 @@ async function loadAll() {
     $id('s-red_instagram').value = redes.instagram || '';
     $id('s-red_facebook').value = redes.facebook || '';
   }
+
+  if (st) cargarFiscal(st);
 
   contentRows = ct || [];
   if (!contentRows.length) {
@@ -193,6 +241,57 @@ $id('form-settings').addEventListener('submit', async e => {
   if (error) { Utils.toast('Error: ' + error.message, 'error'); return; }
   Utils.toast('Datos del negocio guardados', 'success');
   Utils.log('editar', 'site_settings', 1, 'Actualizó datos del negocio');
+});
+
+// ── Datos fiscales (sql/017) ──
+const FISCAL = ['cuit', 'domicilio_fiscal', 'ingresos_brutos', 'inicio_actividades', 'condicion_iva', 'ticket_pie'];
+const soloDigitos = v => String(v || '').replace(/\D/g, '');
+function cuitValido(c) {
+  if (!/^\d{11}$/.test(c)) return false;
+  const pesos = [5,4,3,2,7,6,5,4,3,2];
+  let dv = 11 - pesos.reduce((s, p, i) => s + p * Number(c[i]), 0) % 11;
+  if (dv === 11) dv = 0; if (dv === 10) dv = 9;
+  return dv === Number(c[10]);
+}
+function cargarFiscal(st) {
+  if (!('cuit' in st)) {   // todavía no se corrió sql/017
+    $id('form-fiscal').innerHTML = '<p style="font-size:13px;color:var(--warning)">Falta ejecutar <code>sql/017-datos-fiscales.sql</code> en Supabase. Hasta entonces el ticket sale sin los datos fiscales.</p>';
+    return;
+  }
+  FISCAL.forEach(k => { $id('f-' + k).value = st[k] || ''; });
+  const c = soloDigitos(st.cuit);
+  if (c.length === 11) $id('f-cuit').value = `${c.slice(0,2)}-${c.slice(2,10)}-${c.slice(10)}`;
+}
+
+$id('form-fiscal').addEventListener('submit', async e => {
+  e.preventDefault();
+  const cuit = soloDigitos($id('f-cuit').value);
+  if (cuit && !cuitValido(cuit)) { Utils.toast('El CUIT no es válido: revisá los 11 números.', 'warning'); return; }
+  const btn = $id('btn-fiscal');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  const payload = {
+    cuit: cuit || null,
+    domicilio_fiscal: $id('f-domicilio_fiscal').value.trim() || null,
+    ingresos_brutos: $id('f-ingresos_brutos').value.trim() || null,
+    inicio_actividades: $id('f-inicio_actividades').value || null,
+    condicion_iva: $id('f-condicion_iva').value || null,
+    ticket_pie: $id('f-ticket_pie').value.trim() || null,
+  };
+  const { error } = await db.from('site_settings').update(payload).eq('id', 1);
+  btn.disabled = false; btn.textContent = 'Guardar datos fiscales';
+  if (error) { Utils.toast('Error: ' + error.message, 'error'); return; }
+  Utils.toast('Datos fiscales guardados', 'success');
+  MHImprimir.refrescar();
+  Utils.log('editar', 'site_settings', 1, 'Actualizó datos fiscales del ticket');
+});
+
+$id('btn-ticket-prueba').addEventListener('click', () => {
+  MHImprimir.ticket({
+    codigo: 'PRUEBA', fecha: new Date().toISOString(), cliente_nombre: 'Cliente de prueba',
+    vendedor_nombre: 'Panel', medio_pago: 'efectivo', subtotal: 57000, descuento: 0, total: 57000,
+    items: [{ nombre: 'Freidora de aire 5L', cantidad: 1, precio_unitario: 45000, subtotal: 45000 },
+            { nombre: 'Termo 1L', cantidad: 1, precio_unitario: 12000, subtotal: 12000 }],
+  });
 });
 
 $id('form-content').addEventListener('submit', async e => {

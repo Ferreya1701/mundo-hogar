@@ -152,3 +152,20 @@ Los productos que llegan de China suelen venir sin código propio. Para que la c
 Solo para lo que no pasa por Crear venta, Compras ni Contar stock: devolución de cliente, mercadería que
 apareció, producto dañado, pérdida, devolución a proveedor, ajuste negativo. Para dejar un producto en
 la cantidad real es más fácil contarlo.
+
+## 10. Ticket de compra y recibo (sql/017, 2026-11-11)
+Rollo de 80 mm. Encabezado de los dos, en este orden: **logo**, **nombre de la tienda**, CUIT,
+domicilio, Ingresos Brutos, inicio de actividades y condición frente al IVA. Esos datos se editan en
+**Configuración → Datos fiscales** (solo administrador); ahí también está "Imprimir ticket de prueba".
+El 017 los carga con los datos del negocio (CUIT 20-35653078-1, Blas Parera 9961, IIBB 0116724067,
+inicio 01/07/2015, Responsable Inscripto) solo si están vacíos.
+
+- **Ticket de compra:** fecha y hora con segundos (hora de Argentina), número de venta, cliente (o
+  "Consumidor final"), quién retira (si se cargó), quién atendió, productos con cantidad × precio,
+  total y medio de pago.
+- **Recibo:** para pagos (lo usan las cuentas corrientes): de quién, importe, forma de pago, saldo
+  anterior y actual, y línea de firma.
+- Los dos dicen al pie "Comprobante interno · no válido como factura".
+- Se imprime cuando cargó el logo (o a los 2,5 s si no carga), así no sale sin logo.
+- Código: `admin/js/impresion.js` (`MHImprimir.ticket`, `MHImprimir.recibo`). Pruebas:
+  `node scripts/test-ticket.mjs` (37).
