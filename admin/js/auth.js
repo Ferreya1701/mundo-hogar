@@ -26,9 +26,46 @@ const Auth = {
       .eq('id', session.user.id)
       .single();
     if (error || !data) return null;
+    data.permisos = await this._cargarPermisos(data.rol);
     this._profile = data;
     try { sessionStorage.setItem('mhPerfil', JSON.stringify(data)); } catch (e) {}
     return data;
+  },
+
+  // Permisos del usuario (sql/016). La base los controla igual: esto solo
+  // decide qué menús y botones mostrar.
+  async _cargarPermisos(rol) {
+    const { data, error } = await db.rpc('fn_mis_permisos');
+    if (!error && Array.isArray(data)) return data;
+    // Todavía no se corrió sql/016: lo que cada rol podía hacer antes
+    if (/could not find the function|schema cache/i.test(error?.message || '')) {
+      return this.PERMISOS_ANTERIORES[rol] || [];
+    }
+    return [];
+  },
+
+  PERMISOS_ANTERIORES: {
+    administrador: ['ventas.crear','ventas.ver_todas','ventas.anular_propias','ventas.anular_todas',
+                    'pedidos.gestionar','pedidos.cobrar','pedidos.anular_pago','clientes.gestionar',
+                    'productos.editar','categorias.editar','stock.contar','stock.ajustar','compras.gestionar'],
+    vendedor:        ['ventas.crear','ventas.anular_propias','pedidos.gestionar','pedidos.cobrar','clientes.gestionar'],
+    encargado_stock: ['ventas.crear','ventas.ver_todas','ventas.anular_propias','productos.editar',
+                      'stock.contar','stock.ajustar','compras.gestionar'],
+  },
+
+  // ¿El usuario puede hacer esto? El administrador siempre puede.
+  puede(clave, perfil = this._profile || this.cachedProfile()) {
+    if (!perfil) return false;
+    if (perfil.rol === 'administrador') return true;
+    return Array.isArray(perfil.permisos) && perfil.permisos.includes(clave);
+  },
+
+  // Para el inicio de una página: sin el permiso, vuelve al inicio.
+  requirePermiso(clave, perfil = this._profile) {
+    if (this.puede(clave, perfil)) return true;
+    try { Utils.toast('No tenés permiso para entrar a esta sección', 'error'); } catch (e) {}
+    window.location.href = '/admin/dashboard';
+    return false;
   },
 
   // Perfil de la última página (solo para dibujar el menú sin esperar)

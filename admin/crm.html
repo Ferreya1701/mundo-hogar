@@ -1456,10 +1456,10 @@ esAncho.addEventListener('change', () => { if (state.vista === 'embudo') render(
 
   // La base es la barrera real (RLS); esto evita mostrar una pantalla
   // que solo devolvería "sin permisos".
-  if (!['administrador', 'vendedor'].includes(profile.rol)) {
+  if (!Auth.puede('clientes.gestionar', profile)) {
     el('acciones').remove();
     el('contenido').innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔒</div>
-      <h3>El CRM es para administración y ventas</h3>
+      <h3>Tu usuario no tiene acceso a Clientes</h3>
       <p>Tu usuario es de stock. Si necesitás verlo, pedile al administrador que te cambie el rol.</p></div>`;
     return;
   }

@@ -320,8 +320,8 @@ async function initPage() {
 
   const greet = new Date().getHours() < 12 ? 'Buenos días' : new Date().getHours() < 19 ? 'Buenas tardes' : 'Buenas noches';
   document.getElementById('welcome-msg').textContent = `${greet}, ${profile.nombre.split(' ')[0]}`;
-  // El vendedor solo ve sus ventas (sql/015): el total es el suyo
-  if (profile.rol === 'vendedor') document.getElementById('kpi-ventas-hoy').previousElementSibling.textContent = 'Mis ventas de hoy';
+  // Sin "ver las ventas de todos" (sql/016) el total es solo el suyo
+  if (!Auth.puede('ventas.ver_todas', profile)) document.getElementById('kpi-ventas-hoy').previousElementSibling.textContent = 'Mis ventas de hoy';
 
   await loadData();
 }

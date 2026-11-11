@@ -2,18 +2,19 @@
 const Layout = {
   NAV: [
     { id:'dashboard',  label:'Inicio',              icon:'📊', href:'/admin/dashboard',      section:'Principal' },
-    { id:'vender',     label:'Crear venta',         icon:'🛒', href:'/admin/vender',         section:'Ventas' },
+    { id:'vender',     label:'Crear venta',         icon:'🛒', href:'/admin/vender',         section:'Ventas', permiso:'ventas.crear' },
     { id:'ventas',     label:'Ventas',              icon:'🧮', href:'/admin/ventas',         section:'Ventas' },
     { id:'pedidos',    label:'Pedidos web',         icon:'🧾', href:'/admin/pedidos',        section:'Ventas' },
-    { id:'crm',        label:'Clientes',            icon:'🤝', href:'/admin/crm',            section:'Ventas', roles:['administrador','vendedor'] },
+    { id:'crm',        label:'Clientes',            icon:'🤝', href:'/admin/crm',            section:'Ventas', permiso:'clientes.gestionar' },
     { id:'cuentas-cobro', label:'Cuentas bancarias',icon:'🏦', href:'/admin/cuentas-cobro',  section:'Ventas', adminOnly:true },
     { id:'productos',  label:'Productos',            icon:'🛍️', href:'/admin/productos',      section:'Catálogo' },
     { id:'categorias', label:'Categorías',           icon:'🏷️', href:'/admin/categorias',     section:'Catálogo' },
-    { id:'carga-stock',label:'Contar stock',         icon:'📥', href:'/admin/carga-stock',    section:'Stock', roles:['administrador','encargado_stock'] },
-    { id:'compras',    label:'Compras',             icon:'🚢', href:'/admin/compras',        section:'Stock', roles:['administrador','encargado_stock'] },
-    { id:'inventario', label:'Ajuste manual',       icon:'📦', href:'/admin/inventario',     section:'Stock', roles:['administrador','encargado_stock'] },
+    { id:'carga-stock',label:'Contar stock',         icon:'📥', href:'/admin/carga-stock',    section:'Stock', permiso:'stock.contar' },
+    { id:'compras',    label:'Compras',             icon:'🚢', href:'/admin/compras',        section:'Stock', permiso:'compras.gestionar' },
+    { id:'inventario', label:'Ajuste manual',       icon:'📦', href:'/admin/inventario',     section:'Stock', permiso:'stock.ajustar' },
     { id:'movimientos',label:'Movimientos de stock', icon:'📋', href:'/admin/movimientos',    section:'Stock' },
     { id:'usuarios',   label:'Usuarios',             icon:'👥', href:'/admin/usuarios',       section:'Admin', adminOnly:true },
+    { id:'permisos',   label:'Permisos',             icon:'🔐', href:'/admin/permisos',       section:'Admin', adminOnly:true },
     { id:'configuracion', label:'Configuración',     icon:'⚙️', href:'/admin/configuracion',  section:'Admin', adminOnly:true },
   ],
 
@@ -22,7 +23,7 @@ const Layout = {
     const sections = {};
     this.NAV.forEach(item => {
       if (item.adminOnly && profile?.rol !== 'administrador') return;
-      if (item.roles && !item.roles.includes(profile?.rol)) return;
+      if (item.permiso && !Auth.puede(item.permiso, profile)) return;
       if (!sections[item.section]) sections[item.section] = [];
       sections[item.section].push(item);
     });

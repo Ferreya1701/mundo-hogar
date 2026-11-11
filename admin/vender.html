@@ -186,7 +186,7 @@ async function cargarHoy() {
   const n = (data||[]).length, total = (data||[]).reduce((s,v)=>s+Number(v.total||0),0);
   const porMedio = {};
   (data||[]).forEach(v => porMedio[v.medio_pago] = (porMedio[v.medio_pago]||0) + Number(v.total||0));
-  el.innerHTML = `<span>${perfil?.rol === 'vendedor' ? 'Tus ventas de hoy' : 'Hoy'}: <b>${n}</b> venta${n!==1?'s':''}</span><span><b>${money(total)}</b></span>` +
+  el.innerHTML = `<span>${!Auth.puede('ventas.ver_todas', perfil) ? 'Tus ventas de hoy' : 'Hoy'}: <b>${n}</b> venta${n!==1?'s':''}</span><span><b>${money(total)}</b></span>` +
     Object.entries(porMedio).map(([m,t]) => `<span>${esc(MEDIOS[m]||m)}: ${money(t)}</span>`).join('');
 }
 
@@ -565,6 +565,7 @@ document.addEventListener('keydown', e => {
 async function initPage() {
   perfil = await Auth.init();
   if (!perfil) return;
+  if (!Auth.requirePermiso('ventas.crear', perfil)) return;
   await Layout.init('vender', 'Crear venta');
   cargarTicket();
   await cargarDatos();

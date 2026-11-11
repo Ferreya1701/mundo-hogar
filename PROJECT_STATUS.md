@@ -1,6 +1,6 @@
 # PROJECT_STATUS — Mundo Hogar / TIAF
 
-> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-10-29 (stock real: caja, compras, conteo).
+> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-11 (permisos tildables por rol).
 
 ## Hosting (desde 2026-10-16): Cloudflare Workers
 - **Producción:** `https://mundohogarstf.com` servido por **Cloudflare Workers** (solo archivos
@@ -21,6 +21,22 @@
 - **Imágenes:** cada `.jpg` de `public/images/productos` tiene su `.webp` (máx. 1200 px). El sitio pide
   la `.webp` y cae al `.jpg` si falta (`MH.webpUrl` / `MH.setImg`). Al sumar fotos nuevas, generar ambas.
 - Cloudflare redirige `x.html` → `x` y `/productos` → `/productos/` (conserva los parámetros).
+
+## Permisos tildables por rol (2026-11-11) — EN EL REPO; FALTA CORRER sql/016 (después del 015)
+- `sql/016-permisos-tildables.sql`: tablas `permisos` + `rol_permisos`, `fn_tiene_permiso(clave)`,
+  `fn_mis_permisos()`, `permisos_rol_guardar(rol, permisos[])` (solo admin, queda en el historial).
+  Las funciones y políticas que miraban el rol ahora miran el permiso; valores iniciales = lo de
+  antes. `fn_es_staff_ventas()` = "pedidos.cobrar"; `fn_es_staff_stock()` = "compras.gestionar".
+- Pantalla nueva **Admin → Permisos** (`admin/permisos.html`). Menú y páginas usan `Auth.puede()`.
+- Después de correrlo: volver a desplegar la Edge Function `leer-lista-compra`.
+- Detalle y tabla de permisos: `GUIA-USUARIOS.md` → *Permisos tildables por rol*.
+- Pruebas: `node scripts/test-permisos-tildables-sql.mjs` (66).
+- Plan de las próximas etapas (acordado 2026-11-11): 2) datos fiscales + ticket y recibo,
+  3) caja diaria con apertura/cierre, 4) cuentas corrientes (saldo único, día fijo de pago, recargo
+  fijo por unidad según categoría), 5) editar venta quitando productos, 6) cotizar envíos (espera
+  empresa de transporte). Cada permiso nuevo se suma al catálogo del 016 desde su migración.
+- Mudanza de Supabase a São Paulo (cuenta TIAF) en curso por el socio: correr 016 en el proyecto
+  nuevo una vez migrado.
 
 ## Qué ve cada rol (2026-11-06) — WEB SUBIDA; FALTA CORRER sql/015
 - Auditoría: varias tablas solo pedían "estar logueado" (`auth.uid() IS NOT NULL`). Además el costo y

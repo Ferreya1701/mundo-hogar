@@ -657,7 +657,7 @@ $id('btn-crear').addEventListener('click', async () => {
 async function initPage() {
   perfil = await Auth.init();
   if (!perfil) return;
-  if (!['administrador','encargado_stock'].includes(perfil.rol)) { Utils.toast('Sin permisos para cargar compras', 'error'); window.location.href = '/admin/dashboard'; return; }
+  if (!Auth.puede('compras.gestionar', perfil)) { Utils.toast('Sin permisos para cargar compras', 'error'); window.location.href = '/admin/dashboard'; return; }
   await Layout.init('compras', 'Compras');
   const { data: catData } = await db.from('categorias').select('id,nombre').eq('activo', true).order('orden');
   (catData||[]).forEach(c => { cats[c.id] = c.nombre; $id('c-cat').insertAdjacentHTML('beforeend', `<option value="${c.id}">${esc(c.nombre)}</option>`); });

@@ -173,7 +173,7 @@ const money = n => n == null ? 'A confirmar' : Number(n).toLocaleString('es-AR',
 const money2 = n => n == null ? '—' : Number(n).toLocaleString('es-AR', { style:'currency', currency:'ARS', minimumFractionDigits:2, maximumFractionDigits:2 });
 const paraRevisar = s => ['comprobante_recibido', 'en_revision'].includes(s.estado_pago);
 const cuentaDe = id => cuentas.find(c => c.id === id);
-const esAdmin = () => perfil && perfil.rol === 'administrador';
+const puedeAnularPago = () => Auth.puede('pedidos.anular_pago', perfil);
 
 function errorAmigable(error) {
   const msg = error.message || '';
@@ -291,7 +291,7 @@ async function verDetalle(id) {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
         <div>
           <h3>${esc(s.cliente_nombre)} ${pagoPill(s)}</h3>
-          <div class="cod">${esc(s.codigo)} · ${Utils.datetime(s.created_at)} · ${s.canal==='mayorista'?'Consulta mayorista':'Tienda web'}${['administrador','vendedor'].includes(perfil.rol) ? ` · <a href="/admin/crm?vista=embudo&q=${encodeURIComponent(s.codigo)}">🤝 CRM</a>` : ''} · <a href="/pedido/${esc(s.codigo)}" target="_blank" rel="noopener">🔗 Página del cliente</a></div>
+          <div class="cod">${esc(s.codigo)} · ${Utils.datetime(s.created_at)} · ${s.canal==='mayorista'?'Consulta mayorista':'Tienda web'}${Auth.puede('clientes.gestionar', perfil) ? ` · <a href="/admin/crm?vista=embudo&q=${encodeURIComponent(s.codigo)}">🤝 CRM</a>` : ''} · <a href="/pedido/${esc(s.codigo)}" target="_blank" rel="noopener">🔗 Página del cliente</a></div>
         </div>
         <button class="btn btn-ghost btn-sm" id="modal-cerrar">✕</button>
       </div>
@@ -372,7 +372,7 @@ async function renderPago(s) {
 
   if (s.estado_pago === 'pagado') {
     h += `<div style="font-size:13.5px">Pagado <b>${money2(s.monto_pagado)}</b> el ${Utils.datetime(s.pagado_en)}${c ? ` en <b>${esc(c.nombre)}</b> (${esc(c.titular)})` : ''}.</div>`;
-    if (esAdmin()) h += `<button class="btn btn-outline btn-sm" id="btn-anular" style="margin-top:10px">Anular pago…</button>`;
+    if (puedeAnularPago()) h += `<button class="btn btn-outline btn-sm" id="btn-anular" style="margin-top:10px">Anular pago…</button>`;
   } else {
     if (['pendiente', 'comprobante_recibido', 'en_revision'].includes(s.estado_pago) && c) {
       h += `<div style="font-size:13.5px">Debe transferir <b>${money2(s.monto_a_pagar)}</b> a <b>${esc(c.nombre)}</b> · ${esc(c.alias || c.cvu)} (${esc(c.titular)})${s.pago_vence_en ? ` · vence ${Utils.datetime(s.pago_vence_en)}` : ''}.</div>`;

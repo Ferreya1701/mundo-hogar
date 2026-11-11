@@ -302,7 +302,7 @@ document.getElementById('mov-form')?.addEventListener('submit', async e => {
 async function initPage() {
   const profile = await Auth.init();
   if (!profile) return;
-  if (!['administrador','encargado_stock'].includes(profile.rol)) {
+  if (!Auth.puede('stock.ajustar', profile)) {
     window.location.href='/admin/dashboard'; return;
   }
   await Layout.init('inventario','Ajuste manual');

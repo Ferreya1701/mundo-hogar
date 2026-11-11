@@ -8,8 +8,8 @@
 // código de barras, cantidad y costo unitario. No crea nada: el panel
 // muestra el resultado para revisarlo antes de cargar la compra.
 //
-// Quién puede llamarla: staff del panel con rol administrador o
-// encargado_stock (se valida la sesión con la clave de servicio).
+// Quién puede llamarla: staff del panel con el permiso "Compras,
+// proveedores y costos" (sql/016; el administrador siempre).
 //
 // Secretos en Supabase → Edge Functions → Secrets:
 //   ANTHROPIC_API_KEY            (obligatoria; sin ella responde ia:false)
@@ -96,10 +96,15 @@ Deno.serve(async (req) => {
     });
     const { data: { user } } = await conSesion.auth.getUser();
     if (!user) return json({ error: "no_autorizado" }, 401);
-    const { data: perfil } = await admin.from("profiles").select("rol, activo").eq("id", user.id).maybeSingle();
-    if (!perfil || !perfil.activo || !["administrador", "encargado_stock"].includes(perfil.rol)) {
-      return json({ error: "no_autorizado" }, 401);
+    // Permiso "Compras, proveedores y costos" (sql/016). Si el 016 todavía
+    // no se corrió, vale la regla anterior: administrador o encargado.
+    const { data: puede, error: errPermiso } = await conSesion.rpc("fn_tiene_permiso", { p_clave: "compras.gestionar" });
+    let autorizado = puede === true;
+    if (errPermiso && /could not find the function|schema cache/i.test(errPermiso.message ?? "")) {
+      const { data: perfil } = await admin.from("profiles").select("rol, activo").eq("id", user.id).maybeSingle();
+      autorizado = !!perfil?.activo && ["administrador", "encargado_stock"].includes(perfil.rol);
     }
+    if (!autorizado) return json({ error: "no_autorizado" }, 401);
     if (!apiKey) return json({ error: "ia_no_configurada", detalle: "Falta ANTHROPIC_API_KEY en los secretos de Supabase" }, 503);
 
     // ── 2) Qué nos mandaron: archivo (imagen/PDF en base64) o texto ──

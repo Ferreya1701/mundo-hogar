@@ -57,3 +57,45 @@ Si la web sube antes que la función, el panel avisa "Falta instalar la función
 
 Una cuenta **desactivada** no lee nada, aunque entre por fuera del panel. Lo hace cumplir la base de
 datos (no solo la pantalla). Pruebas: `node scripts/test-permisos-sql.mjs`.
+
+## Permisos tildables por rol (sql/016, 2026-11-11)
+Desde el 016, lo que puede hacer el **vendedor** y el **encargado de stock** se elige en
+**Admin → Permisos**: una tabla con un tilde por permiso y por rol. El **administrador siempre puede
+todo** (su columna no se edita). Los cambios valen para todas las personas de ese rol desde la
+próxima página que abran.
+
+| Permiso | Vendedor | Encargado | Qué controla |
+|---|---|---|---|
+| Crear ventas en el local | ✔ | ✔ | Crear venta / cobrar en el mostrador |
+| Ver las ventas de todos | | ✔ | Sin él, cada uno ve solo sus ventas |
+| Anular sus propias ventas (24 h) | ✔ | ✔ | |
+| Anular cualquier venta | | | De otros o de más de 24 h |
+| Gestionar pedidos web | ✔ | | Cambiar estado de pedidos de la tienda |
+| Cobrar pedidos web | ✔ | | Habilitar pago, confirmar/rechazar comprobantes |
+| Anular un pago confirmado | | | |
+| Ver y gestionar clientes | ✔ | | Clientes (CRM) |
+| Crear y editar productos | | ✔ | Borrar productos sigue siendo solo del admin |
+| Crear y editar categorías | | | |
+| Contar stock | | ✔ | |
+| Ajuste manual de stock | | ✔ | |
+| Compras, proveedores y costos | | ✔ | |
+
+Los tildes de arriba son los **valores iniciales** = exactamente lo que cada rol podía antes del 016.
+Volver a correr el 016 **no** pisa lo que el administrador cambió.
+
+**Siempre solo del administrador:** usuarios, permisos, configuración, cuentas bancarias,
+liquidaciones, historial de actividad y borrar productos.
+
+Cómo funciona por dentro:
+- Tablas `permisos` (catálogo) y `rol_permisos` (lo tildado). Se cambian solo con la función
+  `permisos_rol_guardar(rol, permisos[])`, que exige administrador y deja registro en el historial.
+- La base consulta `fn_tiene_permiso('clave')` en las funciones y en las políticas. El 016 cambió en
+  cada función existente **solo la línea** que miraba el rol; si alguien modificó una a mano y no
+  encuentra esa línea, el script se detiene sin cambiar nada.
+- El panel pide `fn_mis_permisos()` al entrar y oculta menús y botones (`Auth.puede('clave')`). Si el
+  016 todavía no se corrió, usa los permisos de siempre.
+- Contar stock y recibir compras generan movimientos de stock por la vía interna: no hace falta
+  tener "Ajuste manual" para contar o recibir.
+- La Edge Function `leer-lista-compra` pide el permiso "Compras, proveedores y costos" (hay que
+  volver a desplegarla después de correr el 016).
+- Pruebas: `node scripts/test-permisos-tildables-sql.mjs` (66).

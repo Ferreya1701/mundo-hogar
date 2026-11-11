@@ -1059,7 +1059,7 @@ async function initPage() {
 
   // La base es la que manda (RLS); esto solo evita mostrar botones que
   // van a devolver "sin permisos" y aclara el modo de solo lectura.
-  puedeEditar = ['administrador','encargado_stock'].includes(profile.rol);
+  puedeEditar = Auth.puede('productos.editar', profile);
   if (!puedeEditar) {
     document.getElementById('btn-importar')?.remove();
     document.querySelector('.page-header-actions a.btn-primary')?.remove();

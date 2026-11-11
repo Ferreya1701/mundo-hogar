@@ -223,7 +223,7 @@ document.getElementById('cat-form')?.addEventListener('submit', async e => {
 async function initPage() {
   const profile = await Auth.init();
   if (!profile) return;
-  await Auth.requireRole(['administrador']);
+  if (!Auth.requirePermiso('categorias.editar', profile)) return;
   await Layout.init('categorias','Categorías');
   await loadData();
 }

@@ -571,7 +571,7 @@ async function initPage() {
   const profile = await Auth.init();
   if (!profile) return;
   currentProfile = profile;
-  if (!['administrador','encargado_stock'].includes(profile.rol)) {
+  if (!Auth.puede('productos.editar', profile)) {
     Utils.toast('Sin permisos para gestionar productos','error');
     window.location.href='/admin/dashboard';
     return;

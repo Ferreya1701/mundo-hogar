@@ -434,7 +434,7 @@ async function cargarDatos() {
 async function initPage() {
   const profile = await Auth.init();
   if (!profile) return;
-  if (!['administrador','encargado_stock'].includes(profile.rol)) {
+  if (!Auth.puede('stock.contar', profile)) {
     Utils.toast('Sin permisos para contar stock', 'error'); window.location.href = '/admin/dashboard'; return;
   }
   await Layout.init('carga-stock', 'Contar stock');
