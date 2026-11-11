@@ -106,6 +106,7 @@ const MHImprimir = (() => {
     const items = (v.items || v.venta_items || []).slice().sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
     const vendedor = v.vendedor_nombre || v.vendedor || '';
     const retira = (v.retira_nombre || '').trim();
+    const cc = v.cuenta_corriente || null;   // solo al imprimir recién vendida (trae los saldos)
     const filas = items.map(i => {
       const cant = Number(i.cantidad || 0), pu = Number(i.precio_unitario ?? (cant ? Number(i.subtotal || 0) / cant : 0));
       return `<tr><td colspan="2">${esc(i.nombre)}</td></tr>
@@ -127,7 +128,15 @@ const MHImprimir = (() => {
     ${Number(v.descuento) > 0 ? `<tr><td>Subtotal</td><td class="r">${money(v.subtotal)}</td></tr><tr><td>Descuento</td><td class="r">−${money(v.descuento)}</td></tr>` : ''}
     <tr class="tot"><td>TOTAL</td><td class="r">${money(v.total)}</td></tr>
     <tr><td>Pago</td><td class="r">${esc(MEDIOS[v.medio_pago] || v.medio_pago || '')}</td></tr>
+    ${Number(v.recargo_total) > 0 ? `<tr><td class="m" colspan="2">Incluye recargo cuenta corriente: ${money(v.recargo_total)}</td></tr>` : ''}
   </table>
+  ${cc ? `<div class="sep"></div><table>
+    <tr><td>Saldo anterior</td><td class="r">${money(cc.saldo_anterior)}</td></tr>
+    <tr><td>Esta compra</td><td class="r">+${money(v.total)}</td></tr>
+    <tr class="tot"><td>SALDO</td><td class="r">${money(cc.saldo_actual)}</td></tr>
+    ${cc.proximo_vencimiento ? `<tr><td colspan="2" class="m">Próximo vencimiento: ${esc(fechaCorta(cc.proximo_vencimiento))}${Number(cc.a_pagar_proximo) > 0 ? ` · a pagar ${money(cc.a_pagar_proximo)}` : ''}</td></tr>` : ''}
+  </table>
+  <div class="firma">Firma del cliente</div>` : ''}
   <div class="sep"></div>
   <div class="c">¡Gracias por tu compra!</div>
   ${t.ticket_pie ? `<div class="c m">${esc(t.ticket_pie)}</div>` : ''}

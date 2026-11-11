@@ -1,6 +1,6 @@
 # PROJECT_STATUS — Mundo Hogar / TIAF
 
-> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-11 (permisos tildables, ticket fiscal, caja).
+> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-11 (permisos tildables, ticket fiscal, caja, cuentas corrientes).
 
 ## Hosting (desde 2026-10-16): Cloudflare Workers
 - **Producción:** `https://mundohogarstf.com` servido por **Cloudflare Workers** (solo archivos
@@ -21,6 +21,19 @@
 - **Imágenes:** cada `.jpg` de `public/images/productos` tiene su `.webp` (máx. 1200 px). El sitio pide
   la `.webp` y cae al `.jpg` si falta (`MH.webpUrl` / `MH.setImg`). Al sumar fotos nuevas, generar ambas.
 - Cloudflare redirige `x.html` → `x` y `/productos` → `/productos/` (conserva los parámetros).
+
+## Cuentas corrientes (2026-11-11) — EN EL REPO; FALTA CORRER sql/019 (después del 018)
+- `sql/019-cuentas-corrientes.sql`: cuentas sobre clientes del CRM con saldo único, día fijo de pago,
+  límite opcional y suspensión; recargo fijo por unidad por categoría (lo suma la base); pagos con
+  recibo numerado que entran a la caja; anulación de pagos y ajustes con motivo; vencimientos FIFO.
+  Reemplaza `venta_registrar` (agrega cuenta corriente y "retira"). 7 permisos `cc.*`.
+- Pantallas: `admin/cuentas-corrientes.html` (nueva), Crear venta (cliente de cuenta, recargo a la
+  vista, "Retira"), Ventas (detalle con cuenta y recargo), ticket con saldo y firma.
+- También se corrigió el 016: `fn_tiene_permiso` se puede llamar sin sesión (devuelve false), así una
+  consulta anónima a ventas da 0 filas en vez de error.
+- Pruebas: `node scripts/test-cc-sql.mjs` (64). `MH_HASTA=019 node scripts/test-stock-sql.mjs` corre
+  las pruebas de stock con todo instalado (3 fallas esperables: leen el costo de `productos`, que desde
+  el 015 vive en `producto_costos`). Guía: `GUIA-CUENTAS-CORRIENTES.md`.
 
 ## Caja diaria (2026-11-11) — EN EL REPO; FALTA CORRER sql/018 (después del 017)
 - `sql/018-caja.sql`: apertura con fondo, ventas que entran solas por disparador (efectivo al cajón,

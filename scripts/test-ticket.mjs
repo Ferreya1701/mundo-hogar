@@ -77,6 +77,17 @@ const sinFiscales = ticket(VENTA, { nombre_tienda: 'Mundo Hogar', direccion: 'Sa
 noTiene('sin sql/017: no imprime "CUIT:" vacío', sinFiscales, 'CUIT:');
 tiene('sin sql/017: usa la dirección común', sinFiscales, 'Santa Fe');
 
+grupo('Ticket de cuenta corriente');
+const hcc = ticket({ ...VENTA, medio_pago: 'cuenta_corriente', recargo_total: 20000, total: 337000,
+  cuenta_corriente: { saldo_anterior: 100000, saldo_actual: 437000, proximo_vencimiento: '2026-12-10', a_pagar_proximo: 437000 } }, TIENDA);
+tiene('dice cuenta corriente', hcc, 'Cuenta corriente');
+tiene('muestra el recargo', hcc, 'Incluye recargo cuenta corriente: $\u00a020.000');
+tiene('saldo anterior', hcc, 'Saldo anterior</td><td class="r">$\u00a0100.000');
+tiene('saldo nuevo', hcc, 'SALDO</td><td class="r">$\u00a0437.000');
+tiene('próximo vencimiento', hcc, 'Próximo vencimiento: 10/12/2026 · a pagar $\u00a0437.000');
+tiene('lugar para la firma del cliente', hcc, 'Firma del cliente');
+noTiene('una venta común no muestra saldo ni firma', h, 'Firma del cliente');
+
 grupo('Recibo');
 const r = recibo({ numero: 'R-000012', fecha: '2026-11-11T16:23:46Z', cliente_nombre: 'Juan Pérez', monto: 30000,
                    medio_pago: 'transferencia', saldo_anterior: 80000, saldo_actual: 50000, concepto: 'Pago cuenta corriente' }, TIENDA);

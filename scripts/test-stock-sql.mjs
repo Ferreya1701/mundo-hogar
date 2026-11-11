@@ -123,6 +123,12 @@ const SQL013 = leerSQL('013-local-compras-stock.sql');
 try { await db.exec(SQL013); await db.exec(SQL013); } catch (e) { errorMigracion = e.message; }
 t('013 corre limpio, dos veces seguidas', errorMigracion, null);
 if (errorMigracion) { console.log(`\n${ok} pasadas, ${fail} fallidas\n`); process.exit(1); }
+// MH_HASTA=019 node scripts/test-stock-sql.mjs → corre las mismas pruebas con las
+// migraciones posteriores instaladas (permisos, caja, cuentas corrientes).
+for (const f of ['014-accesos.sql', '015-permisos-por-rol.sql', '016-permisos-tildables.sql', '017-datos-fiscales.sql',
+                 '018-caja.sql', '019-cuentas-corrientes.sql'].filter(f => f.slice(0, 3) <= (process.env.MH_HASTA || '013'))) {
+  await db.exec(leerSQL(f));
+}
 t('backfill: el producto con carga a mano quedó controlado; los demás no',
   (await q(`SELECT id, stock_controlado FROM productos ORDER BY id`)).map(r => r.stock_controlado), [true, false, false, false, false]);
 t('columnas calculadas: comprometido 0, disponible = stock',

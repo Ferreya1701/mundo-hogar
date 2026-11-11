@@ -121,9 +121,10 @@ RETURNS TEXT[] LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS 
   WHERE fn_tiene_permiso(p.clave)
 $$;
 
-REVOKE ALL ON FUNCTION fn_tiene_permiso(TEXT) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION fn_tiene_permiso(TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION fn_mis_permisos()      FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION fn_tiene_permiso(TEXT) TO authenticated;
+-- anon también: las políticas la usan, y sin sesión responde false (lee 0 filas en vez de dar error)
+GRANT EXECUTE ON FUNCTION fn_tiene_permiso(TEXT) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION fn_mis_permisos()      TO authenticated;
 
 

@@ -193,12 +193,14 @@ function abrir(id) {
         <div><b>Fecha</b>${Utils.datetime(v.fecha)}</div>
         <div><b>Vendedor</b>${esc(v.vendedor_nombre||'—')}</div>
         <div><b>Cliente</b>${esc(v.cliente_nombre||'Consumidor final')}${v.cliente_telefono ? ' · ' + esc(v.cliente_telefono) : ''}</div>
-        <div><b>Medio de pago</b><span class="vta-medio vta-medio-${esc(v.medio_pago)}">${esc(MEDIOS[v.medio_pago]||v.medio_pago)}</span></div>
+        <div><b>Medio de pago</b><span class="vta-medio vta-medio-${esc(v.medio_pago)}">${esc(MEDIOS[v.medio_pago]||v.medio_pago)}</span>${v.cc_cuenta_id && Auth.puede('cc.ver', perfil) ? ` <a href="/admin/cuentas-corrientes?cuenta=${v.cc_cuenta_id}" style="font-size:12px">ver cuenta →</a>` : ''}</div>
+        ${v.retira_nombre ? `<div><b>Retiró</b>${esc(v.retira_nombre)}</div>` : ''}
+        ${Number(v.recargo_total) > 0 ? `<div><b>Recargo cuenta corriente</b>${money(v.recargo_total)}</div>` : ''}
         ${v.notas ? `<div style="grid-column:1/-1"><b>Nota</b>${esc(v.notas)}</div>` : ''}
         ${v.estado==='anulada' ? `<div style="grid-column:1/-1;color:var(--danger)"><b>Anulada</b>${Utils.datetime(v.anulada_en)} · ${esc(v.motivo_anulacion||'')}</div>` : ''}
       </div>
       <table class="vta-items"><thead><tr><th>Producto</th><th class="r">Cant.</th><th class="r">Precio</th><th class="r">Subtotal</th><th>Stock</th></tr></thead>
-      <tbody>${(v.venta_items||[]).sort((a,b)=>a.orden-b.orden).map(i => `<tr><td>${esc(i.nombre)}${i.sku?`<div style="font-size:11px;color:var(--muted)">${esc(i.sku)}</div>`:''}</td><td class="r">${i.cantidad}</td><td class="r">${money(i.precio_unitario)}</td><td class="r">${money(i.subtotal)}</td><td>${i.afecto_stock ? `<span class="ctrl ctrl-si">descontó → ${i.stock_posterior}</span>` : (i.producto_id ? '<span class="ctrl ctrl-no">sin tocar stock</span>' : '<span class="ctrl ctrl-libre">fuera del catálogo</span>')}</td></tr>`).join('')}</tbody></table>
+      <tbody>${(v.venta_items||[]).sort((a,b)=>a.orden-b.orden).map(i => `<tr><td>${esc(i.nombre)}${i.sku?`<div style="font-size:11px;color:var(--muted)">${esc(i.sku)}</div>`:''}</td><td class="r">${i.cantidad}</td><td class="r">${money(i.precio_unitario)}${Number(i.recargo_unitario) > 0 ? `<div style="font-size:11px;color:var(--muted)">incl. +${money(i.recargo_unitario)} cta. cte.</div>` : ''}</td><td class="r">${money(i.subtotal)}</td><td>${i.afecto_stock ? `<span class="ctrl ctrl-si">descontó → ${i.stock_posterior}</span>` : (i.producto_id ? '<span class="ctrl ctrl-no">sin tocar stock</span>' : '<span class="ctrl ctrl-libre">fuera del catálogo</span>')}</td></tr>`).join('')}</tbody></table>
       <div style="text-align:right;font-size:14px">${Number(v.descuento)>0 ? `Subtotal ${money(v.subtotal)} · Descuento −${money(v.descuento)}<br>` : ''}<b style="font-size:18px">Total ${money(v.total)}</b></div>
     </div>
     <div class="modal-footer">
@@ -211,7 +213,9 @@ function abrir(id) {
   bd.querySelector('#_x').onclick = bd.querySelector('#_ok').onclick = () => bd.remove();
   bd.querySelector('#_imprimir').addEventListener('click', () => MHImprimir.ticket(v));
   bd.querySelector('#_anular')?.addEventListener('click', async () => {
-    const motivo = prompt('¿Por qué se anula la venta? (el stock de los productos controlados vuelve a sumarse)');
+    const motivo = prompt(v.medio_pago === 'cuenta_corriente'
+      ? '¿Por qué se anula la venta? (vuelve el stock de los productos controlados y se descuenta de la cuenta corriente del cliente)'
+      : '¿Por qué se anula la venta? (vuelve el stock de los productos controlados y sale la devolución de la caja)');
     if (motivo === null) return;
     if (!motivo.trim()) { Utils.toast('Escribí el motivo', 'warning'); return; }
     const { data, error } = await db.rpc('venta_anular', { p_venta_id: v.id, p_motivo: motivo.trim() });

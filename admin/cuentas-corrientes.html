@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/admin/manifest.json">
+  <meta name="theme-color" content="#0A2E63">
+  <link rel="icon" type="image/png" href="/images/marca/favicon.png">
+  <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
+  <title>Cuentas corrientes — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+  <style>
+    .cc-fila { cursor:pointer; }
+    .cc-fila:hover td { background:var(--bg); }
+    .r { text-align:right; white-space:nowrap; }
+    .deuda { font-weight:700; color:var(--night); }
+    .vencido { color:#B91C1C; font-weight:600; }
+    .favor { color:#15803D; font-weight:600; }
+    .sub { font-size:11.5px; color:var(--muted); }
+    .det-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+    .det-stats > div { background:var(--bg); border-radius:var(--r); padding:10px 12px; }
+    .det-stats b { display:block; font-size:18px; color:var(--night); margin-top:2px; }
+    .det-stats span { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+    @media (max-width: 700px) { .det-stats { grid-template-columns:1fr 1fr; } }
+    .det-acc { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+    tr.anulado td { text-decoration:line-through; color:var(--muted); }
+    tr.anulado td.acc { text-decoration:none; }
+    .grande input { font-size:20px; font-weight:600; }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><img class="sidebar-brand-icon" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="32" height="32"><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/" target="_blank" class="btn btn-ghost btn-sm">🌐 Ver Tienda</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1>Cuentas corrientes</h1><p>Clientes que compran a cuenta: saldo, vencimientos y pagos.</p></div>
+        <div class="page-header-actions" id="acciones"></div>
+      </div>
+      <div class="kpi-grid" id="kpis"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+        <div class="search-bar" style="flex:1;min-width:220px"><span class="search-icon">🔍</span><input type="search" id="q" placeholder="Buscar cliente, teléfono o CUIT…" autocomplete="off"></div>
+        <div class="chips" id="filtros">
+          <button class="chip active" data-f="todas">Todas</button>
+          <button class="chip" data-f="deuda">Con deuda</button>
+          <button class="chip" data-f="vencidas">Vencidas</button>
+          <button class="chip" data-f="suspendidas">Suspendidas</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Cliente</th><th class="r">Debe</th><th class="r">Vencido</th><th>Próximo vencimiento</th><th class="r">Límite</th><th>Último pago</th><th></th></tr></thead>
+        <tbody id="tabla"><tr><td colspan="7" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr></tbody>
+      </table></div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script src="/admin/js/impresion.js"></script>
+<script>
+/* ============================================================
+   Cuentas corrientes (sql/019). El saldo lo mueve solo la base:
+   ventas en cuenta corriente, pagos, anulaciones y ajustes.
+   ============================================================ */
+const $id = id => document.getElementById(id);
+const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const money = n => new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS', minimumFractionDigits:0, maximumFractionDigits:2 }).format(Number(n || 0));
+const fechaCorta = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? `${m[3]}/${m[2]}/${m[1]}` : '—'; };
+const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+// Montos como los escribe la gente: "12.500", "12500,50", "12500.5", "$ 12.500"
+const num = v => {
+  let s = String(v ?? '').trim().replace(/[\s$]/g, '');
+  if (!s) return NaN;
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+  const n = Number(s);
+  return Number.isFinite(n) ? n : NaN;
+};
+const MEDIOS = { efectivo:'Efectivo', transferencia:'Transferencia', debito:'Débito', credito:'Crédito', mercadopago:'Mercado Pago', otro:'Otro' };
+const TIPOS = { cargo:'Compra', pago:'Pago', devolucion:'Devolución', ajuste_debito:'Ajuste (+)', ajuste_credito:'Ajuste (−)', pago_anulado:'Pago anulado' };
+const SUMA = t => ['cargo', 'ajuste_debito', 'pago_anulado'].includes(t);
+
+let perfil = null;
+let cuentas = [];
+let filtro = 'todas';
+const puede = k => Auth.puede(k, perfil);
+
+function msgError(e, accion) {
+  const m = (e?.message || '').toLowerCase();
+  if (m.includes('could not find') || m.includes('schema cache') || m.includes('does not exist'))
+    return 'Falta ejecutar sql/019-cuentas-corrientes.sql en la base de datos.';
+  if (!navigator.onLine || m.includes('failed to fetch')) return 'Sin conexión. Probá de nuevo.';
+  return e?.hint || `No se pudo ${accion}.`;
+}
+
+/* ── Lista ─────────────────────────────────────────── */
+async function cargar() {
+  const { data, error } = await db.from('v_cc_cuentas').select('*').order('nombre');
+  if (error) { $id('tabla').innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📒</div><h3>${esc(msgError(error, 'cargar las cuentas'))}</h3></div></td></tr>`; return; }
+  cuentas = data || [];
+  render();
+}
+
+function render() {
+  const deudaTotal = cuentas.reduce((s, c) => s + Math.max(0, Number(c.saldo)), 0);
+  const vencTotal = cuentas.reduce((s, c) => s + Number(c.vencido || 0), 0);
+  const conVenc = cuentas.filter(c => Number(c.vencido) > 0).length;
+  $id('kpis').innerHTML = `
+    <div class="kpi-card"><div class="kpi-icon gold">📒</div><div class="kpi-label">Total a cobrar</div><div class="kpi-value">${money(deudaTotal)}</div><div class="kpi-sub">${cuentas.length} cuenta${cuentas.length !== 1 ? 's' : ''}</div></div>
+    <div class="kpi-card" data-f="vencidas"><div class="kpi-icon red">⏰</div><div class="kpi-label">Vencido</div><div class="kpi-value">${money(vencTotal)}</div><div class="kpi-sub">${conVenc} cliente${conVenc !== 1 ? 's' : ''} con deuda vencida</div></div>`;
+
+  const q = norm($id('q').value.trim());
+  const lista = cuentas.filter(c => {
+    if (filtro === 'deuda' && !(Number(c.saldo) > 0)) return false;
+    if (filtro === 'vencidas' && !(Number(c.vencido) > 0)) return false;
+    if (filtro === 'suspendidas' && c.habilitada) return false;
+    if (!q) return true;
+    return norm(c.nombre).includes(q) || String(c.telefono || '').replace(/\D/g, '').includes(q.replace(/\D/g, '') || '§') || norm(c.cuit).includes(q);
+  });
+  $id('tabla').innerHTML = lista.length ? lista.map(c => `<tr class="cc-fila" data-id="${c.id}">
+    <td><b>${esc(c.nombre)}</b>${!c.habilitada ? ' <span class="badge badge-danger">suspendida</span>' : ''}<div class="sub">${esc(c.telefono || '')}${c.cuit ? ' · ' + esc(c.cuit) : ''}</div></td>
+    <td class="r ${Number(c.saldo) < 0 ? 'favor' : 'deuda'}">${Number(c.saldo) < 0 ? 'a favor ' + money(-c.saldo) : money(c.saldo)}</td>
+    <td class="r">${Number(c.vencido) > 0 ? `<span class="vencido">${money(c.vencido)}</span>` : '—'}</td>
+    <td>${fechaCorta(c.proximo_vencimiento)}${Number(c.a_pagar_proximo) > 0 ? `<div class="sub">a pagar ${money(c.a_pagar_proximo)}</div>` : ''}</td>
+    <td class="r">${c.limite != null ? money(c.limite) + `<div class="sub">disponible ${money(c.disponible)}</div>` : '<span class="sub">sin límite</span>'}</td>
+    <td>${c.ultimo_pago ? Utils.date(c.ultimo_pago) : '<span class="sub">nunca</span>'}</td>
+    <td class="r">›</td></tr>`).join('')
+    : `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📒</div><h3>${cuentas.length ? 'Ninguna cuenta coincide' : 'Todavía no hay cuentas corrientes'}</h3>${!cuentas.length && puede('cc.gestionar') ? '<p>Abrí la primera con "+ Nueva cuenta".</p>' : ''}</div></td></tr>`;
+}
+
+/* ── Detalle de una cuenta ─────────────────────────── */
+async function abrir(id) {
+  const c = cuentas.find(x => x.id === id);
+  if (!c) return;
+  const bd = document.createElement('div'); bd.className = 'modal-backdrop';
+  bd.innerHTML = `<div class="modal modal-lg" style="max-width:min(940px, calc(100vw - 32px))"><div class="modal-header"><h3 class="modal-title">${esc(c.nombre)}</h3><button class="modal-close" data-x aria-label="Cerrar">×</button></div>
+    <div class="modal-body" id="det"><div class="spinner" style="margin:30px auto"></div></div></div>`;
+  document.body.appendChild(bd);
+  bd.querySelectorAll('[data-x]').forEach(b => b.onclick = () => bd.remove());
+  history.replaceState(null, '', `?cuenta=${id}`);
+  bd.querySelector('[data-x]').addEventListener('click', () => history.replaceState(null, '', location.pathname));
+
+  const { data: movs, error } = await db.from('cc_movimientos').select('*').eq('cuenta_id', id).order('fecha', { ascending: false }).order('id', { ascending: false }).limit(300);
+  if (error) { bd.querySelector('#det').innerHTML = esc(msgError(error, 'cargar los movimientos')); return; }
+
+  const venc = Number(c.vencido) > 0;
+  bd.querySelector('#det').innerHTML = `
+    <div class="sub" style="margin-bottom:10px">${esc(c.telefono || 'sin teléfono')}${c.cuit ? ' · DNI/CUIT ' + esc(c.cuit) : ''} · paga el día <b>${c.dia_pago}</b> de cada mes${c.notas ? ' · ' + esc(c.notas) : ''}</div>
+    <div class="det-stats">
+      <div><span>Debe</span><b>${money(c.saldo)}</b></div>
+      <div><span>Vencido</span><b class="${venc ? 'vencido' : ''}">${venc ? money(c.vencido) : '—'}</b></div>
+      <div><span>Vence ${fechaCorta(c.proximo_vencimiento)}</span><b>${money(c.a_pagar_proximo)}</b></div>
+      <div><span>${c.limite != null ? 'Disponible' : 'Límite'}</span><b>${c.limite != null ? money(c.disponible) : 'sin límite'}</b></div>
+    </div>
+    <div class="det-acc">
+      ${puede('cc.cobrar') ? '<button class="btn btn-primary" data-a="pago">💵 Registrar pago</button>' : ''}
+      ${puede('cc.ajustar') ? '<button class="btn btn-outline" data-a="ajuste">± Ajuste</button>' : ''}
+      ${puede('cc.gestionar') ? '<button class="btn btn-outline" data-a="editar">✎ Editar cuenta</button>' : ''}
+      ${c.telefono ? '<button class="btn btn-ghost" data-a="wa">💬 Recordatorio por WhatsApp</button>' : ''}
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Fecha</th><th>Movimiento</th><th class="r">Debe</th><th class="r">Haber</th><th class="r">Saldo</th><th></th></tr></thead>
+      <tbody>${movs.length ? movs.map(m => `<tr class="${m.anulado ? 'anulado' : ''}">
+        <td style="white-space:nowrap">${Utils.date(m.fecha)}</td>
+        <td style="min-width:220px"><b>${esc(TIPOS[m.tipo] || m.tipo)}</b>${m.recibo_numero ? ` · ${esc(m.recibo_numero)}` : ''}${m.medio_pago ? ` · ${esc(MEDIOS[m.medio_pago] || m.medio_pago)}` : ''}
+          <div class="sub">${esc(m.descripcion || '')}${m.usuario_nombre ? ' · ' + esc(m.usuario_nombre) : ''}${m.anulado ? ` · anulado: ${esc(m.motivo_anulacion)}` : ''}</div></td>
+        <td class="r">${SUMA(m.tipo) ? money(m.monto) : ''}</td>
+        <td class="r">${SUMA(m.tipo) ? '' : money(m.monto)}</td>
+        <td class="r"><b>${money(m.saldo_posterior)}</b></td>
+        <td class="acc r" style="white-space:nowrap">${m.tipo === 'pago' ? `<button class="btn btn-ghost btn-sm" data-recibo="${m.id}" title="Reimprimir recibo">🖨️</button>` : ''}${m.tipo === 'pago' && !m.anulado && puede('cc.ajustar') ? `<button class="btn btn-ghost btn-sm" data-anular="${m.id}" title="Anular pago">✕</button>` : ''}</td>
+      </tr>`).join('') : '<tr><td colspan="6" class="text-center" style="padding:24px;color:var(--muted)">Sin movimientos.</td></tr>'}</tbody>
+    </table></div>`;
+
+  bd.querySelector('#det').addEventListener('click', async e => {
+    const a = e.target.closest('[data-a]');
+    if (a?.dataset.a === 'pago') return modalPago(c, () => { bd.remove(); refrescar(id); });
+    if (a?.dataset.a === 'ajuste') return modalAjuste(c, () => { bd.remove(); refrescar(id); });
+    if (a?.dataset.a === 'editar') return modalCuenta(c, () => { bd.remove(); refrescar(id); });
+    if (a?.dataset.a === 'wa') return recordatorio(c);
+    const r = e.target.closest('[data-recibo]');
+    if (r) { const m = movs.find(x => x.id === Number(r.dataset.recibo)); return MHImprimir.recibo(reciboDe(m, c)); }
+    const an = e.target.closest('[data-anular]');
+    if (an) {
+      const m = movs.find(x => x.id === Number(an.dataset.anular));
+      const motivo = await pedirTexto(`Anular el pago ${m.recibo_numero} de ${money(m.monto)}`, 'Motivo', 'La deuda vuelve a la cuenta y sale el egreso de la caja por el mismo medio.');
+      if (!motivo) return;
+      const { error } = await db.rpc('cc_pago_anular', { p_id: m.id, p_motivo: motivo });
+      if (error) { Utils.toast(msgError(error, 'anular el pago'), 'error'); return; }
+      Utils.toast('Pago anulado', 'success'); bd.remove(); refrescar(id);
+    }
+  });
+}
+
+async function refrescar(id) { await cargar(); if (id) abrir(id); }
+
+const reciboDe = (m, c) => ({ numero: m.recibo_numero, fecha: m.fecha, cliente_nombre: c.nombre, cliente_doc: c.cuit,
+  concepto: m.descripcion || 'Pago a cuenta corriente', monto: m.monto, medio_pago: m.medio_pago,
+  saldo_anterior: m.saldo_anterior, saldo_actual: m.saldo_posterior, usuario: m.usuario_nombre, anulado: m.anulado });
+
+function recordatorio(c) {
+  const tel = String(c.telefono || '').replace(/\D/g, '');
+  let n = tel; if (n && !n.startsWith('54')) n = '549' + n.replace(/^0/, '').replace(/^15/, '');
+  const venc = Number(c.vencido) > 0;
+  const texto = `Hola ${c.nombre.split(' ')[0]}, te escribimos de Mundo Hogar. ` +
+    (venc ? `Tu cuenta tiene ${money(c.vencido)} vencidos. ` : '') +
+    `El saldo de tu cuenta es ${money(c.saldo)}` +
+    (Number(c.a_pagar_proximo) > 0 ? ` y el ${fechaCorta(c.proximo_vencimiento)} vencen ${money(c.a_pagar_proximo)}.` : '.') +
+    ' ¡Gracias!';
+  window.open(`https://wa.me/${n}?text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
+}
+
+/* ── Formularios ───────────────────────────────────── */
+function modal(titulo, cuerpo, onSubmit, boton = 'Guardar') {
+  const bd = document.createElement('div'); bd.className = 'modal-backdrop';
+  bd.innerHTML = `<div class="modal" style="max-width:460px"><div class="modal-header"><h3 class="modal-title">${titulo}</h3><button class="modal-close" data-x aria-label="Cerrar">×</button></div>
+    <form class="modal-body form-grid" style="gap:14px" novalidate>${cuerpo}
+      <div class="modal-footer" style="padding:0;border:0"><button type="button" class="btn btn-outline" data-x>Cancelar</button><button type="submit" class="btn btn-primary">${boton}</button></div>
+    </form></div>`;
+  document.body.appendChild(bd);
+  bd.querySelectorAll('[data-x]').forEach(b => b.onclick = () => bd.remove());
+  bd.querySelector('input, select')?.focus();
+  bd.querySelector('form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = e.submitter; btn.disabled = true;
+    try { if (await onSubmit(bd) !== false) bd.remove(); } finally { btn.disabled = false; }
+  });
+  return bd;
+}
+const val = (bd, id) => bd.querySelector('#' + id).value.trim();
+
+function modalPago(c, listo) {
+  const sugerido = Number(c.vencido) > 0 ? Number(c.vencido) : Math.max(0, Number(c.a_pagar_proximo) || Number(c.saldo));
+  modal(`Pago de ${esc(c.nombre)}`, `
+    <div class="sub">Debe ${money(c.saldo)}${Number(c.vencido) > 0 ? ` · vencido ${money(c.vencido)}` : ''}</div>
+    <div class="form-group grande"><label>Monto <span class="req">*</span></label><input type="text" id="p-monto" inputmode="decimal" value="${sugerido > 0 ? sugerido : ''}" autocomplete="off"></div>
+    <div class="form-group"><label>Cómo pagó</label><select id="p-medio">${Object.entries(MEDIOS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+      <span class="form-hint">El pago entra a la caja con este medio. Si la caja está cerrada, se suma al abrirla.</span></div>
+    <div class="form-group"><label>Nota</label><input type="text" id="p-desc" maxlength="300" placeholder="Opcional"></div>`,
+  async bd => {
+    const monto = num(val(bd, 'p-monto'));
+    if (!(monto > 0)) { Utils.toast('Poné el monto que pagó', 'warning'); return false; }
+    if (monto > Number(c.saldo) && !await Utils.confirm(`El pago (${money(monto)}) es mayor a lo que debe (${money(c.saldo)}). La diferencia queda a favor del cliente.`, '¿Seguro?', 'Registrar igual', false)) return false;
+    const { data, error } = await db.rpc('cc_pago_registrar', { p: { cuenta_id: c.id, monto, medio_pago: val(bd, 'p-medio'), descripcion: val(bd, 'p-desc') || null } });
+    if (error) { Utils.toast(msgError(error, 'registrar el pago'), 'error'); return false; }
+    Utils.toast(`Pago registrado · recibo ${data.recibo.numero}${data.caja_abierta ? '' : ' · la caja está cerrada: entra al abrirla'}`, 'success', 6000);
+    if (await Utils.confirm(`Saldo actual: ${money(data.recibo.saldo_actual)}`, `Recibo ${esc(data.recibo.numero)}`, '🖨️ Imprimir recibo', false)) MHImprimir.recibo(data.recibo);
+    listo();
+  }, 'Registrar pago');
+}
+
+function modalAjuste(c, listo) {
+  modal(`Ajuste de ${esc(c.nombre)}`, `
+    <div class="form-group"><label>Tipo</label><select id="a-tipo">
+      <option value="ajuste_debito">Suma deuda (ej. saldo inicial de la libreta, intereses)</option>
+      <option value="ajuste_credito">Resta deuda (ej. bonificación, error a favor del cliente)</option></select></div>
+    <div class="form-group grande"><label>Monto <span class="req">*</span></label><input type="text" id="a-monto" inputmode="decimal" autocomplete="off"></div>
+    <div class="form-group"><label>Motivo <span class="req">*</span></label><input type="text" id="a-motivo" maxlength="300" placeholder="Ej: Saldo inicial (libreta al 11/11/2026)"></div>
+    <div class="form-hint">No entra a la caja. Queda registrado con tu nombre.</div>`,
+  async bd => {
+    const monto = num(val(bd, 'a-monto'));
+    if (!(monto > 0)) { Utils.toast('Poné el monto', 'warning'); return false; }
+    if (!val(bd, 'a-motivo')) { Utils.toast('Escribí el motivo', 'warning'); return false; }
+    const { error } = await db.rpc('cc_ajuste', { p: { cuenta_id: c.id, tipo: val(bd, 'a-tipo'), monto, motivo: val(bd, 'a-motivo') } });
+    if (error) { Utils.toast(msgError(error, 'guardar el ajuste'), 'error'); return false; }
+    Utils.toast('Ajuste registrado', 'success'); listo();
+  });
+}
+
+function modalCuenta(c, listo) {
+  const nueva = !c;
+  modal(nueva ? 'Nueva cuenta corriente' : `Cuenta de ${esc(c.nombre)}`, `
+    ${nueva ? `
+    <div class="form-group"><label>Nombre y apellido <span class="req">*</span></label><input type="text" id="c-nombre" maxlength="120"></div>
+    <div class="form-group"><label>Teléfono</label><input type="tel" id="c-tel" maxlength="40" placeholder="Si ya está en Clientes, se usa esa ficha"></div>
+    <div class="form-group"><label>DNI / CUIT</label><input type="text" id="c-cuit" maxlength="15"></div>
+    <div class="form-group"><label>Localidad</label><input type="text" id="c-loc" maxlength="80"></div>` : `
+    <label class="toggle-wrap"><div class="toggle"><input type="checkbox" id="c-hab" ${c.habilitada ? 'checked' : ''}><div class="toggle-track"></div><div class="toggle-thumb"></div></div><span class="toggle-label">Habilitada para comprar (suspendida: puede pagar, no comprar)</span></label>`}
+    <div class="form-group"><label>Día de pago (1 a 28)</label><input type="number" id="c-dia" min="1" max="28" value="${c?.dia_pago ?? 10}">
+      <span class="form-hint">Lo comprado en un mes vence ese día del mes siguiente.</span></div>
+    <div class="form-group"><label>Límite de crédito</label><input type="text" id="c-lim" inputmode="decimal" value="${c?.limite ?? ''}" placeholder="Vacío = sin límite"></div>
+    <div class="form-group"><label>Notas</label><input type="text" id="c-notas" maxlength="500" value="${esc(c?.notas || '')}"></div>`,
+  async bd => {
+    const limTxt = val(bd, 'c-lim');
+    const lim = limTxt ? num(limTxt) : null;
+    if (limTxt && !(lim > 0)) { Utils.toast('El límite tiene que ser un monto mayor a cero (o vacío)', 'warning'); return false; }
+    const dia = Number(val(bd, 'c-dia'));
+    if (!(dia >= 1 && dia <= 28)) { Utils.toast('El día de pago va del 1 al 28', 'warning'); return false; }
+    const p = { dia_pago: dia, limite: lim, notas: val(bd, 'c-notas') };
+    if (nueva) {
+      if (val(bd, 'c-nombre').length < 2) { Utils.toast('Escribí el nombre del cliente', 'warning'); return false; }
+      p.contacto = { nombre: val(bd, 'c-nombre'), telefono: val(bd, 'c-tel'), cuit: val(bd, 'c-cuit'), localidad: val(bd, 'c-loc') };
+    } else { p.cuenta_id = c.id; p.habilitada = bd.querySelector('#c-hab').checked; }
+    const { data, error } = await db.rpc('cc_cuenta_guardar', { p });
+    if (error) { Utils.toast(msgError(error, 'guardar la cuenta'), 'error'); return false; }
+    Utils.toast(nueva ? 'Cuenta abierta' : 'Cuenta actualizada', 'success');
+    if (nueva) { await cargar(); abrir(data.cuenta_id); } else listo();
+  }, nueva ? 'Abrir cuenta' : 'Guardar');
+}
+
+async function modalRecargos() {
+  const { data, error } = await db.from('categorias').select('id, nombre, recargo_cc, activo').order('orden').order('nombre');
+  if (error) { Utils.toast(msgError(error, 'cargar las categorías'), 'error'); return; }
+  const editable = puede('cc.recargos');
+  modal('Recargos por categoría', `
+    <div class="form-hint" style="margin-top:-4px">Lo que se suma <b>por unidad</b> al vender en cuenta corriente. Ej: Celulares $20.000 → un celular de $300.000 sale $320.000 en cuenta corriente. En efectivo y otros medios no se suma nada.</div>
+    <div class="table-wrap" style="max-height:50vh;overflow:auto"><table>
+      <thead><tr><th>Categoría</th><th class="r" style="width:150px">Recargo por unidad</th></tr></thead>
+      <tbody>${data.map(c => `<tr><td>${esc(c.nombre)}${c.activo === false ? ' <span class="sub">(inactiva)</span>' : ''}</td>
+        <td class="r"><input type="text" inputmode="decimal" data-cat="${c.id}" data-orig="${Number(c.recargo_cc || 0)}" value="${Number(c.recargo_cc || 0) || ''}" placeholder="0" style="width:130px;text-align:right" ${editable ? '' : 'disabled'}></td></tr>`).join('')}</tbody>
+    </table></div>`,
+  async bd => {
+    if (!editable) return true;
+    const cambios = [...bd.querySelectorAll('[data-cat]')].map(i => ({ id: Number(i.dataset.cat), orig: Number(i.dataset.orig), nuevo: i.value.trim() === '' ? 0 : num(i.value) }))
+      .filter(x => x.nuevo !== x.orig);
+    if (cambios.some(x => !(x.nuevo >= 0))) { Utils.toast('Revisá los montos: tienen que ser 0 o más', 'warning'); return false; }
+    for (const x of cambios) {
+      const { error } = await db.rpc('cc_recargo_guardar', { p_categoria_id: x.id, p_monto: x.nuevo });
+      if (error) { Utils.toast(msgError(error, 'guardar el recargo'), 'error'); return false; }
+    }
+    Utils.toast(cambios.length ? `${cambios.length} recargo${cambios.length !== 1 ? 's' : ''} actualizado${cambios.length !== 1 ? 's' : ''}` : 'Sin cambios', 'success');
+  }, editable ? 'Guardar recargos' : 'Cerrar');
+}
+
+function pedirTexto(titulo, etiqueta, ayuda) {
+  return new Promise(resolve => {
+    const bd = modal(esc(titulo), `<div class="form-group"><label>${esc(etiqueta)} <span class="req">*</span></label><input type="text" id="_t" maxlength="300" autocomplete="off"><span class="form-hint">${esc(ayuda)}</span></div>`,
+      async b => { const v = val(b, '_t'); if (!v) return false; resolve(v); }, 'Anular');
+    bd.querySelectorAll('[data-x]').forEach(b => b.addEventListener('click', () => resolve(null)));
+  });
+}
+
+/* ── Eventos ───────────────────────────────────────── */
+$id('q').addEventListener('input', render);
+$id('filtros').addEventListener('click', e => {
+  const b = e.target.closest('[data-f]'); if (!b) return;
+  filtro = b.dataset.f;
+  $id('filtros').querySelectorAll('.chip').forEach(x => x.classList.toggle('active', x === b));
+  render();
+});
+$id('kpis').addEventListener('click', e => { if (e.target.closest('[data-f="vencidas"]')) $id('filtros').querySelector('[data-f="vencidas"]').click(); });
+$id('tabla').addEventListener('click', e => { const f = e.target.closest('.cc-fila'); if (f) abrir(Number(f.dataset.id)); });
+$id('acciones').addEventListener('click', e => {
+  const b = e.target.closest('[data-acc]'); if (!b) return;
+  if (b.dataset.acc === 'nueva') modalCuenta(null);
+  if (b.dataset.acc === 'recargos') modalRecargos();
+});
+
+async function initPage() {
+  perfil = await Auth.init();
+  if (!perfil) return;
+  if (!Auth.requirePermiso('cc.ver', perfil)) return;
+  await Layout.init('cuentas-corrientes', 'Cuentas corrientes');
+  $id('acciones').innerHTML =
+    (puede('cc.gestionar') ? '<button class="btn btn-primary" data-acc="nueva">+ Nueva cuenta</button>' : '') +
+    '<button class="btn btn-outline" data-acc="recargos">🏷️ Recargos por categoría</button>';
+  await cargar();
+  const q = new URLSearchParams(location.search).get('cuenta');
+  if (q) abrir(Number(q));
+}
+initPage();
+</script>
+<script src="/admin/js/assistant.js"></script>
+<script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/admin/sw.js').catch(()=>{}); }</script>
+</body>
+</html>

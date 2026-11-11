@@ -11,6 +11,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/admin/css/admin.css">
+<style>
+  .ctrl-cc { background:rgba(244,122,31,.13); color:#B35208; }
+  .cc-res { display:flex; flex-direction:column; gap:4px; margin-top:6px; max-height:220px; overflow:auto; }
+  .cc-item { display:flex; justify-content:space-between; gap:8px; text-align:left; padding:8px 10px; border:1px solid var(--border); border-radius:var(--r); background:#fff; cursor:pointer; font-size:13px; }
+  .cc-item:hover { border-color:var(--blue); }
+  .cc-sel { border:1px solid var(--border); border-radius:var(--r); padding:10px 12px; background:var(--bg); display:flex; flex-direction:column; gap:4px; }
+  .cc-dato { font-size:12.5px; color:var(--muted); }
+  #cc-q, #retira { width:100%; min-height:40px; }
+</style>
 </head>
 <body class="pos">
 <div class="admin-layout">
@@ -114,6 +123,8 @@ let cuentas = [];
 let perfil = null;
 let ticket = [];           // [{ key, producto_id, nombre, sku, cantidad, precio, imagen }]
 let medio = 'efectivo';
+let ccSel = null;          // cliente de cuenta corriente elegido (cc_buscar)
+let recargos = {};         // categoria_id -> recargo por unidad en cuenta corriente (sql/019)
 let catSel = '';
 let ultimaVenta = null;    // resultado de la última venta para mostrar el ticket
 
@@ -139,22 +150,26 @@ function msgError(error, accion = 'registrar la venta') {
   if (m.includes('stock_insuficiente')) return hint || 'No alcanza el stock.';
   if (m.includes('descuento_invalido')) return 'El descuento no puede superar el subtotal.';
   if (m.includes('venta_vacia')) return 'El ticket está vacío.';
+  if (m.includes('cuenta_requerida')) return 'Elegí el cliente de cuenta corriente.';
+  if (m.includes('cuenta_suspendida') || m.includes('limite_superado')) return hint;
   return hint || `No se pudo ${accion}. Probá de nuevo.`;
 }
 
 /* ── Persistencia del ticket (si se recarga la página no se pierde) ── */
-function guardarTicket() { try { sessionStorage.setItem(KEY_TICKET, JSON.stringify({ ticket, medio })); } catch (e) {} }
+function guardarTicket() { try { sessionStorage.setItem(KEY_TICKET, JSON.stringify({ ticket, medio, ccSel })); } catch (e) {} }
 function cargarTicket() {
   try {
     const s = JSON.parse(sessionStorage.getItem(KEY_TICKET) || 'null');
-    if (s && Array.isArray(s.ticket)) { ticket = s.ticket; medio = s.medio || 'efectivo'; }
+    if (s && Array.isArray(s.ticket)) { ticket = s.ticket; medio = s.medio || 'efectivo'; ccSel = s.ccSel || null; }
   } catch (e) {}
 }
 
 /* ── Datos ── */
 async function cargarDatos() {
   const [catRes, prodRes, ctaRes] = await Promise.all([
-    db.from('categorias').select('id,nombre').order('orden'),
+    // recargo_cc existe desde sql/019; sin él, las categorías igual cargan
+    db.from('categorias').select('id,nombre,recargo_cc').order('orden')
+      .then(r => r.error ? db.from('categorias').select('id,nombre').order('orden') : r),
     db.from('productos')
       .select('id,nombre,sku,codigo_barras,categoria_id,precio_minorista,precio_oferta,en_oferta,stock_actual,stock_minimo,stock_controlado,seguimiento_inventario,permite_venta_sin_stock,imagen_principal_url,estado')
       .neq('estado','archivado').order('nombre'),
@@ -169,7 +184,8 @@ async function cargarDatos() {
     document.getElementById('resultados').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">⚠️</div><h3>No se pudo cargar el catálogo</h3><button type="button" class="btn btn-outline" onclick="location.reload()">↺ Reintentar</button></div>`;
     return;
   }
-  (catRes.data || []).forEach(c => cats[c.id] = c.nombre);
+  (catRes.data || []).forEach(c => { cats[c.id] = c.nombre; recargos[c.id] = Number(c.recargo_cc || 0); });
+  if (medio === 'cuenta_corriente' && !puedeCC()) medio = 'efectivo';
   productos = prodRes.data || [];
   cuentas = ctaRes.error ? [] : (ctaRes.data || []);
   renderCats();
@@ -351,9 +367,20 @@ document.getElementById('btn-libre').addEventListener('click', () => {
 });
 
 const MEDIOS = { efectivo:'Efectivo', transferencia:'Transferencia', debito:'Débito', credito:'Crédito', mercadopago:'Mercado Pago', cuenta_corriente:'Cuenta corriente', otro:'Otro' };
+const puedeCC = () => Auth.puede('cc.vender', perfil);
+const esCC = () => medio === 'cuenta_corriente';
+
+// Recargo por unidad de un renglón (solo en cuenta corriente y productos del catálogo).
+// Es una vista previa: el que manda es la base (venta_registrar le suma el recargo).
+function recargoDe(t) {
+  if (!esCC() || !t.producto_id) return 0;
+  const p = productos.find(x => x.id === t.producto_id);
+  return p ? (recargos[p.categoria_id] || 0) : 0;
+}
+const precioFinal = t => t.precio + recargoDe(t);
 
 function totales() {
-  const subtotal = ticket.reduce((s,t) => s + t.precio * t.cantidad, 0);
+  const subtotal = ticket.reduce((s,t) => s + precioFinal(t) * t.cantidad, 0);
   const desc = Math.max(0, Number(document.getElementById('desc')?.value || 0) || 0);
   return { subtotal, desc: Math.min(desc, subtotal), total: Math.max(0, subtotal - Math.min(desc, subtotal)) };
 }
@@ -387,6 +414,8 @@ function renderTicket() {
   const cliT = document.getElementById('cli-tel')?.value || '';
   const notas = document.getElementById('notas')?.value || '';
   const cuentaSel = document.getElementById('cuenta')?.value || '';
+  const retira = document.getElementById('retira')?.value || '';
+  const recargoTotal = ticket.reduce((s, t) => s + recargoDe(t) * t.cantidad, 0);
 
   const lineas = ticket.map(t => {
     const p = t.producto_id ? productos.find(x => x.id === t.producto_id) : null;
@@ -399,10 +428,10 @@ function renderTicket() {
     return `<div class="pos-linea" data-key="${esc(t.key)}">
       <div>
         <div class="pos-linea-nombre">${esc(t.nombre)}</div>
-        <div class="pos-linea-sub">${t.sku ? `<span>${esc(t.sku)}</span>` : ''}<button type="button" class="pos-precio-btn" data-act="precio" title="Cambiar precio">${money2(t.precio)} c/u ✎</button>${sub}</div>
+        <div class="pos-linea-sub">${t.sku ? `<span>${esc(t.sku)}</span>` : ''}<button type="button" class="pos-precio-btn" data-act="precio" title="Cambiar precio">${money2(t.precio)} c/u ✎</button>${recargoDe(t) ? `<span class="ctrl ctrl-cc" title="Recargo de cuenta corriente de la categoría">+${money2(recargoDe(t))} c/u cta. cte.</span>` : ''}${sub}</div>
       </div>
       <div class="pos-linea-right">
-        <div class="pos-linea-total">${money(t.precio * t.cantidad)}</div>
+        <div class="pos-linea-total">${money(precioFinal(t) * t.cantidad)}</div>
         <div class="qty-ctl"><button type="button" data-act="menos" aria-label="Menos">−</button><input type="number" inputmode="numeric" min="1" max="9999" value="${t.cantidad}" data-act="cant" aria-label="Cantidad"><button type="button" data-act="mas" aria-label="Más">+</button></div>
         <button type="button" class="pos-quitar" data-act="quitar">Quitar</button>
       </div>
@@ -413,16 +442,18 @@ function renderTicket() {
   body.innerHTML = lineas + `
     <div class="pos-totales">
       <div class="fila"><span>Subtotal</span><b>${money(subtotal)}</b></div>
+      ${recargoTotal ? `<div class="fila" style="font-size:12.5px;color:var(--muted)"><span>incluye recargo cta. cte.</span><span>${money(recargoTotal)}</span></div>` : ''}
       <div class="fila"><span>Descuento ($)</span><input type="number" id="desc" inputmode="decimal" min="0" step="1" placeholder="0" value="${esc(descActual)}"></div>
       <div class="pos-total"><span>Total</span><span id="total-txt">${money(subtotal - desc)}</span></div>
     </div>
     <div class="pos-seccion"><span class="lbl">Medio de pago</span>
-      <div class="chips pay-chips" id="medios">${Object.entries(MEDIOS).map(([k,v]) => `<button type="button" class="chip${medio===k?' active':''}" data-medio="${k}">${v}</button>`).join('')}</div>
+      <div class="chips pay-chips" id="medios">${Object.entries(MEDIOS).filter(([k]) => k !== 'cuenta_corriente' || puedeCC()).map(([k,v]) => `<button type="button" class="chip${medio===k?' active':''}" data-medio="${k}">${v}</button>`).join('')}</div>
       ${(medio==='transferencia'||medio==='mercadopago') && cuentas.length ? `<select id="cuenta" style="margin-top:8px;width:100%;min-height:40px"><option value="">¿A qué cuenta entró? (opcional)</option>${cuentas.map(c=>`<option value="${c.id}"${String(c.id)===cuentaSel?' selected':''}>${esc(c.nombre)}${c.alias?' · '+esc(c.alias):''}</option>`).join('')}</select>` : ''}
     </div>
-    <div class="pos-seccion"><span class="lbl">Cliente (opcional)</span>
+    ${esCC() ? htmlClienteCC(subtotal - desc) : `<div class="pos-seccion"><span class="lbl">Cliente (opcional)</span>
       <div class="pos-cliente"><input type="text" id="cli-nombre" placeholder="Nombre" maxlength="80" value="${esc(cliN)}"><input type="tel" id="cli-tel" placeholder="Teléfono (para mandar el ticket)" maxlength="25" value="${esc(cliT)}"></div>
-    </div>
+    </div>`}
+    <div class="pos-seccion"><input type="text" id="retira" placeholder="Retira (si no es el cliente)" maxlength="80" value="${esc(retira)}"></div>
     <div class="pos-seccion"><input type="text" id="notas" placeholder="Nota interna (opcional)" maxlength="400" value="${esc(notas)}"></div>
     <button type="button" class="btn btn-primary btn-cobrar" id="btn-cobrar">Cobrar ${money(subtotal - desc)}</button>`;
 }
@@ -435,7 +466,9 @@ document.getElementById('ticket-body').addEventListener('click', async e => {
   if (b.dataset.ok === 'wa') { enviarWA(); return; }
   if (b.dataset.ok === 'imprimir') { MHImprimir.ticket(ultimaVenta); return; }
   if (b.dataset.ok === 'copiar') { Utils.copy(textoTicket(ultimaVenta), 'Ticket copiado'); return; }
-  if (b.dataset.medio) { medio = b.dataset.medio; guardarTicket(); renderTicket(); return; }
+  if (b.dataset.medio) { medio = b.dataset.medio; guardarTicket(); renderTicket(); if (esCC() && !ccSel) setTimeout(() => document.getElementById('cc-q')?.focus(), 0); return; }
+  if (b.dataset.act === 'cc-elegir') { ccSel = ccResultados.find(c => String(c.id) === b.dataset.id) || null; ccResultados = []; guardarTicket(); renderTicket(); return; }
+  if (b.dataset.act === 'cc-cambiar') { ccSel = null; guardarTicket(); renderTicket(); setTimeout(() => document.getElementById('cc-q')?.focus(), 0); return; }
   const linea = b.closest('.pos-linea'); if (!linea) return;
   const t = ticket.find(x => x.key === linea.dataset.key); if (!t) return;
   if (b.dataset.act === 'mas') t.cantidad = Math.min(9999, t.cantidad + 1);
@@ -444,11 +477,55 @@ document.getElementById('ticket-body').addEventListener('click', async e => {
   if (b.dataset.act === 'precio') { const v = await pedirPrecio(t.nombre, t.precio); if (v === null) return; t.precio = v; }
   guardarTicket(); renderTicket();
 });
+
+/* ── Cliente de cuenta corriente ── */
+let ccResultados = [];
+let ccTimer = null;
+function htmlClienteCC(total) {
+  if (!ccSel) {
+    return `<div class="pos-seccion"><span class="lbl">Cliente de cuenta corriente *</span>
+      <input type="search" id="cc-q" placeholder="Buscar por nombre, teléfono o CUIT…" autocomplete="off">
+      <div id="cc-res" class="cc-res">${htmlResultadosCC()}</div></div>`;
+  }
+  const c = ccSel;
+  const saldoNuevo = Number(c.saldo) + total;
+  const pasa = c.limite != null && saldoNuevo > Number(c.limite);
+  return `<div class="pos-seccion"><span class="lbl">Cliente de cuenta corriente</span>
+    <div class="cc-sel">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:start">
+        <div><b>${esc(c.nombre)}</b>${c.telefono ? `<div class="cc-dato">${esc(c.telefono)}</div>` : ''}</div>
+        <button type="button" class="btn btn-ghost btn-sm" data-act="cc-cambiar">Cambiar</button>
+      </div>
+      <div class="cc-dato">Debe hoy: <b>${money(c.saldo)}</b>${Number(c.vencido) > 0 ? ` · <span style="color:var(--danger)">vencido ${money(c.vencido)}</span>` : ''}</div>
+      <div class="cc-dato">Con esta compra: <b>${money(saldoNuevo)}</b>${c.limite != null ? ` · límite ${money(c.limite)}` : ''}</div>
+      ${!c.habilitada ? '<div class="pos-aviso" style="display:block">Cuenta suspendida: no puede comprar.</div>' : ''}
+      ${pasa ? `<div class="pos-aviso" style="display:block">Supera el límite por ${money(saldoNuevo - Number(c.limite))}.${Auth.puede('cc.exceder_limite', perfil) ? ' Tenés permiso para venderle igual.' : ' La venta va a ser rechazada.'}</div>` : ''}
+    </div></div>`;
+}
+function htmlResultadosCC() {
+  if (!ccResultados.length) return '';
+  return ccResultados.map(c => `<button type="button" class="cc-item" data-act="cc-elegir" data-id="${c.id}">
+    <span><b>${esc(c.nombre)}</b>${c.telefono ? ` · ${esc(c.telefono)}` : ''}${!c.habilitada ? ' <span class="badge badge-danger">suspendida</span>' : ''}</span>
+    <span>${money(c.saldo)}${Number(c.vencido) > 0 ? ' <span class="badge badge-danger">vencido</span>' : ''}</span></button>`).join('');
+}
+document.getElementById('ticket-body').addEventListener('input', e => {
+  if (e.target.id !== 'cc-q') return;
+  clearTimeout(ccTimer);
+  const q = e.target.value.trim();
+  ccTimer = setTimeout(async () => {
+    if (q.length < 2) { ccResultados = []; document.getElementById('cc-res').innerHTML = ''; return; }
+    const { data, error } = await db.rpc('cc_buscar', { p_q: q });
+    if (error) { Utils.toast(msgError(error, 'buscar clientes'), 'error'); return; }
+    ccResultados = data || [];
+    const el = document.getElementById('cc-res');
+    if (el) el.innerHTML = ccResultados.length ? htmlResultadosCC() : '<div class="cc-dato" style="padding:6px 2px">No hay clientes con cuenta que coincidan. Las cuentas se abren en Cuentas corrientes.</div>';
+  }, 250);
+});
 document.getElementById('ticket-body').addEventListener('input', e => {
   if (e.target.dataset.act === 'cant') {
     const linea = e.target.closest('.pos-linea'); const t = ticket.find(x => x.key === linea.dataset.key);
     const v = Math.max(1, Math.min(9999, parseInt(e.target.value, 10) || 1));
-    if (t) { t.cantidad = v; guardarTicket(); linea.querySelector('.pos-linea-total').textContent = money(t.precio * v); }
+    if (t) { t.cantidad = v; guardarTicket(); linea.querySelector('.pos-linea-total').textContent = money(precioFinal(t) * v); }
     const { subtotal, desc } = totales();
     document.getElementById('total-txt').textContent = money(subtotal - desc);
     document.getElementById('btn-cobrar').textContent = `Cobrar ${money(subtotal - desc)}`;
@@ -488,12 +565,17 @@ async function cobrar() {
   const { subtotal, desc, total } = totales();
   if (desc > subtotal) { Utils.toast('El descuento no puede superar el subtotal', 'warning'); return; }
   const avisos = avisosStock();
-  const cliN = document.getElementById('cli-nombre').value.trim();
-  const cliT = document.getElementById('cli-tel').value.trim();
+  if (esCC() && !ccSel) { Utils.toast('Elegí el cliente de cuenta corriente', 'warning'); document.getElementById('cc-q')?.focus(); return; }
+  const cliN = esCC() ? ccSel.nombre : document.getElementById('cli-nombre').value.trim();
+  const cliT = esCC() ? (ccSel.telefono || '') : document.getElementById('cli-tel').value.trim();
+  const retira = document.getElementById('retira')?.value.trim() || '';
+  const recargoTotal = ticket.reduce((s, t) => s + recargoDe(t) * t.cantidad, 0);
   const notas = document.getElementById('notas').value.trim();
   const cuenta = document.getElementById('cuenta')?.value || null;
 
   const resumen = `<b>${money(total)}</b> en ${MEDIOS[medio]}${desc ? ` (descuento ${money(desc)})` : ''}.<br>` +
+    (esCC() ? `Cliente: <b>${esc(ccSel.nombre)}</b> · queda debiendo <b>${money(Number(ccSel.saldo) + total)}</b>${recargoTotal ? ` (incluye ${money(recargoTotal)} de recargo)` : ''}.<br>` : '') +
+    (retira ? `Retira: ${esc(retira)}<br>` : '') +
     ticket.map(t => `${t.cantidad}× ${esc(t.nombre)}`).join('<br>') +
     (avisos.length ? `<br><br><span style="color:#B45309">⚠ El sistema dice que no alcanza el stock de: ${avisos.map(a => `<b>${esc(a.nombre)}</b> (hay ${a.hay}, se venden ${a.piden})`).join(', ')}. Se vende igual y el stock queda en negativo para que lo revises en Contar stock.</span>` : '');
   if (!await Utils.confirm(resumen, 'Confirmar venta', `Cobrar ${money(total)}`, false)) return;
@@ -503,7 +585,8 @@ async function cobrar() {
   const payload = {
     items: ticket.map(t => ({ producto_id: t.producto_id, nombre: t.producto_id ? undefined : t.nombre, cantidad: t.cantidad, precio_unitario: t.precio })),
     medio_pago: medio, cuenta_cobro_id: cuenta || null,
-    cliente_nombre: cliN || null, cliente_telefono: cliT || null,
+    cliente_nombre: cliN || null, cliente_telefono: cliT || null, retira_nombre: retira || null,
+    cc_cuenta_id: esCC() ? ccSel.id : null,
     descuento: desc || 0, notas: notas || null, permitir_negativo: true
   };
   const { data, error } = await db.rpc('venta_registrar', { p: payload });
@@ -519,8 +602,8 @@ async function cobrar() {
     const p = productos.find(x => x.id === i.producto_id);
     if (p && i.afecto_stock && typeof i.stock_posterior === 'number') p.stock_actual = i.stock_posterior;
   });
-  ultimaVenta = Object.assign({}, data, { cliente_nombre: cliN, cliente_telefono: cliT });
-  ticket = []; guardarTicket();
+  ultimaVenta = Object.assign({}, data, { cliente_nombre: data.cliente_nombre || cliN, cliente_telefono: cliT, retira_nombre: retira });
+  ticket = []; ccSel = null; guardarTicket();
   renderTicket(); renderResultados(); cargarHoy();
   toggleTicket(true);
   Utils.toast(`Venta ${data.codigo} registrada ✅`, 'success');
@@ -531,11 +614,13 @@ function textoTicket(v) {
   L.push('Mundo Hogar — Comprobante de venta');
   L.push(`${v.codigo} · ${Utils.datetime(v.fecha)}`);
   if (v.cliente_nombre) L.push(`Cliente: ${v.cliente_nombre}`);
+  if (v.retira_nombre) L.push(`Retira: ${v.retira_nombre}`);
   L.push('');
   (v.items||[]).forEach(i => L.push(`${i.cantidad}× ${i.nombre} — ${money2(i.subtotal)}`));
   L.push('');
   if (Number(v.descuento) > 0) { L.push(`Subtotal: ${money2(v.subtotal)}`); L.push(`Descuento: -${money2(v.descuento)}`); }
   L.push(`TOTAL: ${money2(v.total)} (${MEDIOS[v.medio_pago]||v.medio_pago})`);
+  if (v.cuenta_corriente) L.push(`Saldo de tu cuenta: ${money2(v.cuenta_corriente.saldo_actual)}`);
   L.push('');
   L.push('¡Gracias por tu compra!');
   return L.join('\n');
@@ -556,6 +641,7 @@ function renderVentaOk() {
       <div class="pos-ok-ic">✅</div>
       <div class="pos-ok-total">${money(v.total)}</div>
       <div class="pos-ok-cod">${esc(v.codigo)} · ${esc(MEDIOS[v.medio_pago]||v.medio_pago)}</div>
+      ${v.cuenta_corriente ? `<div class="pos-ok-cod">${esc(v.cliente_nombre)} · ahora debe <b>${money(v.cuenta_corriente.saldo_actual)}</b>${Number(v.recargo_total) ? ` · recargo ${money(v.recargo_total)}` : ''}</div>` : ''}
       <div class="pos-ok-items">${(v.items||[]).map(i => `<div><span>${i.cantidad}× ${esc(i.nombre)}${i.afecto_stock ? ` <span class="ctrl ctrl-si">stock ${i.stock_posterior}</span>` : ' <span class="ctrl ctrl-no">sin tocar stock</span>'}</span><b>${money(i.subtotal)}</b></div>`).join('')}</div>
       ${avisos.length ? `<div class="pos-aviso" style="display:block;text-align:left;padding:8px 10px">⚠ Stock en negativo: ${avisos.map(a => `<b>${esc(a.nombre)}</b> (${a.stock})`).join(', ')}. Revisalo en <a href="/admin/carga-stock">Contar stock</a>.</div>` : ''}
       <div class="pos-ok-acciones">
