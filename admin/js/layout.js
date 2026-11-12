@@ -10,6 +10,7 @@ const Layout = {
     { id:'crm',        label:'Clientes',            icon:'🤝', href:'/admin/crm',            section:'Clientes', permiso:'clientes.gestionar' },
     { id:'cuentas-corrientes', label:'Cuentas corrientes', icon:'📒', href:'/admin/cuentas-corrientes', section:'Clientes', permiso:'cc.ver' },
     { id:'completar',  label:'Completar productos',  icon:'✨', href:'/admin/completar',      section:'Catálogo', permiso:'productos.editar' },
+    { id:'fotos-revisar', label:'Fotos para revisar', icon:'🖼️', href:'/admin/fotos-revisar', section:'Catálogo', permiso:'productos.editar' },
     { id:'productos',  label:'Productos',            icon:'🛍️', href:'/admin/productos',      section:'Catálogo' },
     { id:'categorias', label:'Categorías',           icon:'🏷️', href:'/admin/categorias',     section:'Catálogo' },
     { id:'importar',   label:'Importar artículos',   icon:'📥', href:'/admin/importar',       section:'Catálogo', permiso:'productos.editar' },

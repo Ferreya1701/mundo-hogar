@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/admin/manifest.json">
+  <meta name="theme-color" content="#0A2E63">
+  <link rel="icon" type="image/png" href="/images/marca/favicon.png">
+  <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
+  <title>Fotos para revisar — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://zydotmaolgddwenwywyc.supabase.co" crossorigin>
+  <link rel="stylesheet" href="/admin/css/admin.css">
+  <style>
+    .tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+    .tabs button { border:1px solid var(--border); background:#fff; border-radius:20px; padding:6px 14px; font-size:13px; cursor:pointer; color:var(--ink); }
+    .tabs button.on { background:var(--night); color:#fff; border-color:var(--night); }
+    .tabs .n { opacity:.7; margin-left:4px; }
+    .grilla { display:grid; grid-template-columns:repeat(auto-fill, minmax(290px, 1fr)); gap:14px; }
+    .card-f { background:#fff; border:1px solid var(--border); border-radius:var(--r-lg, 12px); display:flex; flex-direction:column; transition:opacity .25s, transform .25s; }
+    .card-f.sale { opacity:0; transform:scale(.97); }
+    .card-f .foto { position:relative; aspect-ratio:1; background:#fff; overflow:hidden; border-radius:var(--r-lg, 12px) var(--r-lg, 12px) 0 0; border-bottom:1px solid var(--border); cursor:zoom-in; }
+    .card-f .foto img { width:100%; height:100%; object-fit:contain; display:block; }
+    .card-f .foto.placa img { object-fit:contain; background:#f3f4f6; }
+    .card-f .ver-placa { position:absolute; right:8px; bottom:8px; font-size:11.5px; background:rgba(255,255,255,.92); border:1px solid var(--border); border-radius:14px; padding:3px 9px; cursor:pointer; }
+    .card-f .nivel { position:absolute; left:8px; top:8px; }
+    .card-f .cuerpo { padding:12px; display:flex; flex-direction:column; gap:8px; flex:1; }
+    .dice { font-size:12.5px; color:var(--muted); line-height:1.4; }
+    .dice b { color:var(--night); font-weight:600; }
+    .cand { display:flex; align-items:center; gap:8px; width:100%; text-align:left; border:1px solid var(--border); background:#fff; border-radius:10px; padding:8px 10px; cursor:pointer; font-size:13.5px; color:var(--ink); }
+    .cand:hover, .cand:focus-visible { border-color:var(--gold); background:#FFF8F2; outline:none; }
+    .cand.top { border-color:var(--gold); border-width:2px; }
+    .cand img, .cand .sinfoto { width:34px; height:34px; border-radius:6px; object-fit:contain; flex:none; background:var(--bg); }
+    .cand .sinfoto { display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--muted); text-align:center; line-height:1.1; }
+    .cand .nom { flex:1; min-width:0; }
+    .cand .nom small { display:block; color:var(--muted); font-size:11.5px; }
+    .cand .tecla { font-size:11px; color:var(--muted); border:1px solid var(--border); border-radius:4px; padding:0 5px; }
+    .buscar { position:relative; }
+    .buscar input { width:100%; min-height:36px; }
+    .resultados { position:absolute; z-index:20; left:0; right:0; top:100%; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:0 8px 24px rgba(10,46,99,.12); max-height:280px; overflow:auto; padding:4px; display:flex; flex-direction:column; gap:4px; }
+    .resultados .cand { border-color:transparent; }
+    .pie { display:flex; gap:8px; align-items:center; justify-content:space-between; margin-top:auto; font-size:12.5px; }
+    .pie label { display:flex; gap:6px; align-items:center; color:var(--muted); cursor:pointer; }
+    .asignada { font-size:13.5px; }
+    .vacio { padding:30px; text-align:center; color:var(--muted); background:#fff; border:1px dashed var(--border); border-radius:var(--r-lg); }
+    .ayuda { background:var(--info-bg); border-radius:var(--r-lg, 12px); padding:12px 14px; font-size:13px; line-height:1.5; margin-bottom:14px; color:var(--ink); }
+    .zoom { position:fixed; inset:0; background:rgba(10,20,40,.85); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px; cursor:zoom-out; }
+    .zoom img { max-width:100%; max-height:100%; object-fit:contain; background:#fff; border-radius:8px; }
+    @media (max-width:640px) { .grilla { grid-template-columns:1fr; } .cand .tecla { display:none; } }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><img class="sidebar-brand-icon" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="32" height="32"><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/" target="_blank" class="btn btn-ghost btn-sm">🌐 Ver Tienda</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1>Fotos para revisar</h1><p>Fotos sacadas de las placas del Drive. El sistema sugiere de qué producto es cada una; vos confirmás. Nada llega a la tienda sin tu toque.</p></div>
+      </div>
+      <div class="ayuda" id="ayuda">
+        Tocá el producto correcto (o las teclas <b>1</b>, <b>2</b>, <b>3</b> en la primera foto). Si no es ninguno, buscalo en <b>Otro producto</b>.
+        Si la foto está mal recortada o el producto ya no se vende, <b>Descartar</b> (tecla <b>D</b>). Todo se puede deshacer.
+        <a href="#" id="ayuda-x" style="margin-left:6px">Entendido</a>
+      </div>
+      <div class="tabs" id="tabs"></div>
+      <div id="lista"><div class="spinner" style="margin:40px auto"></div></div>
+      <div style="text-align:center;margin:14px 0" id="mas"></div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script>
+/* Fotos para revisar (sql/031): placas del Drive recortadas, con el
+   producto sugerido. Cada foto se asigna, se descarta o se deshace con
+   las funciones de la base; la tabla no se toca a mano. */
+const $id = id => document.getElementById(id);
+const esc = v => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const LS_AYUDA = 'mhFotosRevAyuda';
+const PAGINA = 24;
+const ORDEN = { seguro: 0, probable: 1, dudoso: 2, sin_match: 3, sin_texto: 4 };
+const NIVEL = { seguro: ['Casi seguro', 'badge-success'], probable: ['Probable', 'badge-info'], dudoso: ['Dudoso', 'badge-warning'],
+                sin_match: ['Sin sugerencia', 'badge-muted'], sin_texto: ['Sin texto', 'badge-muted'] };
+const TABS = { pendiente: 'Para revisar', asignada: 'Asignadas', descartada: 'Descartadas' };
+let fotos = [], prods = new Map(), tab = 'pendiente', mostrar = PAGINA;
+
+const lista = () => fotos.filter(f => f.estado === tab);
+
+async function cargar() {
+  const [rf, rp] = await Promise.all([
+    Utils.traerTodo(() => db.from('fotos_sugeridas').select('id, url, placa_url, carpeta, titulo, nivel, candidatos, estado, producto_id, revisada_en').order('id')),
+    Utils.traerTodo(() => db.from('productos').select('id, nombre, sku, marca, imagen_principal_url').neq('estado', 'archivado').order('nombre').order('id')),
+  ]);
+  if (rf.error) {
+    $id('lista').innerHTML = `<div class="vacio">${/fotos_sugeridas|schema cache|does not exist/i.test(rf.error.message || '') ? 'Falta ejecutar sql/031 en la base de datos.' : esc(rf.error.message)}</div>`;
+    return;
+  }
+  fotos = (rf.data || []).sort((a, b) => (ORDEN[a.nivel] ?? 9) - (ORDEN[b.nivel] ?? 9) || String(a.carpeta).localeCompare(String(b.carpeta)));
+  prods = new Map((rp.data || []).map(p => [p.id, p]));
+  render();
+}
+
+function miniProd(p, i, top) {
+  const img = p.imagen_principal_url ? `<img src="${esc(p.imagen_principal_url)}" alt="" loading="lazy">` : '<span class="sinfoto">sin foto</span>';
+  return `<button type="button" class="cand${top ? ' top' : ''}" data-a="asignar" data-p="${p.id}">
+    ${img}<span class="nom">${esc(p.nombre)}<small>${[p.marca, p.sku].filter(Boolean).map(esc).join(' · ')}${p.imagen_principal_url ? ' · ya tiene foto' : ''}</small></span>
+    ${i != null ? `<span class="tecla">${i + 1}</span>` : ''}</button>`;
+}
+
+function tarjeta(f) {
+  const nv = NIVEL[f.nivel] || NIVEL.dudoso;
+  const foto = `<div class="foto" data-a="zoom"><img src="${esc(f.url)}" alt="" loading="lazy">
+      <span class="badge ${nv[1]} nivel">${nv[0]}</span>
+      ${f.placa_url ? '<span class="ver-placa" data-a="placa">Ver placa</span>' : ''}</div>`;
+  const dice = `<div class="dice">La placa dice: <b>${esc(f.titulo || '—')}</b>${f.carpeta ? ` · carpeta ${esc(f.carpeta)}` : ''}</div>`;
+  if (f.estado !== 'pendiente') {
+    const p = prods.get(f.producto_id);
+    return `<div class="card-f" data-id="${esc(f.id)}">${foto}<div class="cuerpo">${dice}
+      <div class="asignada">${f.estado === 'asignada' ? `✅ Asignada a <b>${esc(p?.nombre || 'un producto borrado')}</b>` : '🗑️ Descartada'}</div>
+      <div class="pie"><span class="dice">${f.revisada_en ? Utils.timeAgo(f.revisada_en) : ''}</span>
+      <button type="button" class="btn btn-ghost btn-sm" data-a="deshacer">↩ Deshacer</button></div></div></div>`;
+  }
+  const cands = (f.candidatos || []).map(c => prods.get(c.id)).filter(Boolean).slice(0, 3);
+  const fuerte = f.nivel === 'seguro' || f.nivel === 'probable';
+  return `<div class="card-f" data-id="${esc(f.id)}">${foto}<div class="cuerpo">${dice}
+    ${cands.map((p, i) => miniProd(p, i, i === 0 && fuerte)).join('')}
+    <div class="buscar"><input type="search" placeholder="🔍 Otro producto…" data-a="buscar" autocomplete="off" aria-label="Buscar otro producto"><div class="resultados" hidden></div></div>
+    <div class="pie"><label title="Si no, se suma al final de sus fotos (si el producto no tiene fotos, queda de principal igual)"><input type="checkbox" data-a="principal"> Que sea la foto principal</label>
+      <button type="button" class="btn btn-ghost btn-sm" data-a="descartar">🗑️ Descartar</button></div>
+  </div></div>`;
+}
+
+function render() {
+  const cuenta = k => fotos.filter(f => f.estado === k).length;
+  $id('tabs').innerHTML = Object.entries(TABS).map(([k, v]) => `<button type="button" data-tab="${k}" class="${k === tab ? 'on' : ''}">${v}<span class="n">${cuenta(k)}</span></button>`).join('');
+  const xs = lista();
+  if (!fotos.length) { $id('lista').innerHTML = '<div class="vacio">No hay fotos cargadas para revisar.</div>'; $id('mas').innerHTML = ''; return; }
+  if (!xs.length) { $id('lista').innerHTML = `<div class="vacio">${tab === 'pendiente' ? '🎉 No queda ninguna foto por revisar.' : 'Nada por acá.'}</div>`; $id('mas').innerHTML = ''; return; }
+  $id('lista').innerHTML = `<div class="grilla">${xs.slice(0, mostrar).map(tarjeta).join('')}</div>`;
+  $id('mas').innerHTML = xs.length > mostrar ? `<button type="button" class="btn btn-ghost" id="ver-mas">Ver más (${xs.length - mostrar})</button>` : '';
+}
+
+const error = e => {
+  const m = e?.hint || e?.message || '';
+  if (/ya_revisada/.test(e?.message || '')) return 'Otra persona ya revisó esta foto.';
+  if (/could not find the function|schema cache/i.test(m)) return 'Falta ejecutar sql/031 en la base de datos.';
+  return m || 'No se pudo guardar.';
+};
+
+async function sacar(card, cambio) {
+  card?.classList.add('sale');
+  await new Promise(r => setTimeout(r, 220));
+  Object.assign(fotos.find(f => f.id === card.dataset.id), cambio);
+  render();
+}
+
+async function asignar(card, prodId) {
+  const id = card.dataset.id, principal = card.querySelector('[data-a="principal"]')?.checked || false;
+  const { data, error: e } = await db.rpc('foto_sugerida_asignar', { p_id: id, p_producto_id: prodId, p_principal: principal });
+  if (e) { Utils.toast(esc(error(e)), 'error', 6000); if (/ya_revisada/.test(e.message)) cargar(); return; }
+  const p = prods.get(prodId);
+  if (p && data?.principal) p.imagen_principal_url = fotos.find(f => f.id === id)?.url;
+  await sacar(card, { estado: 'asignada', producto_id: prodId, revisada_en: new Date().toISOString() });
+  avisoDeshacer(id, `Foto asignada a ${p?.nombre || 'el producto'}`);
+}
+
+async function descartar(card) {
+  const id = card.dataset.id;
+  const { error: e } = await db.rpc('foto_sugerida_descartar', { p_id: id });
+  if (e) { Utils.toast(esc(error(e)), 'error', 6000); if (/ya_revisada/.test(e.message)) cargar(); return; }
+  await sacar(card, { estado: 'descartada', producto_id: null, revisada_en: new Date().toISOString() });
+  avisoDeshacer(id, 'Foto descartada');
+}
+
+async function deshacer(id) {
+  const { error: e } = await db.rpc('foto_sugerida_deshacer', { p_id: id });
+  if (e) { Utils.toast(esc(error(e)), 'error', 6000); return; }
+  const f = fotos.find(x => x.id === id);
+  const p = prods.get(f?.producto_id);
+  if (p && p.imagen_principal_url === f.url) p.imagen_principal_url = null;   // se recalcula al recargar
+  Object.assign(f, { estado: 'pendiente', producto_id: null, revisada_en: null });
+  render();
+  Utils.toast('Deshecho: la foto volvió a "Para revisar"', 'success', 2500);
+}
+
+function avisoDeshacer(id, texto) {
+  Utils.toast(`${esc(texto)} · <a href="#" data-deshacer="${esc(id)}" style="color:inherit;font-weight:700">Deshacer</a>`, 'success', 6000);
+}
+
+function buscar(input) {
+  const caja = input.nextElementSibling;
+  const q = Utils.norm(input.value.trim());
+  if (q.length < 2) { caja.hidden = true; caja.innerHTML = ''; return; }
+  const palabras = q.split(/\s+/);
+  const res = [];
+  for (const p of prods.values()) {
+    const t = Utils.norm(`${p.nombre} ${p.sku || ''} ${p.marca || ''}`);
+    if (palabras.every(w => t.includes(w))) { res.push(p); if (res.length >= 30) break; }
+  }
+  caja.innerHTML = res.length ? res.map(p => miniProd(p)).join('') : '<div class="dice" style="padding:8px">No hay productos con eso.</div>';
+  caja.hidden = false;
+}
+
+function zoom(src) {
+  const z = document.createElement('div'); z.className = 'zoom';
+  z.innerHTML = `<img src="${esc(src)}" alt="">`;
+  z.onclick = () => z.remove();
+  document.body.appendChild(z);
+}
+
+document.addEventListener('click', e => {
+  const dz = e.target.closest('[data-deshacer]');
+  if (dz) { e.preventDefault(); deshacer(dz.dataset.deshacer); dz.closest('.toast')?.remove(); return; }
+  const tb = e.target.closest('[data-tab]');
+  if (tb) { tab = tb.dataset.tab; mostrar = PAGINA; render(); return; }
+  if (e.target.id === 'ver-mas') { mostrar += PAGINA; render(); return; }
+  if (e.target.id === 'ayuda-x') { e.preventDefault(); $id('ayuda').hidden = true; try { localStorage.setItem(LS_AYUDA, '1'); } catch (_) {} return; }
+  const b = e.target.closest('[data-a]'); if (!b) {
+    document.querySelectorAll('.resultados').forEach(r => { if (!r.parentElement.contains(e.target)) r.hidden = true; });
+    return;
+  }
+  const card = b.closest('.card-f'), f = card && fotos.find(x => x.id === card.dataset.id);
+  switch (b.dataset.a) {
+    case 'asignar': b.disabled = true; asignar(card, Number(b.dataset.p)).finally(() => { b.disabled = false; }); break;
+    case 'descartar': b.disabled = true; descartar(card).finally(() => { b.disabled = false; }); break;
+    case 'deshacer': deshacer(card.dataset.id); break;
+    case 'placa': e.stopPropagation(); if (f?.placa_url) zoom(f.placa_url); break;
+    case 'zoom': if (!e.target.closest('[data-a="placa"]')) zoom(f.url); break;
+  }
+});
+let tBuscar;
+document.addEventListener('input', e => {
+  if (e.target.dataset.a === 'buscar') { clearTimeout(tBuscar); const el = e.target; tBuscar = setTimeout(() => buscar(el), 120); }
+});
+// Teclas rápidas sobre la primera foto pendiente: 1-3 elige, D descarta
+document.addEventListener('keydown', e => {
+  if (tab !== 'pendiente' || e.ctrlKey || e.metaKey || e.altKey || /input|textarea|select/i.test(e.target.tagName)) return;
+  if (document.querySelector('.zoom')) { if (e.key === 'Escape') document.querySelector('.zoom').remove(); return; }
+  const card = document.querySelector('.card-f:not(.sale)'); if (!card) return;
+  if (/^[1-3]$/.test(e.key)) { const c = card.querySelectorAll(':scope .cuerpo > .cand')[Number(e.key) - 1]; if (c) { e.preventDefault(); c.click(); } }
+  else if (e.key === 'd' || e.key === 'D') { e.preventDefault(); card.querySelector('[data-a="descartar"]').click(); }
+});
+
+async function initPage() {
+  const perfil = await Auth.init();
+  if (!perfil) return;
+  if (!Auth.requirePermiso('productos.editar', perfil)) return;
+  await Layout.init('fotos-revisar', 'Fotos para revisar');
+  try { if (localStorage.getItem(LS_AYUDA)) $id('ayuda').hidden = true; } catch (e) {}
+  await cargar();
+}
+initPage();
+</script>
+<script src="/admin/js/assistant.js"></script>
+<script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/admin/sw.js').catch(()=>{}); }</script>
+</body>
+</html>
