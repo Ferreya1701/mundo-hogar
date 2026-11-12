@@ -58,6 +58,7 @@
       </div>
 
       <!-- KPIs -->
+      <div id="pendientes" style="display:none;gap:14px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-left:4px solid var(--gold);border-radius:var(--r-lg);padding:14px 18px;margin-bottom:18px"></div>
       <div class="kpi-grid" id="kpi-grid">
         <div class="kpi-card" data-href="/admin/productos"><div class="kpi-icon gold">🛍️</div><div class="kpi-label">Productos activos</div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-sub" id="kpi-activos">—</div></div>
         <div class="kpi-card" data-href="/admin/productos?precio=sin"><div class="kpi-icon amber">💲</div><div class="kpi-label">Sin precio</div><div class="kpi-value" id="kpi-sin-precio">—</div><div class="kpi-sub">clic para cargarlos</div></div>
@@ -158,8 +159,8 @@ async function loadData() {
   const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString();
 
   // stock_controlado existe desde sql/013; si la base no lo tiene, se pide sin esa columna
-  let prodRes = await db.from('productos').select('id,nombre,stock_actual,stock_minimo,estado,precio_minorista,imagen_principal_url,categoria_id,destacado,stock_controlado,seguimiento_inventario,categorias(nombre)').order('stock_actual');
-  if (prodRes.error) prodRes = await db.from('productos').select('id,nombre,stock_actual,stock_minimo,estado,precio_minorista,imagen_principal_url,categoria_id,destacado,categorias(nombre)').order('stock_actual');
+  let prodRes = await Utils.traerTodo(() => db.from('productos').select('id,nombre,stock_actual,stock_minimo,estado,precio_minorista,imagen_principal_url,categoria_id,destacado,stock_controlado,seguimiento_inventario,categorias(nombre)').order('stock_actual').order('id'));
+  if (prodRes.error) prodRes = await Utils.traerTodo(() => db.from('productos').select('id,nombre,stock_actual,stock_minimo,estado,precio_minorista,imagen_principal_url,categoria_id,destacado,categorias(nombre)').order('stock_actual').order('id'));
   const ventasRes = await db.from('ventas').select('total').gte('fecha', hoy.toISOString()).eq('estado','cerrada');
   const ventasHoy = ventasRes.error ? null : (ventasRes.data || []);
   const [
@@ -208,6 +209,20 @@ async function loadData() {
   document.getElementById('kpi-sol-sub').textContent    = `${solicitudes.length} en total`;
   document.getElementById('kpi-mov-hoy').textContent    = movHoy||0;
   document.getElementById('kpi-mov-mes').textContent    = `${movMes||0} este mes`;
+
+  // ── Para hacer: productos cargados que todavía no están en la tienda ──
+  const ocultos = productos.filter(p => p.estado === 'inactivo');
+  const listoP = p => p.precio_minorista > 0 && p.imagen_principal_url && p.categoria_id;
+  const listos = ocultos.filter(listoP).length, incompletos = ocultos.length - listos;
+  const pend = document.getElementById('pendientes');
+  if (ocultos.length && Auth.puede('productos.editar', profileActual)) {
+    pend.style.display = 'flex';
+    pend.innerHTML = `<div style="font-size:26px">✨</div>
+      <div style="flex:1;min-width:220px"><b style="color:var(--night)">${ocultos.length} productos cargados todavía no están en la tienda</b>
+        <div style="font-size:13px;color:var(--muted);margin-top:2px">${listos ? `<b>${listos}</b> ya tienen foto, precio y categoría: se pueden publicar. ` : ''}${incompletos ? `A <b>${incompletos}</b> les falta algo.` : ''}</div></div>
+      <a class="btn btn-primary" href="/admin/completar${listos ? '?filtro=listos' : ''}">${listos ? 'Publicar los listos' : 'Completar productos'}</a>
+      ${listos && incompletos ? '<a class="btn btn-outline" href="/admin/completar">Completar el resto</a>' : ''}`;
+  } else pend.style.display = 'none';
 
   // ── Salud del catálogo ──
   const problemas = [
@@ -313,9 +328,11 @@ document.getElementById('kpi-grid').addEventListener('click', e => {
   if (card) window.location.href = card.dataset.href;
 });
 
+let profileActual = null;
 async function initPage() {
   const profile = await Auth.init();
   if (!profile) return;
+  profileActual = profile;
   await Layout.init('dashboard', 'Inicio');
 
   const greet = new Date().getHours() < 12 ? 'Buenos días' : new Date().getHours() < 19 ? 'Buenas tardes' : 'Buenas noches';

@@ -230,10 +230,19 @@ window.MH = (function () {
     const hdr = { headers: { apikey: key, Authorization: `Bearer ${key}` } };
     // stock_controlado y stock_disponible existen desde sql/013; si la base
     // todavía no lo tiene, se pide el catálogo sin esas columnas.
-    let res = await fetch(`${url}/rest/v1/productos?select=${base},stock_controlado,stock_disponible&estado=eq.activo&order=orden.asc`, hdr);
-    if (!res.ok) res = await fetch(`${url}/rest/v1/productos?select=${base}&estado=eq.activo&order=orden.asc`, hdr);
+    // Supabase entrega hasta 1000 filas por pedido: se pide de a tandas hasta traer todo.
+    const TANDA = 1000;
+    let sel = `${base},stock_controlado,stock_disponible`;
+    const pedir = desde => fetch(`${url}/rest/v1/productos?select=${sel}&estado=eq.activo&order=orden.asc,id.asc&limit=${TANDA}&offset=${desde}`, hdr);
+    let res = await pedir(0);
+    if (!res.ok) { sel = base; res = await pedir(0); }
     if (!res.ok) throw new Error('Supabase respondió ' + res.status);
     const rows = await res.json();
+    for (let desde = TANDA; rows.length === desde && desde < 20000; desde += TANDA) {
+      const mas = await pedir(desde);
+      if (!mas.ok) break;
+      rows.push(...await mas.json());
+    }
     return rows.map(p => ({
       id: p.slug,
       pid: p.id,

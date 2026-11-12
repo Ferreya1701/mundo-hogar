@@ -170,9 +170,9 @@ async function cargarDatos() {
     // recargo_cc existe desde sql/019; sin él, las categorías igual cargan
     db.from('categorias').select('id,nombre,recargo_cc').order('orden')
       .then(r => r.error ? db.from('categorias').select('id,nombre').order('orden') : r),
-    db.from('productos')
-      .select('id,nombre,sku,codigo_barras,categoria_id,precio_minorista,precio_oferta,en_oferta,stock_actual,stock_minimo,stock_controlado,seguimiento_inventario,permite_venta_sin_stock,imagen_principal_url,estado')
-      .neq('estado','archivado').order('nombre'),
+    Utils.traerTodo(() => db.from('productos')
+      .select('id,nombre,sku,codigo_barras,codigo_anterior,categoria_id,precio_minorista,precio_oferta,en_oferta,stock_actual,stock_minimo,stock_controlado,seguimiento_inventario,permite_venta_sin_stock,imagen_principal_url,estado')
+      .neq('estado','archivado').order('nombre').order('id')),
     // Vista sin CUIT ni límites (sql/015); si la base no la tiene, la tabla
     db.from('cuentas_cobro_staff').select('id,nombre,alias,activa').eq('activa', true).order('orden')
       .then(r => r.error ? db.from('cuentas_cobro').select('id,nombre,alias,activa').eq('activa', true).order('orden') : r)
@@ -242,9 +242,10 @@ function buscar(q) {
   }
   const digits = t.replace(/\D/g,'');
   const puntaje = p => {
-    const n = norm(p.nombre), sku = norm(p.sku), bar = String(p.codigo_barras||'').replace(/\D/g,'');
+    const n = norm(p.nombre), sku = norm(p.sku), bar = String(p.codigo_barras||'').replace(/\D/g,''), viejo = norm(p.codigo_anterior);
     if (digits.length >= 8 && bar && bar === digits) return 1000;
     if (sku && sku === t) return 900;
+    if (viejo && viejo === t) return 880;      // código del sistema anterior
     if (sku && sku.startsWith(t)) return 500;
     if (n.startsWith(t)) return 400;
     const palabras = t.split(/\s+/).filter(Boolean);
@@ -257,7 +258,8 @@ function buscar(q) {
 function exacto(q) {
   const t = norm(q).trim(); if (!t) return null;
   const digits = t.replace(/\D/g,'');
-  return productos.find(p => (digits.length >= 8 && String(p.codigo_barras||'').replace(/\D/g,'') === digits) || norm(p.sku) === t) || null;
+  return productos.find(p => (digits.length >= 8 && String(p.codigo_barras||'').replace(/\D/g,'') === digits) || norm(p.sku) === t)
+    || productos.find(p => norm(p.codigo_anterior) === t) || null;
 }
 
 function stockBadge(p) {

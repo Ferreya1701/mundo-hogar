@@ -15,6 +15,24 @@ const Utils = {
     }, ms);
   },
 
+  /* ── Traer TODO (Supabase corta en 1000 filas por pedido) ──
+     armar: () => db.from('tabla').select(...).order(...)  (sin range ni limit)
+     Pide de a 1000 hasta que no haya más. Devuelve { data, error }. */
+  async traerTodo(armar, tanda = 1000) {
+    const filas = [];
+    for (let desde = 0; ; desde += tanda) {
+      const { data, error } = await armar().range(desde, desde + tanda - 1);
+      if (error) return { data: filas.length ? filas : null, error };
+      filas.push(...(data || []));
+      if (!data || data.length < tanda) return { data: filas, error: null };
+    }
+  },
+
+  /* ── Texto para buscar: sin mayúsculas ni acentos ── */
+  norm(s) {
+    return String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  },
+
   /* ── Formatters ─────────────────────────────────── */
   currency(n) {
     if (n == null || n === '') return '—';

@@ -39,7 +39,7 @@ window.MHAssistant = (function () {
   async function datos() {
     if (cache.data && Date.now() - cache.ts < 60000) return cache.data;
     const [prodRes, solRes, movRes] = await Promise.all([
-      db.from('productos').select('id,nombre,estado,stock_actual,stock_minimo,precio_minorista,imagen_principal_url,categoria_id,destacado,en_oferta'),
+      Utils.traerTodo(() => db.from('productos').select('id,nombre,estado,stock_actual,stock_minimo,precio_minorista,imagen_principal_url,categoria_id,destacado,en_oferta').order('id')),
       db.from('solicitudes').select('id,estado,cliente_nombre,codigo,created_at').order('created_at', { ascending: false }).limit(100),
       db.from('movimientos_inventario').select('id,tipo,cantidad,created_at,productos(nombre)').gte('created_at', new Date(Date.now() - 7 * 864e5).toISOString()).order('created_at', { ascending: false }).limit(50)
     ]);

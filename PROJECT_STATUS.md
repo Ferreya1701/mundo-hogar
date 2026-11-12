@@ -39,6 +39,22 @@
 - Pantalla: Ventas → Ver → "Quitar productos"; ticket corregido. Guía: `GUIA-STOCK-Y-VENTAS.md` §12.
 - Pruebas: `node scripts/test-editar-venta-sql.mjs` (33).
 
+## Productos simples para los empleados (2026-11-12) — EN EL REPO; FALTA CORRER sql/023
+- **Tope de 1000 filas de Supabase:** con ~1060 productos, Productos / Contar stock / Inicio / Crear
+  venta / Compras / Ajuste manual perdían ~60 sin avisar. Ahora todo pide de a tandas
+  (`Utils.traerTodo`); la tienda pública también (`assets/catalogo.js`).
+- `admin/completar.html` (Catálogo → Completar productos): foto + precio + categoría + publicar por fila,
+  guardado automático, Enter pasa al siguiente, acciones en masa, barra de avance.
+- `admin/js/fotos.js`: compresión en el navegador (1600 px, WebP), varias fotos, principal, orden,
+  arrastrar / pegar / cámara. La ficha (`producto-form.html`) se reordenó: lo esencial y fotos arriba,
+  avanzado plegado, checklist "qué falta", margen y oferta validados, slug estable, SKU automático.
+- Productos: 50 por página, búsqueda sin acentos (nombre, SKU, barras, código viejo, marca), stock
+  "~N · sin contar" distinto del contado, publicar en masa solo los completos. Ajuste manual ve inactivos.
+- `sql/023-fotos-precios-publicar.sql`: `producto_fotos_guardar`, `productos_precio_masivo`,
+  `productos_publicar`, fotos con el permiso "productos.editar". Sin el 023: las fotos igual suben (solo
+  la principal) y publicar/precios en masa avisan que falta.
+- Guía para empleados: `GUIA-PRODUCTOS.md`. Pruebas: `node scripts/test-fotos-precios-sql.mjs` (21).
+
 ## Producción al 2026-11-12 (Virginia, antes de la mudanza)
 - 016 → 021 EJECUTADOS el 2026-11-12 con `npx supabase db query --remote=<ref> --yes -f` (cada uno dentro
   de BEGIN/COMMIT). Respaldo previo (estructura + datos, incluidos usuarios) en `~/mundo-hogar-respaldos/`

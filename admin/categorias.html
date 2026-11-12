@@ -103,7 +103,7 @@ let prodCount = {};
 async function loadData() {
   const [{ data: catData }, { data: prodData }] = await Promise.all([
     db.from('categorias').select('*').order('orden'),
-    db.from('productos').select('categoria_id,estado')
+    Utils.traerTodo(() => db.from('productos').select('categoria_id,estado').order('id'))
   ]);
   cats = catData || [];
   prodCount = {};

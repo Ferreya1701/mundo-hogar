@@ -11,6 +11,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/admin/css/admin.css">
+<style>
+  .stock-ref { color:var(--muted); font-weight:600; }
+</style>
 </head>
 <body>
 <div class="admin-layout">
@@ -36,7 +39,8 @@
         <div><h1>Productos</h1><p id="subtitle">Cargando catálogo...</p></div>
         <div class="page-header-actions">
           <button class="btn btn-outline btn-sm" id="btn-export">⬇ Exportar CSV</button>
-          <button class="btn btn-outline btn-sm" id="btn-importar">📥 Importar JSON</button>
+          <a href="/admin/importar" class="btn btn-outline btn-sm" title="Cargar o actualizar precios y artículos desde una planilla">📥 Importar planilla</a>
+          <a href="/admin/completar" class="btn btn-outline btn-sm" id="btn-completar" title="Cargar fotos, precios y categorías rápido, y publicar">✨ Completar productos</a>
           <a href="/admin/producto-form" class="btn btn-primary">+ Nuevo Producto</a>
         </div>
       </div>
@@ -236,7 +240,7 @@
 <script>
 let allProducts = [];
 let cats = {};
-const PER = 20;
+const PER = 50;
 
 /* Permisos del usuario. La autoridad real sigue siendo RLS en la base;
    esto solo evita ofrecer botones que van a terminar en "sin permisos". */
@@ -368,9 +372,17 @@ const filtrosActivos = () =>
   ['q','cat','estado','stock'].filter(k => state[k] !== DEFAULTS[k]).length + extrasActivos().length;
 
 function applyFilters() {
-  const f = { ...state, q: state.q.toLowerCase().trim() };
+  // Búsqueda sin acentos ni mayúsculas, por nombre, SKU, código de barras, código viejo o marca;
+  // varias palabras = tienen que estar todas.
+  const f = { ...state, q: Utils.norm(state.q) };
   let list = allProducts;
-  if (f.q) list = list.filter(p => (p.nombre||'').toLowerCase().includes(f.q) || (p.sku||'').toLowerCase().includes(f.q));
+  if (f.q) {
+    const palabras = f.q.split(/\s+/);
+    list = list.filter(p => {
+      const t = Utils.norm(`${p.nombre||''} ${p.sku||''} ${p.codigo_barras||''} ${p.codigo_anterior||''} ${p.marca||''}`);
+      return palabras.every(w => t.includes(w));
+    });
+  }
   if (f.cat) list = list.filter(p => String(p.categoria_id) === f.cat);
   if (f.estado) list = list.filter(p => p.estado === f.estado);
   if (f.stock === 'sin') list = list.filter(p => p.stock_actual <= 0);
@@ -467,8 +479,9 @@ function renderTable() {
       <td class="c-cat" data-l="Categoría">${catNombre}</td>
       <td class="c-sku" data-l="SKU">${esc(p.sku||'—')}</td>
       <td class="c-stock" data-l="Stock">
-        <span class="stock-num ${sc}">${p.stock_actual}</span>
-        ${p.stock_minimo>0?`<div class="c-stock-min">mín: ${p.stock_minimo}</div>`:''}
+        ${p.stock_controlado === false
+          ? `<span class="stock-ref" title="Número de referencia: todavía no se contó en el local. Se cuenta en Contar stock.">${p.stock_actual > 0 ? '~' + p.stock_actual : '—'}</span><div class="c-stock-min">sin contar</div>`
+          : `<span class="stock-num ${sc}">${p.stock_actual}</span>${p.stock_minimo>0?`<div class="c-stock-min">mín: ${p.stock_minimo}</div>`:''}`}
       </td>
       <td class="c-estado" data-l="Estado">${Utils.estadoBadge(p.estado)}</td>
       <td class="c-precio" data-l="Precio">
@@ -659,10 +672,12 @@ async function toggleDestacado(prod) {
 
 async function toggleEstado(prod) {
   const nuevoEstado = prod.estado === 'activo' ? 'inactivo' : 'activo';
+  const falta = [!(Number(prod.precio_minorista) > 0) && 'precio', !prod.imagen_principal_url && 'foto', !prod.categoria_id && 'categoría'].filter(Boolean);
   const texto = nuevoEstado === 'activo'
-    ? `<b>${esc(prod.nombre)}</b> va a quedar visible en la tienda.`
+    ? `<b>${esc(prod.nombre)}</b> va a quedar visible en la tienda.` +
+      (falta.length ? `<br><br>⚠️ Le falta <b>${falta.join(', ')}</b>: en la tienda se va a ver incompleto. Conviene completarlo antes (Completar productos).` : '')
     : `<b>${esc(prod.nombre)}</b> va a dejar de mostrarse en la tienda.`;
-  const ok = await Utils.confirm(texto, 'Cambiar visibilidad', 'Confirmar', false);
+  const ok = await Utils.confirm(texto, 'Cambiar visibilidad', nuevoEstado === 'activo' && falta.length ? 'Publicar igual' : 'Confirmar', nuevoEstado === 'activo' && falta.length > 0);
   if (!ok) return;
   const { error } = await db.from('productos').update({ estado: nuevoEstado }).eq('id', prod.id);
   if (error) { Utils.toast(msgError(error, 'cambiar el estado'), 'error'); return; }
@@ -712,6 +727,31 @@ document.getElementById('barra-masiva')?.addEventListener('click', async e => {
 
   const cfg = MASIVAS[accion];
   if (!cfg) return;
+
+  // Publicar en masa: solo los que tienen precio, foto y categoría (sql/023)
+  if (accion === 'activo') {
+    const elegidos = allProducts.filter(p => seleccion.has(p.id) && p.estado === 'inactivo');
+    const completos = elegidos.filter(p => Number(p.precio_minorista) > 0 && p.imagen_principal_url && p.categoria_id);
+    const incompletos = elegidos.length - completos.length;
+    if (!elegidos.length) { Utils.toast('Los elegidos ya están publicados', 'info'); return; }
+    if (!completos.length) {
+      Utils.toast(`A los ${incompletos} elegidos les falta foto, precio o categoría. Completalos en "Completar productos".`, 'warning', 8000);
+      return;
+    }
+    const ok = await Utils.confirm(
+      `Se publican <b>${completos.length}</b> producto${completos.length!==1?'s':''} en la tienda.` +
+      (incompletos ? `<br><br><b>${incompletos}</b> no se publican porque les falta foto, precio o categoría (se completan en "Completar productos").` : ''),
+      'Publicar en la tienda', 'Publicar', false);
+    if (!ok) return;
+    Utils.showLoading('Publicando…');
+    const { data, error } = await db.rpc('productos_publicar', { p_ids: completos.map(p => p.id), p_publicar: true });
+    Utils.hideLoading();
+    if (error) { Utils.toast(/could not find/i.test(error.message||'') ? 'Falta ejecutar sql/023 en la base de datos.' : msgError(error, 'publicar'), 'error', 7000); return; }
+    completos.forEach(p => { p.estado = 'activo'; });
+    Utils.toast(`${data.publicados} producto${data.publicados!==1?'s':''} publicado${data.publicados!==1?'s':''}` + (incompletos ? ` · ${incompletos} quedaron sin publicar` : ''), incompletos ? 'warning' : 'success', 6000);
+    limpiarSeleccion(); renderTable();
+    return;
+  }
 
   const ok = await Utils.confirm(
     `<b>${cfg.verbo}</b><br><br>Se van a modificar <b>${ids.length} producto${ids.length!==1?'s':''}</b>.
@@ -897,9 +937,10 @@ async function cargarCategorias() {
 }
 
 async function cargarProductos() {
-  const { data, error } = await db.from('productos')
-    .select('id,nombre,slug,sku,codigo_barras,marca,categoria_id,stock_actual,stock_minimo,estado,precio_minorista,precio_oferta,en_oferta,destacado,imagen_principal_url,created_at')
-    .order('nombre');
+  // De a tandas: Supabase entrega hasta 1000 filas por pedido y el catálogo ya pasó ese número.
+  const COLS = 'id,nombre,slug,sku,codigo_barras,marca,categoria_id,stock_actual,stock_minimo,estado,precio_minorista,precio_oferta,en_oferta,destacado,imagen_principal_url,created_at';
+  let { data, error } = await Utils.traerTodo(() => db.from('productos').select(COLS + ',stock_controlado,codigo_anterior').order('nombre').order('id'));
+  if (error) ({ data, error } = await Utils.traerTodo(() => db.from('productos').select(COLS).order('nombre').order('id')));   // base sin sql/013 o sql/021
   if (error) {
     Utils.toast(msgError(error, 'cargar los productos'), 'error');
     document.getElementById('tabla-body').innerHTML =

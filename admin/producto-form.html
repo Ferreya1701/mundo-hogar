@@ -11,6 +11,26 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/admin/css/admin.css">
+<style>
+  .pf-precio { position:relative; }
+  .pf-precio::before { content:'$'; position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--muted); font-weight:600; }
+  .pf-precio input { padding-left:24px; font-size:17px; font-weight:600; }
+  details.pf-mas > summary, details.pf-sub > summary { cursor:pointer; list-style:none; font-size:14px; font-weight:600; color:var(--night); display:flex; align-items:center; gap:8px; }
+  details.pf-mas > summary { padding:14px 20px; }
+  details.pf-mas > summary::before, details.pf-sub > summary::before { content:'▸'; color:var(--muted); transition:transform .15s; }
+  details[open].pf-mas > summary::before, details[open].pf-sub > summary::before { transform:rotate(90deg); }
+  details.pf-mas > summary::-webkit-details-marker, details.pf-sub > summary::-webkit-details-marker { display:none; }
+  details.pf-sub > summary { font-size:13px; color:var(--muted); font-weight:500; }
+  .pf-resumen { font-weight:400; font-size:12px; color:var(--muted); margin-left:auto; text-align:right; }
+  .pf-check { font-size:13px; line-height:1.7; border-radius:var(--r); padding:8px 12px; background:var(--bg); }
+  .pf-check .ok { color:#15803D; } .pf-check .no { color:#B91C1C; font-weight:600; }
+  .form-hint.alerta { color:#B91C1C; font-weight:600; }
+  .form-hint.bien { color:#15803D; }
+  @media (max-width: 768px) {
+    .barra-guardado { position:fixed; left:0; right:0; bottom:0; z-index:30; background:#fff; padding:10px 12px; border-top:1px solid var(--border); justify-content:flex-end; box-shadow:0 -4px 14px rgba(0,0,0,.08); }
+    .page-content { padding-bottom:84px; }
+  }
+</style>
 </head>
 <body class="form-producto">
 <div class="admin-layout">
@@ -48,83 +68,116 @@
           <!-- COLUMNA IZQUIERDA -->
           <div>
 
-            <!-- Info básica -->
+            <!-- Lo esencial -->
             <div class="card">
-              <div class="card-header"><span class="card-title">Información básica</span></div>
+              <div class="card-header"><span class="card-title">Lo esencial</span></div>
               <div class="card-body">
                 <div class="form-grid">
                   <div class="form-group col-span-2">
                     <label>Nombre del producto <span class="req">*</span></label>
                     <input type="text" id="nombre" placeholder="Ej: Cafetera de filtro 12 tazas" required>
-                    <span class="form-hint">Este nombre aparece en la tienda pública</span>
+                    <span class="form-hint">Así se ve en la tienda y en el ticket.</span>
+                  </div>
+                  <div class="form-group">
+                    <label>Precio de venta</label>
+                    <div class="pf-precio"><input type="number" id="precio_minorista" placeholder="0" min="0" step="0.01" inputmode="decimal"></div>
+                    <span class="form-hint" id="hint-precio">Sin precio, en la tienda dice "Consultar".</span>
                   </div>
                   <div class="form-group">
                     <label>Categoría <span class="req">*</span></label>
                     <select id="categoria_id" required>
-                      <option value="">Seleccioná una categoría</option>
+                      <option value="">Elegí una categoría</option>
                     </select>
                   </div>
                   <div class="form-group">
                     <label>Marca</label>
                     <input type="text" id="marca" placeholder="Ej: Philips">
                   </div>
-                  <div class="form-group">
-                    <label>SKU</label>
-                    <div style="display:flex;gap:8px">
-                      <input type="text" id="sku" placeholder="Ej: ELEC-CAFE-1234" style="flex:1">
-                      <button type="button" class="btn btn-outline btn-sm" id="btn-gen-sku" title="Generar SKU">🎲</button>
-                    </div>
-                  </div>
-                  <div class="form-group">
-                    <label>Código de barras</label>
-                    <input type="text" id="codigo_barras" placeholder="Ej: 7798051420017">
-                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fotos -->
+            <div class="card">
+              <div class="card-header"><span class="card-title">Fotos</span></div>
+              <div class="card-body">
+                <div id="fotos-galeria"></div>
+                <input type="hidden" id="imagen_principal_url">
+                <div id="img-preview" hidden></div>
+              </div>
+            </div>
+
+            <!-- Oferta -->
+            <div class="card">
+              <div class="card-body">
+                <label class="toggle-wrap">
+                  <div class="toggle"><input type="checkbox" id="en_oferta"><div class="toggle-track"></div><div class="toggle-thumb"></div></div>
+                  <span class="toggle-label">Está en oferta</span>
+                </label>
+                <div class="form-group" id="oferta-campos" hidden style="margin-top:12px;max-width:260px">
+                  <label>Precio de oferta</label>
+                  <div class="pf-precio"><input type="number" id="precio_oferta" placeholder="0" min="0" step="0.01" inputmode="decimal"></div>
+                  <span class="form-hint" id="hint-oferta">En la tienda se muestra el precio de venta tachado y este al lado.</span>
+                </div>
+              </div>
+            </div>
+
+            <details class="card pf-mas">
+              <summary>Descripción para la tienda <span class="pf-resumen" id="res-desc"></span></summary>
+              <div class="card-body">
+                <div class="form-grid">
                   <div class="form-group col-span-2">
                     <label>Descripción corta</label>
-                    <input type="text" id="descripcion_corta" placeholder="Una línea descriptiva (se muestra en cards)" maxlength="120">
+                    <input type="text" id="descripcion_corta" placeholder="Una línea (se muestra debajo del nombre)" maxlength="120">
                   </div>
                   <div class="form-group col-span-2">
                     <label>Descripción completa</label>
-                    <textarea id="descripcion" placeholder="Características, especificaciones, usos..."></textarea>
+                    <textarea id="descripcion" placeholder="Características, medidas, usos…"></textarea>
                   </div>
                 </div>
               </div>
-            </div>
+            </details>
 
-            <!-- Precios -->
-            <div class="card">
-              <div class="card-header"><span class="card-title">Precios</span></div>
+            <details class="card pf-mas">
+              <summary>Códigos <span class="pf-resumen" id="res-cod"></span></summary>
+              <div class="card-body">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Código interno (SKU)</label>
+                    <input type="text" id="sku" placeholder="Vacío = se genera solo">
+                    <span class="form-hint">Es el que se imprime en la etiqueta si no hay código de barras.</span>
+                  </div>
+                  <div class="form-group">
+                    <label>Código de barras</label>
+                    <input type="text" id="codigo_barras" placeholder="Ej: 7798051420017" inputmode="numeric">
+                  </div>
+                  <div class="form-group col-span-2" id="cod-viejo-wrap" hidden>
+                    <span class="form-hint">Código en el sistema anterior: <b id="cod-viejo"></b></span>
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            <details class="card pf-mas">
+              <summary>Costo, proveedor y precio mayorista <span class="pf-resumen" id="res-costo"></span></summary>
               <div class="card-body">
                 <div class="form-grid form-grid-3">
                   <div class="form-group">
-                    <label>Precio de costo</label>
-                    <input type="number" id="precio_costo" placeholder="0" min="0" step="0.01">
+                    <label>Costo</label>
+                    <input type="number" id="precio_costo" placeholder="0" min="0" step="0.01" inputmode="decimal">
+                    <span class="form-hint" id="hint-costo">Solo lo ven administración y stock.</span>
                   </div>
-                  <div class="form-group">
-                    <label>Precio minorista</label>
-                    <input type="number" id="precio_minorista" placeholder="0" min="0" step="0.01">
-                  </div>
+                  <div class="form-group"><label>Proveedor</label><input type="text" id="proveedor" placeholder="Nombre del proveedor"></div>
                   <div class="form-group">
                     <label>Precio mayorista</label>
-                    <input type="number" id="precio_mayorista" placeholder="0" min="0" step="0.01">
-                  </div>
-                  <div class="form-group">
-                    <label>Precio oferta</label>
-                    <input type="number" id="precio_oferta" placeholder="0" min="0" step="0.01">
-                  </div>
-                  <div class="form-group" style="padding-top:20px">
-                    <label class="toggle-wrap">
-                      <div class="toggle"><input type="checkbox" id="en_oferta"><div class="toggle-track"></div><div class="toggle-thumb"></div></div>
-                      <span class="toggle-label">En oferta</span>
-                    </label>
+                    <input type="number" id="precio_mayorista" placeholder="0" min="0" step="0.01" inputmode="decimal">
                   </div>
                 </div>
               </div>
-            </div>
+            </details>
 
-            <!-- Especificaciones -->
-            <div class="card">
-              <div class="card-header"><span class="card-title">Especificaciones (opcional)</span></div>
+            <details class="card pf-mas">
+              <summary>Medidas y otros datos</summary>
               <div class="card-body">
                 <div class="form-grid form-grid-3">
                   <div class="form-group"><label>Material</label><input type="text" id="material" placeholder="Ej: Acero inoxidable"></div>
@@ -134,41 +187,41 @@
                   <div class="form-group"><label>Alto (cm)</label><input type="number" id="alto" placeholder="0" step="0.01" min="0"></div>
                   <div class="form-group"><label>Ancho (cm)</label><input type="number" id="ancho" placeholder="0" step="0.01" min="0"></div>
                   <div class="form-group"><label>Profundidad (cm)</label><input type="number" id="profundidad" placeholder="0" step="0.01" min="0"></div>
-                  <div class="form-group"><label>Proveedor</label><input type="text" id="proveedor" placeholder="Nombre proveedor"></div>
-                  <div class="form-group"><label>Ubicación en depósito</label><input type="text" id="ubicacion" placeholder="Ej: Estante A-3"></div>
-                  <div class="form-group col-span-3"><label>Observaciones internas</label><textarea id="observaciones" placeholder="Notas de uso interno (no visible en tienda)"></textarea></div>
+                  <div class="form-group col-span-2"><label>Dónde está guardado</label><input type="text" id="ubicacion" placeholder="Ej: Estante A-3"></div>
+                  <div class="form-group col-span-3"><label>Notas internas</label><textarea id="observaciones" placeholder="No se ven en la tienda"></textarea></div>
                 </div>
               </div>
-            </div>
+            </details>
 
           </div>
 
           <!-- COLUMNA DERECHA -->
           <div>
 
-            <!-- Estado -->
+            <!-- En la tienda -->
             <div class="card">
-              <div class="card-header"><span class="card-title">Estado y visibilidad</span></div>
+              <div class="card-header"><span class="card-title">En la tienda</span></div>
               <div class="card-body">
                 <div class="form-grid" style="gap:14px">
                   <div class="form-group">
-                    <label>Estado</label>
+                    <label>¿Se muestra?</label>
                     <select id="estado">
-                      <option value="activo">Activo (visible en tienda)</option>
-                      <option value="inactivo">Inactivo (oculto)</option>
-                      <option value="archivado">Archivado</option>
+                      <option value="activo">Publicado · se ve en la tienda</option>
+                      <option value="inactivo">Oculto · solo en el panel y la caja</option>
+                      <option value="archivado">Archivado · ya no se vende</option>
                     </select>
                   </div>
+                  <div class="pf-check" id="pf-check"></div>
                   <div class="form-group">
                     <label class="toggle-wrap">
                       <div class="toggle"><input type="checkbox" id="destacado"><div class="toggle-track"></div><div class="toggle-thumb"></div></div>
-                      <span class="toggle-label">Destacado</span>
+                      <span class="toggle-label">Destacado (aparece en la portada)</span>
                     </label>
                   </div>
                   <div class="form-group">
                     <label class="toggle-wrap">
                       <div class="toggle"><input type="checkbox" id="es_nuevo"><div class="toggle-track"></div><div class="toggle-thumb"></div></div>
-                      <span class="toggle-label">Marcar como "Nuevo"</span>
+                      <span class="toggle-label">Cartel de "Nuevo"</span>
                     </label>
                   </div>
                 </div>
@@ -177,64 +230,48 @@
 
             <!-- Stock -->
             <div class="card">
-              <div class="card-header"><span class="card-title">Inventario</span></div>
+              <div class="card-header"><span class="card-title">Stock</span></div>
               <div class="card-body">
                 <div class="form-grid" style="gap:14px">
-                  <div class="form-group">
-                    <label class="toggle-wrap">
-                      <div class="toggle"><input type="checkbox" id="seguimiento_inventario" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></div>
-                      <span class="toggle-label">Controlar stock</span>
-                    </label>
-                  </div>
                   <div class="form-group" id="stock-fields">
-                    <label>Stock</label>
-                    <div style="font-size:14px;padding:6px 0"><b id="stock-actual-txt">0</b> <span class="form-hint" id="stock-hint" style="display:inline">unidades · un producto nuevo nace sin stock</span></div>
-                    <span class="form-hint">El stock no se escribe acá: se carga contándolo en <a href="/admin/carga-stock">Contar stock</a> o al recibir una <a href="/admin/compras">compra</a>. Así queda registro de cada movimiento.</span>
+                    <div style="font-size:14px"><b id="stock-actual-txt" style="font-size:22px">0</b> <span class="form-hint" id="stock-hint" style="display:inline">unidades · un producto nuevo nace sin stock</span></div>
+                    <span class="form-hint">El stock no se escribe acá. Se carga contándolo en <a href="/admin/carga-stock" id="link-contar">Contar stock</a> o al recibir una <a href="/admin/compras">compra</a>, y baja solo con cada venta.</span>
                   </div>
                   <div class="form-group">
-                    <label>Stock mínimo (alerta)</label>
-                    <input type="number" id="stock_minimo" placeholder="0" min="0" step="1">
-                    <span class="form-hint">Se mostrará alerta cuando el stock sea ≤ a este valor</span>
+                    <label>Avisar cuando queden…</label>
+                    <input type="number" id="stock_minimo" placeholder="0" min="0" step="1" inputmode="numeric">
+                    <span class="form-hint">0 = sin aviso.</span>
                   </div>
-                  <div class="form-group">
-                    <label>Unidad de medida</label>
-                    <select id="unidad">
-                      <option value="unidad">Unidad</option>
-                      <option value="par">Par</option>
-                      <option value="set">Set</option>
-                      <option value="caja">Caja</option>
-                      <option value="kg">Kilogramo</option>
-                      <option value="litro">Litro</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label class="toggle-wrap">
-                      <div class="toggle"><input type="checkbox" id="permite_venta_sin_stock"><div class="toggle-track"></div><div class="toggle-thumb"></div></div>
-                      <span class="toggle-label">Vender sin stock</span>
-                    </label>
-                  </div>
+                  <details class="pf-sub">
+                    <summary>Más opciones de stock</summary>
+                    <div class="form-grid" style="gap:14px;margin-top:10px">
+                      <div class="form-group">
+                        <label class="toggle-wrap">
+                          <div class="toggle"><input type="checkbox" id="seguimiento_inventario" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></div>
+                          <span class="toggle-label">Llevar la cuenta del stock</span>
+                        </label>
+                        <span class="form-hint">Apagalo para lo que no se cuenta (servicios, cosas a pedido).</span>
+                      </div>
+                      <div class="form-group">
+                        <label class="toggle-wrap">
+                          <div class="toggle"><input type="checkbox" id="permite_venta_sin_stock"><div class="toggle-track"></div><div class="toggle-thumb"></div></div>
+                          <span class="toggle-label">Vender por la web aunque no haya stock</span>
+                        </label>
+                      </div>
+                      <div class="form-group">
+                        <label>Se vende por</label>
+                        <select id="unidad">
+                          <option value="unidad">Unidad</option>
+                          <option value="par">Par</option>
+                          <option value="set">Set</option>
+                          <option value="caja">Caja</option>
+                          <option value="kg">Kilogramo</option>
+                          <option value="litro">Litro</option>
+                        </select>
+                      </div>
+                    </div>
+                  </details>
                 </div>
-              </div>
-            </div>
-
-            <!-- Imagen -->
-            <div class="card">
-              <div class="card-header"><span class="card-title">Imagen principal</span></div>
-              <div class="card-body">
-                <div class="form-group">
-                  <label>URL de imagen existente</label>
-                  <input type="url" id="imagen_principal_url" placeholder="/images/productos/categoria/foto.jpg">
-                  <span class="form-hint">Ruta de imagen ya subida (ej: imágenes existentes del catálogo)</span>
-                </div>
-                <div style="margin:12px 0;text-align:center;color:var(--muted);font-size:12px">— o subir nueva imagen —</div>
-                <div class="upload-area" id="upload-area">
-                  <div class="upload-icon">🖼️</div>
-                  <div class="upload-text">Hacé clic o arrastrá una imagen</div>
-                  <div class="upload-sub">JPG, PNG, WEBP · Máx. 5 MB</div>
-                  <input type="file" id="imagen-file" accept="image/jpeg,image/png,image/webp" style="display:none">
-                </div>
-                <div id="img-preview" style="margin-top:10px"></div>
-                <div id="upload-status" style="font-size:12px;margin-top:6px"></div>
               </div>
             </div>
 
@@ -252,12 +289,14 @@
 <script src="/admin/js/auth.js"></script>
 <script src="/admin/js/utils.js"></script>
 <script src="/admin/js/layout.js"></script>
+<script src="/admin/js/fotos.js"></script>
 <script>
 const urlParams = new URLSearchParams(window.location.search);
 let editId      = urlParams.get('id');
 let isEdit      = !!editId;
 let currentProfile = null;
 let uploadedImageUrl = null;
+let estadoCargado = null;   // estado con el que se abrió (para avisar solo al PASAR a publicado)
 
 /* ── Contexto de regreso ────────────────────────────────────────
    El listado nos pasa sus filtros/orden/página en `volver`. Se
@@ -347,9 +386,9 @@ function num(v) { const n = parseFloat(v); return isNaN(n) ? null : n; }
 function int(v) { const n = parseInt(v); return isNaN(n) ? 0 : n; }
 
 async function cargarCategorias() {
-  const { data } = await db.from('categorias').select('id,nombre').eq('activo',true).order('orden');
+  const { data } = await db.from('categorias').select('id,nombre,activo').order('orden');
   const sel = document.getElementById('categoria_id');
-  (data||[]).forEach(c => sel.innerHTML += `<option value="${c.id}">${c.nombre}</option>`);
+  sel.insertAdjacentHTML('beforeend', (data||[]).map(c => `<option value="${c.id}">${String(c.nombre || '').replace(/&/g,'&amp;').replace(/</g,'&lt;')}${c.activo === false ? ' (categoría oculta)' : ''}</option>`).join(''));
 }
 
 /* El stock nunca se escribe desde acá: la base lo blinda (sql/008) y solo
@@ -359,9 +398,12 @@ function mostrarStock(p) {
   const hint = document.getElementById('stock-hint');
   if (!p) { txt.textContent = '0'; hint.textContent = 'unidades · un producto nuevo nace sin stock'; return; }
   txt.textContent = p.stock_actual ?? 0;
-  txt.className = 'stock-num ' + Utils.stockClass(p.stock_actual, p.stock_minimo);
-  hint.textContent = p.seguimiento_inventario === false ? 'sin control de stock'
-    : p.stock_controlado ? 'unidades · stock controlado' : 'unidades · todavía sin contar';
+  // Sin contar: es un número de referencia, no se pinta como stock real
+  txt.className = p.stock_controlado === false ? '' : 'stock-num ' + Utils.stockClass(p.stock_actual, p.stock_minimo);
+  hint.textContent = p.seguimiento_inventario === false ? 'no se lleva la cuenta de este producto'
+    : p.stock_controlado ? 'unidades · contado en el local'
+    : (p.stock_actual > 0 ? 'unidades según el sistema anterior · todavía sin contar' : 'unidades · todavía sin contar');
+  if (p.id) document.getElementById('link-contar').href = '/admin/carga-stock?producto=' + p.id;
 }
 
 /* ── Costo y proveedor: viven aparte (sql/015, producto_costos) ──
@@ -412,11 +454,60 @@ async function cargarProducto() {
   setVal('peso', data.peso); setVal('alto', data.alto); setVal('ancho', data.ancho); setVal('profundidad', data.profundidad);
   setVal('observaciones', data.observaciones);
   setVal('imagen_principal_url', data.imagen_principal_url);
-  if (data.imagen_principal_url) {
-    document.getElementById('img-preview').innerHTML =
-      `<img src="${data.imagen_principal_url}" style="width:100%;max-height:180px;object-fit:contain;background:var(--bg);border-radius:var(--r);border:1px solid var(--border)" onerror="this.style.display='none'">`;
+  if (data.codigo_anterior) {
+    document.getElementById('cod-viejo-wrap').hidden = false;
+    document.getElementById('cod-viejo').textContent = data.codigo_anterior;
   }
+  const { data: gal } = await db.from('producto_imagenes').select('url, orden').eq('producto_id', editId).order('orden');
+  fotosIniciales = (gal || []).map(g => g.url);
+  if (!fotosIniciales.length && data.imagen_principal_url) fotosIniciales = [data.imagen_principal_url];
 }
+
+/* ── Fotos (admin/js/fotos.js) ──
+   Producto existente: cada cambio se guarda al instante.
+   Producto nuevo: se suben ya, y se asocian al guardar por primera vez. */
+let fotosIniciales = [];
+let galeria = null;
+function iniciarFotos() {
+  galeria = MHFotos.galeria(document.getElementById('fotos-galeria'), {
+    productoId: isEdit ? Number(editId) : null,
+    urls: fotosIniciales,
+    onCambio: urls => {
+      const sucio = estaSucio();
+      setVal('imagen_principal_url', urls[0] || '');
+      if (isEdit && !sucio) marcarLimpio(); else refrescarIndicador();   // ya quedó guardado
+      pintarAyudas();
+    },
+  });
+}
+
+/* ── Ayudas en vivo: qué falta para publicar, margen, oferta, resúmenes ── */
+function pintarAyudas() {
+  const precio = num(val('precio_minorista')) || 0, costo = num(val('precio_costo')) || 0, oferta = num(val('precio_oferta')) || 0;
+  const enOferta = document.getElementById('en_oferta').checked;
+  const foto = !!val('imagen_principal_url'), cat = !!val('categoria_id');
+  const fila = (ok, txt) => `<div class="${ok ? 'ok' : 'no'}">${ok ? '✓' : '✕'} ${txt}</div>`;
+  document.getElementById('pf-check').innerHTML =
+    fila(foto, foto ? 'Tiene foto' : 'Falta la foto') + fila(precio > 0, precio > 0 ? 'Tiene precio' : 'Falta el precio') + fila(cat, cat ? 'Tiene categoría' : 'Falta la categoría');
+
+  document.getElementById('oferta-campos').hidden = !enOferta;
+  const ho = document.getElementById('hint-oferta');
+  if (enOferta && !(oferta > 0)) { ho.textContent = 'Escribí el precio de oferta.'; ho.className = 'form-hint alerta'; }
+  else if (enOferta && precio > 0 && oferta >= precio) { ho.textContent = 'La oferta tiene que ser más barata que el precio de venta.'; ho.className = 'form-hint alerta'; }
+  else if (enOferta && precio > 0) { ho.textContent = `${Math.round(100 * (1 - oferta / precio))}% de descuento sobre el precio de venta.`; ho.className = 'form-hint bien'; }
+  else { ho.textContent = 'En la tienda se muestra el precio de venta tachado y este al lado.'; ho.className = 'form-hint'; }
+
+  const hc = document.getElementById('hint-costo');
+  if (costo > 0 && precio > 0 && precio < costo) { hc.textContent = '⚠ El precio de venta está por debajo del costo.'; hc.className = 'form-hint alerta'; }
+  else if (costo > 0 && precio > 0) { hc.textContent = `Margen: ${Math.round(100 * (precio - costo) / costo)}% sobre el costo.`; hc.className = 'form-hint bien'; }
+  else { hc.textContent = 'Solo lo ven administración y stock.'; hc.className = 'form-hint'; }
+
+  document.getElementById('res-desc').textContent = val('descripcion_corta') || val('descripcion') ? 'cargada' : 'sin descripción';
+  document.getElementById('res-cod').textContent = [val('sku'), val('codigo_barras')].filter(Boolean).join(' · ') || 'se generan solos';
+  document.getElementById('res-costo').textContent = costo > 0 ? 'costo ' + Utils.currency(costo) : '';
+}
+document.getElementById('producto-form').addEventListener('input', pintarAyudas);
+document.getElementById('producto-form').addEventListener('change', pintarAyudas);
 
 document.getElementById('btn-gen-sku')?.addEventListener('click', () => {
   const cat = document.getElementById('categoria_id');
@@ -490,8 +581,20 @@ async function guardar(volverAlListado) {
   const cat = val('categoria_id');
   if (!cat) { Utils.toast('Seleccioná una categoría','warning'); document.getElementById('categoria_id').focus(); return false; }
 
+  const precioV = num(val('precio_minorista')) || 0, ofertaV = num(val('precio_oferta')) || 0;
+  if (document.getElementById('en_oferta').checked && (!(ofertaV > 0) || (precioV > 0 && ofertaV >= precioV))) {
+    Utils.toast(ofertaV > 0 ? 'La oferta tiene que ser más barata que el precio de venta' : 'Escribí el precio de oferta, o apagá "Está en oferta"', 'warning', 6000);
+    document.getElementById('precio_oferta').focus(); return false;
+  }
+  // Publicar algo incompleto: se avisa, no se prohíbe (sin precio la tienda dice "Consultar")
+  const faltaPub = [!val('imagen_principal_url') && 'la foto', !(precioV > 0) && 'el precio'].filter(Boolean);
+  if (val('estado') === 'activo' && faltaPub.length && estadoCargado !== 'activo') {
+    const seguir = await Utils.confirm(`Le falta <b>${faltaPub.join(' y ')}</b>. Si lo publicás así, en la tienda se va a ver incompleto.`, 'Publicar incompleto', 'Publicar igual', false);
+    if (!seguir) { setVal('estado', 'inactivo'); Utils.toast('Quedó como Oculto. Publicalo cuando esté completo.', 'info', 5000); }
+  }
+
   const payload = {
-    nombre, slug: Utils.slug(nombre),
+    nombre,
     categoria_id: parseInt(cat),
     marca: val('marca')||null,
     sku: val('sku')||null,
@@ -526,9 +629,15 @@ async function guardar(volverAlListado) {
   } else {
     // Un producto nuevo nace con stock 0 y "sin contar": el stock entra
     // después por Contar stock o al recibir una compra (sql/008 y sql/013).
+    // La dirección web (slug) se arma UNA vez, al crear: cambiar el nombre después no rompe links.
     payload.stock_actual = 0;
     payload.created_by = currentProfile?.id;
+    payload.slug = Utils.slug(nombre) || 'producto';
     ({ error, data } = await db.from('productos').insert(payload).select().single());
+    if (error && /slug/.test(error.message || '') && /duplicate|unique/i.test(error.message || '')) {
+      payload.slug += '-' + Math.random().toString(36).slice(2, 6);   // dos productos con el mismo nombre
+      ({ error, data } = await db.from('productos').insert(payload).select().single());
+    }
   }
 
   bloquearBotones(false);
@@ -543,6 +652,14 @@ async function guardar(volverAlListado) {
   if (eraAlta && data?.id) {
     editId = String(data.id);
     isEdit = true;
+    // Las fotos que se subieron antes de crear el producto, ahora se le asocian
+    const urls = galeria ? galeria.urls() : [];
+    if (urls.length) { try { await MHFotos.guardar(data.id, urls); } catch (e) { Utils.toast('El producto se creó, pero las fotos no quedaron asociadas: ' + MHFotos.mensaje(e), 'warning', 7000); } }
+    fotosIniciales = urls; iniciarFotos();
+    if (!payload.sku) {   // código interno automático: MH-00042
+      const sku = 'MH-' + String(data.id).padStart(5, '0');
+      if (!(await db.from('productos').update({ sku }).eq('id', data.id)).error) setVal('sku', sku);
+    }
     document.getElementById('form-title').textContent = 'Editar Producto';
     document.getElementById('form-subtitle').textContent = data.nombre;
     mostrarStock(data);
@@ -550,6 +667,8 @@ async function guardar(volverAlListado) {
       `/admin/producto-form?id=${editId}` + (volverQS ? `&volver=${encodeURIComponent(volverQS)}` : ''));
   }
 
+  estadoCargado = val('estado');
+  pintarAyudas();
   marcarLimpio();
   Utils.toast(eraAlta ? 'Producto creado ✅' : 'Producto actualizado ✅', 'success');
   await Utils.log(eraAlta?'create':'update','productos',data?.id||editId,`Producto ${eraAlta?'creado':'actualizado'}: ${nombre}`);
@@ -579,6 +698,9 @@ async function initPage() {
   await Layout.init('productos', isEdit ? 'Editar Producto' : 'Nuevo Producto');
   await cargarCategorias();     // antes del producto: el <select> necesita sus <option>
   await cargarProducto();
+  estadoCargado = isEdit ? val('estado') : null;
+  iniciarFotos();
+  pintarAyudas();
   marcarLimpio();               // desde acá se empieza a medir "cambios sin guardar"
 }
 initPage();

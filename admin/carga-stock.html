@@ -412,7 +412,7 @@ $id('btn-nuevo').addEventListener('click', () => {
 async function cargarDatos() {
   const [{ data: catData, error: e1 }, prodRes] = await Promise.all([
     db.from('categorias').select('id,nombre').order('orden'),
-    db.from('productos').select('id,nombre,sku,codigo_barras,categoria_id,stock_actual,stock_minimo,stock_controlado,ultimo_conteo_en,seguimiento_inventario,estado').neq('estado','archivado').order('nombre')
+    Utils.traerTodo(() => db.from('productos').select('id,nombre,sku,codigo_barras,categoria_id,stock_actual,stock_minimo,stock_controlado,ultimo_conteo_en,seguimiento_inventario,estado').neq('estado','archivado').order('nombre').order('id'))
   ]);
   if (e1 || prodRes.error) {
     if ((prodRes.error?.message||'').includes('stock_controlado')) $id('aviso-sql').hidden = false;

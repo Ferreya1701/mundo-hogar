@@ -159,10 +159,11 @@ let allProds = [];
 let selectedProd = null;
 
 async function cargarProductos() {
-  const { data } = await db.from('productos')
+  // Todos menos los archivados: los importados (ocultos de la tienda) también se ajustan
+  const { data } = await Utils.traerTodo(() => db.from('productos')
     .select('id,nombre,sku,stock_actual,stock_minimo,seguimiento_inventario')
-    .eq('estado','activo').neq('seguimiento_inventario',false)
-    .order('nombre');
+    .neq('estado','archivado').neq('seguimiento_inventario',false)
+    .order('nombre').order('id'));
   allProds = data || [];
   filtrarProductos('');
 

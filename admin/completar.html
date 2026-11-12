@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/admin/manifest.json">
+  <meta name="theme-color" content="#0A2E63">
+  <link rel="icon" type="image/png" href="/images/marca/favicon.png">
+  <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
+  <title>Completar productos — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+  <style>
+    .cp-progreso { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
+    .cp-barra { flex:1; min-width:200px; height:10px; background:var(--border); border-radius:6px; overflow:hidden; }
+    .cp-barra > div { height:100%; background:var(--success); transition:width .4s; }
+    .cp-progreso b { font-size:15px; color:var(--night); }
+    .cp-herr { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+    .cp-herr .search-bar { flex:1; min-width:220px; }
+    .cp-herr select { min-height:40px; }
+    .cp-lista { display:flex; flex-direction:column; gap:10px; }
+    .cp-fila { display:grid; grid-template-columns:28px 210px 1fr 150px 190px 150px; gap:14px; align-items:center;
+               background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:12px 14px; }
+    .cp-fila.listo { border-left:4px solid var(--success); }
+    .cp-fila.publicado { background:#F6FEF9; }
+    .cp-nom { font-weight:600; color:var(--night); line-height:1.3; }
+    .cp-nom a { color:inherit; text-decoration:none; } .cp-nom a:hover { text-decoration:underline; }
+    .cp-sub { font-size:12px; color:var(--muted); margin-top:3px; }
+    .cp-falta { display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }
+    .cp-falta span { font-size:11px; padding:1px 7px; border-radius:20px; background:var(--danger-bg); color:#B91C1C; font-weight:600; }
+    .cp-falta span.ok { background:var(--success-bg); color:#15803D; }
+    .cp-precio { position:relative; }
+    .cp-precio input { width:100%; min-height:42px; font-size:16px; font-weight:600; padding-left:22px; text-align:right; }
+    .cp-precio::before { content:'$'; position:absolute; left:9px; top:50%; transform:translateY(-50%); color:var(--muted); font-weight:600; }
+    .cp-cat select { width:100%; min-height:42px; }
+    .cp-lbl { display:block; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:3px; }
+    .cp-guardado { font-size:11px; color:var(--success); height:14px; margin-top:2px; }
+    .cp-guardado.error { color:var(--danger); }
+    .cp-pub .btn { width:100%; justify-content:center; }
+    .cp-pub .cp-sub { text-align:center; }
+    .cp-bulk { position:sticky; bottom:0; z-index:5; display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:12px 14px; margin-top:12px;
+               background:var(--night); color:#fff; border-radius:var(--r-lg); box-shadow:0 -4px 16px rgba(0,0,0,.12); }
+    .cp-bulk .btn-outline { background:transparent; color:#fff; border-color:rgba(255,255,255,.5); }
+    .cp-bulk b { margin-right:auto; }
+    .cp-ayuda { background:var(--info-bg); color:var(--blue-dark); border-radius:var(--r); padding:10px 14px; font-size:13px; margin-bottom:14px; line-height:1.5; }
+    .cp-ayuda b { color:var(--night); }
+    @media (max-width: 1100px) {
+      .cp-fila { grid-template-columns:28px 1fr 1fr; grid-template-areas:"sel info info" "fotos fotos fotos" "precio precio cat" "pub pub pub"; }
+      .cp-fila > .cp-sel { grid-area:sel; } .cp-fila > .cp-info { grid-area:info; } .cp-fila > .cp-fotos { grid-area:fotos; }
+      .cp-fila > .cp-precio-wrap { grid-area:precio; } .cp-fila > .cp-cat { grid-area:cat; } .cp-fila > .cp-pub { grid-area:pub; }
+    }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><img class="sidebar-brand-icon" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="32" height="32"><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/" target="_blank" class="btn btn-ghost btn-sm">🌐 Ver Tienda</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1>Completar productos</h1><p>Foto, precio y categoría en una sola pantalla. Todo se guarda solo.</p></div>
+        <div class="page-header-actions"><button class="btn btn-primary" id="btn-pub-listos" hidden>Publicar los listos</button></div>
+      </div>
+
+      <div class="cp-ayuda" id="ayuda">
+        <b>Cómo se usa:</b> arrastrá o pegá (Ctrl+V) las fotos sobre cada producto, o tocá <b>＋</b> / <b>📷</b> en el celular.
+        Escribí el precio y apretá <b>Enter</b> para pasar al siguiente. Cuando tiene <b>foto, precio y categoría</b> se puede publicar.
+        <button class="btn btn-ghost btn-sm" id="ocultar-ayuda" style="margin-left:6px">Entendido</button>
+      </div>
+
+      <div class="cp-progreso">
+        <b id="prog-txt">…</b>
+        <div class="cp-barra" title="Productos publicados sobre el total"><div id="prog-barra" style="width:0"></div></div>
+        <span class="sub" id="prog-sub" style="font-size:13px;color:var(--muted)"></span>
+      </div>
+
+      <div class="chips chips-filtro" id="chips"></div>
+      <div class="cp-herr">
+        <div class="search-bar"><span class="search-icon">🔍</span><input type="search" id="q" placeholder="Buscar por nombre, SKU o código viejo…" autocomplete="off"></div>
+        <select id="f-cat" aria-label="Categoría"></select>
+      </div>
+
+      <div class="cp-lista" id="lista"><div class="spinner" style="margin:40px auto"></div></div>
+      <div style="text-align:center;margin:14px 0" id="mas-wrap" hidden><button class="btn btn-outline" id="btn-mas">Mostrar más</button></div>
+
+      <div class="cp-bulk" id="bulk" hidden>
+        <b id="bulk-n"></b>
+        <button class="btn btn-outline btn-sm" data-bulk="precio">💲 Poner precio</button>
+        <button class="btn btn-outline btn-sm" data-bulk="categoria">🏷️ Cambiar categoría</button>
+        <button class="btn btn-primary btn-sm" data-bulk="publicar">Publicar</button>
+        <button class="btn btn-outline btn-sm" data-bulk="ocultar">Ocultar</button>
+        <button class="btn btn-ghost btn-sm" data-bulk="limpiar" style="color:#fff">✕</button>
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script src="/admin/js/fotos.js"></script>
+<script>
+/* ============================================================
+   Completar productos: la mesa de trabajo para dejar listos los
+   productos (foto + precio + categoría) y publicarlos. sql/023.
+   ============================================================ */
+const $id = id => document.getElementById(id);
+const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const money = n => new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS', maximumFractionDigits:0 }).format(Number(n || 0));
+const num = v => {
+  let s = String(v ?? '').trim().replace(/[\s$]/g, '');
+  if (!s) return null;
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+  const n = Number(s); return Number.isFinite(n) ? n : NaN;
+};
+const fmtPrecio = n => n ? new Intl.NumberFormat('es-AR', { maximumFractionDigits:2 }).format(n) : '';
+const TAM = 25;
+const LS_AYUDA = 'mh_completar_ayuda_ok';
+
+let perfil = null, prods = [], cats = [], fotos = {}, filtro = 'falta', mostrados = TAM;
+const sel = new Set();
+
+const tieneFoto = p => !!(p.imagen_principal_url || '').trim();
+const tienePrecio = p => Number(p.precio_minorista) > 0;
+const completo = p => tieneFoto(p) && tienePrecio(p) && !!p.categoria_id;
+const FILTROS = {
+  falta:     ['Les falta algo',          p => !completo(p) && p.estado !== 'activo'],
+  listos:    ['Listos para publicar',    p => completo(p) && p.estado === 'inactivo'],
+  sin_foto:  ['Sin foto',                p => !tieneFoto(p)],
+  sin_precio:['Sin precio',              p => !tienePrecio(p)],
+  sin_cat:   ['Sin categoría',           p => !p.categoria_id],
+  publicados:['Publicados',              p => p.estado === 'activo'],
+  todos:     ['Todos',                   () => true],
+};
+
+/* ── Datos ── */
+async function cargar() {
+  const [c, p] = await Promise.all([
+    db.from('categorias').select('id, nombre').order('orden').order('nombre'),
+    Utils.traerTodo(() => db.from('productos')
+      .select('id, nombre, sku, codigo_anterior, categoria_id, precio_minorista, imagen_principal_url, estado, stock_actual, stock_controlado, marca')
+      .neq('estado', 'archivado').order('nombre')),
+  ]);
+  if (p.error) { $id('lista').innerHTML = `<div class="empty-state"><h3>No se pudieron cargar los productos</h3><p>${esc(p.error.message)}</p></div>`; return; }
+  cats = c.data || []; prods = p.data || [];
+  $id('f-cat').innerHTML = `<option value="">Todas las categorías</option><option value="0">Sin categoría</option>` + cats.map(x => `<option value="${x.id}">${esc(x.nombre)}</option>`).join('');
+  render();
+}
+
+async function cargarFotos(ids) {
+  const faltan = ids.filter(id => !(id in fotos));
+  if (!faltan.length) return;
+  faltan.forEach(id => fotos[id] = null);
+  const { data } = await db.from('producto_imagenes').select('producto_id, url, orden').in('producto_id', faltan).order('orden');
+  faltan.forEach(id => { fotos[id] = []; });
+  (data || []).forEach(f => fotos[f.producto_id].push(f.url));
+  // Productos con principal pero sin galería (cargados antes): la principal es la galería
+  faltan.forEach(id => { const p = prods.find(x => x.id === id); if (!fotos[id].length && tieneFoto(p)) fotos[id] = [p.imagen_principal_url]; });
+}
+
+/* ── Pantalla ── */
+function visibles() {
+  const q = Utils.norm($id('q').value), cat = $id('f-cat').value;
+  return prods.filter(p => {
+    if (!FILTROS[filtro][1](p)) return false;
+    if (cat === '0' && p.categoria_id) return false;
+    if (cat && cat !== '0' && String(p.categoria_id) !== cat) return false;
+    return !q || Utils.norm(`${p.nombre} ${p.sku || ''} ${p.codigo_anterior || ''} ${p.marca || ''}`).includes(q);
+  });
+}
+
+function render() {
+  const total = prods.length, pub = prods.filter(p => p.estado === 'activo').length, listos = prods.filter(FILTROS.listos[1]).length;
+  $id('prog-txt').textContent = `${pub} de ${total} publicados`;
+  $id('prog-barra').style.width = `${total ? Math.round(100 * pub / total) : 0}%`;
+  $id('prog-sub').textContent = `${listos} listos para publicar · ${prods.filter(FILTROS.falta[1]).length} con algo pendiente`;
+  $id('btn-pub-listos').hidden = !listos;
+  $id('btn-pub-listos').textContent = `Publicar los ${listos} listos`;
+  $id('chips').innerHTML = Object.entries(FILTROS).map(([k, [nombre, fn]]) =>
+    `<button class="chip${filtro === k ? ' active' : ''}" data-f="${k}">${nombre} <span class="chip-n">${prods.filter(fn).length}</span></button>`).join('');
+  renderLista();
+}
+
+async function renderLista() {
+  const lista = visibles();
+  const pag = lista.slice(0, mostrados);
+  $id('mas-wrap').hidden = lista.length <= mostrados;
+  $id('btn-mas').textContent = `Mostrar más (${lista.length - mostrados} restantes)`;
+  if (!pag.length) {
+    $id('lista').innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎉</div><h3>${filtro === 'falta' ? '¡No queda nada pendiente con este filtro!' : 'Nada con este filtro'}</h3></div>`;
+    renderBulk(); return;
+  }
+  await cargarFotos(pag.map(p => p.id));
+  $id('lista').innerHTML = pag.map(fila).join('');
+  pag.forEach(p => MHFotos.galeria(document.querySelector(`[data-fotos="${p.id}"]`), {
+    productoId: p.id, urls: fotos[p.id] || [], compacta: true,
+    onCambio: urls => { fotos[p.id] = urls; p.imagen_principal_url = urls[0] || null; refrescarFila(p); },
+  }));
+  renderBulk();
+}
+
+function faltaHTML(p) {
+  return `<div class="cp-falta">
+    <span class="${tieneFoto(p) ? 'ok' : ''}">${tieneFoto(p) ? '✓' : '✕'} foto</span>
+    <span class="${tienePrecio(p) ? 'ok' : ''}">${tienePrecio(p) ? '✓' : '✕'} precio</span>
+    <span class="${p.categoria_id ? 'ok' : ''}">${p.categoria_id ? '✓' : '✕'} categoría</span></div>`;
+}
+function pubHTML(p) {
+  if (p.estado === 'activo') return `<div class="cp-sub" style="color:var(--success);font-weight:600;margin-bottom:4px">✓ En la tienda</div><button class="btn btn-ghost btn-sm" data-ocultar="${p.id}">Ocultar</button>`;
+  if (completo(p)) return `<button class="btn btn-primary btn-sm" data-publicar="${p.id}">Publicar</button>`;
+  return `<button class="btn btn-outline btn-sm" disabled title="Le falta foto, precio o categoría">Publicar</button><div class="cp-sub">completá lo que falta</div>`;
+}
+function fila(p) {
+  const stock = p.stock_controlado ? `${p.stock_actual} en stock` : (p.stock_actual > 0 ? `~${p.stock_actual} (sin contar)` : 'sin stock cargado');
+  return `<div class="cp-fila${completo(p) ? ' listo' : ''}${p.estado === 'activo' ? ' publicado' : ''}" data-id="${p.id}">
+    <div class="cp-sel"><input type="checkbox" data-sel="${p.id}" ${sel.has(p.id) ? 'checked' : ''} aria-label="Elegir ${esc(p.nombre)}"></div>
+    <div class="cp-fotos" data-fotos="${p.id}"></div>
+    <div class="cp-info">
+      <div class="cp-nom"><a href="/admin/producto-form?id=${p.id}" title="Abrir la ficha completa">${esc(p.nombre)}</a></div>
+      <div class="cp-sub">${esc(p.sku || '')}${p.codigo_anterior && p.codigo_anterior !== p.sku ? ' · cód. ' + esc(p.codigo_anterior) : ''} · ${esc(stock)}</div>
+      <div data-falta>${faltaHTML(p)}</div>
+    </div>
+    <div class="cp-precio-wrap"><label class="cp-lbl" for="pr-${p.id}">Precio</label>
+      <div class="cp-precio"><input id="pr-${p.id}" type="text" inputmode="decimal" data-precio="${p.id}" value="${fmtPrecio(p.precio_minorista)}" placeholder="sin precio" autocomplete="off"></div>
+      <div class="cp-guardado" data-ok-precio></div></div>
+    <div class="cp-cat"><label class="cp-lbl" for="ca-${p.id}">Categoría</label>
+      <select id="ca-${p.id}" data-cat="${p.id}"><option value="">Elegir…</option>${cats.map(c => `<option value="${c.id}"${c.id === p.categoria_id ? ' selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select>
+      <div class="cp-guardado" data-ok-cat></div></div>
+    <div class="cp-pub" data-pub>${pubHTML(p)}</div>
+  </div>`;
+}
+function refrescarFila(p) {
+  const f = document.querySelector(`.cp-fila[data-id="${p.id}"]`); if (!f) return;
+  f.classList.toggle('listo', completo(p)); f.classList.toggle('publicado', p.estado === 'activo');
+  f.querySelector('[data-falta]').innerHTML = faltaHTML(p);
+  f.querySelector('[data-pub]').innerHTML = pubHTML(p);
+  const total = prods.length, pub = prods.filter(x => x.estado === 'activo').length, listos = prods.filter(FILTROS.listos[1]).length;
+  $id('prog-txt').textContent = `${pub} de ${total} publicados`;
+  $id('prog-barra').style.width = `${total ? Math.round(100 * pub / total) : 0}%`;
+  $id('prog-sub').textContent = `${listos} listos para publicar · ${prods.filter(FILTROS.falta[1]).length} con algo pendiente`;
+  $id('btn-pub-listos').hidden = !listos; $id('btn-pub-listos').textContent = `Publicar los ${listos} listos`;
+}
+function marca(el, txt, error = false) {
+  if (!el) return; el.textContent = txt; el.classList.toggle('error', error);
+  if (!error) setTimeout(() => { if (el.textContent === txt) el.textContent = ''; }, 1800);
+}
+
+/* ── Guardar al toque ── */
+async function guardarPrecio(inp) {
+  if (inp._guardando) return inp._guardando;           // Enter + salir del campo: una sola vez
+  inp._guardando = guardarPrecioYa(inp).finally(() => { inp._guardando = null; });
+  return inp._guardando;
+}
+async function guardarPrecioYa(inp) {
+  const p = prods.find(x => x.id === Number(inp.dataset.precio));
+  const ok = inp.closest('.cp-precio-wrap').querySelector('[data-ok-precio]');
+  const v = num(inp.value);
+  if (inp.value.trim() === '' ) { if (!p.precio_minorista) return true; }
+  if (Number.isNaN(v) || (v !== null && v < 0)) { marca(ok, 'Número inválido', true); return false; }
+  const nuevo = v || null;
+  if (Number(nuevo || 0) === Number(p.precio_minorista || 0)) { inp.value = fmtPrecio(nuevo); return true; }
+  const { error } = await db.from('productos').update({ precio_minorista: nuevo }).eq('id', p.id);
+  if (error) { marca(ok, 'No se guardó', true); Utils.toast(error.message, 'error'); return false; }
+  p.precio_minorista = nuevo; inp.value = fmtPrecio(nuevo);
+  marca(ok, '✓ guardado'); refrescarFila(p);
+  return true;
+}
+async function guardarCat(s) {
+  const p = prods.find(x => x.id === Number(s.dataset.cat));
+  const ok = s.closest('.cp-cat').querySelector('[data-ok-cat]');
+  const nuevo = s.value ? Number(s.value) : null;
+  const { error } = await db.from('productos').update({ categoria_id: nuevo }).eq('id', p.id);
+  if (error) { marca(ok, 'No se guardó', true); s.value = p.categoria_id || ''; return; }
+  p.categoria_id = nuevo; marca(ok, '✓ guardado'); refrescarFila(p);
+}
+
+async function publicar(ids, si = true) {
+  const { data, error } = await db.rpc('productos_publicar', { p_ids: ids, p_publicar: si });
+  if (error && /could not find|schema cache/i.test(error.message || '')) {
+    // Base sin sql/023: mismo criterio, hecho desde acá (solo los completos)
+    const elegidos = prods.filter(p => ids.includes(p.id));
+    const van = si ? elegidos.filter(p => completo(p) && p.estado === 'inactivo') : elegidos.filter(p => p.estado === 'activo');
+    for (let k = 0; k < van.length; k += 100) {
+      const r = await db.from('productos').update({ estado: si ? 'activo' : 'inactivo' }).in('id', van.slice(k, k + 100).map(p => p.id));
+      if (r.error) { Utils.toast(r.error.message, 'error', 7000); return null; }
+    }
+    const faltan = si ? elegidos.filter(p => !completo(p)).map(p => ({ id: p.id, nombre: p.nombre,
+      falta: [!tienePrecio(p) && 'precio', !tieneFoto(p) && 'foto', !p.categoria_id && 'categoría'].filter(Boolean) })) : [];
+    return si ? { publicados: van.length, faltan } : { ocultados: van.length };
+  }
+  if (error) { Utils.toast(error.hint || error.message, 'error', 7000); return null; }
+  return data;
+}
+
+/* ── Eventos ── */
+$id('lista').addEventListener('keydown', async e => {
+  if (e.key !== 'Enter' || !e.target.dataset.precio) return;
+  e.preventDefault();
+  if (!await guardarPrecio(e.target)) return;
+  const todos = [...document.querySelectorAll('[data-precio]')];
+  const sig = todos[todos.indexOf(e.target) + 1];
+  if (sig) { sig.focus(); sig.select(); sig.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+});
+$id('lista').addEventListener('focusout', e => { if (e.target.dataset.precio) guardarPrecio(e.target); });
+$id('lista').addEventListener('change', e => {
+  if (e.target.dataset.cat) guardarCat(e.target);
+  if (e.target.dataset.sel) { const id = Number(e.target.dataset.sel); e.target.checked ? sel.add(id) : sel.delete(id); renderBulk(); }
+});
+$id('lista').addEventListener('click', async e => {
+  const b = e.target.closest('[data-publicar], [data-ocultar]'); if (!b) return;
+  const id = Number(b.dataset.publicar || b.dataset.ocultar), si = !!b.dataset.publicar;
+  b.disabled = true;
+  const r = await publicar([id], si);
+  if (!r) { b.disabled = false; return; }
+  const p = prods.find(x => x.id === id);
+  if (si && r.publicados) { p.estado = 'activo'; Utils.toast('Publicado en la tienda', 'success', 1800); }
+  else if (si) Utils.toast('Le falta: ' + (r.faltan[0]?.falta || []).join(', '), 'warning');
+  else { p.estado = 'inactivo'; Utils.toast('Oculto de la tienda', 'success', 1800); }
+  refrescarFila(p);
+});
+
+$id('chips').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (!b) return; filtro = b.dataset.f; mostrados = TAM; render(); });
+let tq; $id('q').addEventListener('input', () => { clearTimeout(tq); tq = setTimeout(() => { mostrados = TAM; renderLista(); }, 200); });
+$id('f-cat').addEventListener('change', () => { mostrados = TAM; renderLista(); });
+$id('btn-mas').addEventListener('click', () => { mostrados += TAM; renderLista(); });
+$id('ocultar-ayuda').addEventListener('click', () => { $id('ayuda').hidden = true; try { localStorage.setItem(LS_AYUDA, '1'); } catch (e) {} });
+
+$id('btn-pub-listos').addEventListener('click', async () => {
+  const ids = prods.filter(FILTROS.listos[1]).map(p => p.id);
+  if (!await Utils.confirm(`Se publican en la tienda <b>${ids.length}</b> productos que ya tienen foto, precio y categoría.`, 'Publicar los listos', 'Publicar', false)) return;
+  const r = await publicar(ids, true); if (!r) return;
+  prods.forEach(p => { if (ids.includes(p.id) && completo(p)) p.estado = 'activo'; });
+  Utils.toast(`${r.publicados} productos publicados`, 'success');
+  render();
+});
+
+/* ── Acciones en masa ── */
+function renderBulk() {
+  $id('bulk').hidden = !sel.size;
+  $id('bulk-n').textContent = `${sel.size} elegido${sel.size !== 1 ? 's' : ''}`;
+}
+$id('bulk').addEventListener('click', async e => {
+  const b = e.target.closest('[data-bulk]'); if (!b) return;
+  const ids = [...sel];
+  if (b.dataset.bulk === 'limpiar') { sel.clear(); renderLista(); return; }
+  if (b.dataset.bulk === 'publicar' || b.dataset.bulk === 'ocultar') {
+    const si = b.dataset.bulk === 'publicar';
+    const r = await publicar(ids, si); if (!r) return;
+    if (si) {
+      const faltan = new Set((r.faltan || []).map(f => f.id));
+      prods.forEach(p => { if (ids.includes(p.id) && !faltan.has(p.id)) p.estado = 'activo'; });
+      Utils.toast(`${r.publicados} publicados${faltan.size ? ` · ${faltan.size} no, porque les falta foto, precio o categoría` : ''}`, faltan.size ? 'warning' : 'success', 6000);
+    } else {
+      prods.forEach(p => { if (ids.includes(p.id)) p.estado = 'inactivo'; });
+      Utils.toast(`${r.ocultados} ocultados`, 'success');
+    }
+    sel.clear(); render(); return;
+  }
+  if (b.dataset.bulk === 'categoria') return modalCategoria(ids);
+  if (b.dataset.bulk === 'precio') return modalPrecio(ids);
+});
+
+function modalBase(titulo, cuerpo, boton, alConfirmar) {
+  const bd = document.createElement('div'); bd.className = 'modal-backdrop';
+  bd.innerHTML = `<div class="modal" style="max-width:440px"><div class="modal-header"><h3 class="modal-title">${titulo}</h3><button class="modal-close" data-x aria-label="Cerrar">×</button></div>
+    <form class="modal-body form-grid" style="gap:14px" novalidate>${cuerpo}
+      <div class="modal-footer" style="padding:0;border:0"><button type="button" class="btn btn-outline" data-x>Cancelar</button><button type="submit" class="btn btn-primary">${boton}</button></div></form></div>`;
+  document.body.appendChild(bd);
+  bd.querySelectorAll('[data-x]').forEach(x => x.onclick = () => bd.remove());
+  bd.querySelector('input, select')?.focus();
+  bd.querySelector('form').onsubmit = async ev => { ev.preventDefault(); const btn = ev.submitter; btn.disabled = true; if (await alConfirmar(bd) !== false) bd.remove(); else btn.disabled = false; };
+}
+function modalCategoria(ids) {
+  modalBase(`Categoría para ${ids.length} productos`, `<div class="form-group"><label>Categoría</label><select id="m-cat">${cats.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('')}</select></div>`, 'Cambiar', async bd => {
+    const cat = Number(bd.querySelector('#m-cat').value);
+    const { error } = await db.from('productos').update({ categoria_id: cat }).in('id', ids);
+    if (error) { Utils.toast(error.message, 'error'); return false; }
+    prods.forEach(p => { if (ids.includes(p.id)) p.categoria_id = cat; });
+    Utils.toast('Categoría cambiada', 'success'); sel.clear(); render();
+  });
+}
+function modalPrecio(ids) {
+  modalBase(`Precio para ${ids.length} productos`, `
+    <div class="form-group"><label>Qué hacer</label><select id="m-modo">
+      <option value="fijar">Poner este precio a todos</option>
+      <option value="porcentaje">Subir o bajar un % (solo a los que ya tienen precio)</option>
+      <option value="sumar">Sumar o restar un monto (solo a los que ya tienen precio)</option></select></div>
+    <div class="form-group"><label id="m-lbl">Precio</label><input id="m-valor" type="text" inputmode="decimal" placeholder="Ej: 25.000" autocomplete="off"></div>
+    <div class="form-group"><label>Redondear</label><select id="m-red"><option value="0">No</option><option value="100" selected>A $100</option><option value="500">A $500</option><option value="1000">A $1.000</option></select></div>`,
+  'Aplicar', async bd => {
+    const modo = bd.querySelector('#m-modo').value, valor = num(bd.querySelector('#m-valor').value);
+    if (valor == null || Number.isNaN(valor)) { Utils.toast('Poné un número', 'warning'); return false; }
+    const { data, error } = await db.rpc('productos_precio_masivo', { p: { ids, modo, valor, redondeo: Number(bd.querySelector('#m-red').value) } });
+    if (error) { Utils.toast(/could not find/i.test(error.message) ? 'Falta ejecutar sql/023 en la base de datos.' : (error.hint || error.message), 'error'); return false; }
+    Utils.toast(`${data.cambiados} precios cambiados${data.salteados ? ` · ${data.salteados} salteados (sin precio previo)` : ''}${data.ofertas_apagadas ? ` · ${data.ofertas_apagadas} ofertas apagadas` : ''}`, 'success', 6000);
+    sel.clear(); await cargar();
+  });
+  const bd = document.querySelector('.modal-backdrop:last-child');
+  bd.querySelector('#m-modo').onchange = e => { bd.querySelector('#m-lbl').textContent = { fijar: 'Precio', porcentaje: 'Porcentaje (ej: 10 o -5)', sumar: 'Monto (ej: 2000 o -500)' }[e.target.value]; };
+}
+
+async function initPage() {
+  perfil = await Auth.init();
+  if (!perfil) return;
+  if (!Auth.requirePermiso('productos.editar', perfil)) return;
+  await Layout.init('completar', 'Completar productos');
+  try { if (localStorage.getItem(LS_AYUDA)) $id('ayuda').hidden = true; } catch (e) {}
+  const f = new URLSearchParams(location.search).get('filtro'); if (f && FILTROS[f]) filtro = f;
+  await cargar();
+}
+initPage();
+</script>
+<script src="/admin/js/assistant.js"></script>
+<script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/admin/sw.js').catch(()=>{}); }</script>
+</body>
+</html>

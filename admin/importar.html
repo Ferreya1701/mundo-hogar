@@ -382,7 +382,7 @@ $id('btn-importar').addEventListener('click', async () => {
 async function cargarBase() {
   const [c, p] = await Promise.all([
     db.from('categorias').select('id, nombre').order('orden').order('nombre'),
-    db.from('productos').select('id, nombre, sku, codigo_anterior, estado').neq('estado', 'archivado').limit(10000),
+    Utils.traerTodo(() => db.from('productos').select('id, nombre, sku, codigo_anterior, estado').neq('estado', 'archivado').order('id')),
   ]);
   if (p.error && /codigo_anterior/.test(p.error.message || '')) {
     $id('info-archivo').innerHTML = '<span style="color:var(--danger)">Falta ejecutar <code>sql/021-importar-articulos.sql</code> en la base de datos.</span>';

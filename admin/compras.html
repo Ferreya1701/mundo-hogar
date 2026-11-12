@@ -534,7 +534,7 @@ $id('btn-paso2').addEventListener('click', async () => {
   Utils.showLoading('Buscando coincidencias en el catálogo…');
   const [{ data: sug, error }, { data: prods }] = await Promise.all([
     db.rpc('compra_sugerir', { p_lineas: lineas.map((l, i) => ({ i, descripcion: l.nombre_es || l.descripcion, sku: l.sku, codigo_barras: l.barras })) }),
-    db.from('productos').select('id,nombre,sku,stock_actual,stock_controlado,estado').neq('estado','archivado').order('nombre')
+    Utils.traerTodo(() => db.from('productos').select('id,nombre,sku,stock_actual,stock_controlado,estado').neq('estado','archivado').order('nombre').order('id'))
   ]);
   Utils.hideLoading();
   if (error) { Utils.toast(msgError(error, 'buscar coincidencias'), 'error', 8000); return; }
