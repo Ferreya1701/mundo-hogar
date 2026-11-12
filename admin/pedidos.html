@@ -514,6 +514,7 @@ function zoom(url) {
 async function recargarPedido(id, plantilla) {
   const { data } = await db.from('solicitudes').select('*, solicitud_items(*), comprobantes(*)').eq('id', id).maybeSingle();
   if (data?.venta_id) await cargarVentas([data.venta_id]);
+  Layout.refrescarContadores?.();
   if (data) {
     const i = solicitudes.findIndex(x => x.id === id);
     if (i >= 0) solicitudes[i] = data;
@@ -539,6 +540,7 @@ async function cambiarEstado(id, estado, sel) {
   if (s) s.estado = estado;
   sel.className = 'estado-select est-' + estado;
   const movs = data && data.movimientos;
+  Layout.refrescarContadores?.();
   Utils.toast(movs ? `Estado actualizado · ${movs} movimiento(s) de stock registrados` : 'Estado actualizado', 'success');
 }
 
@@ -672,6 +674,7 @@ async function pasarAlMostrador(s) {
       return;
     }
     bd.remove();
+    Layout.refrescarContadores?.();
     Utils.toast(data.pagada_online ? `Venta ${data.codigo}: pagada online, ya está en Entregas` : `Venta ${data.codigo}: se cobra en la caja cuando venga`, 'success', 6000);
     ventasDe[data.id] = { id: data.id, codigo: data.codigo, estado: data.estado, medio_pago: data.medio_pago, total: data.total, entrega_tipo: tipo, entrega_estado: 'pendiente' };
     await recargarPedido(s.id);

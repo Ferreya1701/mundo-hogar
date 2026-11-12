@@ -192,6 +192,7 @@ function pintarPendientes() {
 }
 function pintarPendientes0() {
   const el = $id('para-cobrar');
+  Layout.fijarContador?.('caja', pendientes.filter(v => !v.devuelta_motivo && v.origen !== 'web').length);
   const fila = pendientes.filter(v => !v.devuelta_motivo && v.origen !== 'web'), devueltas = pendientes.filter(v => v.devuelta_motivo);
   const qw = Utils.norm(webQ);
   const webTodas = pendientes.filter(v => !v.devuelta_motivo && v.origen === 'web');

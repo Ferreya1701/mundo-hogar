@@ -318,3 +318,17 @@ En Ventas y Entregas las ventas que vienen de la web llevan 🌐 y un enlace al 
 Por dentro: `ventas.origen` / `ventas.solicitud_id` / `solicitudes.venta_id`, medio `web`,
 `pedido_a_venta(pedido, opciones)`, triggers que mantienen pedido y venta al día.
 Pruebas: `node scripts/test-pedidos-web-sql.mjs` (32).
+
+## 16. Menú nuevo con contadores (2026-11-12)
+
+El menú quedó ordenado por lo que hace cada uno en el local:
+**Mostrador** (Crear venta, Caja, Ventas) · **Entregas** (Retiros y envíos) · **Pedidos web** ·
+**Clientes** (Clientes, Cuentas corrientes) · **Catálogo** · **Stock** · **Administración**
+(Cuentas bancarias, Usuarios, Permisos, Configuración).
+
+Los números naranjas dicen lo que está esperando a alguien:
+- **Caja**: ventas del mostrador esperando cobro (los pedidos web que pagan al retirar no cuentan).
+- **Retiros y envíos**: lo que falta entregar o despachar.
+- **Pedidos web**: pedidos nuevos o con comprobante para revisar.
+Se actualizan solos cada minuto y al instante cuando se cobra, se entrega o se pasa un pedido.
+Con el menú achicado se ven como un puntito. Cada persona ve solo los de los módulos que tiene permitidos.

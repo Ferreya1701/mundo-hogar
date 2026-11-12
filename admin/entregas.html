@@ -146,6 +146,7 @@ const esEnvio  = v => v.entrega_tipo === 'envio'  && v.entrega_estado !== 'entre
 const esHecha  = v => v.entrega_estado === 'entregado';
 
 function render() {
+  Layout.fijarContador?.('entregas', ventas.filter(v => esRetiro(v) || esEnvio(v)).length);
   $id('n-retiros').textContent = ventas.filter(esRetiro).length;
   $id('n-envios').textContent = ventas.filter(esEnvio).length;
   $id('n-hechas').textContent = ventas.filter(esHecha).length;
