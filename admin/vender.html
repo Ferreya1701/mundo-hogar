@@ -410,7 +410,7 @@ document.getElementById('btn-libre').addEventListener('click', () => {
 });
 
 const MEDIOS = { efectivo:'Efectivo', transferencia:'Transferencia', debito:'Débito', credito:'Crédito', mercadopago:'Mercado Pago', cuenta_corriente:'Cuenta corriente', otro:'Otro' };
-const MEDIO_TXT = { ...MEDIOS, pendiente:'A cobrar en caja', mixto:'Pago mixto' };
+const MEDIO_TXT = { ...MEDIOS, pendiente:'A cobrar en caja', mixto:'Pago mixto', web:'Pagado online' };
 const puedeCC = () => Auth.puede('cc.vender', perfil);
 const esCC = () => medio === 'cuenta_corriente';
 

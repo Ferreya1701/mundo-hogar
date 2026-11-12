@@ -153,6 +153,8 @@ let cuentas = [];
 let settings = {};
 let perfil = null;
 let page = 1;
+let ventasDe = {};       // sql/028: venta_id → {codigo, estado, entrega_*}
+let transportes = null;
 let sinCobros = false;   // falta ejecutar sql/012
 const PER = 25;
 const ESTADOS = {
@@ -232,7 +234,7 @@ function renderTable() {
   document.getElementById('tabla-body').innerHTML = slice.map(s => {
     const c = cuentaDe(s.cuenta_cobro_id);
     return `<tr${paraRevisar(s) ? ' style="background:#FFFBF5"' : ''}>
-    <td style="font-family:monospace;font-size:12px;white-space:nowrap">${esc(s.codigo)}${s.canal==='mayorista'?' <span class="pend-tag">Mayorista</span>':''}</td>
+    <td style="font-family:monospace;font-size:12px;white-space:nowrap">${esc(s.codigo)}${s.canal==='mayorista'?' <span class="pend-tag">Mayorista</span>':''}${s.venta_id ? `<div style="font-size:11px;color:#2563EB" title="Pasó al mostrador">🏪 ${esc(ventasDe[s.venta_id]?.codigo || 'en venta')}</div>` : ''}</td>
     <td style="white-space:nowrap;color:var(--muted,#888);font-size:12px">${Utils.datetime(s.created_at)}</td>
     <td style="font-weight:500">${esc(s.cliente_nombre)}<div style="font-size:11.5px;color:#888">${esc(s.telefono)}${s.comercio?` · ${esc(s.comercio)}`:''}</div></td>
     <td style="white-space:nowrap;font-weight:600;text-align:right">${s.monto_a_pagar != null && s.estado_pago !== 'sin_pago' ? money2(s.monto_a_pagar) : money(s.total_estimado)}${s.tiene_pendientes?' <span class="pend-tag" title="Tiene productos sin precio o con stock a confirmar">a confirmar</span>':''}</td>
@@ -314,6 +316,7 @@ async function verDetalle(id) {
       <div style="text-align:right;font-weight:700;margin-top:6px">Total estimado: ${money(s.total_estimado)}</div>` : '<p style="color:#888;font-size:13px;margin:12px 0">Sin productos (consulta general).</p>'}
       ${s.observaciones ? `<div class="sol-obs"><b>Observaciones del cliente:</b><br>${esc(s.observaciones)}</div>` : ''}
 
+      <div id="mostrador-box">${htmlMostrador(s)}</div>
       <div class="pago-box" id="pago-box">${sinCobros ? '<p style="font-size:13px;color:#8A4B12">Falta ejecutar <code>sql/012-cobros.sql</code> en Supabase para gestionar cobros.</p>' : '<div class="spinner" style="margin:10px auto"></div>'}</div>
 
       <div style="background:var(--violet-bg,#F3F0FF);border-radius:10px;padding:14px;margin-top:16px">
@@ -352,6 +355,7 @@ async function verDetalle(id) {
   document.getElementById('modal-cerrar').onclick = () => slot.innerHTML = '';
   document.getElementById('modal-bg').addEventListener('click', e => { if (e.target.id === 'modal-bg') slot.innerHTML = ''; });
 
+  document.getElementById('btn-mostrador')?.addEventListener('click', () => pasarAlMostrador(s));
   if (!sinCobros) { renderPago(s); cargarEventos(s.id); }
 }
 
@@ -509,6 +513,7 @@ function zoom(url) {
 
 async function recargarPedido(id, plantilla) {
   const { data } = await db.from('solicitudes').select('*, solicitud_items(*), comprobantes(*)').eq('id', id).maybeSingle();
+  if (data?.venta_id) await cargarVentas([data.venta_id]);
   if (data) {
     const i = solicitudes.findIndex(x => x.id === id);
     if (i >= 0) solicitudes[i] = data;
@@ -578,6 +583,7 @@ async function cargar() {
     return;
   }
   solicitudes = (data || []).map(s => ({ ...s, estado_pago: s.estado_pago || 'sin_pago', comprobantes: s.comprobantes || [] }));
+  await cargarVentas(solicitudes.map(x => x.venta_id).filter(Boolean));
   const nuevas = solicitudes.filter(s => s.estado === 'nueva').length;
   const revisar = solicitudes.filter(paraRevisar).length;
   document.getElementById('subtitle').textContent = sinCobros
@@ -585,6 +591,92 @@ async function cargar() {
     : `${solicitudes.length} pedidos` + (nuevas ? ` · ${nuevas} sin atender` : '') + (revisar ? ` · ${revisar} comprobante(s) para revisar` : '');
   renderChips();
   renderTable();
+}
+
+/* ── sql/028: el pedido pasa al mostrador (se convierte en venta) ── */
+async function cargarVentas(ids) {
+  if (!ids.length) return;
+  const { data } = await db.from('ventas').select('id, codigo, estado, medio_pago, total, entrega_tipo, entrega_estado').in('id', ids);
+  (data || []).forEach(v => { ventasDe[v.id] = v; });
+}
+const VENTA_EST = v => v.estado === 'anulada' ? 'anulada'
+  : v.entrega_estado === 'entregado' ? (v.entrega_tipo === 'envio' ? 'despachada' : 'entregada')
+  : v.estado === 'pendiente_cobro' ? 'se cobra en la caja al retirar'
+  : v.medio_pago === 'web' ? 'pagada online, falta entregar' : 'pagada en la caja, falta entregar';
+const puedePasar = s => !s.venta_id && !['cancelado', 'entregado'].includes(s.estado) && (s.solicitud_items || []).length
+  && Auth.puede('pedidos.gestionar', perfil) && Auth.puede('ventas.crear', perfil);
+
+function htmlMostrador(s) {
+  if (s.venta_id) {
+    const v = ventasDe[s.venta_id];
+    return `<div class="sol-obs" style="background:#EEF6FF;border-color:#BFD8F6"><b>🏪 Ya está en el mostrador:</b> venta
+      <a href="/admin/ventas?ver=${s.venta_id}">${esc(v?.codigo || '#' + s.venta_id)}</a>${v ? ` · ${esc(VENTA_EST(v))}` : ''}
+      · <a href="/admin/entregas?tab=${v?.entrega_estado === 'entregado' ? 'hechas' : v?.entrega_tipo === 'envio' ? 'envios' : 'retiros'}">ver en Entregas</a>
+      <div style="font-size:12px;color:#5A6B85;margin-top:4px">Se cobra en Caja y se entrega desde Entregas. Para cancelarlo, anulá la venta.</div></div>`;
+  }
+  if (!puedePasar(s)) return '';
+  const pagado = s.estado_pago === 'pagado';
+  return `<div class="sol-obs" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#FFF8EE;border-color:#F6D7B0">
+    <div style="flex:1;min-width:220px"><b>🏪 Pasar al mostrador</b><br><span style="font-size:12.5px">Lo convierte en una venta: ${pagado
+      ? 'como ya pagó online, queda <b>pagada</b> y va directo a Entregas.'
+      : 'el cliente <b>paga en la caja</b> cuando viene a retirar (o la mercadería sale cuando se cobre).'}</span></div>
+    <button class="btn btn-primary btn-sm" id="btn-mostrador">Pasar al mostrador</button></div>`;
+}
+
+async function pasarAlMostrador(s) {
+  if (!transportes) { const r = await db.from('transportes').select('id, nombre, activo').order('orden').order('nombre'); transportes = r.data || []; }
+  const items = s.solicitud_items || [];
+  const hoy = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const env = s.tipo_entrega === 'envio';
+  const bd = document.createElement('div'); bd.className = 'modal-backdrop'; bd.style.zIndex = 1200;
+  bd.innerHTML = `<div class="modal" style="max-width:560px"><div class="modal-header"><h3 class="modal-title">Pasar ${esc(s.codigo)} al mostrador</h3><button class="modal-close" data-x aria-label="Cerrar">×</button></div>
+    <form class="modal-body form-grid" style="gap:12px" novalidate>
+      <table class="sol-items"><thead><tr><th>Producto</th><th style="text-align:center">Cant.</th><th style="text-align:right;width:130px">Precio c/u</th></tr></thead><tbody>
+      ${items.map(i => `<tr><td>${esc(i.nombre)}</td><td style="text-align:center">${i.cantidad}</td>
+        <td><input type="number" min="0" step="1" data-precio="${i.id}" data-cant="${i.cantidad}" value="${i.precio_unitario ?? ''}" placeholder="Precio" style="width:100%;text-align:right"></td></tr>`).join('')}
+      </tbody></table>
+      <div style="text-align:right;font-weight:700" id="pm-total"></div>
+      ${s.estado_pago === 'pagado' ? `<div class="form-hint">Pagó online ${money2(s.monto_pagado)}: la venta no puede sumar más que eso.</div>` : ''}
+      <div class="form-group"><label>Entrega</label><select id="pm-tipo"><option value="retiro"${env ? '' : ' selected'}>🏬 Retira en el local</option><option value="envio"${env ? ' selected' : ''}>🚚 Envío</option></select></div>
+      <div class="form-group"><label id="pm-flbl">Fecha</label><input type="date" id="pm-fecha" value="${hoy}" min="${hoy}"></div>
+      <div id="pm-env" class="form-grid" style="gap:10px">
+        <div class="form-group"><label>Transporte</label><select id="pm-tr"><option value="">A definir</option>${transportes.filter(t => t.activo).map(t => `<option value="${t.id}">${esc(t.nombre)}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Dirección *</label><input type="text" id="pm-dir" maxlength="200" value="${esc(s.direccion || '')}"></div>
+        <div class="form-group"><label>Localidad *</label><input type="text" id="pm-loc" maxlength="120" value="${esc(s.localidad || '')}"></div>
+        <div class="form-group"><label>Bultos</label><input type="number" id="pm-bul" min="1" max="99"></div>
+      </div>
+      <div class="form-group"><label>Nota</label><input type="text" id="pm-nota" maxlength="300" placeholder="Ej. pasa el sábado a la mañana"></div>
+      <div class="modal-footer" style="padding:0;border:0"><button type="button" class="btn btn-outline" data-x>Cancelar</button><button type="submit" class="btn btn-primary">Pasar al mostrador</button></div>
+    </form></div>`;
+  document.body.appendChild(bd);
+  const $ = q => bd.querySelector(q);
+  const total = () => [...bd.querySelectorAll('[data-precio]')].reduce((a, i) => a + (Number(i.value) || 0) * Number(i.dataset.cant), 0);
+  const sync = () => { $('#pm-env').hidden = $('#pm-tipo').value !== 'envio'; $('#pm-flbl').textContent = $('#pm-tipo').value === 'envio' ? 'Despachar el' : 'Retira el'; $('#pm-total').textContent = 'Total: ' + money(total()); };
+  bd.addEventListener('input', sync); $('#pm-tipo').onchange = sync; sync();
+  bd.querySelectorAll('[data-x]').forEach(x => x.onclick = () => bd.remove());
+  $('form').onsubmit = async e => {
+    e.preventDefault();
+    const precios = [...bd.querySelectorAll('[data-precio]')];
+    if (precios.some(i => i.value === '')) { Utils.toast('Completá el precio de todos los productos', 'warning'); return; }
+    const tipo = $('#pm-tipo').value;
+    if (tipo === 'envio' && (!$('#pm-dir').value.trim() || !$('#pm-loc').value.trim())) { Utils.toast('Para un envío hacen falta dirección y localidad', 'warning'); return; }
+    const b = e.submitter; b.disabled = true;
+    const { data, error } = await db.rpc('pedido_a_venta', { p_solicitud_id: s.id, p_o: {
+      items: precios.map(i => ({ id: Number(i.dataset.precio), precio: i.value })),
+      entrega: { tipo, fecha: $('#pm-fecha').value, notas: $('#pm-nota').value, transporte_id: tipo === 'envio' ? $('#pm-tr').value : '',
+        direccion: $('#pm-dir').value, localidad: $('#pm-loc').value, bultos: $('#pm-bul').value, destinatario: s.cliente_nombre, telefono: s.telefono } } });
+    b.disabled = false;
+    if (error) {
+      const m = (error.message || '');
+      Utils.toast(/could not find|schema cache|pedido_a_venta/i.test(m) && !error.hint ? 'Falta ejecutar sql/028-pedidos-web-en-circuito.sql en la base de datos.' : errorAmigable(error), 'error', 9000);
+      return;
+    }
+    bd.remove();
+    Utils.toast(data.pagada_online ? `Venta ${data.codigo}: pagada online, ya está en Entregas` : `Venta ${data.codigo}: se cobra en la caja cuando venga`, 'success', 6000);
+    ventasDe[data.id] = { id: data.id, codigo: data.codigo, estado: data.estado, medio_pago: data.medio_pago, total: data.total, entrega_tipo: tipo, entrega_estado: 'pendiente' };
+    await recargarPedido(s.id);
+    if (document.getElementById('modal-bg')) verDetalle(s.id);
+  };
 }
 
 async function cargarCuentasYSettings() {

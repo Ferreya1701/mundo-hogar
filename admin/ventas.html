@@ -85,7 +85,7 @@
 <script src="/admin/js/layout.js"></script>
 <script src="/admin/js/impresion.js"></script>
 <script>
-const MEDIOS = { efectivo:'Efectivo', transferencia:'Transferencia', debito:'Débito', credito:'Crédito', mercadopago:'Mercado Pago', cuenta_corriente:'Cuenta corriente', otro:'Otro', mixto:'Pago mixto', pendiente:'A cobrar en caja' };
+const MEDIOS = { efectivo:'Efectivo', transferencia:'Transferencia', debito:'Débito', credito:'Crédito', mercadopago:'Mercado Pago', cuenta_corriente:'Cuenta corriente', web:'Pagado online', otro:'Otro', mixto:'Pago mixto', pendiente:'A cobrar en caja' };
 const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const money = n => Utils.currency(n);
 let ventas = [], perfil = null, rango = 'hoy';
@@ -208,6 +208,7 @@ function abrir(id) {
         <div><b>Fecha</b>${Utils.datetime(v.fecha)}</div>
         <div><b>Vendedor</b>${esc(v.vendedor_nombre||'—')}</div>
         <div><b>Cliente</b>${esc(v.cliente_nombre||'Consumidor final')}${v.cliente_telefono ? ' · ' + esc(v.cliente_telefono) : ''}</div>
+        ${v.origen === 'web' ? `<div><b>Origen</b>🌐 Pedido web${v.solicitud_id && Auth.puede('pedidos.gestionar', perfil) ? ` · <a href="/admin/pedidos?ver=${v.solicitud_id}">ver pedido</a>` : ''}</div>` : ''}
         <div><b>Medio de pago</b><span class="vta-medio vta-medio-${esc(v.medio_pago)}">${esc(MEDIOS[v.medio_pago]||v.medio_pago)}</span>${v.cc_cuenta_id && Auth.puede('cc.ver', perfil) ? ` <a href="/admin/cuentas-corrientes?cuenta=${v.cc_cuenta_id}" style="font-size:12px">ver cuenta →</a>` : ''}</div>
         ${v.retira_nombre ? `<div><b>Retiró</b>${esc(v.retira_nombre)}</div>` : ''}
         ${v.entrega_tipo && v.entrega_tipo !== 'en_el_momento' ? `<div style="grid-column:1/-1"><b>Entrega</b>${v.entrega_tipo === 'retiro' ? '🏬 Retira en el local' : `🚚 Envío a ${esc(v.envio_direccion || '')}, ${esc(v.envio_localidad || '')}`}
@@ -240,6 +241,7 @@ function abrir(id) {
   bd.querySelector('#_anular')?.addEventListener('click', async () => {
     const motivo = prompt(v.medio_pago === 'cuenta_corriente'
       ? '¿Por qué se anula la venta? (vuelve el stock de los productos controlados y se descuenta de la cuenta corriente del cliente)'
+      : v.medio_pago === 'web' ? '¿Por qué se anula la venta? (vuelve el stock; el pedido web queda sin venta. Lo pagado online se devuelve por fuera de la caja)'
       : '¿Por qué se anula la venta? (vuelve el stock de los productos controlados y sale la devolución de la caja)');
     if (motivo === null) return;
     if (!motivo.trim()) { Utils.toast('Escribí el motivo', 'warning'); return; }
@@ -268,6 +270,7 @@ function modalQuitar(v) {
   const bd = document.createElement('div'); bd.className = 'modal-backdrop';
   const destino = v.medio_pago === 'cuenta_corriente'
     ? 'se descuenta de la cuenta corriente del cliente'
+    : v.medio_pago === 'web' ? 'lo pagado online se devuelve por fuera de la caja (transferencia al cliente)'
     : `sale de la caja como devolución (${esc(MEDIOS[v.medio_pago] || v.medio_pago)})`;
   bd.innerHTML = `<div class="modal modal-lg"><div class="modal-header"><h3 class="modal-title">Quitar productos · ${esc(v.codigo)}</h3><button class="modal-close" data-x aria-label="Cerrar">×</button></div>
     <div class="modal-body">

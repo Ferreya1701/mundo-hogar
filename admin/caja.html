@@ -159,18 +159,22 @@ const vacio = (icono, texto, extra = '') => `<div class="empty-state"><div class
 
 /* ── Para cobrar (sql/026) ─────────────────────────────
    Las ventas que mandaron las vendedoras. Se refresca sola cada 7 s. */
+let webQ = '', webAbierto = false;
+document.addEventListener('input', e => { if (e.target.id === 'web-q') { webQ = e.target.value; pintarPendientes(); } });
+document.addEventListener('toggle', e => { if (e.target.classList?.contains('pc-web')) webAbierto = e.target.open; }, true);
 async function cargarPendientes() {
   clearTimeout(pcTimer);
   if (!puede('caja.cobrar')) return;
   if (!document.hidden && !document.querySelector('.modal-backdrop')) {
-    const { data, error } = await db.from('ventas')
-      .select('id, codigo, fecha, total, subtotal, descuento, cliente_nombre, cliente_telefono, retira_nombre, vendedor_nombre, notas, estado, medio_pago, devuelta_motivo, venta_items(id, nombre, cantidad, precio_unitario, subtotal, orden)')
-      .eq('estado', 'pendiente_cobro').order('fecha');
+    const base = 'id, codigo, fecha, total, subtotal, descuento, cliente_nombre, cliente_telefono, retira_nombre, vendedor_nombre, notas, estado, medio_pago, devuelta_motivo, venta_items(id, nombre, cantidad, precio_unitario, subtotal, orden)';
+    const pedir = cols => db.from('ventas').select(cols).eq('estado', 'pendiente_cobro').order('fecha');
+    let { data, error } = await pedir(base + ', origen, entrega_tipo, entrega_fecha, solicitud_id');
+    if (error && /column|does not exist|schema cache/i.test(error.message || '')) ({ data, error } = await pedir(base));   // base sin sql/028
     if (error && /column|does not exist|schema cache/i.test(error.message || '')) return;   // base sin sql/026: no hay fila de cobro
     if (!error) {
       const antes = new Set(pendientes.map(v => v.id));
       pendientes = data || [];
-      if (antes.size && pendientes.some(v => !antes.has(v.id) && !v.devuelta_motivo)) avisarNueva();
+      if (antes.size && pendientes.some(v => !antes.has(v.id) && !v.devuelta_motivo && v.origen !== 'web')) avisarNueva();
       pintarPendientes();
     }
   }
@@ -182,15 +186,23 @@ function avisarNueva() {
 }
 const minutos = f => Math.max(0, Math.round((Date.now() - new Date(f).getTime()) / 60000));
 function pintarPendientes() {
+  const foco = document.activeElement?.id === 'web-q' ? document.activeElement.selectionStart : null;
+  pintarPendientes0();
+  if (foco != null) { const n = $id('web-q'); if (n) { n.focus(); n.setSelectionRange(foco, foco); } }
+}
+function pintarPendientes0() {
   const el = $id('para-cobrar');
-  const fila = pendientes.filter(v => !v.devuelta_motivo), devueltas = pendientes.filter(v => v.devuelta_motivo);
+  const fila = pendientes.filter(v => !v.devuelta_motivo && v.origen !== 'web'), devueltas = pendientes.filter(v => v.devuelta_motivo);
+  const qw = Utils.norm(webQ);
+  const webTodas = pendientes.filter(v => !v.devuelta_motivo && v.origen === 'web');
+  const web = webTodas.filter(v => !qw || Utils.norm(`${v.codigo} ${v.cliente_nombre || ''} ${v.cliente_telefono || ''} ${v.retira_nombre || ''} ${v.notas || ''}`).includes(qw));
   if (!pendientes.length) { el.innerHTML = ''; return; }
   const abierta = !!resumen?.abierta;
   const card = v => {
     const m = minutos(v.fecha), its = (v.venta_items || []).filter(i => i.cantidad > 0).sort((a, b) => a.orden - b.orden);
     return `<div class="pc-card${v.devuelta_motivo ? ' devuelta' : ''}">
       <div class="pc-cab"><span class="pc-total">${money(v.total)}</span><span class="pc-cod">${esc(v.codigo)}</span></div>
-      <div class="pc-meta"><b>${esc(v.cliente_nombre || 'Consumidor final')}</b>${v.retira_nombre ? ' · retira ' + esc(v.retira_nombre) : ''}</div>
+      <div class="pc-meta">${v.origen === 'web' ? '🌐 ' : ''}<b>${esc(v.cliente_nombre || 'Consumidor final')}</b>${v.retira_nombre ? ' · retira ' + esc(v.retira_nombre) : ''}${v.origen === 'web' ? ` · ${v.entrega_tipo === 'envio' ? 'envío' : 'retira'} ${esc((v.entrega_fecha || '').split('-').reverse().join('/'))}` : ''}</div>
       <div class="pc-items">${its.map(i => `${i.cantidad}× ${esc(i.nombre)}`).join('<br>')}</div>
       <div class="pc-meta">Vendió ${esc(v.vendedor_nombre || '—')} · <span class="${m >= 30 ? 'pc-vieja' : ''}">hace ${m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min'}</span>${v.notas ? ' · ' + esc(v.notas) : ''}</div>
       ${v.devuelta_motivo ? `<div class="pc-meta">↩ Devuelta a la vendedora: ${esc(v.devuelta_motivo)}</div>` : `<div class="pc-acc">
@@ -201,6 +213,9 @@ function pintarPendientes() {
   };
   el.innerHTML = (fila.length ? `<div class="pc-tit">Para cobrar <span class="pc-n">${fila.length}</span>${abierta ? '' : '<span style="font-size:13px;font-weight:500;color:var(--danger)">Abrí la caja para poder cobrarlas</span>'}</div>
       <div class="pc-grid">${fila.map(card).join('')}</div>` : '') +
+    (webTodas.length ? `<details class="pc-web" ${webAbierto ? 'open' : ''}><summary class="pc-tit" style="font-size:14px;cursor:pointer">🌐 Pedidos web: pagan al retirar <span class="pc-n">${webTodas.length}</span></summary>
+      <div style="margin:6px 0 10px"><input type="search" id="web-q" placeholder="Buscar por nombre, teléfono o código del pedido…" value="${esc(webQ)}" style="max-width:380px;width:100%"></div>
+      <div class="pc-grid">${web.map(card).join('') || '<div class="pc-meta">Nada coincide.</div>'}</div></details>` : '') +
     (devueltas.length ? `<div class="pc-tit" style="font-size:13px;color:var(--muted)">Devueltas a la vendedora (${devueltas.length})</div><div class="pc-grid">${devueltas.map(card).join('')}</div>` : '');
 }
 

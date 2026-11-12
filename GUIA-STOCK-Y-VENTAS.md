@@ -294,3 +294,27 @@ La **cuenta corriente** sí sale sin pasar por caja.
 Por dentro: columnas `entrega_*`/`envio_*`/`recibio_*` en `ventas`, tabla `transportes`,
 `venta_entrega_guardar`, `venta_entrega_lista`, `venta_entregar(ids[], datos)`, `venta_entrega_deshacer`.
 Pruebas: `node scripts/test-entregas-sql.mjs` (32) y `scripts/test-ticket.mjs` (comprobantes).
+
+## 15. Pedidos web en el mismo circuito (sql/028, 2026-11-12)
+
+En **Pedidos web**, al abrir un pedido aparece **🏪 Pasar al mostrador**: lo convierte en una venta común
+(se revisan los precios —los "a cotizar" hay que completarlos—, se elige retiro o envío, fecha y transporte).
+Desde ahí sigue el mismo camino que una venta del local:
+
+- **Ya pagó online** (transferencia confirmada en Pedidos): la venta queda **pagada** con el medio
+  "Pagado online" y va directo a Entregas. **No entra a la caja** ni se vuelve a sumar en la cuenta bancaria
+  (esa plata ya está registrada en Pedidos). Si pagó menos de lo que suma la venta, no deja pasarlo.
+- **No pagó**: la venta espera cobro. En **Caja** aparece aparte, en "🌐 Pedidos web: pagan al retirar"
+  (con buscador por nombre, teléfono o código; no hace sonar el aviso). Cuando el cliente viene, la cajera
+  lo busca, cobra (efectivo, tarjeta, mixto…) y se entrega desde Entregas.
+- Si el cliente **paga online después**, la venta se marca pagada sola. Si se **anula ese pago** en Pedidos,
+  vuelve a esperar cobro (si la mercadería ya salió, no deja anular el pago).
+- **Entregada** la venta → el pedido pasa a "Entregado". **Anulada** la venta → el pedido queda sin venta
+  (se puede volver a pasar o cancelar). Un pedido que ya es venta no se cancela ni se entrega desde Pedidos.
+- **Stock**: lo descuenta la venta. Si el pedido ya lo había descontado al confirmarse, primero se repone
+  (no se descuenta dos veces). Lo que ya pasó a venta deja de figurar como "comprometido" en la tienda.
+
+En Ventas y Entregas las ventas que vienen de la web llevan 🌐 y un enlace al pedido.
+Por dentro: `ventas.origen` / `ventas.solicitud_id` / `solicitudes.venta_id`, medio `web`,
+`pedido_a_venta(pedido, opciones)`, triggers que mantienen pedido y venta al día.
+Pruebas: `node scripts/test-pedidos-web-sql.mjs` (32).

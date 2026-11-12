@@ -104,7 +104,8 @@ const sel = new Set();
 const puede = k => Auth.puede(k, perfil);
 
 const pago = v => v.estado === 'pendiente_cobro' ? 'no' : v.medio_pago === 'cuenta_corriente' ? 'cc' : 'ok';
-const PAGO_TXT = { ok: '<span class="estado-pago ep-ok">Pagada</span>', cc: '<span class="estado-pago ep-cc">Cuenta corriente</span>', no: '<span class="estado-pago ep-no">Sin pagar · espera cobro en caja</span>' };
+const pagoTxt = v => v.medio_pago === 'web' && v.estado === 'cerrada' ? PAGO_TXT.web : PAGO_TXT[pago(v)];
+const PAGO_TXT = { ok: '<span class="estado-pago ep-ok">Pagada</span>', web: '<span class="estado-pago ep-ok">Pagada online</span>', cc: '<span class="estado-pago ep-cc">Cuenta corriente</span>', no: '<span class="estado-pago ep-no">Sin pagar · espera cobro en caja</span>' };
 
 function msgError(e, accion) {
   const m = (e?.message || '').toLowerCase();
@@ -115,15 +116,16 @@ function msgError(e, accion) {
 }
 
 /* ── Datos ── */
+const COLS_V = 'id, codigo, fecha, total, estado, medio_pago, cliente_nombre, cliente_telefono, retira_nombre, vendedor_nombre, entrega_tipo, entrega_estado, entrega_fecha, transporte_id, envio_destinatario, envio_telefono, envio_direccion, envio_localidad, envio_notas, envio_bultos, envio_seguimiento, lista_en, lista_por_nombre, entregada_en, entregada_por_nombre, recibio_nombre, recibio_dni, venta_items(nombre, cantidad, orden, producto_id, productos(ubicacion_id))';
+const pedirVentas = (conOrigen, desde = new Date(Date.now() - 7 * 864e5).toISOString()) => db.from('ventas')
+  .select(COLS_V + (conOrigen ? ', origen' : ''))
+  .neq('entrega_tipo', 'en_el_momento').neq('estado', 'anulada')
+  .or(`entrega_estado.neq.entregado,entregada_en.gte.${desde}`)
+  .order('entrega_fecha').order('fecha');
 async function cargar() {
   clearTimeout(timer);
-  const desde = new Date(Date.now() - 7 * 864e5).toISOString();
   const [r, t] = await Promise.all([
-    db.from('ventas')
-      .select('id, codigo, fecha, total, estado, medio_pago, cliente_nombre, cliente_telefono, retira_nombre, vendedor_nombre, entrega_tipo, entrega_estado, entrega_fecha, transporte_id, envio_destinatario, envio_telefono, envio_direccion, envio_localidad, envio_notas, envio_bultos, envio_seguimiento, lista_en, lista_por_nombre, entregada_en, entregada_por_nombre, recibio_nombre, recibio_dni, venta_items(nombre, cantidad, orden, producto_id, productos(ubicacion_id))')
-      .neq('entrega_tipo', 'en_el_momento').neq('estado', 'anulada')
-      .or(`entrega_estado.neq.entregado,entregada_en.gte.${desde}`)
-      .order('entrega_fecha').order('fecha'),
+    pedirVentas(true).then(r => r.error && /origen/.test(r.error.message || '') ? pedirVentas(false) : r),
     db.from('transportes').select('id, nombre, notas, activo, orden').order('orden').order('nombre'),
     MHUbic.cargar(),
   ]);
@@ -163,8 +165,8 @@ function cardRetiro(v) {
   const p = pago(v), at = v.entrega_fecha && v.entrega_fecha < hoyISO();
   const g = puede('entregas.gestionar');
   return `<div class="card-e ${p === 'ok' ? 'pagada' : p === 'cc' ? 'cc' : 'sinpagar'}${v.entrega_estado === 'listo' ? ' lista' : ''}${at ? ' atrasada' : ''}">
-    <div class="cab"><span class="nom">${esc(v.retira_nombre || v.cliente_nombre || 'Consumidor final')}</span><span class="cod">${esc(v.codigo)}</span></div>
-    <div class="meta">${PAGO_TXT[p]} · ${money(v.total)} · pasa <span class="fecha">${esc(diaTxt(v.entrega_fecha))}</span>${v.cliente_telefono ? ' · ' + esc(v.cliente_telefono) : ''}</div>
+    <div class="cab"><span class="nom">${v.origen === 'web' ? '<span title="Pedido web">🌐</span> ' : ''}${esc(v.retira_nombre || v.cliente_nombre || 'Consumidor final')}</span><span class="cod">${esc(v.codigo)}</span></div>
+    <div class="meta">${pagoTxt(v)} · ${money(v.total)} · pasa <span class="fecha">${esc(diaTxt(v.entrega_fecha))}</span>${v.cliente_telefono ? ' · ' + esc(v.cliente_telefono) : ''}</div>
     ${v.retira_nombre && v.cliente_nombre && v.retira_nombre !== v.cliente_nombre ? `<div class="meta">Cliente: ${esc(v.cliente_nombre)}</div>` : ''}
     ${items(v)}
     ${v.envio_notas ? `<div class="meta">📝 ${esc(v.envio_notas)}</div>` : ''}
@@ -189,9 +191,9 @@ function renderRetiros() {
 function cardEnvio(v) {
   const p = pago(v), at = v.entrega_fecha && v.entrega_fecha < hoyISO(), g = puede('entregas.gestionar');
   return `<div class="card-e ${p === 'ok' ? 'pagada' : p === 'cc' ? 'cc' : 'sinpagar'}${v.entrega_estado === 'listo' ? ' lista' : ''}${at ? ' atrasada' : ''}">
-    <div class="cab"><span style="display:flex;gap:8px;align-items:center">${g && p !== 'no' ? `<input type="checkbox" class="sel-e" data-sel="${v.id}" ${sel.has(v.id) ? 'checked' : ''} aria-label="Elegir para despachar">` : ''}<span class="nom">${esc(v.envio_destinatario || v.cliente_nombre || '')}</span></span><span class="cod">${esc(v.codigo)}</span></div>
+    <div class="cab"><span style="display:flex;gap:8px;align-items:center">${g && p !== 'no' ? `<input type="checkbox" class="sel-e" data-sel="${v.id}" ${sel.has(v.id) ? 'checked' : ''} aria-label="Elegir para despachar">` : ''}<span class="nom">${v.origen === 'web' ? '<span title="Pedido web">🌐</span> ' : ''}${esc(v.envio_destinatario || v.cliente_nombre || '')}</span></span><span class="cod">${esc(v.codigo)}</span></div>
     <div class="meta">${esc(v.envio_direccion || '')} · <b>${esc(v.envio_localidad || '')}</b>${v.envio_telefono ? ' · ' + esc(v.envio_telefono) : ''}</div>
-    <div class="meta">${PAGO_TXT[p]} · despachar <span class="fecha">${esc(diaTxt(v.entrega_fecha))}</span>${v.envio_bultos ? ` · ${v.envio_bultos} bulto${v.envio_bultos !== 1 ? 's' : ''}` : ''}</div>
+    <div class="meta">${pagoTxt(v)} · despachar <span class="fecha">${esc(diaTxt(v.entrega_fecha))}</span>${v.envio_bultos ? ` · ${v.envio_bultos} bulto${v.envio_bultos !== 1 ? 's' : ''}` : ''}</div>
     ${items(v)}
     ${v.envio_notas ? `<div class="meta">📝 ${esc(v.envio_notas)}</div>` : ''}
     ${v.entrega_estado === 'listo' ? `<div class="meta"><b style="color:#15803D">✓ embalado</b>${v.lista_por_nombre ? ' por ' + esc(v.lista_por_nombre) : ''}</div>` : ''}
@@ -256,7 +258,7 @@ function modal(titulo, cuerpo, boton, alConfirmar, ancho = 460) {
 
 function entregar(v) {
   modal(`Entregar ${esc(v.codigo)}`, `
-    <div class="meta">${PAGO_TXT[pago(v)]} · ${money(v.total)}</div>
+    <div class="meta">${pagoTxt(v)} · ${money(v.total)}</div>
     ${items(v)}
     <div class="form-group"><label>¿Quién lo retira?</label><input type="text" id="rn" maxlength="120" value="${esc(v.retira_nombre || v.cliente_nombre || '')}"></div>
     <div class="form-group"><label>DNI (opcional)</label><input type="text" id="rd" maxlength="20" inputmode="numeric"></div>
