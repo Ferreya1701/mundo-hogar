@@ -394,6 +394,8 @@ async function initPage() {
   const t = new URLSearchParams(location.search).get('tab'); if (['retiros', 'envios', 'hechas'].includes(t)) tab = t;
   await cargar();
 }
+// Al volver a este módulo dentro del armazón: datos al día (salvo con un diálogo abierto)
+window.MHAlMostrar = () => { if (!document.querySelector('.modal-backdrop, .sol-modal-bg, .modal[style*="flex"]')) cargar(); };
 initPage();
 </script>
 <script src="/admin/js/assistant.js"></script>

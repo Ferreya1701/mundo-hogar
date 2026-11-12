@@ -1,4 +1,43 @@
 // Módulo de autenticación y sesión
+
+/* ── El panel como una sola aplicación (admin/app.html + js/app.js) ──
+   MH_EMBEBIDO: esta página es un módulo abierto dentro del armazón. Entonces
+   esconde su propio menú (lo dibuja el armazón), le pasa los enlaces a otros
+   módulos y usa la sesión que el armazón ya tiene.
+   Una dirección vieja abierta suelta (/admin/caja) se manda al armazón
+   (/admin/app#/caja). Con ?solo=1 se puede abrir un módulo suelto igual. */
+const MH_EMBEBIDO = (() => { try { return window.top !== window && !!window.top.MHApp; } catch (e) { return false; } })();
+const MH_AL_ARMAZON = (() => {
+  const p = location.pathname.replace(/\.html$/, '').replace(/\/+$/, '');
+  const modulo = /^\/admin\/[a-z0-9-]+$/.test(p) && !['/admin/app', '/admin/index', '/admin/clave'].includes(p);
+  if (MH_EMBEBIDO) {
+    document.documentElement.classList.add('mh-embebido');
+    // Los estilos van acá (no en admin.css) para no depender de que el navegador ya tenga el admin.css nuevo
+    const st = document.createElement('style');
+    st.textContent = 'html.mh-embebido .sidebar,html.mh-embebido .main-header,html.mh-embebido .mobile-overlay,html.mh-embebido #mh-asst-fab{display:none!important}html.mh-embebido .main-wrap{margin-left:0!important}';
+    document.head.appendChild(st);
+    document.addEventListener('click', e => {
+      const a = e.target.closest('a[href]');
+      if (!a || a.target === '_blank' || a.hasAttribute('download') || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+      let u; try { u = new URL(a.href, location.origin); } catch (x) { return; }
+      if (u.origin !== location.origin || !u.pathname.startsWith('/admin/')) return;
+      if (u.pathname === location.pathname && u.search === location.search && u.hash) return;   // ancla dentro de la página
+      e.preventDefault();
+      window.top.MHApp.ir(u.pathname + u.search);
+    });
+    // El armazón avisa cuando el módulo vuelve a verse: la página puede refrescar sus datos
+    window.addEventListener('message', e => {
+      if (e.origin === location.origin && e.data?.mh === 'mostrar' && typeof window.MHAlMostrar === 'function') window.MHAlMostrar();
+    });
+    return false;
+  }
+  if (modulo && window.top === window && !/[?&]solo=1\b/.test(location.search)) {
+    location.replace('/admin/app#/' + p.slice('/admin/'.length) + location.search);
+    return true;
+  }
+  return false;
+})();
+
 const Auth = {
   _profile: null,
 
@@ -24,6 +63,10 @@ const Auth = {
 
   async getProfile(forceRefresh = false) {
     if (this._profile && !forceRefresh) return this._profile;
+    // Dentro del armazón: el perfil ya lo tiene él (sin consultas al abrir un módulo)
+    if (MH_EMBEBIDO && !forceRefresh) {
+      try { const p = window.top.Auth?._profile; if (p) { this._profile = p; return p; } } catch (e) {}
+    }
     const session = await this.getSession();
     if (!session) return null;
     if (!forceRefresh) {
@@ -99,11 +142,12 @@ const Auth = {
   async logout() {
     try { sessionStorage.removeItem('mhPerfil'); } catch (e) {}
     await db.auth.signOut();
-    window.location.href = '/admin/';
+    (MH_EMBEBIDO ? window.top : window).location.href = '/admin/';
   },
 
   // Llamar al inicio de cada página protegida
   async init() {
+    if (MH_AL_ARMAZON) return null;   // se está yendo al armazón
     const session = await this.requireAuth();
     if (!session) return null;
 

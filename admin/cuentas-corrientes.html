@@ -379,6 +379,8 @@ async function initPage() {
   const q = new URLSearchParams(location.search).get('cuenta');
   if (q) abrir(Number(q));
 }
+// Al volver a este módulo dentro del armazón: datos al día (salvo con un diálogo abierto)
+window.MHAlMostrar = () => { if (!document.querySelector('.modal-backdrop, .sol-modal-bg, .modal[style*="flex"]')) cargar(); };
 initPage();
 </script>
 <script src="/admin/js/assistant.js"></script>

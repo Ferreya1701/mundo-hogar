@@ -1136,6 +1136,8 @@ async function initPage() {
   escribirURL(false);   // normaliza la URL (limpia parámetros inválidos o heredados)
   renderTable();
 }
+// Al volver a este módulo dentro del armazón: datos al día (salvo con un diálogo abierto)
+window.MHAlMostrar = () => { if (!document.querySelector('.modal-backdrop, .sol-modal-bg, .modal[style*="flex"]')) cargarProductos(); };
 initPage();
 </script>
   <script src="/admin/js/assistant.js"></script>

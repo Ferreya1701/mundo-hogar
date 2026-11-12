@@ -358,6 +358,8 @@ async function initPage() {
   const ver = Number(new URLSearchParams(location.search).get('ver'));
   if (ver) { $id('f-estado').value = ''; render(); if (ventas.some(v => v.id === ver)) abrir(ver); }
 }
+// Al volver a este módulo dentro del armazón: datos al día (salvo con un diálogo abierto)
+window.MHAlMostrar = () => { if (!document.querySelector('.modal-backdrop, .sol-modal-bg, .modal[style*="flex"]')) cargar(); };
 initPage();
 </script>
   <script src="/admin/js/assistant.js"></script>

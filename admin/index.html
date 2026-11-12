@@ -51,7 +51,7 @@
   // Si ya hay sesión activa, redirigir al dashboard
   // (sin sesión, se borra el menú guardado de otro usuario que haya usado esta pestaña)
   const { data: { session } } = await db.auth.getSession();
-  if (session) { window.location.href = '/admin/dashboard'; return; }
+  if (session) { window.location.href = '/admin/app'; return; }
   try { sessionStorage.removeItem('mhPerfil'); } catch (e) {}
 
   const form = document.getElementById('login-form');
@@ -96,7 +96,7 @@
     }
 
     // El cajero arranca en la caja (sql/029); el resto, en el inicio
-    window.location.href = profile.rol === 'cajero' ? '/admin/caja' : '/admin/dashboard';
+    window.location.href = '/admin/app';   // el armazón elige el inicio según el rol
   });
 
   function showError(msg) {

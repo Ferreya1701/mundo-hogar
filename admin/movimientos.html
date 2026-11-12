@@ -221,6 +221,8 @@ async function initPage() {
 
   await cargarMovimientos();
 }
+// Al volver a este módulo dentro del armazón: datos al día (salvo con un diálogo abierto)
+window.MHAlMostrar = () => { if (!document.querySelector('.modal-backdrop, .sol-modal-bg, .modal[style*="flex"]')) cargarMovimientos(); };
 initPage();
 </script>
   <script src="/admin/js/assistant.js"></script>

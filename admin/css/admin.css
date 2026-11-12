@@ -80,6 +80,7 @@ a:hover { color: var(--blue-dark); }
 
 /* ── Layout ─────────────────────────────────────────────────── */
 .admin-layout { display:flex; min-height:100vh; }
+/* Módulo dentro del armazón (admin/app.html): sus estilos los pone auth.js */
 
 /* ── Sidebar ─────────────────────────────────────────────────── */
 .sidebar {

@@ -61,6 +61,7 @@ const Layout = {
   },
   /* Una página que ya tiene el número a mano (Caja, Entregas) lo actualiza sin consultar */
   fijarContador(k, v) {
+    if (typeof MH_EMBEBIDO !== 'undefined' && MH_EMBEBIDO) { try { window.top.Layout.fijarContador(k, v); } catch (e) {} return; }
     let c = null; try { c = JSON.parse(sessionStorage.getItem(this.CONT_KEY) || 'null'); } catch (e) {}
     if (!c || c.u !== this._perfil?.id) c = { t: Date.now(), u: this._perfil?.id, n: {} };
     c.n[k] = v;
@@ -68,7 +69,8 @@ const Layout = {
     this.pintarContadores(c.n);
   },
   /* Las páginas que cambian algo contado (cobrar, entregar, pasar un pedido) lo llaman */
-  refrescarContadores() { try { sessionStorage.removeItem(this.CONT_KEY); } catch (e) {} if (this._perfil) this.contar(this._perfil, true); },
+  refrescarContadores() {
+    if (typeof MH_EMBEBIDO !== 'undefined' && MH_EMBEBIDO) { try { window.top.Layout.refrescarContadores(); } catch (e) {} return; } try { sessionStorage.removeItem(this.CONT_KEY); } catch (e) {} if (this._perfil) this.contar(this._perfil, true); },
 
 
   render(pageId, pageTitle, profile) {
@@ -132,7 +134,7 @@ const Layout = {
   // visual: los permisos reales los sigue controlando Auth.init + Supabase.
   prerender() {
     const sb = document.getElementById('sidebar');
-    if (!sb) return;
+    if (!sb || (typeof MH_EMBEBIDO !== 'undefined' && MH_EMBEBIDO)) return;
     if (localStorage.getItem('sbCollapsed') === 'true' && !this.esMovil()) {
       sb.classList.add('collapsed');
     }
@@ -145,6 +147,11 @@ const Layout = {
   async init(pageId, pageTitle) {
     const profile = await Auth.getProfile();
     this.render(pageId, pageTitle, profile);
+    // Módulo dentro del armazón: el menú, la barra y los contadores son del armazón
+    if (typeof MH_EMBEBIDO !== 'undefined' && MH_EMBEBIDO) {
+      try { window.top.MHApp.titulo(pageId, pageTitle); } catch (e) {}
+      return;
+    }
     this._perfil = profile;
     this.contar(profile);
     setInterval(() => { if (!document.hidden) this.contar(profile); }, this.CONT_TTL);

@@ -739,6 +739,8 @@ document.getElementById('btn-export').addEventListener('click', () => {
   document.getElementById(id).addEventListener('change', () => { page = 1; renderChips(); renderTable(); });
 });
 
+// Al volver a este módulo dentro del armazón: datos al día (salvo con un diálogo abierto)
+window.MHAlMostrar = () => { if (!document.querySelector('.modal-backdrop, .sol-modal-bg, .modal[style*="flex"]')) cargar(); };
 (async function () {
   perfil = await Auth.init();
   if (!perfil) return;

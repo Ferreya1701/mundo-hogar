@@ -39,6 +39,20 @@
 - Pantalla: Ventas → Ver → "Quitar productos"; ticket corregido. Guía: `GUIA-STOCK-Y-VENTAS.md` §12.
 - Pruebas: `node scripts/test-editar-venta-sql.mjs` (33).
 
+## Panel como UNA SOLA APLICACIÓN (2026-11-12) — etapa 1 hecha
+- `admin/app.html` + `admin/js/app.js`: armazón con menú y barra fijos; cada módulo se abre en su propio
+  iframe y QUEDA ABIERTO (hasta 8; el más viejo se cierra). Volver a un módulo: ~12 ms, conserva lo que
+  había (ticket a medio armar, filtros). Un módulo oculto más de 10 min se recarga al volver; algunos
+  refrescan sus datos al volver (`window.MHAlMostrar`).
+- Dirección: `/admin/app#/caja?ver=12`. Las direcciones viejas (`/admin/caja`) redirigen solas al armazón
+  (auth.js, `MH_AL_ARMAZON`); `?solo=1` abre un módulo suelto (para revisar algo sin armazón).
+- Dentro del armazón (`MH_EMBEBIDO`): el módulo esconde su menú, pasa los enlaces al armazón, usa el
+  perfil del armazón (sin consultas), los contadores y el asistente son del armazón.
+- Por qué iframes y no reemplazar el HTML: aislamiento (el código de un módulo no puede escribir en la
+  pantalla de otro ni dejar temporizadores andando) y módulos que siguen vivos.
+- Etapa 2 (pendiente): catálogo compartido entre módulos (bajarlo una vez en el armazón), y de a poco
+  reescribir módulos como componentes del armazón.
+
 ## Circuito de venta estilo PromRepuestos (2026-11-12) — plan acordado con el dueño
 - **Etapa A — cobrar en caja con pago mixto: sql/026 EJECUTADO EN PRODUCCIÓN 2026-11-12.** Decisiones del dueño:
   SIEMPRE por caja (nadie cobra directo) y pago mixto desde el inicio. Cuenta corriente no pasa por caja.

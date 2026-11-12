@@ -17,7 +17,7 @@ window.MHAssistant = (function () {
 
   /* ── Sección actual (para ayuda contextual) ── */
   function seccion() {
-    const p = location.pathname;
+    const p = location.pathname + location.hash;   // en el armazón el módulo está en el #
     if (p.includes('dashboard'))     return 'dashboard';
     if (p.includes('vender'))        return 'vender';
     if (p.includes('ventas'))        return 'ventas';
@@ -284,6 +284,8 @@ window.MHAssistant = (function () {
   }
 
   async function init() {
+    // Dentro del armazón el asistente es uno solo, el del armazón
+    try { if (window.top !== window && window.top.MHApp) return; } catch (e) {}
     // Solo en páginas del panel con sesión iniciada (nunca en el login)
     if (!window.db || location.pathname.replace(/\/$/, '').endsWith('/admin') || location.pathname.endsWith('/admin/index.html')) return;
     const { data: { session } } = await db.auth.getSession();
@@ -302,3 +304,5 @@ window.MHAssistant = (function () {
 
   return { open: () => { if (!panel) abrirPanel(); }, seccion };
 })();
+// Módulo dentro del armazón: usa el asistente del armazón (un solo panel)
+try { if (window.top !== window && window.top.MHAssistant) window.MHAssistant = window.top.MHAssistant; } catch (e) {}
