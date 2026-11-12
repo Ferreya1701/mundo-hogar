@@ -264,6 +264,12 @@ BEGIN
      $b$IF NOT fn_tiene_permiso('ventas.anular_todas') AND ($b$)
   ) AS t(fn, antes, despues)
   LOOP
+    -- Una función de una migración que en esta base no se corrió (ej. el 011): se saltea.
+    -- Si después se corre esa migración, volver a correr el 016 la deja con permisos.
+    IF to_regprocedure(r.fn) IS NULL THEN
+      RAISE NOTICE '016: % no existe en esta base, se saltea', r.fn;
+      CONTINUE;
+    END IF;
     v_def := pg_get_functiondef(r.fn::regprocedure);
     IF position(r.despues IN v_def) > 0 THEN
       CONTINUE;  -- ya estaba cambiada (se corrió el 016 antes)

@@ -1,6 +1,6 @@
 # PROJECT_STATUS — Mundo Hogar / TIAF
 
-> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-11 (permisos, ticket fiscal, caja, cuentas corrientes, editar venta).
+> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-12 (016–021 en producción).
 
 ## Hosting (desde 2026-10-16): Cloudflare Workers
 - **Producción:** `https://mundohogarstf.com` servido por **Cloudflare Workers** (solo archivos
@@ -22,7 +22,7 @@
   la `.webp` y cae al `.jpg` si falta (`MH.webpUrl` / `MH.setImg`). Al sumar fotos nuevas, generar ambas.
 - Cloudflare redirige `x.html` → `x` y `/productos` → `/productos/` (conserva los parámetros).
 
-## Importar artículos del sistema anterior (2026-11-11) — EN EL REPO; FALTA CORRER sql/021
+## Importar artículos del sistema anterior (2026-11-11) — EJECUTADO EN PRODUCCIÓN 2026-11-12
 - `sql/021-importar-articulos.sql`: `productos.codigo_anterior` (único) y `productos_importar()` en
   tandas: crea inactivos con stock de referencia sin contar, vincula a productos existentes, no duplica
   al reimportar, actualiza precios por código. Pantalla `admin/importar.html` (lee el CSV en el
@@ -31,7 +31,7 @@
   sin precios; "marca" mezcla marcas y orígenes. ~80 se parecen a productos de la web (revisar a mano).
 - Pruebas: `node scripts/test-importar-sql.mjs` (23).
 
-## Quitar productos de una venta (2026-11-11) — EN EL REPO; FALTA CORRER sql/020 (después del 019)
+## Quitar productos de una venta (2026-11-11) — EJECUTADO EN PRODUCCIÓN 2026-11-12
 - `sql/020-editar-venta.sql`: `venta_quitar_items` devuelve stock, recalcula el total y los
   disparadores de caja (018) y cuenta corriente (019) devuelven la diferencia. Registro en
   `venta_ediciones`; la venta queda "Modificada". `venta_anular` ya no repone renglones en 0.
@@ -39,14 +39,19 @@
 - Pantalla: Ventas → Ver → "Quitar productos"; ticket corregido. Guía: `GUIA-STOCK-Y-VENTAS.md` §12.
 - Pruebas: `node scripts/test-editar-venta-sql.mjs` (33).
 
-## Orden para correr en producción (proyecto nuevo de São Paulo)
-`015` (si no se corrió) → `016` → `017` → `018` → `019` → `020` → `021`. Después: volver a desplegar la Edge
-Function `leer-lista-compra`, importar el catálogo del sistema viejo (Catálogo → Importar artículos),
-cargar recargos por categoría y los saldos iniciales de las cuentas corrientes (ajuste "Saldo inicial").
-Falta del sistema viejo: **lista de precios** (se importa con la misma pantalla, codigo + precio). Pendiente: cotizar envíos fuera de Santa Fe (espera empresa de
-transporte).
+## Producción al 2026-11-12 (Virginia, antes de la mudanza)
+- 016 → 021 EJECUTADOS el 2026-11-12 con `npx supabase db query --remote=<ref> --yes -f` (cada uno dentro
+  de BEGIN/COMMIT). Respaldo previo (estructura + datos, incluidos usuarios) en `~/mundo-hogar-respaldos/`
+  de la máquina del dueño (no está en el repo).
+- `leer-lista-compra` redesplegada (pide el permiso "compras.gestionar").
+- **El 011 (charla en PanelBot) NUNCA se corrió en producción.** El 016 saltea `crm_base_conversacion`
+  si no existe; si algún día se corre el 011, volver a correr el 016 después.
+- La mudanza a São Paulo se lleva todo esto en la copia de la base (no hay que volver a correr nada).
+- Siguiente: importar el catálogo del sistema viejo (Catálogo → Importar artículos), cargar recargos
+  por categoría y saldos iniciales de cuentas corrientes. Falta del sistema viejo la **lista de precios**.
+  Pendiente: cotizar envíos fuera de Santa Fe (espera empresa de transporte).
 
-## Cuentas corrientes (2026-11-11) — EN EL REPO; FALTA CORRER sql/019 (después del 018)
+## Cuentas corrientes (2026-11-11) — EJECUTADO EN PRODUCCIÓN 2026-11-12
 - `sql/019-cuentas-corrientes.sql`: cuentas sobre clientes del CRM con saldo único, día fijo de pago,
   límite opcional y suspensión; recargo fijo por unidad por categoría (lo suma la base); pagos con
   recibo numerado que entran a la caja; anulación de pagos y ajustes con motivo; vencimientos FIFO.
@@ -59,7 +64,7 @@ transporte).
   las pruebas de stock con todo instalado (3 fallas esperables: leen el costo de `productos`, que desde
   el 015 vive en `producto_costos`). Guía: `GUIA-CUENTAS-CORRIENTES.md`.
 
-## Caja diaria (2026-11-11) — EN EL REPO; FALTA CORRER sql/018 (después del 017)
+## Caja diaria (2026-11-11) — EJECUTADO EN PRODUCCIÓN 2026-11-12
 - `sql/018-caja.sql`: apertura con fondo, ventas que entran solas por disparador (efectivo al cajón,
   otros medios aparte, cuenta corriente no), ingresos/egresos con concepto, anulación con inverso,
   cierre con diferencia obligatoriamente explicada, retiro y fondo. Nunca frena una venta: con la caja
@@ -69,7 +74,7 @@ transporte).
 - Pruebas: `node scripts/test-caja-sql.mjs` (75), `node scripts/test-ticket.mjs` (54).
   Detalle: `GUIA-STOCK-Y-VENTAS.md` §11.
 
-## Ticket y recibo con datos fiscales (2026-11-11) — EN EL REPO; FALTA CORRER sql/017 (después del 016)
+## Ticket y recibo con datos fiscales (2026-11-11) — EJECUTADO EN PRODUCCIÓN 2026-11-12
 - `sql/017-datos-fiscales.sql`: columnas en `site_settings` (cuit validado con dígito verificador,
   domicilio_fiscal, ingresos_brutos, inicio_actividades, condicion_iva, ticket_pie), cargadas con los
   datos del negocio solo si están vacías. Se editan en Configuración → Datos fiscales.
@@ -78,7 +83,7 @@ transporte).
 - "Retira" se muestra si la venta lo trae; el campo se agrega a la venta en la etapa de cuentas corrientes.
 - Pruebas: `node scripts/test-ticket.mjs`. Detalle: `GUIA-STOCK-Y-VENTAS.md` §10.
 
-## Permisos tildables por rol (2026-11-11) — EN EL REPO; FALTA CORRER sql/016 (después del 015)
+## Permisos tildables por rol (2026-11-11) — EJECUTADO EN PRODUCCIÓN 2026-11-12
 - `sql/016-permisos-tildables.sql`: tablas `permisos` + `rol_permisos`, `fn_tiene_permiso(clave)`,
   `fn_mis_permisos()`, `permisos_rol_guardar(rol, permisos[])` (solo admin, queda en el historial).
   Las funciones y políticas que miraban el rol ahora miran el permiso; valores iniciales = lo de
@@ -94,7 +99,7 @@ transporte).
 - Mudanza de Supabase a São Paulo (cuenta TIAF) en curso por el socio: correr 016 en el proyecto
   nuevo una vez migrado.
 
-## Qué ve cada rol (2026-11-06) — WEB SUBIDA; FALTA CORRER sql/015
+## Qué ve cada rol (2026-11-06) — sql/015 EJECUTADO EN PRODUCCIÓN (verificado 2026-11-12)
 - Auditoría: varias tablas solo pedían "estar logueado" (`auth.uid() IS NOT NULL`). Además el costo y
   el proveedor de los productos activos eran legibles por cualquiera con la clave pública (estaban
   vacíos: no se filtró nada). `sql/015-permisos-por-rol.sql`:
