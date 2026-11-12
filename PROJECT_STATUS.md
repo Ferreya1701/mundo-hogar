@@ -51,7 +51,7 @@
   OJO al correr el 026: desde ese momento NINGUNA venta queda cobrada sin pasar por Caja → avisar al
   personal y tener la caja abierta. Las pantallas viejas en caché (5 min) mostrarían "cobrada" de más.
 - **Etapa B — retiros y envíos (módulo Entregas): sql/027 EJECUTADO EN PRODUCCIÓN 2026-11-12.** Venta elige se lo lleva / retira después / envío por transporte; Entregas con Para retirar, Envíos por transporte (despacho múltiple con guía), Entregadas; comprobante de retiro con ubicaciones, etiqueta por bulto, hoja de despacho. Lo sin pagar no sale (salvo cuenta corriente). Guía §14 de GUIA-STOCK-Y-VENTAS.md.
-- **Etapa C — pedidos web en el circuito: EN EL REPO; FALTA CORRER sql/028.** "Pasar al mostrador" en Pedidos convierte el pedido en venta: pagado online → venta pagada (medio `web`, no toca caja); sin pagar → Caja "pagan al retirar". Pedido y venta se sincronizan (pago online, entrega, anulación). Guía §15.
+- **Etapa C — pedidos web en el circuito: sql/028 EJECUTADO EN PRODUCCIÓN 2026-11-12.** "Pasar al mostrador" en Pedidos convierte el pedido en venta: pagado online → venta pagada (medio `web`, no toca caja); sin pagar → Caja "pagan al retirar". Pedido y venta se sincronizan (pago online, entrega, anulación). Guía §15.
 - **Pendiente:** D) (comprobante de retiro, etiqueta y hoja de despacho YA HECHOS en la etapa B; falta el ticket por paso para pedidos web);
   E) menú reordenado (Mostrador / Entregas / Pedidos web / Clientes / Catálogo / Stock / Administración)
   con contadores. Fuera de alcance por ahora: presupuestos, proveedores, estadísticas, facturación.
