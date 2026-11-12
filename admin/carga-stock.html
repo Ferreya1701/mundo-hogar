@@ -64,6 +64,7 @@
         </div>
         <button type="button" class="btn btn-outline btn-scan" id="btn-scan" hidden>📷 Escanear</button>
         <select id="filtro-cat" aria-label="Filtrar por categoría"><option value="">Todas las categorías</option></select>
+        <select id="filtro-ubic" aria-label="Filtrar por ubicación" hidden></select>
         <span class="filter-count" id="filter-count" role="status"></span>
       </div>
 
@@ -72,6 +73,9 @@
 
       <div class="barra-guardado barra-carga" id="barra" hidden>
         <span class="dirty-flag" id="resumen"></span>
+        <label id="contando-wrap" style="display:none;align-items:center;gap:6px;font-size:13px">📍 Estoy contando en
+          <select id="contando-en" style="min-height:36px;max-width:230px" title="Todo lo que cuentes queda ubicado en este lugar"></select>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-ubic-adm" title="Agregar o editar ubicaciones">⚙</button></label>
         <button type="button" class="btn btn-outline" id="btn-descartar">Descartar</button>
         <button type="button" class="btn btn-primary" id="btn-guardar">Guardar conteo</button>
       </div>
@@ -91,6 +95,7 @@
 <script src="/admin/js/auth.js"></script>
 <script src="/admin/js/utils.js"></script>
 <script src="/admin/js/layout.js"></script>
+<script src="/admin/js/ubicaciones.js"></script>
 <script src="/admin/js/scanner.js"></script>
 <script>
 /* Conteo de stock: número ABSOLUTO contado por producto → fn_stock_contar_lote.
@@ -166,6 +171,9 @@ function visibles() {
     if (estadoDe(p) === 'libre') return false;
     if (pendientes.has(p.id)) return !q || coincide(p, q, digits);
     if (cat && String(p.categoria_id) !== cat) return false;
+    const ub = $id('filtro-ubic').value;
+    if (ub === '0' && p.ubicacion_id) return false;
+    if (ub && ub !== '0' && String(p.ubicacion_id) !== ub) return false;
     const e = estadoDe(p);
     if (filtro === 'sin_contar' && e !== 'sin_contar') return false;
     if (filtro === 'negativo' && e !== 'negativo') return false;
@@ -208,7 +216,7 @@ function render() {
     return `<div class="cnt-card${pend?' pend':''}${guardados.has(p.id)&&!pend?' guardado':''}" data-id="${p.id}">
       <div>
         <div class="cnt-nombre">${esc(p.nombre)}</div>
-        <div class="cnt-meta">${p.sku ? `<span>${esc(p.sku)}</span>` : ''}<span>${esc(cats[p.categoria_id]||'Sin categoría')}</span>${badgeEstado(p)}${p.ultimo_conteo_en ? `<span title="Último conteo">contado ${Utils.timeAgo(p.ultimo_conteo_en).toLowerCase()}</span>` : ''}<button type="button" class="pos-precio-btn" data-act="mas">más ▾</button></div>
+        <div class="cnt-meta">${p.sku ? `<span>${esc(p.sku)}</span>` : ''}<span>${esc(cats[p.categoria_id]||'Sin categoría')}</span>${p.ubicacion_id ? `<span title="Dónde está guardado">📍 ${esc(MHUbic.texto(p.ubicacion_id))}</span>` : ''}${badgeEstado(p)}${p.ultimo_conteo_en ? `<span title="Último conteo">contado ${Utils.timeAgo(p.ultimo_conteo_en).toLowerCase()}</span>` : ''}<button type="button" class="pos-precio-btn" data-act="mas">más ▾</button></div>
       </div>
       <div class="cnt-der">
         <div class="cnt-actual">${p.stock_controlado ? 'sistema' : 'sin contar'}<br><b class="stock-num ${Utils.stockClass(p.stock_actual, p.stock_minimo)}">${p.stock_actual}</b></div>
@@ -353,6 +361,13 @@ $id('btn-guardar').addEventListener('click', async () => {
         okItems.push({ p, r }); pendientes.delete(p.id); guardados.add(p.id);
       } else fallidos.push({ p, r });
     });
+    // 3) Lo contado queda ubicado en "Estoy contando en…"
+    const donde = Number($id('contando-en').value) || null;
+    const aUbicar = okItems.map(x => x.p).filter(p => donde && p.ubicacion_id !== donde);
+    if (aUbicar.length) {
+      try { await MHUbic.ubicar(aUbicar.map(p => p.id), donde); aUbicar.forEach(p => { p.ubicacion_id = donde; }); }
+      catch (e) { Utils.toast('El conteo se guardó, pero no la ubicación: ' + (e.hint || e.message), 'warning', 7000); }
+    }
   } else { pendientes.clear(); }
   pendientes.forEach((v, id) => { if (v.cantidad === null) pendientes.delete(id); });
 
@@ -409,6 +424,29 @@ $id('btn-nuevo').addEventListener('click', () => {
   });
 });
 
+/* ── Ubicaciones (sql/024): filtrar por lugar y dejar ubicado lo que se cuenta ── */
+async function iniciarUbicaciones() {
+  await MHUbic.cargar();
+  if (!MHUbic.disponible) return;
+  const { data } = await Utils.traerTodo(() => db.from('productos').select('id, ubicacion_id').not('ubicacion_id', 'is', null).order('id'));
+  const mapa = new Map((data || []).map(r => [r.id, r.ubicacion_id]));
+  productos.forEach(p => { p.ubicacion_id = mapa.get(p.id) || null; });
+  pintarUbicaciones();
+  $id('filtro-ubic').hidden = false; $id('contando-wrap').style.display = 'flex';
+  $id('filtro-ubic').addEventListener('change', () => {
+    const v = $id('filtro-ubic').value;
+    if (v && v !== '0') $id('contando-en').value = v;      // contás un lugar: lo contado queda ahí
+    limite = 60; render();
+  });
+  $id('btn-ubic-adm').addEventListener('click', () => MHUbic.administrar(pintarUbicaciones));
+}
+function pintarUbicaciones() {
+  const f = $id('filtro-ubic').value, c = $id('contando-en').value;
+  $id('filtro-ubic').innerHTML = `<option value="">Todas las ubicaciones</option><option value="0">Sin ubicación</option>` + MHUbic.opciones(f, { vacio: null });
+  $id('filtro-ubic').value = f;
+  $id('contando-en').innerHTML = MHUbic.opciones(c, { vacio: '(no cambiar ubicación)' });
+}
+
 async function cargarDatos() {
   const [{ data: catData, error: e1 }, prodRes] = await Promise.all([
     db.from('categorias').select('id,nombre').order('orden'),
@@ -423,6 +461,7 @@ async function cargarDatos() {
   const sel = $id('filtro-cat');
   (catData||[]).forEach(c => { cats[c.id] = c.nombre; sel.insertAdjacentHTML('beforeend', `<option value="${c.id}">${esc(c.nombre)}</option>`); });
   productos = prodRes.data || [];
+  await iniciarUbicaciones();
   const qs = new URLSearchParams(location.search);
   const f = qs.get('filtro');
   if (f && ['sin_contar','negativo','cero','bajo','controlado','todos'].includes(f)) filtro = f;

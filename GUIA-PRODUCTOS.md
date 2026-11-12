@@ -55,3 +55,20 @@ igual, con aviso (sin precio la tienda dice "Consultar").
 (`producto_fotos_guardar`, `productos_precio_masivo`, `productos_publicar`, permisos de fotos con
 "Crear y editar productos"). Las listas piden los productos de a 1000 (`Utils.traerTodo`): Supabase
 corta ahí y el catálogo ya tiene más. Pruebas: `node scripts/test-fotos-precios-sql.mjs` (21).
+
+## Ubicación: dónde está guardado cada producto (sql/024)
+Cada producto tiene **una** ubicación, elegida de una lista que arman ustedes: un **lugar** (local,
+depósito…) y, si quieren, un **sector** (fila, estante). Ej.: "Depósito 1 · Fila B", "Local Blas Parera".
+No divide el stock por lugar: dice adónde ir a buscarlo.
+
+- **La forma rápida de cargarlas:** en `Stock → Contar stock`, abajo aparece **"📍 Estoy contando en…"**.
+  Se elige el lugar y todo lo que se cuente queda ubicado ahí al guardar. El filtro de ubicación
+  ("Sin ubicación" incluido) sirve para contar un lugar por vez.
+- **De a muchos:** en Productos o Completar productos, tildar varios → **📍 Ubicación**.
+- **De a uno:** en la ficha, tarjeta Stock → "Dónde está guardado". El ⚙ abre la lista para agregar,
+  corregir o desactivar ubicaciones (no se borran).
+- **Dónde se ve:** en Productos (y se puede buscar escribiendo el lugar), en Contar stock y en
+  **Crear venta**, al lado de cada producto, para saber adónde ir a buscarlo.
+- Pueden ubicar y armar la lista quienes tengan "Crear y editar productos", "Contar stock" o
+  "Ajuste manual". Verla, todo el personal.
+- Pruebas: `node scripts/test-ubicaciones-sql.mjs` (18).

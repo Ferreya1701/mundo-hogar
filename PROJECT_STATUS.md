@@ -39,6 +39,14 @@
 - Pantalla: Ventas → Ver → "Quitar productos"; ticket corregido. Guía: `GUIA-STOCK-Y-VENTAS.md` §12.
 - Pruebas: `node scripts/test-editar-venta-sql.mjs` (33).
 
+## Ubicación del stock (2026-11-12) — EN EL REPO; FALTA CORRER sql/024
+- Una ubicación por producto (lugar + sector opcional), de una lista propia (`ubicaciones`,
+  `productos.ubicacion_id`, `productos_ubicar()`). NO divide stock por lugar (decisión del dueño: varios
+  locales/depósitos, pero solo "dónde está guardado").
+- Contar stock: filtro por ubicación y "Estoy contando en…" (lo contado queda ubicado). Productos y
+  Completar: acción en masa. Ficha: selector. Crear venta: muestra 📍. `admin/js/ubicaciones.js`.
+- Sin el 024 no aparece nada de esto (las pantallas siguen igual). Guía: `GUIA-PRODUCTOS.md`.
+
 ## Productos simples para los empleados (2026-11-12) — sql/023 EJECUTADO EN PRODUCCIÓN 2026-11-12
 - **Tope de 1000 filas de Supabase:** con ~1060 productos, Productos / Contar stock / Inicio / Crear
   venta / Compras / Ajuste manual perdían ~60 sin avisar. Ahora todo pide de a tandas

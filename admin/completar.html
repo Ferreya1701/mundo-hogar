@@ -100,6 +100,7 @@
         <b id="bulk-n"></b>
         <button class="btn btn-outline btn-sm" data-bulk="precio">💲 Poner precio</button>
         <button class="btn btn-outline btn-sm" data-bulk="categoria">🏷️ Cambiar categoría</button>
+        <button class="btn btn-outline btn-sm" data-bulk="ubicacion" id="bulk-ubic" hidden>📍 Ubicación</button>
         <button class="btn btn-primary btn-sm" data-bulk="publicar">Publicar</button>
         <button class="btn btn-outline btn-sm" data-bulk="ocultar">Ocultar</button>
         <button class="btn btn-ghost btn-sm" data-bulk="limpiar" style="color:#fff">✕</button>
@@ -116,6 +117,7 @@
 <script src="/admin/js/utils.js"></script>
 <script src="/admin/js/layout.js"></script>
 <script src="/admin/js/fotos.js"></script>
+<script src="/admin/js/ubicaciones.js"></script>
 <script>
 /* ============================================================
    Completar productos: la mesa de trabajo para dejar listos los
@@ -161,6 +163,13 @@ async function cargar() {
   ]);
   if (p.error) { $id('lista').innerHTML = `<div class="empty-state"><h3>No se pudieron cargar los productos</h3><p>${esc(p.error.message)}</p></div>`; return; }
   cats = c.data || []; prods = p.data || [];
+  await MHUbic.cargar();
+  if (MHUbic.disponible) {
+    const { data } = await Utils.traerTodo(() => db.from('productos').select('id, ubicacion_id').not('ubicacion_id', 'is', null).order('id'));
+    const mapa = new Map((data || []).map(r => [r.id, r.ubicacion_id]));
+    prods.forEach(x => { x.ubicacion_id = mapa.get(x.id) || null; });
+    $id('bulk-ubic').hidden = false;
+  }
   $id('f-cat').innerHTML = `<option value="">Todas las categorías</option><option value="0">Sin categoría</option>` + cats.map(x => `<option value="${x.id}">${esc(x.nombre)}</option>`).join('');
   render();
 }
@@ -235,7 +244,7 @@ function fila(p) {
     <div class="cp-fotos" data-fotos="${p.id}"></div>
     <div class="cp-info">
       <div class="cp-nom"><a href="/admin/producto-form?id=${p.id}" title="Abrir la ficha completa">${esc(p.nombre)}</a></div>
-      <div class="cp-sub">${esc(p.sku || '')}${p.codigo_anterior && p.codigo_anterior !== p.sku ? ' · cód. ' + esc(p.codigo_anterior) : ''} · ${esc(stock)}</div>
+      <div class="cp-sub">${esc(p.sku || '')}${p.codigo_anterior && p.codigo_anterior !== p.sku ? ' · cód. ' + esc(p.codigo_anterior) : ''} · ${esc(stock)}${p.ubicacion_id ? ' · 📍 ' + esc(MHUbic.texto(p.ubicacion_id)) : ''}</div>
       <div data-falta>${faltaHTML(p)}</div>
     </div>
     <div class="cp-precio-wrap"><label class="cp-lbl" for="pr-${p.id}">Precio</label>
@@ -375,6 +384,12 @@ $id('bulk').addEventListener('click', async e => {
     sel.clear(); render(); return;
   }
   if (b.dataset.bulk === 'categoria') return modalCategoria(ids);
+  if (b.dataset.bulk === 'ubicacion') {
+    const u = await MHUbic.elegir(`Ubicación de ${ids.length} productos`); if (u === null) return;
+    try { await MHUbic.ubicar(ids, u || null); } catch (e) { Utils.toast(e.hint || e.message, 'error'); return; }
+    prods.forEach(p => { if (ids.includes(p.id)) p.ubicacion_id = u || null; });
+    Utils.toast(u ? `Ubicados en ${MHUbic.texto(u)}` : 'Ubicación quitada', 'success'); sel.clear(); renderLista(); return;
+  }
   if (b.dataset.bulk === 'precio') return modalPrecio(ids);
 });
 

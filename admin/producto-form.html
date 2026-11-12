@@ -187,7 +187,7 @@
                   <div class="form-group"><label>Alto (cm)</label><input type="number" id="alto" placeholder="0" step="0.01" min="0"></div>
                   <div class="form-group"><label>Ancho (cm)</label><input type="number" id="ancho" placeholder="0" step="0.01" min="0"></div>
                   <div class="form-group"><label>Profundidad (cm)</label><input type="number" id="profundidad" placeholder="0" step="0.01" min="0"></div>
-                  <div class="form-group col-span-2"><label>Dónde está guardado</label><input type="text" id="ubicacion" placeholder="Ej: Estante A-3"></div>
+                  <div class="form-group col-span-2"><label>Detalle de la ubicación</label><input type="text" id="ubicacion" placeholder="Ej: caja 4, arriba"></div>
                   <div class="form-group col-span-3"><label>Notas internas</label><textarea id="observaciones" placeholder="No se ven en la tienda"></textarea></div>
                 </div>
               </div>
@@ -236,6 +236,11 @@
                   <div class="form-group" id="stock-fields">
                     <div style="font-size:14px"><b id="stock-actual-txt" style="font-size:22px">0</b> <span class="form-hint" id="stock-hint" style="display:inline">unidades · un producto nuevo nace sin stock</span></div>
                     <span class="form-hint">El stock no se escribe acá. Se carga contándolo en <a href="/admin/carga-stock" id="link-contar">Contar stock</a> o al recibir una <a href="/admin/compras">compra</a>, y baja solo con cada venta.</span>
+                  </div>
+                  <div class="form-group" id="ubic-wrap" hidden>
+                    <label>📍 Dónde está guardado</label>
+                    <div style="display:flex;gap:6px"><select id="ubicacion_id" style="flex:1"></select>
+                      <button type="button" class="btn btn-outline btn-sm" id="btn-ubic-adm" title="Agregar o editar ubicaciones">⚙</button></div>
                   </div>
                   <div class="form-group">
                     <label>Avisar cuando queden…</label>
@@ -290,12 +295,14 @@
 <script src="/admin/js/utils.js"></script>
 <script src="/admin/js/layout.js"></script>
 <script src="/admin/js/fotos.js"></script>
+<script src="/admin/js/ubicaciones.js"></script>
 <script>
 const urlParams = new URLSearchParams(window.location.search);
 let editId      = urlParams.get('id');
 let isEdit      = !!editId;
 let currentProfile = null;
 let uploadedImageUrl = null;
+let ubicacionCargada = null;
 let estadoCargado = null;   // estado con el que se abrió (para avisar solo al PASAR a publicado)
 
 /* ── Contexto de regreso ────────────────────────────────────────
@@ -312,7 +319,7 @@ const CAMPOS = ['nombre','categoria_id','marca','sku','codigo_barras','descripci
   'precio_costo','precio_minorista','precio_mayorista','precio_oferta','en_oferta',
   'material','color','garantia','peso','alto','ancho','profundidad','proveedor','ubicacion','observaciones',
   'estado','destacado','es_nuevo','seguimiento_inventario','stock_minimo','unidad',
-  'permite_venta_sin_stock','imagen_principal_url'];
+  'permite_venta_sin_stock','imagen_principal_url','ubicacion_id'];
 
 let baseline = null;      // foto del formulario tal como quedó al cargar/guardar
 let omitirAviso = false;  // true mientras navegamos a propósito
@@ -454,6 +461,7 @@ async function cargarProducto() {
   setVal('peso', data.peso); setVal('alto', data.alto); setVal('ancho', data.ancho); setVal('profundidad', data.profundidad);
   setVal('observaciones', data.observaciones);
   setVal('imagen_principal_url', data.imagen_principal_url);
+  ubicacionCargada = data.ubicacion_id ?? null;
   if (data.codigo_anterior) {
     document.getElementById('cod-viejo-wrap').hidden = false;
     document.getElementById('cod-viejo').textContent = data.codigo_anterior;
@@ -619,6 +627,7 @@ async function guardar(volverAlListado) {
     imagen_principal_url: val('imagen_principal_url')||null,
     updated_by: currentProfile?.id
   };
+  if (MHUbic.disponible) payload.ubicacion_id = val('ubicacion_id') ? Number(val('ubicacion_id')) : null;   // sql/024
 
   bloquearBotones(true, volverAlListado ? 'volver' : 'quedarse');
 
@@ -698,6 +707,12 @@ async function initPage() {
   await Layout.init('productos', isEdit ? 'Editar Producto' : 'Nuevo Producto');
   await cargarCategorias();     // antes del producto: el <select> necesita sus <option>
   await cargarProducto();
+  await MHUbic.cargar();
+  if (MHUbic.disponible) {
+    const pintarU = () => { const v = val('ubicacion_id') || ubicacionCargada || ''; document.getElementById('ubicacion_id').innerHTML = MHUbic.opciones(v); setVal('ubicacion_id', v); };
+    document.getElementById('ubic-wrap').hidden = false; pintarU();
+    document.getElementById('btn-ubic-adm').addEventListener('click', () => MHUbic.administrar(pintarU));
+  }
   estadoCargado = isEdit ? val('estado') : null;
   iniciarFotos();
   pintarAyudas();

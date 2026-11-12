@@ -108,6 +108,7 @@
 <script src="/admin/js/auth.js"></script>
 <script src="/admin/js/utils.js"></script>
 <script src="/admin/js/layout.js"></script>
+<script src="/admin/js/ubicaciones.js"></script>
 <script src="/admin/js/scanner.js"></script>
 <script src="/admin/js/impresion.js"></script>
 <script>
@@ -185,6 +186,14 @@ async function cargarDatos() {
     return;
   }
   (catRes.data || []).forEach(c => { cats[c.id] = c.nombre; recargos[c.id] = Number(c.recargo_cc || 0); });
+  // Dónde está guardado cada producto (sql/024), para saber adónde ir a buscarlo
+  MHUbic.cargar().then(async () => {
+    if (!MHUbic.disponible || !MHUbic.lista().length) return;
+    const { data } = await Utils.traerTodo(() => db.from('productos').select('id, ubicacion_id').not('ubicacion_id', 'is', null).order('id'));
+    const mapa = new Map((data || []).map(r => [r.id, r.ubicacion_id]));
+    productos.forEach(p => { p.ubicacion_id = mapa.get(p.id) || null; });
+    if (mapa.size) { renderResultados(); renderTicket(); }
+  });
   if (medio === 'cuenta_corriente' && !puedeCC()) medio = 'efectivo';
   productos = prodRes.data || [];
   cuentas = ctaRes.error ? [] : (ctaRes.data || []);
@@ -285,7 +294,7 @@ function renderResultados() {
       ${img ? `<img src="${esc(img)}" alt="" loading="lazy" onerror="this.outerHTML='<div class=pos-img-ph>📦</div>'">` : '<div class="pos-img-ph">📦</div>'}
       <div class="pos-item-info">
         <div class="pos-item-nombre">${esc(p.nombre)}</div>
-        <div class="pos-item-meta">${p.sku ? `<span>${esc(p.sku)}</span>` : ''}${stockBadge(p)}${p.estado!=='activo' ? '<span class="badge badge-muted">oculto en tienda</span>' : ''}</div>
+        <div class="pos-item-meta">${p.sku ? `<span>${esc(p.sku)}</span>` : ''}${stockBadge(p)}${p.ubicacion_id ? `<span title="Dónde está guardado">📍 ${esc(MHUbic.texto(p.ubicacion_id))}</span>` : ''}${p.estado!=='activo' ? '<span class="badge badge-muted">oculto en tienda</span>' : ''}</div>
       </div>
       <div class="pos-item-precio ${precio===null?'ask':''}">${precio===null ? 'sin precio' : money(precio)}</div>
     </button>`;
@@ -430,7 +439,7 @@ function renderTicket() {
     return `<div class="pos-linea" data-key="${esc(t.key)}">
       <div>
         <div class="pos-linea-nombre">${esc(t.nombre)}</div>
-        <div class="pos-linea-sub">${t.sku ? `<span>${esc(t.sku)}</span>` : ''}<button type="button" class="pos-precio-btn" data-act="precio" title="Cambiar precio">${money2(t.precio)} c/u ✎</button>${recargoDe(t) ? `<span class="ctrl ctrl-cc" title="Recargo de cuenta corriente de la categoría">+${money2(recargoDe(t))} c/u cta. cte.</span>` : ''}${sub}</div>
+        <div class="pos-linea-sub">${t.sku ? `<span>${esc(t.sku)}</span>` : ''}<button type="button" class="pos-precio-btn" data-act="precio" title="Cambiar precio">${money2(t.precio)} c/u ✎</button>${p?.ubicacion_id ? `<span class="ctrl ctrl-libre" title="Dónde está guardado">📍 ${esc(MHUbic.texto(p.ubicacion_id))}</span>` : ''}${recargoDe(t) ? `<span class="ctrl ctrl-cc" title="Recargo de cuenta corriente de la categoría">+${money2(recargoDe(t))} c/u cta. cte.</span>` : ''}${sub}</div>
       </div>
       <div class="pos-linea-right">
         <div class="pos-linea-total">${money(precioFinal(t) * t.cantidad)}</div>

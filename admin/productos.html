@@ -106,6 +106,7 @@
         <button type="button" class="btn btn-outline btn-sm" data-masiva="activo">▶️ Publicar</button>
         <button type="button" class="btn btn-outline btn-sm" data-masiva="inactivo">⏸️ Ocultar</button>
         <button type="button" class="btn btn-outline btn-sm" data-masiva="precios">💲 Ajustar precios</button>
+        <button type="button" class="btn btn-outline btn-sm" data-masiva="ubicacion" hidden>📍 Ubicación</button>
         <button type="button" class="btn btn-outline btn-sm" data-masiva="destacar">⭐ Destacar</button>
         <button type="button" class="btn btn-outline btn-sm" data-masiva="no-destacar">☆ Quitar destacado</button>
         <button type="button" class="btn btn-outline btn-sm" data-masiva="etiquetas">🏷️ Etiquetas</button>
@@ -237,6 +238,7 @@
 <script src="/admin/js/utils.js"></script>
 <script src="/admin/js/impresion.js"></script>
 <script src="/admin/js/layout.js"></script>
+<script src="/admin/js/ubicaciones.js"></script>
 <script>
 let allProducts = [];
 let cats = {};
@@ -379,7 +381,7 @@ function applyFilters() {
   if (f.q) {
     const palabras = f.q.split(/\s+/);
     list = list.filter(p => {
-      const t = Utils.norm(`${p.nombre||''} ${p.sku||''} ${p.codigo_barras||''} ${p.codigo_anterior||''} ${p.marca||''}`);
+      const t = Utils.norm(`${p.nombre||''} ${p.sku||''} ${p.codigo_barras||''} ${p.codigo_anterior||''} ${p.marca||''} ${p.ubicacion_id ? MHUbic.texto(p.ubicacion_id) : ''}`);
       return palabras.every(w => t.includes(w));
     });
   }
@@ -473,7 +475,7 @@ function renderTable() {
       <td class="c-prod">
         <div class="td-product" style="flex-direction:column;align-items:flex-start;gap:3px">
           <div class="td-name">${nombre}</div>
-          <div class="d-flex gap-2" style="flex-wrap:wrap">${p.marca ? `<span class="td-sku">${esc(p.marca)}</span>` : ''}${badges.join('')}</div>
+          <div class="d-flex gap-2" style="flex-wrap:wrap">${p.marca ? `<span class="td-sku">${esc(p.marca)}</span>` : ''}${p.ubicacion_id ? `<span class="td-sku" title="Dónde está guardado">📍 ${esc(MHUbic.texto(p.ubicacion_id))}</span>` : ''}${badges.join('')}</div>
         </div>
       </td>
       <td class="c-cat" data-l="Categoría">${catNombre}</td>
@@ -723,6 +725,14 @@ document.getElementById('barra-masiva')?.addEventListener('click', async e => {
 
   if (accion === 'precios') { abrirModalPrecios(); return; }
 
+  if (accion === 'ubicacion') {
+    const u = await MHUbic.elegir(`Ubicación de ${ids.length} producto${ids.length!==1?'s':''}`); if (u === null) return;
+    try { await MHUbic.ubicar(ids, u || null); } catch (e) { Utils.toast(e.hint || msgError(e, 'guardar la ubicación'), 'error'); return; }
+    allProducts.forEach(p => { if (seleccion.has(p.id)) p.ubicacion_id = u || null; });
+    Utils.toast(u ? `${ids.length} ubicado${ids.length!==1?'s':''} en ${MHUbic.texto(u)}` : 'Ubicación quitada', 'success');
+    limpiarSeleccion(); renderTable(); return;
+  }
+
   if (accion === 'etiquetas') { MHImprimir.pedirEtiquetas(allProducts.filter(p => seleccion.has(p.id)).map(paraEtiqueta)); return; }
 
   const cfg = MASIVAS[accion];
@@ -953,6 +963,14 @@ async function cargarProductos() {
     return;
   }
   allProducts = data || [];
+  // Dónde está guardado cada uno (sql/024)
+  await MHUbic.cargar();
+  if (MHUbic.disponible) {
+    const u = await Utils.traerTodo(() => db.from('productos').select('id, ubicacion_id').not('ubicacion_id', 'is', null).order('id'));
+    const mapa = new Map((u.data || []).map(r => [r.id, r.ubicacion_id]));
+    allProducts.forEach(p => { p.ubicacion_id = mapa.get(p.id) || null; });
+    document.querySelector('[data-masiva="ubicacion"]')?.removeAttribute('hidden');
+  }
 }
 
 function limpiarFiltros() {
