@@ -39,7 +39,7 @@
 - Pantalla: Ventas → Ver → "Quitar productos"; ticket corregido. Guía: `GUIA-STOCK-Y-VENTAS.md` §12.
 - Pruebas: `node scripts/test-editar-venta-sql.mjs` (33).
 
-## Fotos para revisar: placas del Drive (2026-11-12) — EN EL REPO; FALTA CORRER sql/031 Y CARGAR LAS FOTOS
+## Fotos para revisar: placas del Drive (2026-11-12) — sql/031 EJECUTADO 2026-11-12; FALTA CARGAR LAS FOTOS
 - Drive "Catálogo Revendedor" (279 placas de Canva). Herramientas en `scripts/placas/` (LEEME.md): OCR del
   título/ficha, recorte de la foto sola (borra texto y plantilla) y cruce con el catálogo. 267 recortes;
   sugerencias: 90 casi seguras, 20 probables, 108 dudosas, 49 sin sugerencia. Muestra de 25 "seguras": 22 bien.
@@ -51,7 +51,7 @@
 - Carga: `SUPABASE_SERVICE_ROLE_KEY=... node scripts/cargar-fotos-placas.mjs <paquete>` (paquete armado en la
   sesión del 2026-11-12, en el scratchpad local; se puede rearmar con scripts/placas).
 
-## Historial de cambios / auditoría (2026-11-12) — EN EL REPO; FALTA CORRER sql/030
+## Historial de cambios / auditoría (2026-11-12) — sql/030 EJECUTADO EN PRODUCCIÓN 2026-11-12
 - `sql/030-historial.sql`: tabla `auditoria` llenada por triggers (no por el navegador) en 18 tablas
   (productos, ventas, caja, stock a mano, cuenta corriente, cobros, usuarios, permisos, cuentas bancarias,
   configuración, pedidos, compras…). Guarda solo lo que cambió (antes → después) y marca lo delicado
