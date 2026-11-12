@@ -266,6 +266,92 @@ const MHImprimir = (() => {
     imprimirHTML(htmlOrdenCobro(v, { ...(await datosTienda()), _origen: location.origin }));
   }
 
+  /* ── Comprobante de retiro (HTML puro) ──
+     Para preparar el pedido (con la ubicación de cada producto) y para que
+     firme quien lo retira. v: venta con venta_items (y opcional ubicacion_texto por ítem). */
+  function htmlRetiro(v, t = {}) {
+    const items = (v.items || v.venta_items || []).filter(i => Number(i.cantidad) > 0).sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+    const pagado = v.estado === 'cerrada' ? (v.medio_pago === 'cuenta_corriente' ? 'CUENTA CORRIENTE' : 'PAGADO') : 'PENDIENTE DE PAGO — NO ENTREGAR';
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Retiro ${esc(v.codigo || '')}</title>
+<style>${ESTILO_80} .ub { font-size:11px; color:#222; padding-left:8px; } .chk { display:inline-block; width:11px; height:11px; border:1px solid #000; margin-right:4px; vertical-align:-1px; }</style></head><body>
+  ${encabezado(t, v.entrega_tipo === 'envio' ? 'PARA ENVIAR' : 'COMPROBANTE DE RETIRO')}
+  <div class="dato">Venta: <b>${esc(v.codigo || '')}</b> · ${esc(fechaHora(v.fecha))}</div>
+  <div class="dato">Cliente: <b>${esc(v.cliente_nombre || 'Consumidor final')}</b></div>
+  ${v.retira_nombre ? `<div class="dato">Retira: <b>${esc(v.retira_nombre)}</b></div>` : ''}
+  ${v.entrega_fecha ? `<div class="m">${v.entrega_tipo === 'envio' ? 'Despachar' : 'Retira'} el ${esc(fechaCorta(v.entrega_fecha))}</div>` : ''}
+  ${v.envio_notas ? `<div class="m">Nota: ${esc(v.envio_notas)}</div>` : ''}
+  <div class="marca">${pagado}</div>
+  <div class="sep"></div>
+  <table>${items.map(i => `<tr><td><span class="chk"></span>${Number(i.cantidad)} × ${esc(i.nombre)}</td></tr>${i.ubicacion_texto ? `<tr><td class="ub">📍 ${esc(i.ubicacion_texto)}</td></tr>` : ''}`).join('')}</table>
+  <div class="sep"></div>
+  ${v.entrega_tipo === 'envio' ? '' : `<div class="dato">Recibí conforme:</div>
+  <div class="firma">Firma</div>
+  <div class="firma">Aclaración y DNI</div>`}
+  ${v.entregada_en ? `<div class="m" style="margin-top:6px">Entregado el ${esc(fechaHora(v.entregada_en))}${v.recibio_nombre ? ' a ' + esc(v.recibio_nombre) : ''}${v.recibio_dni ? ' (DNI ' + esc(v.recibio_dni) + ')' : ''}</div>` : ''}
+  ${SCRIPT_LISTO}
+</body></html>`;
+  }
+
+  /* ── Etiqueta de envío (A6 apaisada, una por bulto) ── */
+  function htmlEtiquetaEnvio(v, t = {}) {
+    const n = Math.max(1, Number(v.envio_bultos) || 1);
+    const una = k => `<div class="et">
+      <div class="et-de">De: <b>${esc(t.nombre_tienda || 'Mundo Hogar')}</b>${t.telefono || t.whatsapp ? ' · Tel. ' + esc(t.telefono || t.whatsapp) : ''}${t.domicilio_fiscal || t.direccion ? ' · ' + esc(t.domicilio_fiscal || t.direccion) : ''}</div>
+      <div class="et-para">PARA</div>
+      <div class="et-nom">${esc(v.envio_destinatario || v.cliente_nombre || '')}</div>
+      <div class="et-dir">${esc(v.envio_direccion || '')}</div>
+      <div class="et-loc">${esc(v.envio_localidad || '')}</div>
+      ${v.envio_telefono ? `<div class="et-tel">Tel. ${esc(v.envio_telefono)}</div>` : ''}
+      <div class="et-pie"><span>${esc(v.transporte_nombre || '')}</span><span>${esc(v.codigo || '')}</span><span>Bulto ${k}/${n}</span></div>
+    </div>`;
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Etiqueta ${esc(v.codigo || '')}</title>
+<style>
+  @page { size: 148mm 105mm; margin: 0; }
+  * { box-sizing: border-box; } body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #000; }
+  .et { width: 148mm; height: 105mm; padding: 7mm 9mm; display: flex; flex-direction: column; page-break-after: always; }
+  .et:last-child { page-break-after: auto; }
+  .et-de { font-size: 9pt; border-bottom: 1px solid #000; padding-bottom: 2mm; }
+  .et-para { font-size: 9pt; font-weight: bold; margin-top: 4mm; letter-spacing: .1em; }
+  .et-nom { font-size: 20pt; font-weight: bold; line-height: 1.1; margin-top: 1mm; }
+  .et-dir { font-size: 15pt; margin-top: 2mm; }
+  .et-loc { font-size: 18pt; font-weight: bold; text-transform: uppercase; margin-top: 1mm; }
+  .et-tel { font-size: 12pt; margin-top: 2mm; }
+  .et-pie { margin-top: auto; display: flex; justify-content: space-between; font-size: 11pt; font-weight: bold; border-top: 2px solid #000; padding-top: 2mm; }
+</style></head><body>
+${Array.from({ length: n }, (_, k) => una(k + 1)).join('')}
+<script>window.__mhListo && window.__mhListo();</script>
+</body></html>`;
+  }
+
+  /* ── Hoja de despacho del día, por transporte (A4) ── */
+  function htmlHojaDespacho(transporte, ventas, fecha, t = {}) {
+    const fila = (v, i) => `<tr><td>${i + 1}</td><td><b>${esc(v.envio_destinatario || v.cliente_nombre || '')}</b><br>${esc(v.envio_telefono || '')}</td>
+      <td>${esc(v.envio_direccion || '')}<br><b>${esc(v.envio_localidad || '')}</b></td><td class="c">${Number(v.envio_bultos) || 1}</td>
+      <td>${esc(v.codigo || '')}${v.envio_notas ? `<br><small>${esc(v.envio_notas)}</small>` : ''}</td><td class="seg"></td></tr>`;
+    const bultos = ventas.reduce((s, v) => s + (Number(v.envio_bultos) || 1), 0);
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Despacho ${esc(transporte)}</title>
+<style>
+  @page { size: A4; margin: 12mm; } * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; color: #000; }
+  h1 { font-size: 16pt; margin: 0 0 2mm; } .sub { margin-bottom: 5mm; }
+  table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #000; padding: 2mm; vertical-align: top; text-align: left; }
+  th { background: #eee; font-size: 9pt; text-transform: uppercase; } .c { text-align: center; } .seg { width: 32mm; }
+  .firmas { display: flex; gap: 20mm; margin-top: 18mm; } .firmas div { flex: 1; border-top: 1px solid #000; padding-top: 1mm; text-align: center; font-size: 9pt; }
+</style></head><body>
+  <h1>${esc(t.nombre_tienda || 'Mundo Hogar')} · Despacho ${esc(transporte)}</h1>
+  <div class="sub">${esc(fechaCorta(fecha))} · ${ventas.length} envío${ventas.length !== 1 ? 's' : ''} · ${bultos} bulto${bultos !== 1 ? 's' : ''}</div>
+  <table><thead><tr><th>#</th><th>Destinatario</th><th>Dirección</th><th>Bultos</th><th>Venta</th><th>N° de guía</th></tr></thead>
+  <tbody>${ventas.map(fila).join('')}</tbody></table>
+  <div class="firmas"><div>Entregó (${esc(t.nombre_tienda || 'Mundo Hogar')})</div><div>Recibió (${esc(transporte)}) · firma y aclaración</div></div>
+<script>window.__mhListo && window.__mhListo();</script>
+</body></html>`;
+  }
+
+  const conTienda = async () => ({ ...(await datosTienda()), _origen: location.origin });
+  async function retiro(v) { if (v) imprimirHTML(htmlRetiro(v, await conTienda())); }
+  async function etiquetaEnvio(v) { if (v) imprimirHTML(htmlEtiquetaEnvio(v, await conTienda())); }
+  async function hojaDespacho(transporte, ventas, fecha) { if (ventas?.length) imprimirHTML(htmlHojaDespacho(transporte, ventas, fecha, await conTienda())); }
+
   async function ticket(v) {
     if (!v) return;
     const t = { ...(await datosTienda()), _origen: location.origin };
@@ -385,6 +471,6 @@ ${lista.map(p => { const c = valorCodigo(p); return `<div class="et">
   // Después de editar los datos del negocio: la próxima impresión los vuelve a leer
   const refrescar = () => { tienda = null; };
 
-  return { ticket, recibo, cierreCaja, ordenCobro, refrescar, etiquetas, pedirEtiquetas, _html: { ticket: htmlTicket, recibo: htmlRecibo, cierreCaja: htmlCierreCaja, ordenCobro: htmlOrdenCobro, cuitFmt, fechaHora } };
+  return { ticket, recibo, cierreCaja, ordenCobro, retiro, etiquetaEnvio, hojaDespacho, refrescar, etiquetas, pedirEtiquetas, _html: { ticket: htmlTicket, recibo: htmlRecibo, cierreCaja: htmlCierreCaja, ordenCobro: htmlOrdenCobro, retiro: htmlRetiro, etiquetaEnvio: htmlEtiquetaEnvio, hojaDespacho: htmlHojaDespacho, cuitFmt, fechaHora } };
 })();
 window.MHImprimir = MHImprimir;

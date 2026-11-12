@@ -210,6 +210,9 @@ function abrir(id) {
         <div><b>Cliente</b>${esc(v.cliente_nombre||'Consumidor final')}${v.cliente_telefono ? ' · ' + esc(v.cliente_telefono) : ''}</div>
         <div><b>Medio de pago</b><span class="vta-medio vta-medio-${esc(v.medio_pago)}">${esc(MEDIOS[v.medio_pago]||v.medio_pago)}</span>${v.cc_cuenta_id && Auth.puede('cc.ver', perfil) ? ` <a href="/admin/cuentas-corrientes?cuenta=${v.cc_cuenta_id}" style="font-size:12px">ver cuenta →</a>` : ''}</div>
         ${v.retira_nombre ? `<div><b>Retiró</b>${esc(v.retira_nombre)}</div>` : ''}
+        ${v.entrega_tipo && v.entrega_tipo !== 'en_el_momento' ? `<div style="grid-column:1/-1"><b>Entrega</b>${v.entrega_tipo === 'retiro' ? '🏬 Retira en el local' : `🚚 Envío a ${esc(v.envio_direccion || '')}, ${esc(v.envio_localidad || '')}`}
+          · ${v.entrega_estado === 'entregado' ? `entregada ${Utils.datetime(v.entregada_en)}${v.recibio_nombre ? ' a ' + esc(v.recibio_nombre) : ''}${v.envio_seguimiento ? ' · guía ' + esc(v.envio_seguimiento) : ''}` : v.entrega_estado === 'listo' ? 'preparada, falta entregar' : 'pendiente'}
+          · <a href="/admin/entregas?tab=${v.entrega_estado === 'entregado' ? 'hechas' : v.entrega_tipo === 'retiro' ? 'retiros' : 'envios'}">ver en Entregas</a></div>` : ''}
         ${Number(v.recargo_total) > 0 ? `<div><b>Recargo cuenta corriente</b>${money(v.recargo_total)}</div>` : ''}
         ${v.notas ? `<div style="grid-column:1/-1"><b>Nota</b>${esc(v.notas)}</div>` : ''}
         ${v.estado==='pendiente_cobro' ? `<div style="grid-column:1/-1;color:#92400E"><b>Esperando cobro en la caja</b>${v.devuelta_motivo ? 'La caja la devolvió: ' + esc(v.devuelta_motivo) : 'No entregar la mercadería hasta que figure cobrada.'}</div>` : ''}

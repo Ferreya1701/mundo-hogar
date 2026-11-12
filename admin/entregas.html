@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/admin/manifest.json">
+  <meta name="theme-color" content="#0A2E63">
+  <link rel="icon" type="image/png" href="/images/marca/favicon.png">
+  <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
+  <title>Entregas — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://zydotmaolgddwenwywyc.supabase.co" crossorigin>
+  <link rel="stylesheet" href="/admin/css/admin.css">
+  <style>
+    .tabs { display:flex; gap:6px; border-bottom:2px solid var(--border); margin-bottom:16px; flex-wrap:wrap; }
+    .tabs button { background:none; border:0; padding:10px 14px; font-size:14px; font-weight:600; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+    .tabs button.active { color:var(--night); border-bottom-color:var(--gold); }
+    .tabs .n { background:var(--bg); border-radius:20px; padding:0 8px; margin-left:4px; font-size:12px; }
+    .tabs button.active .n { background:var(--gold); color:#fff; }
+    .grupo { margin-bottom:22px; }
+    .grupo-tit { display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:14px; font-weight:700; color:var(--night); margin-bottom:8px; }
+    .grupo-tit .sub { font-weight:500; color:var(--muted); font-size:13px; }
+    .grupo-tit .acc { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px; }
+    .card-e { background:#fff; border:1px solid var(--border); border-left:4px solid var(--border); border-radius:var(--r-lg); padding:12px 14px; display:flex; flex-direction:column; gap:6px; }
+    .card-e.pagada { border-left-color:var(--success); } .card-e.cc { border-left-color:var(--blue); } .card-e.sinpagar { border-left-color:var(--warning); }
+    .card-e.lista { box-shadow:0 0 0 2px var(--success-bg) inset; }
+    .card-e.atrasada .fecha { color:#B91C1C; font-weight:700; }
+    .cab { display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
+    .cod { font-family:monospace; font-size:12.5px; color:var(--muted); }
+    .nom { font-weight:700; color:var(--night); }
+    .meta { font-size:12.5px; color:var(--muted); }
+    .items { font-size:13px; line-height:1.5; }
+    .items .ub { color:var(--muted); font-size:12px; }
+    .accs { display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; }
+    .accs .btn-primary { flex:1; justify-content:center; }
+    .estado-pago { font-size:11px; font-weight:700; padding:1px 8px; border-radius:20px; }
+    .ep-ok { background:var(--success-bg); color:#15803D; } .ep-cc { background:var(--info-bg); color:var(--blue-dark); } .ep-no { background:var(--warning-bg); color:#92400E; }
+    .sel-e { width:18px; height:18px; accent-color:var(--gold); }
+    .vacio { padding:30px; text-align:center; color:var(--muted); background:#fff; border:1px dashed var(--border); border-radius:var(--r-lg); }
+    .filtros { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+    .filtros .search-bar { flex:1; min-width:200px; }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><img class="sidebar-brand-icon" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="32" height="32"><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/" target="_blank" class="btn btn-ghost btn-sm">🌐 Ver Tienda</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1>Entregas</h1><p>Lo que queda para retirar en el local y lo que hay que despachar. Lo que no está pagado no sale.</p></div>
+        <div class="page-header-actions" id="acciones"></div>
+      </div>
+      <div class="tabs" id="tabs">
+        <button data-tab="retiros">🏬 Para retirar <span class="n" id="n-retiros">0</span></button>
+        <button data-tab="envios">🚚 Envíos <span class="n" id="n-envios">0</span></button>
+        <button data-tab="hechas">✓ Entregadas <span class="n" id="n-hechas">0</span></button>
+      </div>
+      <div class="filtros">
+        <div class="search-bar"><span class="search-icon">🔍</span><input type="search" id="q" placeholder="Buscar por cliente, código, producto o localidad…" autocomplete="off"></div>
+      </div>
+      <div id="contenido"><div class="spinner" style="margin:40px auto"></div></div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script src="/admin/js/ubicaciones.js"></script>
+<script src="/admin/js/impresion.js"></script>
+<script>
+/* ============================================================
+   Entregas (sql/027): retiros en el local y envíos por transporte.
+   Lo sin pagar se ve (para prepararlo) pero no se puede entregar.
+   ============================================================ */
+const $id = id => document.getElementById(id);
+const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const money = n => new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS', maximumFractionDigits:0 }).format(Number(n || 0));
+const hoyISO = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const fCorta = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? `${m[3]}/${m[2]}${m[1] !== hoyISO().slice(0, 4) ? '/' + m[1] : ''}` : ''; };
+const diaTxt = iso => { if (!iso) return ''; const h = hoyISO(); if (iso === h) return 'hoy'; const d = (new Date(iso) - new Date(h)) / 864e5; if (d === 1) return 'mañana'; if (d < 0) return `${fCorta(iso)} (atrasada)`; return fCorta(iso); };
+
+let perfil = null, ventas = [], transportes = [], tab = 'retiros', timer = null;
+const sel = new Set();
+const puede = k => Auth.puede(k, perfil);
+
+const pago = v => v.estado === 'pendiente_cobro' ? 'no' : v.medio_pago === 'cuenta_corriente' ? 'cc' : 'ok';
+const PAGO_TXT = { ok: '<span class="estado-pago ep-ok">Pagada</span>', cc: '<span class="estado-pago ep-cc">Cuenta corriente</span>', no: '<span class="estado-pago ep-no">Sin pagar · espera cobro en caja</span>' };
+
+function msgError(e, accion) {
+  const m = (e?.message || '').toLowerCase();
+  if (m.includes('could not find') || m.includes('schema cache') || m.includes('does not exist') || m.includes('entrega_tipo'))
+    return 'Falta ejecutar sql/027-entregas.sql en la base de datos.';
+  if (!navigator.onLine || m.includes('failed to fetch')) return 'Sin conexión. Probá de nuevo.';
+  return e?.hint || `No se pudo ${accion}.`;
+}
+
+/* ── Datos ── */
+async function cargar() {
+  clearTimeout(timer);
+  const desde = new Date(Date.now() - 7 * 864e5).toISOString();
+  const [r, t] = await Promise.all([
+    db.from('ventas')
+      .select('id, codigo, fecha, total, estado, medio_pago, cliente_nombre, cliente_telefono, retira_nombre, vendedor_nombre, entrega_tipo, entrega_estado, entrega_fecha, transporte_id, envio_destinatario, envio_telefono, envio_direccion, envio_localidad, envio_notas, envio_bultos, envio_seguimiento, lista_en, lista_por_nombre, entregada_en, entregada_por_nombre, recibio_nombre, recibio_dni, venta_items(nombre, cantidad, orden, producto_id, productos(ubicacion_id))')
+      .neq('entrega_tipo', 'en_el_momento').neq('estado', 'anulada')
+      .or(`entrega_estado.neq.entregado,entregada_en.gte.${desde}`)
+      .order('entrega_fecha').order('fecha'),
+    db.from('transportes').select('id, nombre, notas, activo, orden').order('orden').order('nombre'),
+    MHUbic.cargar(),
+  ]);
+  if (r.error) { $id('contenido').innerHTML = `<div class="vacio">${esc(msgError(r.error, 'cargar las entregas'))}</div>`; return; }
+  ventas = r.data || []; transportes = t.data || [];
+  ventas.forEach(v => (v.venta_items || []).forEach(i => { i.ubicacion_texto = i.productos?.ubicacion_id ? MHUbic.texto(i.productos.ubicacion_id) : ''; }));
+  render();
+  timer = setTimeout(() => { if (!document.hidden && !document.querySelector('.modal-backdrop')) cargar(); else timer = setTimeout(cargar, 20000); }, 20000);
+}
+
+/* ── Pantalla ── */
+function visibles(f) {
+  const q = Utils.norm($id('q').value);
+  return ventas.filter(f).filter(v => !q || Utils.norm(`${v.codigo} ${v.cliente_nombre || ''} ${v.retira_nombre || ''} ${v.envio_destinatario || ''} ${v.envio_localidad || ''} ${(v.venta_items || []).map(i => i.nombre).join(' ')}`).includes(q));
+}
+const esRetiro = v => v.entrega_tipo === 'retiro' && v.entrega_estado !== 'entregado';
+const esEnvio  = v => v.entrega_tipo === 'envio'  && v.entrega_estado !== 'entregado';
+const esHecha  = v => v.entrega_estado === 'entregado';
+
+function render() {
+  $id('n-retiros').textContent = ventas.filter(esRetiro).length;
+  $id('n-envios').textContent = ventas.filter(esEnvio).length;
+  $id('n-hechas').textContent = ventas.filter(esHecha).length;
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  $id('acciones').innerHTML = puede('entregas.transportes') ? '<button class="btn btn-outline" data-acc="transportes">🚚 Empresas de transporte</button>' : '';
+  if (tab === 'retiros') return renderRetiros();
+  if (tab === 'envios') return renderEnvios();
+  renderHechas();
+}
+
+function items(v) {
+  return `<div class="items">${(v.venta_items || []).filter(i => i.cantidad > 0).sort((a, b) => a.orden - b.orden)
+    .map(i => `${i.cantidad}× ${esc(i.nombre)}${i.ubicacion_texto ? ` <span class="ub">📍 ${esc(i.ubicacion_texto)}</span>` : ''}`).join('<br>')}</div>`;
+}
+
+function cardRetiro(v) {
+  const p = pago(v), at = v.entrega_fecha && v.entrega_fecha < hoyISO();
+  const g = puede('entregas.gestionar');
+  return `<div class="card-e ${p === 'ok' ? 'pagada' : p === 'cc' ? 'cc' : 'sinpagar'}${v.entrega_estado === 'listo' ? ' lista' : ''}${at ? ' atrasada' : ''}">
+    <div class="cab"><span class="nom">${esc(v.retira_nombre || v.cliente_nombre || 'Consumidor final')}</span><span class="cod">${esc(v.codigo)}</span></div>
+    <div class="meta">${PAGO_TXT[p]} · ${money(v.total)} · pasa <span class="fecha">${esc(diaTxt(v.entrega_fecha))}</span>${v.cliente_telefono ? ' · ' + esc(v.cliente_telefono) : ''}</div>
+    ${v.retira_nombre && v.cliente_nombre && v.retira_nombre !== v.cliente_nombre ? `<div class="meta">Cliente: ${esc(v.cliente_nombre)}</div>` : ''}
+    ${items(v)}
+    ${v.envio_notas ? `<div class="meta">📝 ${esc(v.envio_notas)}</div>` : ''}
+    <div class="meta">Vendió ${esc(v.vendedor_nombre || '—')}${v.entrega_estado === 'listo' ? ` · <b style="color:#15803D">✓ preparado</b>${v.lista_por_nombre ? ' por ' + esc(v.lista_por_nombre) : ''}` : ''}</div>
+    <div class="accs">
+      ${g && p !== 'no' ? `<button class="btn btn-primary btn-sm" data-entregar="${v.id}">Entregar</button>` : ''}
+      ${p === 'no' ? '<button class="btn btn-outline btn-sm" disabled title="Primero se cobra en la caja">No se entrega: falta cobrar</button>' : ''}
+      ${g ? `<button class="btn btn-outline btn-sm" data-lista="${v.id}" data-on="${v.entrega_estado === 'listo' ? 0 : 1}">${v.entrega_estado === 'listo' ? 'Desmarcar' : '✓ Preparado'}</button>` : ''}
+      <button class="btn btn-ghost btn-sm" data-imp-retiro="${v.id}" title="Comprobante con la ubicación de cada producto y lugar para la firma">🖨️</button>
+      ${g ? `<button class="btn btn-ghost btn-sm" data-editar="${v.id}" title="Cambiar la entrega">✎</button>` : ''}
+    </div></div>`;
+}
+
+function renderRetiros() {
+  const l = visibles(esRetiro);
+  if (!l.length) { $id('contenido').innerHTML = '<div class="vacio">No hay nada para retirar. 🎉</div>'; return; }
+  const grupos = [['Pagadas', l.filter(v => pago(v) === 'ok')], ['En cuenta corriente', l.filter(v => pago(v) === 'cc')], ['Esperan cobro en la caja', l.filter(v => pago(v) === 'no')]];
+  $id('contenido').innerHTML = grupos.filter(([, a]) => a.length).map(([t, a]) => `<div class="grupo">
+    <div class="grupo-tit">${t} <span class="sub">${a.length}</span></div><div class="grid">${a.map(cardRetiro).join('')}</div></div>`).join('');
+}
+
+function cardEnvio(v) {
+  const p = pago(v), at = v.entrega_fecha && v.entrega_fecha < hoyISO(), g = puede('entregas.gestionar');
+  return `<div class="card-e ${p === 'ok' ? 'pagada' : p === 'cc' ? 'cc' : 'sinpagar'}${v.entrega_estado === 'listo' ? ' lista' : ''}${at ? ' atrasada' : ''}">
+    <div class="cab"><span style="display:flex;gap:8px;align-items:center">${g && p !== 'no' ? `<input type="checkbox" class="sel-e" data-sel="${v.id}" ${sel.has(v.id) ? 'checked' : ''} aria-label="Elegir para despachar">` : ''}<span class="nom">${esc(v.envio_destinatario || v.cliente_nombre || '')}</span></span><span class="cod">${esc(v.codigo)}</span></div>
+    <div class="meta">${esc(v.envio_direccion || '')} · <b>${esc(v.envio_localidad || '')}</b>${v.envio_telefono ? ' · ' + esc(v.envio_telefono) : ''}</div>
+    <div class="meta">${PAGO_TXT[p]} · despachar <span class="fecha">${esc(diaTxt(v.entrega_fecha))}</span>${v.envio_bultos ? ` · ${v.envio_bultos} bulto${v.envio_bultos !== 1 ? 's' : ''}` : ''}</div>
+    ${items(v)}
+    ${v.envio_notas ? `<div class="meta">📝 ${esc(v.envio_notas)}</div>` : ''}
+    ${v.entrega_estado === 'listo' ? `<div class="meta"><b style="color:#15803D">✓ embalado</b>${v.lista_por_nombre ? ' por ' + esc(v.lista_por_nombre) : ''}</div>` : ''}
+    <div class="accs">
+      ${p === 'no' ? '<button class="btn btn-outline btn-sm" disabled>No sale: falta cobrar</button>' : ''}
+      ${g ? `<button class="btn btn-outline btn-sm" data-lista="${v.id}" data-on="${v.entrega_estado === 'listo' ? 0 : 1}">${v.entrega_estado === 'listo' ? 'Desmarcar' : '✓ Embalado'}</button>` : ''}
+      <button class="btn btn-ghost btn-sm" data-etiqueta="${v.id}" title="Etiqueta para el paquete (una por bulto)">🏷️ Etiqueta</button>
+      <button class="btn btn-ghost btn-sm" data-imp-retiro="${v.id}" title="Lista para preparar, con ubicaciones">🖨️</button>
+      ${g ? `<button class="btn btn-ghost btn-sm" data-editar="${v.id}" title="Cambiar dirección, transporte o fecha">✎</button>` : ''}
+    </div></div>`;
+}
+
+function renderEnvios() {
+  const l = visibles(esEnvio);
+  if (!l.length) { $id('contenido').innerHTML = '<div class="vacio">No hay envíos pendientes. 🎉</div>'; return; }
+  const h = hoyISO();
+  const porT = new Map();
+  l.forEach(v => { const k = v.transporte_id || 0; if (!porT.has(k)) porT.set(k, []); porT.get(k).push(v); });
+  const nombreT = id => id ? (transportes.find(t => t.id === id)?.nombre || 'Transporte') : 'Transporte a definir';
+  const g = puede('entregas.gestionar');
+  $id('contenido').innerHTML = [...porT.entries()].sort((a, b) => (a[0] === 0) - (b[0] === 0) || nombreT(a[0]).localeCompare(nombreT(b[0]))).map(([tid, arr]) => {
+    const deHoy = arr.filter(v => !v.entrega_fecha || v.entrega_fecha <= h), luego = arr.filter(v => v.entrega_fecha > h);
+    const despachables = deHoy.filter(v => pago(v) !== 'no');
+    const notas = transportes.find(t => t.id === tid)?.notas;
+    return `<div class="grupo">
+      <div class="grupo-tit">🚚 ${esc(nombreT(tid))} <span class="sub">${deHoy.length} para hoy${luego.length ? ` · ${luego.length} más adelante` : ''}${notas ? ' · ' + esc(notas) : ''}</span>
+        <span class="acc">
+          ${deHoy.length ? `<button class="btn btn-outline btn-sm" data-hoja="${tid}">🖨️ Hoja de despacho de hoy</button>` : ''}
+          ${g && despachables.length ? `<button class="btn btn-outline btn-sm" data-todos="${tid}">Elegir los de hoy</button>
+          <button class="btn btn-primary btn-sm" data-despachar="${tid}">Despachar elegidos</button>` : ''}
+        </span></div>
+      ${deHoy.length ? `<div class="grid">${deHoy.map(cardEnvio).join('')}</div>` : ''}
+      ${luego.length ? `<div class="meta" style="margin:10px 0 6px">Más adelante</div><div class="grid">${luego.map(cardEnvio).join('')}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderHechas() {
+  const l = visibles(esHecha).sort((a, b) => new Date(b.entregada_en) - new Date(a.entregada_en));
+  if (!l.length) { $id('contenido').innerHTML = '<div class="vacio">Nada entregado en los últimos 7 días.</div>'; return; }
+  $id('contenido').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Cuándo</th><th>Venta</th><th>Cómo</th><th>Recibió / destino</th><th>Entregó</th><th></th></tr></thead><tbody>
+    ${l.map(v => `<tr><td style="white-space:nowrap">${Utils.datetime(v.entregada_en)}</td><td><span class="cod">${esc(v.codigo)}</span><br>${esc(v.cliente_nombre || '')}</td>
+      <td>${v.entrega_tipo === 'retiro' ? '🏬 Retiró' : '🚚 ' + esc(transportes.find(t => t.id === v.transporte_id)?.nombre || 'Envío')}</td>
+      <td>${v.entrega_tipo === 'retiro' ? `${esc(v.recibio_nombre || '')}${v.recibio_dni ? ' · DNI ' + esc(v.recibio_dni) : ''}` : `${esc(v.envio_localidad || '')}${v.envio_seguimiento ? ' · guía ' + esc(v.envio_seguimiento) : ''}`}</td>
+      <td>${esc(v.entregada_por_nombre || '')}</td>
+      <td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" data-imp-retiro="${v.id}">🖨️</button>${puede('entregas.gestionar') ? `<button class="btn btn-ghost btn-sm" data-deshacer="${v.id}" title="Se marcó por error">↶</button>` : ''}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+/* ── Acciones ── */
+function modal(titulo, cuerpo, boton, alConfirmar, ancho = 460) {
+  const bd = document.createElement('div'); bd.className = 'modal-backdrop';
+  bd.innerHTML = `<div class="modal" style="max-width:${ancho}px"><div class="modal-header"><h3 class="modal-title">${titulo}</h3><button class="modal-close" data-x aria-label="Cerrar">×</button></div>
+    <form class="modal-body form-grid" style="gap:12px" novalidate>${cuerpo}
+      <div class="modal-footer" style="padding:0;border:0"><button type="button" class="btn btn-outline" data-x>Cancelar</button><button type="submit" class="btn btn-primary">${boton}</button></div></form></div>`;
+  document.body.appendChild(bd);
+  bd.querySelectorAll('[data-x]').forEach(x => x.onclick = () => bd.remove());
+  bd.querySelector('input, select')?.focus();
+  bd.querySelector('form').onsubmit = async e => { e.preventDefault(); const b = e.submitter; b.disabled = true; if (await alConfirmar(bd) !== false) bd.remove(); else b.disabled = false; };
+  return bd;
+}
+
+function entregar(v) {
+  modal(`Entregar ${esc(v.codigo)}`, `
+    <div class="meta">${PAGO_TXT[pago(v)]} · ${money(v.total)}</div>
+    ${items(v)}
+    <div class="form-group"><label>¿Quién lo retira?</label><input type="text" id="rn" maxlength="120" value="${esc(v.retira_nombre || v.cliente_nombre || '')}"></div>
+    <div class="form-group"><label>DNI (opcional)</label><input type="text" id="rd" maxlength="20" inputmode="numeric"></div>
+    <label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="imp" checked> Imprimir comprobante para que firme</label>`,
+  'Entregar', async bd => {
+    const { error } = await db.rpc('venta_entregar', { p_ids: [v.id], p_datos: { recibio_nombre: bd.querySelector('#rn').value, recibio_dni: bd.querySelector('#rd').value } });
+    if (error) { Utils.toast(msgError(error, 'entregar'), 'error', 7000); return false; }
+    if (bd.querySelector('#imp').checked) MHImprimir.retiro({ ...v, recibio_nombre: bd.querySelector('#rn').value });
+    Utils.toast('Entregada', 'success'); cargar();
+  });
+}
+
+function despachar(tid) {
+  const l = ventas.filter(v => esEnvio(v) && (v.transporte_id || 0) === tid && sel.has(v.id));
+  if (!l.length) { Utils.toast('Tildá los envíos que se llevan', 'warning'); return; }
+  modal(`Despachar ${l.length} envío${l.length !== 1 ? 's' : ''}`, `
+    <div class="meta">Anotá el número de guía de cada uno si lo tenés (opcional).</div>
+    ${l.map(v => `<div class="form-group"><label>${esc(v.envio_destinatario || v.cliente_nombre || '')} · ${esc(v.envio_localidad || '')} <span class="cod">${esc(v.codigo)}</span></label>
+      <input type="text" data-seg="${v.id}" maxlength="80" placeholder="N° de guía" value="${esc(v.envio_seguimiento || '')}"></div>`).join('')}`,
+  'Despachar', async bd => {
+    const seguimientos = {}; bd.querySelectorAll('[data-seg]').forEach(i => { if (i.value.trim()) seguimientos[i.dataset.seg] = i.value.trim(); });
+    const { data, error } = await db.rpc('venta_entregar', { p_ids: l.map(v => v.id), p_datos: { seguimientos } });
+    if (error) { Utils.toast(msgError(error, 'despachar'), 'error', 8000); return false; }
+    l.forEach(v => sel.delete(v.id));
+    Utils.toast(`${data.entregadas} despachado${data.entregadas !== 1 ? 's' : ''}`, 'success'); cargar();
+  }, 520);
+}
+
+function editar(v) {
+  const e = { tipo: v.entrega_tipo, fecha: v.entrega_fecha || hoyISO(), transporte_id: v.transporte_id || '', destinatario: v.envio_destinatario || '', telefono: v.envio_telefono || '', direccion: v.envio_direccion || '', localidad: v.envio_localidad || '', bultos: v.envio_bultos || '', notas: v.envio_notas || '' };
+  const bd = modal(`Entrega de ${esc(v.codigo)}`, `
+    <div class="form-group"><label>Cómo</label><select id="et"><option value="retiro"${e.tipo === 'retiro' ? ' selected' : ''}>🏬 Retira en el local</option><option value="envio"${e.tipo === 'envio' ? ' selected' : ''}>🚚 Envío</option><option value="en_el_momento">🛍️ Ya se la llevó / no necesita entrega</option></select></div>
+    <div class="form-group"><label>Fecha (retiro o despacho)</label><input type="date" id="ef" value="${esc(e.fecha)}"></div>
+    <div id="ee" class="form-grid" style="gap:10px">
+      <div class="form-group"><label>Transporte</label><select id="etr"><option value="">A definir</option>${transportes.filter(t => t.activo || t.id === e.transporte_id).map(t => `<option value="${t.id}"${t.id === e.transporte_id ? ' selected' : ''}>${esc(t.nombre)}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Recibe</label><input type="text" id="ed" maxlength="120" value="${esc(e.destinatario)}"></div>
+      <div class="form-group"><label>Teléfono</label><input type="text" id="etel" maxlength="40" value="${esc(e.telefono)}"></div>
+      <div class="form-group"><label>Dirección *</label><input type="text" id="edir" maxlength="200" value="${esc(e.direccion)}"></div>
+      <div class="form-group"><label>Localidad *</label><input type="text" id="eloc" maxlength="120" value="${esc(e.localidad)}"></div>
+      <div class="form-group"><label>Bultos</label><input type="number" id="eb" min="1" max="99" value="${esc(e.bultos)}"></div>
+    </div>
+    <div class="form-group"><label>Nota</label><input type="text" id="en" maxlength="300" value="${esc(e.notas)}"></div>`,
+  'Guardar', async bd => {
+    const p = { tipo: bd.querySelector('#et').value, fecha: bd.querySelector('#ef').value, transporte_id: bd.querySelector('#etr').value, destinatario: bd.querySelector('#ed').value,
+      telefono: bd.querySelector('#etel').value, direccion: bd.querySelector('#edir').value, localidad: bd.querySelector('#eloc').value, bultos: bd.querySelector('#eb').value, notas: bd.querySelector('#en').value };
+    const { error } = await db.rpc('venta_entrega_guardar', { p_venta_id: v.id, p_e: p });
+    if (error) { Utils.toast(msgError(error, 'guardar la entrega'), 'error', 7000); return false; }
+    Utils.toast('Entrega actualizada', 'success'); cargar();
+  });
+  const sync = () => { bd.querySelector('#ee').hidden = bd.querySelector('#et').value !== 'envio'; };
+  bd.querySelector('#et').onchange = sync; sync();
+}
+
+function modalTransportes() {
+  const bd = document.createElement('div'); bd.className = 'modal-backdrop';
+  const pintar = () => { bd.querySelector('tbody').innerHTML = transportes.map(t => `<tr>
+      <td><input type="text" data-t="nombre" data-id="${t.id}" value="${esc(t.nombre)}" maxlength="60" style="width:100%;border-color:transparent;background:transparent"></td>
+      <td><input type="text" data-t="notas" data-id="${t.id}" value="${esc(t.notas || '')}" maxlength="200" placeholder="Horario, teléfono…" style="width:100%;border-color:transparent;background:transparent"></td>
+      <td><label class="toggle-wrap"><div class="toggle"><input type="checkbox" data-activo="${t.id}" ${t.activo ? 'checked' : ''}><div class="toggle-track"></div><div class="toggle-thumb"></div></div></label></td></tr>`).join('')
+      || '<tr><td colspan="3" style="text-align:center;padding:16px;color:var(--muted)">Todavía no hay empresas cargadas.</td></tr>'; };
+  bd.innerHTML = `<div class="modal" style="max-width:560px"><div class="modal-header"><h3 class="modal-title">🚚 Empresas de transporte</h3><button class="modal-close" data-x aria-label="Cerrar">×</button></div>
+    <div class="modal-body"><form id="tf" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap" novalidate>
+      <input type="text" id="tn" maxlength="60" placeholder="Nombre (ej. Andreani, Vía Cargo, flete propio)" style="flex:1;min-width:200px"><button class="btn btn-primary" type="submit">Agregar</button></form>
+      <div class="table-wrap"><table><thead><tr><th>Empresa</th><th>Notas</th><th style="width:70px">Activa</th></tr></thead><tbody></tbody></table></div>
+      <div class="form-hint" style="margin-top:8px">No se borran: se desactivan. Tocá un nombre para corregirlo.</div></div></div>`;
+  document.body.appendChild(bd); pintar();
+  bd.querySelector('[data-x]').onclick = () => { bd.remove(); cargar(); };
+  bd.querySelector('#tf').onsubmit = async e => {
+    e.preventDefault(); const n = bd.querySelector('#tn').value.trim(); if (n.length < 2) return;
+    const { data, error } = await db.from('transportes').insert({ nombre: n }).select().single();
+    if (error) { Utils.toast(/duplicate|unique/i.test(error.message) ? 'Ya existe' : msgError(error, 'agregar'), 'error'); return; }
+    transportes.push(data); bd.querySelector('#tn').value = ''; pintar();
+  };
+  bd.addEventListener('change', async e => {
+    const t = e.target, id = Number(t.dataset.id || t.dataset.activo); if (!id) return;
+    const cambio = t.dataset.activo ? { activo: t.checked } : { [t.dataset.t]: t.value.trim() || null };
+    if (cambio.nombre === null) { pintar(); return; }
+    const { error } = await db.from('transportes').update(cambio).eq('id', id);
+    if (error) { Utils.toast(msgError(error, 'guardar'), 'error'); pintar(); return; }
+    Object.assign(transportes.find(x => x.id === id), cambio);
+  });
+}
+
+document.addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const id = Number(b.dataset.entregar || b.dataset.lista || b.dataset.impRetiro || b.dataset.etiqueta || b.dataset.editar || b.dataset.deshacer);
+  const v = ventas.find(x => x.id === id);
+  if (b.dataset.tab) { tab = b.dataset.tab; render(); return; }
+  if (b.dataset.acc === 'transportes') return modalTransportes();
+  if (b.dataset.entregar) return entregar(v);
+  if (b.dataset.editar) return editar(v);
+  if (b.dataset.impRetiro) return MHImprimir.retiro(v);
+  if (b.dataset.etiqueta) return MHImprimir.etiquetaEnvio({ ...v, transporte_nombre: transportes.find(t => t.id === v.transporte_id)?.nombre || '' });
+  if (b.dataset.lista) {
+    const { error } = await db.rpc('venta_entrega_lista', { p_ids: [id], p_lista: b.dataset.on === '1' });
+    if (error) { Utils.toast(msgError(error, 'guardar'), 'error'); return; }
+    cargar(); return;
+  }
+  if (b.dataset.deshacer) {
+    const bd = modal(`Deshacer la entrega de ${esc(v.codigo)}`, `<div class="form-group"><label>Motivo *</label><input type="text" id="mo" maxlength="300" placeholder="Ej. se marcó la venta equivocada"></div>`, 'Deshacer', async bd => {
+      const m = bd.querySelector('#mo').value.trim(); if (!m) { Utils.toast('Escribí el motivo', 'warning'); return false; }
+      const { error } = await db.rpc('venta_entrega_deshacer', { p_venta_id: id, p_motivo: m });
+      if (error) { Utils.toast(msgError(error, 'deshacer'), 'error'); return false; }
+      Utils.toast('Vuelve a pendiente', 'success'); cargar();
+    });
+    return;
+  }
+  if (b.dataset.todos !== undefined) {
+    const tid = Number(b.dataset.todos), h = hoyISO();
+    ventas.filter(v => esEnvio(v) && (v.transporte_id || 0) === tid && pago(v) !== 'no' && (!v.entrega_fecha || v.entrega_fecha <= h)).forEach(v => sel.add(v.id));
+    render(); return;
+  }
+  if (b.dataset.despachar !== undefined) return despachar(Number(b.dataset.despachar));
+  if (b.dataset.hoja !== undefined) {
+    const tid = Number(b.dataset.hoja), h = hoyISO();
+    const l = ventas.filter(v => esEnvio(v) && (v.transporte_id || 0) === tid && (!v.entrega_fecha || v.entrega_fecha <= h) && pago(v) !== 'no');
+    if (!l.length) { Utils.toast('No hay envíos pagados para hoy en este transporte', 'warning'); return; }
+    MHImprimir.hojaDespacho(tid ? (transportes.find(t => t.id === tid)?.nombre || 'Transporte') : 'Transporte a definir', l, h);
+  }
+});
+document.addEventListener('change', e => { if (e.target.dataset.sel) { const id = Number(e.target.dataset.sel); e.target.checked ? sel.add(id) : sel.delete(id); } });
+let tq; $id('q').addEventListener('input', () => { clearTimeout(tq); tq = setTimeout(render, 200); });
+
+async function initPage() {
+  perfil = await Auth.init();
+  if (!perfil) return;
+  if (!Auth.requirePermiso('entregas.ver', perfil)) return;
+  await Layout.init('entregas', 'Entregas');
+  const t = new URLSearchParams(location.search).get('tab'); if (['retiros', 'envios', 'hechas'].includes(t)) tab = t;
+  await cargar();
+}
+initPage();
+</script>
+<script src="/admin/js/assistant.js"></script>
+<script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/admin/sw.js').catch(()=>{}); }</script>
+</body>
+</html>

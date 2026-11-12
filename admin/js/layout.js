@@ -5,6 +5,7 @@ const Layout = {
     { id:'vender',     label:'Crear venta',         icon:'🛒', href:'/admin/vender',         section:'Ventas', permiso:'ventas.crear' },
     { id:'ventas',     label:'Ventas',              icon:'🧮', href:'/admin/ventas',         section:'Ventas' },
     { id:'caja',       label:'Caja',                icon:'💵', href:'/admin/caja',           section:'Ventas', permiso:'caja.ver' },
+    { id:'entregas',   label:'Entregas',            icon:'📦', href:'/admin/entregas',       section:'Ventas', permiso:'entregas.ver' },
     { id:'cuentas-corrientes', label:'Cuentas corrientes', icon:'📒', href:'/admin/cuentas-corrientes', section:'Ventas', permiso:'cc.ver' },
     { id:'pedidos',    label:'Pedidos web',         icon:'🧾', href:'/admin/pedidos',        section:'Ventas' },
     { id:'crm',        label:'Clientes',            icon:'🤝', href:'/admin/crm',            section:'Ventas', permiso:'clientes.gestionar' },

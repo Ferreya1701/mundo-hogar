@@ -263,3 +263,34 @@ crea un rol "cajero").
 Por dentro: estado `pendiente_cobro`, tabla `venta_pagos`, `venta_cobrar(venta, pagos[])`,
 `venta_devolver`, `venta_reenviar_a_caja`; `fn_venta_pagado` es la única fuente para asentar caja y
 cuentas bancarias. Pruebas: `node scripts/test-cobrar-en-caja-sql.mjs` (41).
+
+## 14. Retiros y envíos — módulo Entregas (sql/027, 2026-11-12)
+
+**Al vender** se elige la entrega (debajo del cobro):
+- 🛍️ **Se lo lleva** (lo de siempre): no pasa por Entregas.
+- 🏬 **Retira después**: con el día que pasa y una nota. Queda en *Entregas → Para retirar*.
+- 🚚 **Envío**: transporte, día de despacho, quién recibe, teléfono, **dirección y localidad (obligatorias)**,
+  bultos y nota. Queda en *Entregas → Envíos*, agrupado por empresa de transporte.
+
+**Regla de oro: lo que no está pagado no sale.** Una venta que espera cobro en la caja aparece en Entregas
+(para ir preparándola), pero el botón de entregar está bloqueado; la base de datos también lo rechaza.
+La **cuenta corriente** sí sale sin pasar por caja.
+
+**En Entregas:**
+- *Para retirar*: separado en Pagadas / Cuenta corriente / Esperan cobro. "✓ Preparado" marca que ya
+  está armado. **Entregar** pide quién retira y el DNI (opcional) e imprime el **comprobante de retiro**
+  para que firme. Las fechas pasadas se ven en rojo (atrasadas).
+- *Envíos*: por transporte, primero lo de hoy. "Elegir los de hoy" → "Despachar elegidos" (con número de
+  guía opcional). Es todo o nada: si una no está pagada no sale ninguna. **🏷️ Etiqueta** imprime una por
+  bulto (A6). **Hoja de despacho de hoy** (A4) para que firme el transporte.
+- *Entregadas*: lo de los últimos 7 días; ↶ deshace una entrega marcada por error (con motivo).
+- El comprobante de retiro lleva la **ubicación** (📍) de cada producto para ir a buscarlo.
+- ✎ cambia la entrega (de retiro a envío, dirección, transporte, fecha) mientras no haya salido.
+- **Empresas de transporte**: las carga el administrador (botón arriba a la derecha). No se borran, se desactivan.
+
+**Permisos**: "Ver retiros y envíos" y "Entregar y despachar" (vendedor y encargado de stock);
+"Empresas de transporte" (solo admin, delegable). Quien ve Entregas ve las ventas con entrega de todas las vendedoras.
+
+Por dentro: columnas `entrega_*`/`envio_*`/`recibio_*` en `ventas`, tabla `transportes`,
+`venta_entrega_guardar`, `venta_entrega_lista`, `venta_entregar(ids[], datos)`, `venta_entrega_deshacer`.
+Pruebas: `node scripts/test-entregas-sql.mjs` (32) y `scripts/test-ticket.mjs` (comprobantes).

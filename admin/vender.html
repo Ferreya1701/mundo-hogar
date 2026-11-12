@@ -19,6 +19,9 @@
   .cc-item:hover { border-color:var(--blue); }
   .cc-sel { border:1px solid var(--border); border-radius:var(--r); padding:10px 12px; background:var(--bg); display:flex; flex-direction:column; gap:4px; }
   .cc-dato { font-size:12.5px; color:var(--muted); }
+  .ent-campos { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+  .ent-campos input, .ent-campos select { width:100%; min-height:38px; }
+  .ent-campos label { font-size:12px; color:var(--muted); display:flex; flex-direction:column; gap:3px; }
   #en-caja { padding:10px 14px; border-left:4px solid var(--warning); }
   .ec-tit { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:6px; }
   .ec-fila { display:flex; justify-content:space-between; gap:10px; align-items:center; padding:8px 0; border-top:1px solid var(--border); font-size:13.5px; flex-wrap:wrap; }
@@ -146,6 +149,12 @@ let ccSel = null;          // cliente de cuenta corriente elegido (cc_buscar)
 /* sql/026: las ventas se cobran en la CAJA. Acá solo se arman y se envían;
    lo único que se resuelve en el momento es la cuenta corriente (no hay plata). */
 let porCaja = false;
+/* sql/027: cómo se entrega. Se lo lleva / retira después / envío por transporte. */
+let conEntregas = false;
+let transportes = [];
+const hoyISO = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const ENTREGA_VACIA = () => ({ tipo: 'en_el_momento', fecha: '', transporte_id: '', destinatario: '', telefono: '', direccion: '', localidad: '', bultos: '', notas: '' });
+let entrega = ENTREGA_VACIA();
 let enCaja = [];           // mis ventas que esperan cobro (o que la caja devolvió)
 const txtBoton = total => !porCaja ? `Cobrar ${money(total)}` : (esCC() ? `Cargar a la cuenta · ${money(total)}` : `Enviar a caja · ${money(total)}`);
 /* Cuenta bancaria para transferencia / Mercado Pago (sql/025): la asigna el
@@ -183,11 +192,11 @@ function msgError(error, accion = 'registrar la venta') {
 }
 
 /* ── Persistencia del ticket (si se recarga la página no se pierde) ── */
-function guardarTicket() { try { sessionStorage.setItem(KEY_TICKET, JSON.stringify({ ticket, medio, ccSel })); } catch (e) {} }
+function guardarTicket() { try { sessionStorage.setItem(KEY_TICKET, JSON.stringify({ ticket, medio, ccSel, entrega })); } catch (e) {} }
 function cargarTicket() {
   try {
     const s = JSON.parse(sessionStorage.getItem(KEY_TICKET) || 'null');
-    if (s && Array.isArray(s.ticket)) { ticket = s.ticket; medio = s.medio || 'efectivo'; ccSel = s.ccSel || null; }
+    if (s && Array.isArray(s.ticket)) { ticket = s.ticket; medio = s.medio || 'efectivo'; ccSel = s.ccSel || null; if (s.entrega) entrega = s.entrega; }
   } catch (e) {}
 }
 
@@ -494,13 +503,14 @@ function renderTicket() {
     ${esCC() ? htmlClienteCC(subtotal - desc) : `<div class="pos-seccion"><span class="lbl">Cliente (opcional)</span>
       <div class="pos-cliente"><input type="text" id="cli-nombre" placeholder="Nombre" maxlength="80" value="${esc(cliN)}"><input type="tel" id="cli-tel" placeholder="Teléfono (para mandar el ticket)" maxlength="25" value="${esc(cliT)}"></div>
     </div>`}
+    ${conEntregas ? htmlEntrega() : ''}
     <div class="pos-seccion"><input type="text" id="retira" placeholder="Retira (si no es el cliente)" maxlength="80" value="${esc(retira)}"></div>
     <div class="pos-seccion"><input type="text" id="notas" placeholder="Nota interna (opcional)" maxlength="400" value="${esc(notas)}"></div>
     <button type="button" class="btn btn-primary btn-cobrar" id="btn-cobrar">${txtBoton(subtotal - desc)}</button>`;
 }
 
 document.getElementById('ticket-body').addEventListener('click', async e => {
-  const b = e.target.closest('[data-act], [data-medio], #btn-cobrar, [data-ok]');
+  const b = e.target.closest('[data-act], [data-medio], [data-entrega], #btn-cobrar, [data-ok]');
   if (!b) return;
   if (b.id === 'btn-cobrar') { cobrar(); return; }
   if (b.dataset.ok === 'nueva') { ultimaVenta = null; renderTicket(); document.getElementById('q').focus(); return; }
@@ -508,6 +518,11 @@ document.getElementById('ticket-body').addEventListener('click', async e => {
   if (b.dataset.ok === 'orden') { MHImprimir.ordenCobro(ultimaVenta); return; }
   if (b.dataset.ok === 'imprimir') { MHImprimir.ticket(ultimaVenta); return; }
   if (b.dataset.ok === 'copiar') { Utils.copy(textoTicket(ultimaVenta), 'Ticket copiado'); return; }
+  if (b.dataset.entrega) {
+    entrega.tipo = b.dataset.entrega;
+    if (entrega.tipo !== 'en_el_momento' && !entrega.fecha) entrega.fecha = hoyISO();
+    guardarTicket(); renderTicket(); return;
+  }
   if (b.dataset.act === 'cta-otra') { pedirCuenta(true); return; }
   if (b.dataset.act === 'cta-copiar') { Utils.copy(b.dataset.txt, 'Copiado'); return; }
   if (b.dataset.medio) { medio = b.dataset.medio; if (!esBanco()) soltarCuenta(); guardarTicket(); renderTicket(); if (esCC() && !ccSel) setTimeout(() => document.getElementById('cc-q')?.focus(), 0); return; }
@@ -521,6 +536,28 @@ document.getElementById('ticket-body').addEventListener('click', async e => {
   if (b.dataset.act === 'precio') { const v = await pedirPrecio(t.nombre, t.precio); if (v === null) return; t.precio = v; }
   guardarTicket(); renderTicket();
 });
+
+/* ── Entrega (sql/027) ── */
+function htmlEntrega() {
+  const e = entrega, T = { en_el_momento: '🛍️ Se lo lleva', retiro: '🏬 Retira después', envio: '🚚 Envío' };
+  const campo = (k, ph, extra = '') => `<input type="text" data-ent="${k}" placeholder="${ph}" value="${esc(e[k] || '')}" ${extra}>`;
+  return `<div class="pos-seccion"><span class="lbl">Entrega</span>
+    <div class="chips pay-chips">${Object.entries(T).map(([k, v]) => `<button type="button" class="chip${e.tipo === k ? ' active' : ''}" data-entrega="${k}">${v}</button>`).join('')}</div>
+    ${e.tipo === 'retiro' ? `<div class="ent-campos">
+        <label>¿Cuándo pasa? <input type="date" data-ent="fecha" value="${esc(e.fecha || hoyISO())}" min="${hoyISO()}"></label>
+        ${campo('notas', 'Nota (ej. pasa el hermano a la tarde)', 'maxlength="300" style="grid-column:1/-1"')}
+        <div class="cta-sub" style="grid-column:1/-1">Queda en Entregas → Para retirar. Se entrega solo si está pagada.</div></div>` : ''}
+    ${e.tipo === 'envio' ? `<div class="ent-campos">
+        <label>Transporte <select data-ent="transporte_id"><option value="">A definir</option>${transportes.filter(t => t.activo).map(t => `<option value="${t.id}"${String(t.id) === String(e.transporte_id) ? ' selected' : ''}>${esc(t.nombre)}</option>`).join('')}</select></label>
+        <label>Despachar el <input type="date" data-ent="fecha" value="${esc(e.fecha || hoyISO())}" min="${hoyISO()}"></label>
+        ${campo('destinatario', 'Recibe (si no es el cliente)', 'maxlength="120"')}
+        ${campo('telefono', 'Teléfono de quien recibe', 'maxlength="40" inputmode="tel"')}
+        ${campo('direccion', 'Dirección *', 'maxlength="200" style="grid-column:1/-1"')}
+        ${campo('localidad', 'Localidad *', 'maxlength="120"')}
+        ${campo('bultos', 'Bultos', 'maxlength="2" inputmode="numeric"')}
+        ${campo('notas', 'Nota para el envío', 'maxlength="300" style="grid-column:1/-1"')}</div>` : ''}
+  </div>`;
+}
 
 /* ── Mis ventas en la caja (sql/026) ──
    Lista de lo que mandé y todavía no se cobró, y lo que la caja me devolvió.
@@ -702,7 +739,11 @@ document.getElementById('ticket-body').addEventListener('input', e => {
     document.getElementById('bar-total').textContent = money(subtotal - desc);
   }
 });
+document.getElementById('ticket-body').addEventListener('input', e => {
+  if (e.target.dataset.ent) { entrega[e.target.dataset.ent] = e.target.value; guardarTicket(); }
+});
 document.getElementById('ticket-body').addEventListener('change', e => {
+  if (e.target.dataset.ent) { entrega[e.target.dataset.ent] = e.target.value; guardarTicket(); }
   if (e.target.dataset.act === 'cant') renderTicket();
 });
 
@@ -734,6 +775,9 @@ async function cobrar() {
   const cliT = esCC() ? (ccSel.telefono || '') : document.getElementById('cli-tel').value.trim();
   const retira = document.getElementById('retira')?.value.trim() || '';
   const recargoTotal = ticket.reduce((s, t) => s + recargoDe(t) * t.cantidad, 0);
+  if (conEntregas && entrega.tipo === 'envio' && (!entrega.direccion.trim() || !entrega.localidad.trim())) {
+    Utils.toast('Para un envío hacen falta la dirección y la localidad', 'warning'); document.querySelector('[data-ent="direccion"]')?.focus(); return;
+  }
   const notas = document.getElementById('notas').value.trim();
   let cuenta = document.getElementById('cuenta')?.value || null;
   const nroOp = document.getElementById('nro-op')?.value.trim() || null;
@@ -748,6 +792,8 @@ async function cobrar() {
     (esBanco() && ctaBanco.modo === 'auto' && !ctaBanco.cuenta && ctaBanco.motivo === 'sin_cupo' ? `<span style="color:#B45309">⚠ Ninguna cuenta tiene cupo: la venta queda sin cuenta asignada. Avisale al administrador.</span><br>` : '') +
     (esCC() ? `Cliente: <b>${esc(ccSel.nombre)}</b> · queda debiendo <b>${money(Number(ccSel.saldo) + total)}</b>${recargoTotal ? ` (incluye ${money(recargoTotal)} de recargo)` : ''}.<br>` : '') +
     (retira ? `Retira: ${esc(retira)}<br>` : '') +
+    (conEntregas && entrega.tipo === 'retiro' ? `🏬 <b>Retira después</b> (${esc((entrega.fecha || hoyISO()).split('-').reverse().join('/'))})<br>` : '') +
+    (conEntregas && entrega.tipo === 'envio' ? `🚚 <b>Envío</b> a ${esc(entrega.direccion)}, ${esc(entrega.localidad)}${entrega.transporte_id ? ' por ' + esc(transportes.find(t => String(t.id) === String(entrega.transporte_id))?.nombre || '') : ''} · despachar el ${esc((entrega.fecha || hoyISO()).split('-').reverse().join('/'))}<br>` : '') +
     ticket.map(t => `${t.cantidad}× ${esc(t.nombre)}`).join('<br>') +
     (avisos.length ? `<br><br><span style="color:#B45309">⚠ El sistema dice que no alcanza el stock de: ${avisos.map(a => `<b>${esc(a.nombre)}</b> (hay ${a.hay}, se venden ${a.piden})`).join(', ')}. Se vende igual y el stock queda en negativo para que lo revises en Contar stock.</span>` : '');
   if (!await Utils.confirm(resumen, porCaja && !esCC() ? 'Enviar a caja' : 'Confirmar venta', txtBoton(total), false)) return;
@@ -758,6 +804,7 @@ async function cobrar() {
     items: ticket.map(t => ({ producto_id: t.producto_id, nombre: t.producto_id ? undefined : t.nombre, cantidad: t.cantidad, precio_unitario: t.precio })),
     medio_pago: porCaja && !esCC() ? 'efectivo' : medio, cuenta_cobro_id: cuenta || null,   // con sql/026 el medio lo elige la caja
     cliente_nombre: cliN || null, cliente_telefono: cliT || null, retira_nombre: retira || null,
+    entrega: conEntregas ? { ...entrega, destinatario: entrega.destinatario || cliN, telefono: entrega.telefono || cliT } : undefined,
     cc_cuenta_id: esCC() ? ccSel.id : null,
     nro_operacion: nroOp,
     descuento: desc || 0, notas: notas || null, permitir_negativo: true
@@ -775,8 +822,8 @@ async function cobrar() {
     const p = productos.find(x => x.id === i.producto_id);
     if (p && i.afecto_stock && typeof i.stock_posterior === 'number') p.stock_actual = i.stock_posterior;
   });
-  ultimaVenta = Object.assign({}, data, { cliente_nombre: data.cliente_nombre || cliN, cliente_telefono: cliT, retira_nombre: retira });
-  ticket = []; ccSel = null; guardarTicket();
+  ultimaVenta = Object.assign({}, data, { cliente_nombre: data.cliente_nombre || cliN, cliente_telefono: cliT, retira_nombre: retira, _entrega: conEntregas ? { ...entrega } : null });
+  ticket = []; ccSel = null; entrega = ENTREGA_VACIA(); guardarTicket();
   Object.assign(ctaBanco, { cuenta: null, monto: null, aviso: null, motivo: null, excluidas: [] });   // la reserva ya la consumió la venta
   if (data.aviso_cuenta) Utils.toast(data.aviso_cuenta, 'warning', 12000);
   renderTicket(); renderResultados(); cargarHoy();
@@ -820,6 +867,7 @@ function renderVentaOk() {
       <div class="pos-ok-total">${money(v.total)}</div>
       <div class="pos-ok-cod">${esc(v.codigo)}</div>
       <div class="pos-espera">ESPERANDO EL PAGO EN CAJA<br><span>No entregues la mercadería hasta que figure pagada.</span></div>
+      ${v._entrega && v._entrega.tipo !== 'en_el_momento' ? `<div class="pos-ok-cod">${v._entrega.tipo === 'retiro' ? '🏬 Queda para retirar' : '🚚 Queda para enviar'}: aparece en Entregas</div>` : ''}
       <div class="pos-ok-items">${(v.items||[]).map(i => `<div><span>${i.cantidad}× ${esc(i.nombre)}</span><b>${money(i.subtotal)}</b></div>`).join('')}</div>
       ${avisos.length ? `<div class="pos-aviso" style="display:block;text-align:left;padding:8px 10px">⚠ Stock en negativo: ${avisos.map(a => `<b>${esc(a.nombre)}</b> (${a.stock})`).join(', ')}.</div>` : ''}
       <div class="pos-ok-acciones">
@@ -864,7 +912,12 @@ async function initPage() {
   cargarTicket();
   avisoCaja();
   // ¿La base ya cobra por caja (sql/026)? Lo dice el catálogo de permisos.
-  const modo = db.from('permisos').select('clave').eq('clave', 'caja.cobrar').maybeSingle().then(r => { porCaja = !!r.data; });
+  const modo = db.from('permisos').select('clave').in('clave', ['caja.cobrar', 'entregas.ver']).then(r => {
+    const c = (r.data || []).map(x => x.clave);
+    porCaja = c.includes('caja.cobrar');
+    conEntregas = c.includes('entregas.ver');
+    if (conEntregas) return db.from('transportes').select('id, nombre, activo').order('orden').order('nombre').then(t => { transportes = t.data || []; });
+  });
   await Promise.all([cargarDatos(), modo]);
   if (porCaja) {
     if (medio !== 'cuenta_corriente' || !puedeCC()) medio = 'pendiente';

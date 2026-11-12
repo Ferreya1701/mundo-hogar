@@ -94,6 +94,29 @@ tiene('próximo vencimiento', hcc, 'Próximo vencimiento: 10/12/2026 · a pagar 
 tiene('lugar para la firma del cliente', hcc, 'Firma del cliente');
 noTiene('una venta común no muestra saldo ni firma', h, 'Firma del cliente');
 
+grupo('Comprobantes de entrega');
+const { retiro, etiquetaEnvio, hojaDespacho } = ctx.MHImprimir._html;
+const VR = { ...VENTA, items: undefined, estado: 'cerrada', medio_pago: 'efectivo', entrega_tipo: 'retiro', entrega_fecha: '2026-11-14', envio_notas: 'pasa a la tarde',
+  venta_items: [{ ...VENTA.items[0], ubicacion_texto: 'Depósito 1 · Fila B' }, { ...VENTA.items[1], cantidad: 0 }] };
+const hr = retiro(VR, TIENDA);
+tiene('retiro: título', hr, 'COMPROBANTE DE RETIRO');
+tiene('retiro: dónde buscar cada producto', hr, '📍 Depósito 1 · Fila B');
+noTiene('retiro: lo quitado no aparece', hr, 'Termo');
+tiene('retiro: marca PAGADO', hr, '<div class="marca">PAGADO</div>');
+tiene('retiro: cuándo pasa', hr, 'Retira el 14/11/2026');
+tiene('retiro: firma y DNI de quien retira', hr, 'Aclaración y DNI');
+tiene('retiro sin pagar: avisa que no se entrega', retiro({ ...VR, estado: 'pendiente_cobro' }, TIENDA), 'PENDIENTE DE PAGO — NO ENTREGAR');
+tiene('retiro en cuenta corriente', retiro({ ...VR, medio_pago: 'cuenta_corriente' }, TIENDA), 'CUENTA CORRIENTE');
+const VE = { ...VR, entrega_tipo: 'envio', envio_destinatario: 'Juan Pérez', envio_direccion: 'San Martín 123', envio_localidad: 'Rafaela', envio_telefono: '3492 55', envio_bultos: 2, transporte_nombre: 'Andreani' };
+const he = etiquetaEnvio(VE, TIENDA);
+tiene('etiqueta: destinatario', he, '<div class="et-nom">Juan Pérez</div>');
+tiene('etiqueta: localidad grande', he, '<div class="et-loc">Rafaela</div>');
+t('etiqueta: una por bulto', (he.match(/class="et"/g) || []).length, 2);
+tiene('etiqueta: bulto 2 de 2 y transporte', he, '<span>Andreani</span><span>VL-261111-0007</span><span>Bulto 2/2</span>');
+const hd = hojaDespacho('Andreani', [VE, { ...VE, codigo: 'VL-2', envio_bultos: null }], '2026-11-14', TIENDA);
+tiene('hoja de despacho: totales', hd, '14/11/2026 · 2 envíos · 3 bultos');
+tiene('hoja de despacho: firma del transporte', hd, 'Recibió (Andreani)');
+
 grupo('Recibo');
 const r = recibo({ numero: 'R-000012', fecha: '2026-11-11T16:23:46Z', cliente_nombre: 'Juan Pérez', monto: 30000,
                    medio_pago: 'transferencia', saldo_anterior: 80000, saldo_actual: 50000, concepto: 'Pago cuenta corriente' }, TIENDA);
