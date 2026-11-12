@@ -22,13 +22,13 @@ descuenta de verdad; al vencer o cancelar, se libera.
 
 1. **Base de datos:** ejecutar `sql/013-local-compras-stock.sql` (idempotente; requiere 001..012).
    Con la CLI logueada (`npx supabase login`):
-   `npx supabase db query --linked --project-ref zydotmaolgddwenwywyc -f sql/013-local-compras-stock.sql`
+   `npx supabase db query --linked --project-ref vduinkzeneokkqzdgxig -f sql/013-local-compras-stock.sql`
    o pegarlo en el SQL Editor del panel de Supabase. Probado con `node scripts/test-stock-sql.mjs`
    (109 pruebas con PGlite). Hasta que se ejecute, las páginas nuevas del panel avisan
    "falta ejecutar sql/013" y la tienda sigue funcionando como antes.
 2. **Lectura de listas con IA (opcional):** desplegar la Edge Function `leer-lista-compra`
    igual que `leer-comprobante`:
-   `npx supabase functions deploy leer-lista-compra --project-ref zydotmaolgddwenwywyc --no-verify-jwt --use-api`.
+   `npx supabase functions deploy leer-lista-compra --project-ref vduinkzeneokkqzdgxig --no-verify-jwt --use-api`.
    Usa el mismo secreto `ANTHROPIC_API_KEY`. Sin la función o sin la clave, la carga de compras
    funciona igual pegando la planilla (la IA solo suma leer fotos/PDF y traducir nombres).
 3. **Deploy de la web:** push a `main` (Cloudflare despliega solo). Páginas nuevas:

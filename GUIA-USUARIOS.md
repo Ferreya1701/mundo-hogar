@@ -10,7 +10,7 @@ falta entrar a Supabase.
    001..013). Al final muestra la lista de accesos: si aparece alguno que no conocés, desactivalo
    desde Usuarios → Editar o borralo en Authentication → Users.
 3. **Edge Function** (en una terminal con la CLI logueada):
-   `npx supabase functions deploy usuarios --project-ref zydotmaolgddwenwywyc --no-verify-jwt --use-api`
+   `npx supabase functions deploy usuarios --project-ref vduinkzeneokkqzdgxig --no-verify-jwt --use-api`
    No necesita secretos nuevos (usa `SUPABASE_SERVICE_ROLE_KEY`, que pone Supabase sola).
    `--no-verify-jwt` porque la función valida la sesión y el rol adentro, como las otras.
 4. **Web:** push a `main` (Cloudflare despliega solo). Página nueva: `/admin/clave`.

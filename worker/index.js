@@ -12,8 +12,8 @@
 // los datos se protegen con RLS. Acá no va ningún secreto.
 
 const SITIO = 'https://mundohogarstf.com';
-const SUPABASE_URL = 'https://zydotmaolgddwenwywyc.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_8mXhNbUrp3wiWeHuZBVkVA_mFAihF_t';
+const SUPABASE_URL = 'https://vduinkzeneokkqzdgxig.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_IN3Qtb5Jtf1izUGRD9KKCw_FGB41b6v';
 const IMAGEN_POR_DEFECTO = `${SITIO}/images/marca/logo-mundo-hogar.png`;
 
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

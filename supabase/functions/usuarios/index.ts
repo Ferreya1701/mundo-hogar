@@ -18,7 +18,7 @@
 // nuevas nacen inactivas y esta función las activa con el rol pedido).
 //
 // Secretos: solo SUPABASE_SERVICE_ROLE_KEY (la pone Supabase sola).
-// Deploy: npx supabase functions deploy usuarios --project-ref zydotmaolgddwenwywyc --no-verify-jwt --use-api
+// Deploy: npx supabase functions deploy usuarios --project-ref vduinkzeneokkqzdgxig --no-verify-jwt --use-api
 // ============================================================
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { claveTemporal, esEmailExistente, validarAlta } from "./logica.ts";

@@ -18,7 +18,7 @@ import path from 'path';
 
 const [dir, ...flags] = process.argv.slice(2);
 const PROBAR = flags.includes('--probar');
-const URL = process.env.SUPABASE_URL || 'https://zydotmaolgddwenwywyc.supabase.co';
+const URL = process.env.SUPABASE_URL || 'https://vduinkzeneokkqzdgxig.supabase.co';
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const BUCKET = 'producto-imagenes';
 if (!dir || !fs.existsSync(path.join(dir, 'filas.json'))) {

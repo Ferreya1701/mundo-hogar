@@ -35,8 +35,8 @@ Cuando se activa la Edge Function `asistente`, las **preguntas libres** que el a
 ### Opción B — con la CLI de Supabase
 
 ```bash
-npx supabase functions deploy asistente --project-ref zydotmaolgddwenwywyc
-npx supabase secrets set ANTHROPIC_API_KEY=sk-ant-... --project-ref zydotmaolgddwenwywyc
+npx supabase functions deploy asistente --project-ref vduinkzeneokkqzdgxig
+npx supabase secrets set ANTHROPIC_API_KEY=sk-ant-... --project-ref vduinkzeneokkqzdgxig
 ```
 
 ## Seguridad (cómo está protegido)

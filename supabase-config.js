@@ -12,10 +12,10 @@
 //   Project Settings → API  (Project URL y API Keys → publishable / anon public)
 // ============================================================
 
-const SUPABASE_URL = 'https://zydotmaolgddwenwywyc.supabase.co';
+const SUPABASE_URL = 'https://vduinkzeneokkqzdgxig.supabase.co';
 
 // Clave PÚBLICA (publishable). Reemplaza a la antigua "anon key".
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_8mXhNbUrp3wiWeHuZBVkVA_mFAihF_t';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_IN3Qtb5Jtf1izUGRD9KKCw_FGB41b6v';
 
 // Compatibilidad: el código del panel usa SUPABASE_ANON_KEY como nombre.
 const SUPABASE_ANON_KEY = SUPABASE_PUBLISHABLE_KEY;

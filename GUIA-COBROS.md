@@ -19,14 +19,14 @@ mensual con el porcentaje de comisión.
 
 1. **Base de datos:** ejecutar `sql/012-cobros.sql` (idempotente; requiere 001..011). Ya está
    ejecutado en producción (2026-10-23). Con la CLI logueada (`npx supabase login` en una
-   terminal): `npx supabase db query --linked --project-ref zydotmaolgddwenwywyc -f sql/012-cobros.sql`.
+   terminal): `npx supabase db query --linked --project-ref vduinkzeneokkqzdgxig -f sql/012-cobros.sql`.
    O pegarlo en el SQL Editor del panel de Supabase.
 2. **Lectura automática (opcional pero recomendada):** desplegar la Edge Function
    `leer-comprobante` igual que `asistente` (ver `GUIA-ASISTENTE-IA.md`): Edge Functions → Deploy a
    new function → nombre exacto `leer-comprobante` → pegar `supabase/functions/leer-comprobante/index.ts`.
-   Con la CLI: `npx supabase functions deploy leer-comprobante --project-ref zydotmaolgddwenwywyc --no-verify-jwt --use-api`
+   Con la CLI: `npx supabase functions deploy leer-comprobante --project-ref vduinkzeneokkqzdgxig --no-verify-jwt --use-api`
    (ya desplegada). Necesita el secreto `ANTHROPIC_API_KEY` (hoy el proyecto NO lo tiene):
-   `npx supabase secrets set ANTHROPIC_API_KEY=sk-ant-... --project-ref zydotmaolgddwenwywyc`.
+   `npx supabase secrets set ANTHROPIC_API_KEY=sk-ant-... --project-ref vduinkzeneokkqzdgxig`.
    Sin la clave, los comprobantes se suben igual y quedan "ilegible / revisar a mano".
 3. **Panel → Cuentas de cobro → + Nueva cuenta:** nombre interno, titular, alias y/o CBU/CVU,
    CUIT/CUIL, peso, límites diario y mensual (opcionales).

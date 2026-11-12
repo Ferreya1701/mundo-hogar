@@ -1,6 +1,24 @@
 # PROJECT_STATUS — Mundo Hogar / TIAF
 
-> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-12 (016–021 en producción).
+> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-12 (mudanza a São Paulo).
+
+## Supabase en São Paulo (desde 2026-11-12)
+- **Proyecto en uso:** `vduinkzeneokkqzdgxig` (sa-east-1), organización **MundoHogar1** de la cuenta TIAF.
+  El viejo `zydotmaolgddwenwywyc` (us-east-1, org "MundoHogar") queda **solo como respaldo, sin uso**:
+  borrarlo cuando el nuevo lleve unos días andando bien.
+- Copiado y verificado: base completa (52 tablas, 2.885 filas idénticas tabla por tabla; 135 funciones,
+  92 políticas, 96 triggers, permisos de `anon`/`authenticated` iguales — el proyecto nuevo traía de
+  más por defecto y se revocaron), los 4 usuarios con sus contraseñas, trigger `tr_auth_user_created`,
+  políticas de Storage, 536 archivos (mismos bytes), las 4 Edge Functions (`--no-verify-jwt`),
+  registro público cerrado (`enable_signup = false`). `fotos_sugeridas.url/placa_url` reescritas al
+  ref nuevo. El nuevo trae `rls_auto_enable()` (de Supabase: activa RLS en tablas nuevas) — se dejó.
+- Medido con la clave pública: catálogo completo 0,4 s (antes 3 s); cada consulta ~100–150 ms.
+- Las sesiones abiertas no se copian: cada uno vuelve a iniciar sesión una vez.
+- `ANTHROPIC_API_KEY` no estaba cargada en el viejo ni en el nuevo (lectura de comprobantes y listas
+  con IA apagada hasta cargarla en Edge Functions → Secrets).
+- Cómo se copió sin Docker: `npx supabase db dump --remote=<ref> --dry-run` imprime el script de
+  pg_dump con un rol temporal (`cli_login_postgres`); se corre con el `pg_dump` local apenas se genera
+  (cada `--dry-run` rota la clave). Storage se copió con la API (clave service_role de cada proyecto).
 
 ## Hosting (desde 2026-10-16): Cloudflare Workers
 - **Producción:** `https://mundohogarstf.com` servido por **Cloudflare Workers** (solo archivos
