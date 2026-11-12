@@ -39,7 +39,7 @@
 - Pantalla: Ventas → Ver → "Quitar productos"; ticket corregido. Guía: `GUIA-STOCK-Y-VENTAS.md` §12.
 - Pruebas: `node scripts/test-editar-venta-sql.mjs` (33).
 
-## Fotos para revisar: placas del Drive (2026-11-12) — sql/031 EJECUTADO 2026-11-12; FALTA CARGAR LAS FOTOS
+## Fotos para revisar: placas del Drive (2026-11-12) — sql/031 EJECUTADO Y 267 FOTOS CARGADAS 2026-11-12
 - Drive "Catálogo Revendedor" (279 placas de Canva). Herramientas en `scripts/placas/` (LEEME.md): OCR del
   título/ficha, recorte de la foto sola (borra texto y plantilla) y cruce con el catálogo. 267 recortes;
   sugerencias: 90 casi seguras, 20 probables, 108 dudosas, 49 sin sugerencia. Muestra de 25 "seguras": 22 bien.
