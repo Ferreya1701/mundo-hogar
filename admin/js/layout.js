@@ -20,6 +20,7 @@ const Layout = {
     { id:'cuentas-cobro', label:'Cuentas bancarias',icon:'🏦', href:'/admin/cuentas-cobro',  section:'Administración', adminOnly:true },
     { id:'usuarios',   label:'Usuarios',             icon:'👥', href:'/admin/usuarios',       section:'Administración', adminOnly:true },
     { id:'permisos',   label:'Permisos',             icon:'🔐', href:'/admin/permisos',       section:'Administración', adminOnly:true },
+    { id:'historial',  label:'Historial',            icon:'🕵️', href:'/admin/historial',      section:'Administración', permiso:'auditoria.ver' },
     { id:'configuracion', label:'Configuración',     icon:'⚙️', href:'/admin/configuracion',  section:'Administración', adminOnly:true },
   ],
 

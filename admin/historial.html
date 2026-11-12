@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/admin/manifest.json">
+  <meta name="theme-color" content="#0A2E63">
+  <link rel="icon" type="image/png" href="/images/marca/favicon.png">
+  <link rel="apple-touch-icon" href="/images/marca/icon-192.png">
+  <title>Historial — Mundo Hogar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://zydotmaolgddwenwywyc.supabase.co" crossorigin>
+  <link rel="stylesheet" href="/admin/css/admin.css">
+  <style>
+    .filtros { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+    .filtros select, .filtros input[type=date] { min-height:38px; }
+    .filtros .search-bar { flex:1; min-width:220px; }
+    .chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+    .dia { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:18px 0 6px; }
+    .ev { display:grid; grid-template-columns:56px 1fr auto; gap:10px; align-items:start; background:#fff; border:1px solid var(--border);
+          border-left:4px solid var(--border); border-radius:var(--r); padding:10px 12px; margin-bottom:6px; }
+    .ev.sens { border-left-color:#DC2626; background:#FFFBFB; }
+    .ev .hora { font-family:monospace; font-size:12.5px; color:var(--muted); padding-top:2px; }
+    .ev .que { font-size:14px; color:var(--night); line-height:1.45; }
+    .ev .que b { font-weight:600; }
+    .ev .quien { font-size:12.5px; color:var(--muted); margin-top:2px; }
+    .ev .det { margin-top:6px; font-size:12.5px; display:none; }
+    .ev.abierto .det { display:block; }
+    .ev .det table { width:auto; } .ev .det td { padding:3px 10px 3px 0; border:0; vertical-align:top; }
+    .ev .det td:first-child { color:var(--muted); white-space:nowrap; }
+    .ev .ver { font-size:12px; }
+    .tag-s { display:inline-block; font-size:10.5px; font-weight:700; color:#B91C1C; background:#FEE2E2; border-radius:10px; padding:1px 7px; margin-left:6px; vertical-align:1px; }
+    .antes { color:#B91C1C; text-decoration:line-through; } .despues { color:#15803D; font-weight:600; }
+    .vacio { padding:30px; text-align:center; color:var(--muted); background:#fff; border:1px dashed var(--border); border-radius:var(--r-lg); }
+    @media (max-width:640px) { .ev { grid-template-columns:44px 1fr; } .ev .ver { grid-column:2; } }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><img class="sidebar-brand-icon" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="32" height="32"><div class="sidebar-brand-text"><span class="sidebar-brand-name">Mundo Hogar</span><span class="sidebar-brand-sub">Panel Admin</span></div></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar" id="user-avatar">?</div><div class="sidebar-user-info"><div class="sidebar-user-name" id="user-name">Cargando...</div><div class="sidebar-user-role" id="user-role"></div></div></div></div>
+  </aside>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+  <div class="main-wrap">
+    <header class="main-header">
+      <button class="header-toggle" id="sidebar-toggle">☰</button>
+      <span class="header-title" id="page-title"></span>
+      <div class="header-actions">
+        <a href="/" target="_blank" class="btn btn-ghost btn-sm">🌐 Ver Tienda</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <div><h1>Historial</h1><p>Quién hizo qué y cuándo. Lo registra la base de datos sola: nadie lo puede borrar ni cambiar. En rojo, lo que conviene revisar.</p></div>
+      </div>
+      <div class="filtros">
+        <select id="f-periodo" aria-label="Período">
+          <option value="1">Hoy</option><option value="2">Ayer y hoy</option><option value="7" selected>Últimos 7 días</option>
+          <option value="30">Últimos 30 días</option><option value="rango">Elegir fechas…</option>
+        </select>
+        <input type="date" id="f-desde" hidden aria-label="Desde"><input type="date" id="f-hasta" hidden aria-label="Hasta">
+        <select id="f-persona" aria-label="Persona"><option value="">Todas las personas</option></select>
+        <div class="search-bar"><span class="search-icon">🔍</span><input type="search" id="q" placeholder="Buscar producto, venta, persona…" autocomplete="off"></div>
+        <label style="display:flex;gap:6px;align-items:center;font-size:13px;white-space:nowrap"><input type="checkbox" id="f-sens"> Solo lo delicado</label>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div id="lista"><div class="spinner" style="margin:40px auto"></div></div>
+      <div style="text-align:center;margin:14px 0" id="mas"></div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/supabase-config.js"></script>
+<script src="/admin/js/supabase-client.js"></script>
+<script src="/admin/js/auth.js"></script>
+<script src="/admin/js/utils.js"></script>
+<script src="/admin/js/layout.js"></script>
+<script>
+/* Historial de cambios (sql/030): tabla auditoria, solo lectura. */
+const $id = id => document.getElementById(id);
+const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const PAGINA = 150;
+let eventos = [], tipo = '', hayMas = false;
+
+const TIPOS = { '': 'Todo', ventas: '🧮 Ventas', precios: '💲 Precios', productos: '🛍️ Productos', stock: '📦 Stock', caja: '💵 Caja',
+  cc: '📒 Cuentas corrientes', pedidos: '🧾 Pedidos web', usuarios: '👥 Usuarios y permisos', compras: '🚢 Compras', config: '⚙️ Configuración' };
+const TABLA = { productos: 'el producto', ventas: 'la venta', caja_movimientos: 'un movimiento de caja', caja_sesiones: 'la caja',
+  movimientos_inventario: 'el stock de', cc_movimientos: 'la cuenta corriente de', cc_cuentas: 'la cuenta corriente de',
+  movimientos_cobro: 'un cobro en la cuenta', categorias: 'la categoría', profiles: 'el usuario', rol_permisos: 'el permiso',
+  cuentas_cobro: 'la cuenta bancaria', site_settings: 'la configuración', solicitudes: 'el pedido web', compras: 'la compra',
+  transportes: 'el transporte', ubicaciones: 'la ubicación', caja_conceptos: 'el concepto de caja' };
+// Nombres de columnas en castellano llano (las que no estén se muestran tal cual)
+const COL = { nombre: 'Nombre', precio_minorista: 'Precio', precio_mayorista: 'Precio mayorista', precio_oferta: 'Precio de oferta',
+  precio_costo: 'Costo', en_oferta: 'En oferta', descuento_porcentaje: 'Descuento %', estado: 'Estado', sku: 'Código', codigo_barras: 'Código de barras',
+  descripcion_corta: 'Descripción corta', descripcion: 'Descripción', categoria_id: 'Categoría', marca: 'Marca', stock_minimo: 'Stock mínimo',
+  imagen_principal_url: 'Foto', destacado: 'Destacado', ubicacion_id: 'Ubicación', stock_controlado: 'Stock contado',
+  total: 'Total', subtotal: 'Subtotal', descuento: 'Descuento', medio_pago: 'Medio de pago', motivo_anulacion: 'Motivo', anulada_en: 'Anulada',
+  cliente_nombre: 'Cliente', vendedor_nombre: 'Vendedor', cobrada_por_nombre: 'Cobró', cobrada_en: 'Cobrada', devuelta_motivo: 'Devuelta a la vendedora',
+  entrega_tipo: 'Entrega', entrega_estado: 'Estado de entrega', entregada_por_nombre: 'Entregó', recibio_nombre: 'Recibió', codigo: 'Código',
+  tipo: 'Tipo', monto: 'Monto', concepto_nombre: 'Concepto', anulado: 'Anulado', cantidad: 'Cantidad', stock_anterior: 'Stock antes',
+  stock_posterior: 'Stock después', motivo: 'Motivo', observacion: 'Observación', diferencia: 'Diferencia', efectivo_contado: 'Efectivo contado',
+  efectivo_esperado: 'Efectivo esperado', monto_inicial: 'Efectivo inicial', retiro: 'Retiro', rol: 'Rol', activo: 'Activo', email: 'Email',
+  limite: 'Límite', habilitada: 'Habilitada', dia_pago: 'Día de pago', recargo_cc: 'Recargo cuenta corriente', alias: 'Alias', cvu: 'CVU',
+  titular: 'Titular', activa: 'Activa', limite_diario: 'Límite diario', limite_mensual: 'Límite mensual', estado_pago: 'Pago', monto_pagado: 'Pagado' };
+const DINERO = /precio|total|subtotal|descuento$|monto|costo|limite|diferencia|efectivo|retiro|recargo|saldo/;
+
+const fecha = iso => new Date(iso);
+const hora = iso => fecha(iso).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+const diaTxt = iso => { const d = fecha(iso), h = new Date(); const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()), y = new Date(h.getFullYear(), h.getMonth(), h.getDate());
+  const dd = Math.round((y - x) / 864e5); return dd === 0 ? 'Hoy' : dd === 1 ? 'Ayer' : d.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' }); };
+function val(col, v) {
+  if (v === null || v === undefined || v === '') return '—';
+  if (typeof v === 'boolean') return v ? 'sí' : 'no';
+  if (typeof v === 'number' && DINERO.test(col)) return Utils.money ? Utils.money(v) : '$ ' + v.toLocaleString('es-AR');
+  if (typeof v === 'object') return JSON.stringify(v);
+  if (/^\d{4}-\d{2}-\d{2}T/.test(v)) return new Date(v).toLocaleString('es-AR');
+  return String(v);
+}
+
+// Una frase que se entiende sin abrir el detalle
+function frase(e) {
+  const c = e.cambios || {}, r = e.registro ? `<b>${esc(e.registro)}</b>` : '';
+  const de = k => c[k]?.[0], a = k => c[k]?.[1];
+  const flecha = k => `<span class="antes">${esc(val(k, de(k)))}</span> → <span class="despues">${esc(val(k, a(k)))}</span>`;
+  switch (e.tabla) {
+    case 'productos':
+      if (e.operacion === 'alta') return `Creó el producto ${r}`;
+      if (e.operacion === 'baja') return `Borró el producto ${r}`;
+      if (c.precio_minorista) return `Cambió el precio de ${r}: ${flecha('precio_minorista')}`;
+      if (c.estado) return `Pasó ${r} de ${esc(de('estado'))} a <b>${esc(a('estado'))}</b>`;
+      break;
+    case 'ventas':
+      if (e.operacion === 'alta') return `Registró la venta ${r} por ${esc(val('total', a('total')))}${a('medio_pago') && a('medio_pago') !== 'pendiente' ? ' (' + esc(a('medio_pago')) + ')' : ''}`;
+      if (a('estado') === 'anulada') return `Anuló la venta ${r}${c.motivo_anulacion ? ': «' + esc(a('motivo_anulacion')) + '»' : ''}`;
+      if (c.total && Number(a('total')) < Number(de('total'))) return `Quitó productos de la venta ${r}: total ${flecha('total')}`;
+      if (de('entrega_estado') === 'entregado') return `Deshizo la entrega de la venta ${r}`;
+      if (a('entrega_estado') === 'entregado') return `Entregó la venta ${r}${a('recibio_nombre') ? ' a ' + esc(a('recibio_nombre')) : ''}`;
+      if (a('estado') === 'cerrada' && de('estado') === 'pendiente_cobro') return `Cobró la venta ${r} (${esc(a('medio_pago') || '')})`;
+      if (c.devuelta_motivo && a('devuelta_motivo')) return `Devolvió a la vendedora la venta ${r}: «${esc(a('devuelta_motivo'))}»`;
+      break;
+    case 'caja_movimientos':
+      if (e.operacion === 'alta') return `Cargó un <b>${esc(a('tipo'))}</b> de caja de ${esc(val('monto', a('monto')))}: ${esc(e.registro || '')}`;
+      if (a('anulado') === true) return `Anuló un movimiento de caja de ${esc(val('monto', a('monto') ?? de('monto')))}${c.motivo_anulacion ? ': «' + esc(a('motivo_anulacion')) + '»' : ''}`;
+      break;
+    case 'caja_sesiones':
+      if (e.operacion === 'alta') return `Abrió la caja con ${esc(val('monto_inicial', a('monto_inicial')))}`;
+      if (c.diferencia) return `Cerró la caja: contó ${esc(val('efectivo_contado', a('efectivo_contado')))}, diferencia <b>${esc(val('diferencia', a('diferencia')))}</b>`;
+      if (a('estado') === 'cerrada') return 'Cerró la caja sin diferencia';
+      break;
+    case 'movimientos_inventario':
+      return `Ajustó el stock de ${r}: ${esc(val('stock_anterior', a('stock_anterior')))} → <b>${esc(val('stock_posterior', a('stock_posterior')))}</b> (${esc(a('tipo') || '')}${a('motivo') ? ': ' + esc(a('motivo')) : ''})`;
+    case 'cc_movimientos':
+      if (e.operacion === 'alta') return `Cargó un <b>${esc((a('tipo') || '').replace('_', ' '))}</b> de ${esc(val('monto', a('monto')))} en la cuenta corriente de ${r}`;
+      if (a('anulado') === true) return `Anuló un movimiento de la cuenta corriente de ${r}`;
+      break;
+    case 'profiles':
+      if (c.rol) return `Cambió el rol de ${r}: ${flecha('rol')}`;
+      if (c.activo) return `${a('activo') ? 'Activó' : 'Desactivó'} el usuario ${r}`;
+      if (e.operacion === 'alta') return `Se creó el usuario ${r}`;
+      break;
+    case 'rol_permisos': return `${e.operacion === 'alta' ? 'Dio' : 'Sacó'} el permiso ${r}`;
+    case 'cuentas_cobro':
+      if (e.operacion === 'alta') return `Agregó la cuenta bancaria ${r}`;
+      if (c.alias || c.cvu) return `Cambió el alias/CVU de la cuenta bancaria ${r}`;
+      break;
+    case 'solicitudes':
+      if (c.estado_pago) return `Pedido web ${r}: pago ${flecha('estado_pago')}`;
+      if (c.estado) return `Pedido web ${r}: ${flecha('estado')}`;
+      if (e.operacion === 'alta') return `Entró el pedido web ${r}`;
+      break;
+  }
+  const verbo = e.operacion === 'alta' ? 'Creó' : e.operacion === 'baja' ? 'Borró' : 'Cambió';
+  const cols = Object.keys(c).map(k => COL[k] || k);
+  return `${verbo} ${TABLA[e.tabla] || e.tabla} ${r}${e.operacion === 'cambio' && cols.length ? ': ' + esc(cols.slice(0, 4).join(', ')) + (cols.length > 4 ? '…' : '') : ''}`;
+}
+
+function detalle(e) {
+  const filas = Object.entries(e.cambios || {}).map(([k, [x, y]]) => `<tr><td>${esc(COL[k] || k)}</td><td>${e.operacion === 'cambio'
+      ? `<span class="antes">${esc(val(k, x))}</span> → <span class="despues">${esc(val(k, y))}</span>` : esc(val(k, y ?? x))}</td></tr>`).join('');
+  return `<table>${filas}</table>`;
+}
+
+function rango() {
+  const p = $id('f-periodo').value;
+  if (p === 'rango') {
+    const d = $id('f-desde').value, h = $id('f-hasta').value;
+    return { desde: d ? new Date(d + 'T00:00:00') : new Date(Date.now() - 30 * 864e5), hasta: h ? new Date(h + 'T23:59:59') : null };
+  }
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  return { desde: new Date(hoy.getTime() - (Number(p) - 1) * 864e5), hasta: null };
+}
+
+async function cargar(mas = false) {
+  const { desde, hasta } = rango();
+  let qy = db.from('auditoria').select('id, fecha, usuario_id, usuario_nombre, tabla, registro_id, registro, operacion, tipo, sensible, cambios')
+    .gte('fecha', desde.toISOString()).order('fecha', { ascending: false }).order('id', { ascending: false });
+  if (hasta) qy = qy.lte('fecha', hasta.toISOString());
+  if (tipo) qy = qy.eq('tipo', tipo);
+  if ($id('f-sens').checked) qy = qy.eq('sensible', true);
+  if ($id('f-persona').value) qy = qy.eq('usuario_id', $id('f-persona').value);
+  const t = $id('q').value.trim();
+  if (t) qy = qy.or(`registro.ilike.*${t.replace(/[*,()]/g, ' ')}*,usuario_nombre.ilike.*${t.replace(/[*,()]/g, ' ')}*`);
+  const desdeFila = mas ? eventos.length : 0;
+  const { data, error } = await qy.range(desdeFila, desdeFila + PAGINA - 1);
+  if (error) {
+    $id('lista').innerHTML = `<div class="vacio">${/auditoria|schema cache|does not exist/i.test(error.message) ? 'Falta ejecutar sql/030-historial.sql en la base de datos.' : 'No se pudo cargar el historial.'}</div>`;
+    return;
+  }
+  eventos = mas ? eventos.concat(data) : data;
+  hayMas = data.length === PAGINA;
+  render();
+}
+
+function render() {
+  $id('chips').innerHTML = Object.entries(TIPOS).map(([k, v]) => `<button class="chip${k === tipo ? ' active' : ''}" data-tipo="${k}">${v}</button>`).join('');
+  if (!eventos.length) { $id('lista').innerHTML = '<div class="vacio">No hay nada registrado con estos filtros.</div>'; $id('mas').innerHTML = ''; return; }
+  let h = '', dia = '';
+  for (const e of eventos) {
+    const d = diaTxt(e.fecha);
+    if (d !== dia) { dia = d; h += `<div class="dia">${esc(d)}</div>`; }
+    h += `<div class="ev${e.sensible ? ' sens' : ''}" data-id="${e.id}">
+      <div class="hora">${hora(e.fecha)}</div>
+      <div><div class="que">${frase(e)}${e.sensible ? '<span class="tag-s">revisar</span>' : ''}</div>
+        <div class="quien">${esc(e.usuario_nombre || 'Sistema')} · ${esc(TIPOS[e.tipo] || e.tipo)}</div>
+        <div class="det">${detalle(e)}</div></div>
+      <button class="btn btn-ghost btn-sm ver" data-ver="${e.id}">Detalle</button></div>`;
+  }
+  $id('lista').innerHTML = h;
+  $id('mas').innerHTML = hayMas ? '<button class="btn btn-outline" id="btn-mas">Ver más</button>' : '';
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.tipo !== undefined) { tipo = b.dataset.tipo; cargar(); return; }
+  if (b.dataset.ver) { b.closest('.ev').classList.toggle('abierto'); b.textContent = b.closest('.ev').classList.contains('abierto') ? 'Ocultar' : 'Detalle'; return; }
+  if (b.id === 'btn-mas') { b.disabled = true; cargar(true); }
+});
+$id('f-periodo').addEventListener('change', () => { const r = $id('f-periodo').value === 'rango'; $id('f-desde').hidden = $id('f-hasta').hidden = !r; cargar(); });
+['f-desde', 'f-hasta', 'f-persona', 'f-sens'].forEach(id => $id(id).addEventListener('change', () => cargar()));
+let tq; $id('q').addEventListener('input', () => { clearTimeout(tq); tq = setTimeout(() => cargar(), 300); });
+
+async function initPage() {
+  const perfil = await Auth.init();
+  if (!perfil) return;
+  if (!Auth.requirePermiso('auditoria.ver', perfil)) return;
+  await Layout.init('historial', 'Historial');
+  const { data: gente } = await db.from('profiles').select('id, nombre').order('nombre');
+  $id('f-persona').insertAdjacentHTML('beforeend', (gente || []).map(p => `<option value="${esc(p.id)}">${esc(p.nombre)}</option>`).join(''));
+  await cargar();
+}
+window.MHAlMostrar = () => cargar();
+initPage();
+</script>
+<script src="/admin/js/assistant.js"></script>
+<script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/admin/sw.js').catch(()=>{}); }</script>
+</body>
+</html>

@@ -39,6 +39,18 @@
 - Pantalla: Ventas → Ver → "Quitar productos"; ticket corregido. Guía: `GUIA-STOCK-Y-VENTAS.md` §12.
 - Pruebas: `node scripts/test-editar-venta-sql.mjs` (33).
 
+## Historial de cambios / auditoría (2026-11-12) — EN EL REPO; FALTA CORRER sql/030
+- `sql/030-historial.sql`: tabla `auditoria` llenada por triggers (no por el navegador) en 18 tablas
+  (productos, ventas, caja, stock a mano, cuenta corriente, cobros, usuarios, permisos, cuentas bancarias,
+  configuración, pedidos, compras…). Guarda solo lo que cambió (antes → después) y marca lo delicado
+  (precios, anulaciones, quitar productos, deshacer entregas, egresos y anulaciones de caja, diferencias de
+  cierre, ajustes de stock, permisos, roles, cuentas bancarias). Nadie la edita ni la borra (ni con acceso
+  total: trigger). La ve el permiso `auditoria.ver` (solo admin de entrada). Lo automático (stock de cada
+  venta, cobros asentados) no se registra; el alta de una fila se registra al confirmar la operación, ya
+  completa (trigger diferido), sin los retoques intermedios. Pruebas: `scripts/test-historial-sql.mjs` (20).
+- Pantalla `admin/historial.html` (Administración → Historial): por día, frases legibles, filtros por
+  período, persona, tipo, búsqueda y "solo lo delicado"; detalle antes → después.
+
 ## Panel como UNA SOLA APLICACIÓN (2026-11-12) — etapa 1 hecha
 - `admin/app.html` + `admin/js/app.js`: armazón con menú y barra fijos; cada módulo se abre en su propio
   iframe y QUEDA ABIERTO (hasta 8; el más viejo se cierra). Volver a un módulo: ~12 ms, conserva lo que
