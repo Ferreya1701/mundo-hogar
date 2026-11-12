@@ -91,6 +91,7 @@ const MEDIOS = { efectivo:'Efectivo', transferencia:'Transferencia', debito:'Dé
 let perfil = null;
 let resumen = null;      // caja_resumen()
 let movs = [];
+let porCuenta = [];   // transferencias y Mercado Pago del día, por cuenta bancaria
 let conceptos = [];
 let vista = 'hoy';       // 'hoy' | 'historial'
 
@@ -114,9 +115,14 @@ async function cargar() {
   resumen = r.data;
   conceptos = c.data || [];
   movs = [];
+  porCuenta = [];
   if (resumen.abierta) {
-    const m = await db.from('caja_movimientos').select('*').eq('sesion_id', resumen.sesion.id).order('id', { ascending: false });
+    const [m, pc] = await Promise.all([
+      db.from('caja_movimientos').select('*').eq('sesion_id', resumen.sesion.id).order('id', { ascending: false }),
+      db.rpc('caja_por_cuenta'),     // sql/025: a qué cuenta bancaria entró cada transferencia
+    ]);
     movs = m.data || [];
+    porCuenta = pc.error ? [] : (pc.data || []);
   }
   render();
 }
@@ -198,7 +204,9 @@ function renderAbierta() {
     <div class="card"><div class="card-header"><span class="card-title">Otros medios (no están en el cajón)</span></div>
       <div class="card-body" style="padding:0">${otros.length ? `<table class="mini-tabla" style="width:100%"><thead><tr><th>Medio</th><th class="r">Ingresos</th><th class="r">Egresos</th><th class="r">Neto</th></tr></thead><tbody>
         ${otros.map(m => `<tr><td>${esc(MEDIOS[m.medio] || m.medio)}</td><td class="r">${money(m.ingresos)}</td><td class="r">${money(m.egresos)}</td><td class="r"><b>${money(m.neto)}</b></td></tr>`).join('')}
-      </tbody></table>` : '<p style="padding:14px 18px;color:var(--muted);font-size:13px">Todavía nada por transferencia, tarjeta ni Mercado Pago.</p>'}</div></div>
+      </tbody></table>` : '<p style="padding:14px 18px;color:var(--muted);font-size:13px">Todavía nada por transferencia, tarjeta ni Mercado Pago.</p>'}
+      ${porCuenta.length ? `<div style="border-top:1px solid var(--border);padding:10px 12px 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Transferencias por cuenta (controlá contra el homebanking)</div>
+        <table class="mini-tabla" style="width:100%"><tbody>${porCuenta.map(c => `<tr><td>${esc(c.cuenta)}${c.titular ? `<div style="font-size:11.5px;color:var(--muted)">${esc(c.titular)}${c.alias ? ' · ' + esc(c.alias) : ''}</div>` : ''}</td><td class="r">${c.ventas} venta${c.ventas !== 1 ? 's' : ''}</td><td class="r"><b>${money(c.total)}</b></td></tr>`).join('')}</tbody></table>` : ''}</div></div>
     <div class="card"><div class="card-header"><span class="card-title">Ventas y gastos</span></div>
       <div class="card-body" style="padding:0"><table class="mini-tabla" style="width:100%"><tbody>
         <tr><td>Ventas (${resumen.ventas.cantidad})</td><td class="r"><b>${money(resumen.ventas.total)}</b></td></tr>

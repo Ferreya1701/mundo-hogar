@@ -18,6 +18,12 @@
   .cc-item:hover { border-color:var(--blue); }
   .cc-sel { border:1px solid var(--border); border-radius:var(--r); padding:10px 12px; background:var(--bg); display:flex; flex-direction:column; gap:4px; }
   .cc-dato { font-size:12.5px; color:var(--muted); }
+  .cta-banco { margin-top:8px; border:1px solid var(--border); border-left:4px solid var(--blue); border-radius:var(--r); padding:10px 12px; background:var(--bg); font-size:13px; }
+  .cta-banco.cta-alerta { border-left-color:var(--danger); color:#B91C1C; }
+  .cta-lbl { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .cta-dato { display:flex; align-items:center; gap:10px; justify-content:space-between; margin:4px 0 2px; }
+  .cta-dato b { font-size:19px; color:var(--night); word-break:break-all; }
+  .cta-sub { font-size:12px; color:var(--muted); margin-top:4px; }
   #cc-q, #retira { width:100%; min-height:40px; }
 </style>
 </head>
@@ -125,6 +131,9 @@ let perfil = null;
 let ticket = [];           // [{ key, producto_id, nombre, sku, cantidad, precio, imagen }]
 let medio = 'efectivo';
 let ccSel = null;          // cliente de cuenta corriente elegido (cc_buscar)
+/* Cuenta bancaria para transferencia / Mercado Pago (sql/025): la asigna el
+   sistema con el mismo reparto que la web (límites y rotación) y reserva el monto. */
+let ctaBanco = { modo: 'auto', cuenta: null, monto: null, aviso: null, motivo: null, cargando: false, excluidas: [] };
 let recargos = {};         // categoria_id -> recargo por unidad en cuenta corriente (sql/019)
 let catSel = '';
 let ultimaVenta = null;    // resultado de la última venta para mostrar el ticket
@@ -459,7 +468,9 @@ function renderTicket() {
     </div>
     <div class="pos-seccion"><span class="lbl">Medio de pago</span>
       <div class="chips pay-chips" id="medios">${Object.entries(MEDIOS).filter(([k]) => k !== 'cuenta_corriente' || puedeCC()).map(([k,v]) => `<button type="button" class="chip${medio===k?' active':''}" data-medio="${k}">${v}</button>`).join('')}</div>
-      ${(medio==='transferencia'||medio==='mercadopago') && cuentas.length ? `<select id="cuenta" style="margin-top:8px;width:100%;min-height:40px"><option value="">¿A qué cuenta entró? (opcional)</option>${cuentas.map(c=>`<option value="${c.id}"${String(c.id)===cuentaSel?' selected':''}>${esc(c.nombre)}${c.alias?' · '+esc(c.alias):''}</option>`).join('')}</select>` : ''}
+      ${esBanco() ? (ctaBanco.modo === 'viejo'
+          ? (cuentas.length ? `<select id="cuenta" style="margin-top:8px;width:100%;min-height:40px"><option value="">¿A qué cuenta entró? (opcional)</option>${cuentas.map(c=>`<option value="${c.id}"${String(c.id)===cuentaSel?' selected':''}>${esc(c.nombre)}${c.alias?' · '+esc(c.alias):''}</option>`).join('')}</select>` : '')
+          : `<div id="cta-banco">${htmlCuentaBanco(subtotal - desc)}</div>`) : ''}
     </div>
     ${esCC() ? htmlClienteCC(subtotal - desc) : `<div class="pos-seccion"><span class="lbl">Cliente (opcional)</span>
       <div class="pos-cliente"><input type="text" id="cli-nombre" placeholder="Nombre" maxlength="80" value="${esc(cliN)}"><input type="tel" id="cli-tel" placeholder="Teléfono (para mandar el ticket)" maxlength="25" value="${esc(cliT)}"></div>
@@ -477,7 +488,9 @@ document.getElementById('ticket-body').addEventListener('click', async e => {
   if (b.dataset.ok === 'wa') { enviarWA(); return; }
   if (b.dataset.ok === 'imprimir') { MHImprimir.ticket(ultimaVenta); return; }
   if (b.dataset.ok === 'copiar') { Utils.copy(textoTicket(ultimaVenta), 'Ticket copiado'); return; }
-  if (b.dataset.medio) { medio = b.dataset.medio; guardarTicket(); renderTicket(); if (esCC() && !ccSel) setTimeout(() => document.getElementById('cc-q')?.focus(), 0); return; }
+  if (b.dataset.act === 'cta-otra') { pedirCuenta(true); return; }
+  if (b.dataset.act === 'cta-copiar') { Utils.copy(b.dataset.txt, 'Copiado'); return; }
+  if (b.dataset.medio) { medio = b.dataset.medio; if (!esBanco()) soltarCuenta(); guardarTicket(); renderTicket(); if (esCC() && !ccSel) setTimeout(() => document.getElementById('cc-q')?.focus(), 0); return; }
   if (b.dataset.act === 'cc-elegir') { ccSel = ccResultados.find(c => String(c.id) === b.dataset.id) || null; ccResultados = []; guardarTicket(); renderTicket(); return; }
   if (b.dataset.act === 'cc-cambiar') { ccSel = null; guardarTicket(); renderTicket(); setTimeout(() => document.getElementById('cc-q')?.focus(), 0); return; }
   const linea = b.closest('.pos-linea'); if (!linea) return;
@@ -488,6 +501,60 @@ document.getElementById('ticket-body').addEventListener('click', async e => {
   if (b.dataset.act === 'precio') { const v = await pedirPrecio(t.nombre, t.precio); if (v === null) return; t.precio = v; }
   guardarTicket(); renderTicket();
 });
+
+/* ── Cuenta bancaria asignada (transferencia / Mercado Pago) ── */
+const esBanco = () => medio === 'transferencia' || medio === 'mercadopago';
+let ctaTimer = null;
+function htmlCuentaBanco(total) {
+  const c = ctaBanco.cuenta;
+  if (!(total > 0)) return '';
+  // El total cambió desde que se pidió: hay que volver a pedirla (se hace solo)
+  if (ctaBanco.monto !== total && !ctaBanco.cargando) { clearTimeout(ctaTimer); ctaTimer = setTimeout(() => pedirCuenta(false), 500); }
+  if (ctaBanco.cargando || ctaBanco.monto !== total) return `<div class="cta-banco"><span class="spinner"></span> Buscando la cuenta para ${money(total)}…</div>`;
+  if (!c) {
+    if (ctaBanco.motivo === 'sin_cuentas') return '';
+    return `<div class="cta-banco cta-alerta">⚠ Ninguna cuenta tiene cupo para ${money(total)}. Avisale al administrador antes de pedirle al cliente que transfiera.<br><button type="button" class="btn btn-outline btn-sm" data-act="cta-otra" style="margin-top:6px">Volver a buscar</button></div>`;
+  }
+  const dato = c.alias || c.cvu || '';
+  return `<div class="cta-banco">
+      <div class="cta-lbl">El cliente transfiere ${money(total)} a</div>
+      <div class="cta-dato"><b>${esc(dato)}</b><button type="button" class="btn btn-outline btn-sm" data-act="cta-copiar" data-txt="${esc(dato)}">Copiar</button></div>
+      <div class="cta-sub">${esc(c.titular)} · ${esc(c.banco || '')}${c.alias ? '' : ' · CBU/CVU'}</div>
+      ${ctaBanco.aviso ? `<div class="pos-aviso" style="display:block;margin-top:6px">${esc(ctaBanco.aviso)}</div>` : ''}
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+        <input type="text" id="nro-op" placeholder="N° de operación (opcional)" maxlength="60" inputmode="numeric" style="flex:1;min-width:150px;min-height:38px" value="${esc(document.getElementById('nro-op')?.value || '')}">
+        <button type="button" class="btn btn-ghost btn-sm" data-act="cta-otra" title="Si el cliente no puede transferir a esta">Otra cuenta</button>
+      </div>
+      <div class="cta-sub">La asigna el sistema según el cupo de cada cuenta. Controlá que el comprobante sea a <b>esta</b> cuenta y por este monto.</div>
+    </div>`;
+}
+async function pedirCuenta(otra) {
+  if (ctaBanco.modo === 'viejo' || !esBanco() || !ticket.length) return;
+  const { total } = totales();
+  if (!(total > 0)) return;
+  if (otra && ctaBanco.cuenta) ctaBanco.excluidas.push(ctaBanco.cuenta.id); else if (!otra) ctaBanco.excluidas = [];
+  ctaBanco.cargando = true; pintarCuenta();
+  const { data, error } = await db.rpc('caja_cuenta_pedir', { p_monto: total, p_excluir: ctaBanco.excluidas.length ? ctaBanco.excluidas : null });
+  ctaBanco.cargando = false;
+  if (error) {
+    if (/could not find the function|schema cache/i.test(error.message || '')) { ctaBanco.modo = 'viejo'; renderTicket(); return; }   // base sin sql/025
+    ctaBanco.cuenta = null; ctaBanco.motivo = 'error'; ctaBanco.monto = total;
+    Utils.toast(msgError(error, 'buscar la cuenta'), 'error');
+  } else {
+    Object.assign(ctaBanco, { cuenta: data.cuenta, aviso: data.aviso || null, motivo: data.motivo || null, monto: total });
+  }
+  pintarCuenta();
+}
+function pintarCuenta() {
+  const el = document.getElementById('cta-banco'); if (!el) return;
+  const { total } = totales();
+  el.innerHTML = htmlCuentaBanco(total);
+}
+function soltarCuenta() {
+  clearTimeout(ctaTimer);
+  if (ctaBanco.modo !== 'viejo' && ctaBanco.cuenta) db.rpc('caja_cuenta_soltar').then(() => {}, () => {});
+  Object.assign(ctaBanco, { cuenta: null, monto: null, aviso: null, motivo: null, excluidas: [] });
+}
 
 /* ── Cliente de cuenta corriente ── */
 let ccResultados = [];
@@ -542,6 +609,8 @@ document.getElementById('ticket-body').addEventListener('input', e => {
     document.getElementById('btn-cobrar').textContent = `Cobrar ${money(subtotal - desc)}`;
     document.getElementById('bar-total').textContent = money(subtotal - desc);
   }
+  if (e.target.id === 'desc') { pintarCuenta(); }
+  if (e.target.dataset.act === 'cant') { pintarCuenta(); }
   if (e.target.id === 'desc') {
     const { subtotal, desc } = totales();
     document.getElementById('total-txt').textContent = money(subtotal - desc);
@@ -557,7 +626,7 @@ document.getElementById('btn-vaciar').addEventListener('click', async () => {
   if (ultimaVenta) { ultimaVenta = null; renderTicket(); return; }
   if (!ticket.length) return;
   if (!await Utils.confirm('Se quitan todos los productos del ticket.', 'Vaciar ticket', 'Vaciar')) return;
-  ticket = []; guardarTicket(); renderTicket();
+  ticket = []; soltarCuenta(); guardarTicket(); renderTicket();
 });
 
 // Ticket como panel deslizable en celular
@@ -582,9 +651,17 @@ async function cobrar() {
   const retira = document.getElementById('retira')?.value.trim() || '';
   const recargoTotal = ticket.reduce((s, t) => s + recargoDe(t) * t.cantidad, 0);
   const notas = document.getElementById('notas').value.trim();
-  const cuenta = document.getElementById('cuenta')?.value || null;
+  let cuenta = document.getElementById('cuenta')?.value || null;
+  const nroOp = document.getElementById('nro-op')?.value.trim() || null;
+  if (esBanco() && ctaBanco.modo === 'auto') {
+    // La cuenta tiene que ser la pedida para ESTE total (si cambió, se vuelve a pedir antes de cobrar)
+    if (ctaBanco.monto !== total || ctaBanco.cargando) { await pedirCuenta(false); renderTicket(); Utils.toast('Se actualizó la cuenta para el nuevo total: revisala y volvé a cobrar', 'warning', 6000); return; }
+    cuenta = ctaBanco.cuenta ? ctaBanco.cuenta.id : null;
+  }
 
   const resumen = `<b>${money(total)}</b> en ${MEDIOS[medio]}${desc ? ` (descuento ${money(desc)})` : ''}.<br>` +
+    (esBanco() && ctaBanco.modo === 'auto' && ctaBanco.cuenta ? `Transferido a <b>${esc(ctaBanco.cuenta.alias || ctaBanco.cuenta.cvu)}</b> (${esc(ctaBanco.cuenta.titular)}). ¿Ya viste el comprobante?<br>` : '') +
+    (esBanco() && ctaBanco.modo === 'auto' && !ctaBanco.cuenta && ctaBanco.motivo === 'sin_cupo' ? `<span style="color:#B45309">⚠ Ninguna cuenta tiene cupo: la venta queda sin cuenta asignada. Avisale al administrador.</span><br>` : '') +
     (esCC() ? `Cliente: <b>${esc(ccSel.nombre)}</b> · queda debiendo <b>${money(Number(ccSel.saldo) + total)}</b>${recargoTotal ? ` (incluye ${money(recargoTotal)} de recargo)` : ''}.<br>` : '') +
     (retira ? `Retira: ${esc(retira)}<br>` : '') +
     ticket.map(t => `${t.cantidad}× ${esc(t.nombre)}`).join('<br>') +
@@ -598,6 +675,7 @@ async function cobrar() {
     medio_pago: medio, cuenta_cobro_id: cuenta || null,
     cliente_nombre: cliN || null, cliente_telefono: cliT || null, retira_nombre: retira || null,
     cc_cuenta_id: esCC() ? ccSel.id : null,
+    nro_operacion: nroOp,
     descuento: desc || 0, notas: notas || null, permitir_negativo: true
   };
   const { data, error } = await db.rpc('venta_registrar', { p: payload });
@@ -615,6 +693,8 @@ async function cobrar() {
   });
   ultimaVenta = Object.assign({}, data, { cliente_nombre: data.cliente_nombre || cliN, cliente_telefono: cliT, retira_nombre: retira });
   ticket = []; ccSel = null; guardarTicket();
+  Object.assign(ctaBanco, { cuenta: null, monto: null, aviso: null, motivo: null, excluidas: [] });   // la reserva ya la consumió la venta
+  if (data.aviso_cuenta) Utils.toast(data.aviso_cuenta, 'warning', 12000);
   renderTicket(); renderResultados(); cargarHoy();
   toggleTicket(true);
   Utils.toast(`Venta ${data.codigo} registrada ✅`, 'success');
@@ -631,6 +711,7 @@ function textoTicket(v) {
   L.push('');
   if (Number(v.descuento) > 0) { L.push(`Subtotal: ${money2(v.subtotal)}`); L.push(`Descuento: -${money2(v.descuento)}`); }
   L.push(`TOTAL: ${money2(v.total)} (${MEDIOS[v.medio_pago]||v.medio_pago})`);
+  if (v.cuenta_cobro) L.push(`Transferido a: ${v.cuenta_cobro.alias || v.cuenta_cobro.cvu} (${v.cuenta_cobro.titular})`);
   if (v.cuenta_corriente) L.push(`Saldo de tu cuenta: ${money2(v.cuenta_corriente.saldo_actual)}`);
   L.push('');
   L.push('¡Gracias por tu compra!');
@@ -652,6 +733,8 @@ function renderVentaOk() {
       <div class="pos-ok-ic">✅</div>
       <div class="pos-ok-total">${money(v.total)}</div>
       <div class="pos-ok-cod">${esc(v.codigo)} · ${esc(MEDIOS[v.medio_pago]||v.medio_pago)}</div>
+      ${v.cuenta_cobro ? `<div class="pos-ok-cod">A la cuenta <b>${esc(v.cuenta_cobro.alias || v.cuenta_cobro.cvu)}</b> · ${esc(v.cuenta_cobro.titular)}</div>` : ''}
+      ${v.aviso_cuenta ? `<div class="pos-aviso" style="display:block;text-align:left;padding:8px 10px">⚠ ${esc(v.aviso_cuenta)}</div>` : ''}
       ${v.cuenta_corriente ? `<div class="pos-ok-cod">${esc(v.cliente_nombre)} · ahora debe <b>${money(v.cuenta_corriente.saldo_actual)}</b>${Number(v.recargo_total) ? ` · recargo ${money(v.recargo_total)}` : ''}</div>` : ''}
       <div class="pos-ok-items">${(v.items||[]).map(i => `<div><span>${i.cantidad}× ${esc(i.nombre)}${i.afecto_stock ? ` <span class="ctrl ctrl-si">stock ${i.stock_posterior}</span>` : ' <span class="ctrl ctrl-no">sin tocar stock</span>'}</span><b>${money(i.subtotal)}</b></div>`).join('')}</div>
       ${avisos.length ? `<div class="pos-aviso" style="display:block;text-align:left;padding:8px 10px">⚠ Stock en negativo: ${avisos.map(a => `<b>${esc(a.nombre)}</b> (${a.stock})`).join(', ')}. Revisalo en <a href="/admin/carga-stock">Contar stock</a>.</div>` : ''}

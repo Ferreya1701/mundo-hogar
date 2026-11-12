@@ -39,6 +39,18 @@
 - Pantalla: Ventas → Ver → "Quitar productos"; ticket corregido. Guía: `GUIA-STOCK-Y-VENTAS.md` §12.
 - Pruebas: `node scripts/test-editar-venta-sql.mjs` (33).
 
+## Cuentas bancarias en la caja, igual que la web (2026-11-12) — EN EL REPO; FALTA CORRER sql/025
+- Antes la cuenta en Crear venta era una etiqueta elegida a mano (sin límites ni cupo). Ahora la asigna
+  el sistema con `fn_cobros_elegir_cuenta` (el mismo de la web), con reserva de 15 min (`cobro_reservas`,
+  `caja_cuenta_pedir`), y la venta se asienta en `movimientos_cobro` (venta_id) por disparador
+  (`tr_ventas_cobros`): cuenta para límites, resumen y liquidación; anular / quitar productos devuelve
+  el cupo. `venta_registrar` se parchea en 3 puntos (resuelve la cuenta al fijar el total).
+- Nunca frena la venta: si se pasa del límite, registra y avisa. Sin cuentas activas, como antes.
+- Crear venta: bloque "El cliente transfiere $X a ALIAS", "Otra cuenta", N° de operación; ticket con la
+  cuenta. Caja: transferencias del día por cuenta (`caja_por_cuenta`). Guía: `GUIA-COBROS.md` §7.
+- OJO producción: hoy hay UNA sola cuenta y está inactiva ("CUENTA DE PRUEBA (borrar)"): hasta cargar
+  las reales, la caja sigue sin cuenta. Pruebas: `node scripts/test-caja-cuentas-sql.mjs` (34).
+
 ## Ubicación del stock (2026-11-12) — EN EL REPO; FALTA CORRER sql/024
 - Una ubicación por producto (lugar + sector opcional), de una lista propia (`ubicaciones`,
   `productos.ubicacion_id`, `productos_ubicar()`). NO divide stock por lugar (decisión del dueño: varios

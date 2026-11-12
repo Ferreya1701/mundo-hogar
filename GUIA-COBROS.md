@@ -106,3 +106,35 @@ Mercado Pago (cruzar ingresos reales) queda como mejora futura.
 npm i --no-save --prefix scripts @electric-sql/pglite   # una vez
 node scripts/test-cobros-sql.mjs                         # 68 pruebas sobre Postgres en memoria
 ```
+
+## 7. Las cuentas bancarias en la caja del local (sql/025, 2026-11-12)
+En **Crear venta**, al cobrar por **Transferencia** o **Mercado Pago**, la cuenta ya no se elige de una
+lista: la **asigna el sistema con el mismo reparto que el carrito de la web** (punto 3): la que tiene
+cupo diario y mensual para ese monto y viene más descansada según su peso; si ninguna tiene cupo, la
+de respaldo. La web y la caja comparten los cupos.
+
+Cómo se usa:
+1. Se arma el ticket y se elige Transferencia (o Mercado Pago). Aparece **"El cliente transfiere $X a
+   ALIAS"**, con titular, banco y botón Copiar.
+2. El cliente transfiere y muestra el comprobante. Se controla que sea a **esa** cuenta y por ese monto.
+   Opcional: anotar el N° de operación.
+3. Cobrar. La venta queda asentada como cobro de esa cuenta.
+
+Para prevenir problemas:
+- **Reserva:** al mostrar la cuenta, el monto queda reservado 15 minutos. Dos cajas (o la caja y un
+  pedido web) no reciben al mismo tiempo la misma cuenta "casi llena".
+- **Si cambia el total** del ticket, la cuenta se vuelve a pedir sola (puede cambiar). No deja cobrar
+  con una cuenta pedida para otro monto.
+- **"Otra cuenta":** si el cliente no puede transferir a la asignada, se pide otra con cupo.
+- **Sin cupo en ninguna** y sin respaldo: lo avisa antes de que el cliente transfiera.
+- **La caja nunca frena:** si la plata ya fue a una cuenta, la venta se registra en esa cuenta aunque
+  pase el límite, y avisa para que el administrador lo vea.
+- **Anular la venta o quitarle productos devuelve el cupo** (movimiento de anulación en la misma cuenta).
+- **Cierre de caja:** la pantalla Caja muestra cuánto entró a cada cuenta en el día, para controlarlo
+  contra el homebanking.
+- La vendedora ve alias/CBU, titular y banco; **no** ve CUIT, límites ni cuánto lleva cada cuenta.
+- Las ventas del local cuentan en el resumen de Cuentas bancarias y en la **liquidación del mes**, igual
+  que los pedidos web pagados (hoy la comisión está en 0%).
+- Sin ninguna cuenta activa cargada, todo sigue como antes (transferencia sin cuenta).
+
+Pruebas: `node scripts/test-caja-cuentas-sql.mjs` (34).

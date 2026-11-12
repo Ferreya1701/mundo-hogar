@@ -131,6 +131,8 @@ const MHImprimir = (() => {
     ${Number(v.descuento) > 0 ? `<tr><td>Subtotal</td><td class="r">${money(v.subtotal)}</td></tr><tr><td>Descuento</td><td class="r">−${money(v.descuento)}</td></tr>` : ''}
     <tr class="tot"><td>TOTAL</td><td class="r">${money(v.total)}</td></tr>
     <tr><td>Pago</td><td class="r">${esc(MEDIOS[v.medio_pago] || v.medio_pago || '')}</td></tr>
+    ${v.cuenta_cobro ? `<tr><td class="m" colspan="2">Transferido a: ${esc(v.cuenta_cobro.alias || v.cuenta_cobro.cvu || '')} (${esc(v.cuenta_cobro.titular || '')})</td></tr>` : ''}
+    ${v.nro_operacion ? `<tr><td class="m" colspan="2">N° de operación: ${esc(v.nro_operacion)}</td></tr>` : ''}
     ${Number(v.recargo_total) > 0 ? `<tr><td class="m" colspan="2">Incluye recargo cuenta corriente: ${money(v.recargo_total)}</td></tr>` : ''}
   </table>
   ${cc ? `<div class="sep"></div><table>
