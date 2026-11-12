@@ -10,6 +10,7 @@
   <title>Contar stock — Mundo Hogar Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://zydotmaolgddwenwywyc.supabase.co" crossorigin>
   <link rel="stylesheet" href="/admin/css/admin.css">
 </head>
 <body class="carga-stock">
@@ -426,11 +427,8 @@ $id('btn-nuevo').addEventListener('click', () => {
 
 /* ── Ubicaciones (sql/024): filtrar por lugar y dejar ubicado lo que se cuenta ── */
 async function iniciarUbicaciones() {
-  await MHUbic.cargar();
+  await MHUbic.cargar();          // ya pedida junto con los productos
   if (!MHUbic.disponible) return;
-  const { data } = await Utils.traerTodo(() => db.from('productos').select('id, ubicacion_id').not('ubicacion_id', 'is', null).order('id'));
-  const mapa = new Map((data || []).map(r => [r.id, r.ubicacion_id]));
-  productos.forEach(p => { p.ubicacion_id = mapa.get(p.id) || null; });
   pintarUbicaciones();
   $id('filtro-ubic').hidden = false; $id('contando-wrap').style.display = 'flex';
   $id('filtro-ubic').addEventListener('change', () => {
@@ -448,10 +446,14 @@ function pintarUbicaciones() {
 }
 
 async function cargarDatos() {
-  const [{ data: catData, error: e1 }, prodRes] = await Promise.all([
+  const COLS_P = 'id,nombre,sku,codigo_barras,categoria_id,stock_actual,stock_minimo,stock_controlado,ultimo_conteo_en,seguimiento_inventario,estado';
+  const traerProds = cols => Utils.traerTodo(() => db.from('productos').select(cols).neq('estado','archivado').order('nombre').order('id'));
+  let [{ data: catData, error: e1 }, prodRes] = await Promise.all([
     db.from('categorias').select('id,nombre').order('orden'),
-    Utils.traerTodo(() => db.from('productos').select('id,nombre,sku,codigo_barras,categoria_id,stock_actual,stock_minimo,stock_controlado,ultimo_conteo_en,seguimiento_inventario,estado').neq('estado','archivado').order('nombre').order('id'))
+    traerProds(COLS_P + ',ubicacion_id'),
+    MHUbic.cargar()
   ]);
+  if (prodRes.error && /ubicacion_id/.test(prodRes.error.message || '')) prodRes = await traerProds(COLS_P);   // base sin sql/024
   if (e1 || prodRes.error) {
     if ((prodRes.error?.message||'').includes('stock_controlado')) $id('aviso-sql').hidden = false;
     Utils.toast(msgError(e1 || prodRes.error, 'cargar el catálogo'), 'error');

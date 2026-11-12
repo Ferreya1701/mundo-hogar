@@ -10,6 +10,7 @@
   <title>Crear venta — Mundo Hogar Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://zydotmaolgddwenwywyc.supabase.co" crossorigin>
   <link rel="stylesheet" href="/admin/css/admin.css">
 <style>
   .ctrl-cc { background:rgba(244,122,31,.13); color:#B35208; }
@@ -181,8 +182,11 @@ async function cargarDatos() {
     db.from('categorias').select('id,nombre,recargo_cc').order('orden')
       .then(r => r.error ? db.from('categorias').select('id,nombre').order('orden') : r),
     Utils.traerTodo(() => db.from('productos')
-      .select('id,nombre,sku,codigo_barras,codigo_anterior,categoria_id,precio_minorista,precio_oferta,en_oferta,stock_actual,stock_minimo,stock_controlado,seguimiento_inventario,permite_venta_sin_stock,imagen_principal_url,estado')
-      .neq('estado','archivado').order('nombre').order('id')),
+      .select('id,nombre,sku,codigo_barras,codigo_anterior,ubicacion_id,categoria_id,precio_minorista,precio_oferta,en_oferta,stock_actual,stock_minimo,stock_controlado,seguimiento_inventario,permite_venta_sin_stock,imagen_principal_url,estado')
+      .neq('estado','archivado').order('nombre').order('id'))
+      .then(r => r.error && /ubicacion_id|codigo_anterior/.test(r.error.message || '')    // base sin sql/021 o sql/024
+        ? Utils.traerTodo(() => db.from('productos').select('id,nombre,sku,codigo_barras,categoria_id,precio_minorista,precio_oferta,en_oferta,stock_actual,stock_minimo,stock_controlado,seguimiento_inventario,permite_venta_sin_stock,imagen_principal_url,estado').neq('estado','archivado').order('nombre').order('id'))
+        : r),
     // Vista sin CUIT ni límites (sql/015); si la base no la tiene, la tabla
     db.from('cuentas_cobro_staff').select('id,nombre,alias,activa').eq('activa', true).order('orden')
       .then(r => r.error ? db.from('cuentas_cobro').select('id,nombre,alias,activa').eq('activa', true).order('orden') : r)
@@ -196,13 +200,7 @@ async function cargarDatos() {
   }
   (catRes.data || []).forEach(c => { cats[c.id] = c.nombre; recargos[c.id] = Number(c.recargo_cc || 0); });
   // Dónde está guardado cada producto (sql/024), para saber adónde ir a buscarlo
-  MHUbic.cargar().then(async () => {
-    if (!MHUbic.disponible || !MHUbic.lista().length) return;
-    const { data } = await Utils.traerTodo(() => db.from('productos').select('id, ubicacion_id').not('ubicacion_id', 'is', null).order('id'));
-    const mapa = new Map((data || []).map(r => [r.id, r.ubicacion_id]));
-    productos.forEach(p => { p.ubicacion_id = mapa.get(p.id) || null; });
-    if (mapa.size) { renderResultados(); renderTicket(); }
-  });
+  MHUbic.cargar().then(() => { if (MHUbic.lista().length) { renderResultados(); renderTicket(); } });
   if (medio === 'cuenta_corriente' && !puedeCC()) medio = 'efectivo';
   productos = prodRes.data || [];
   cuentas = ctaRes.error ? [] : (ctaRes.data || []);

@@ -16,18 +16,32 @@ const Auth = {
     return session;
   },
 
+  // Perfil y permisos se recuerdan 5 minutos entre páginas: cambiar de módulo no
+  // vuelve a preguntarlos (eran 2 consultas en fila antes de mostrar nada). Es solo
+  // para dibujar menús y botones: lo que cada uno puede hacer lo controla la base.
+  // Un cambio de rol o permisos se ve, como mucho, 5 minutos después (o al volver a entrar).
+  PERFIL_TTL: 5 * 60 * 1000,
+
   async getProfile(forceRefresh = false) {
     if (this._profile && !forceRefresh) return this._profile;
     const session = await this.getSession();
     if (!session) return null;
-    const { data, error } = await db
-      .from('profiles')
-      .select('*')
-      .eq('id', session.user.id)
-      .single();
+    if (!forceRefresh) {
+      const c = this.cachedProfile();
+      if (c && c.id === session.user.id && Array.isArray(c.permisos) && c._ts && Date.now() - c._ts < this.PERFIL_TTL) {
+        this._profile = c;
+        return c;
+      }
+    }
+    const [{ data, error }, permisos] = await Promise.all([
+      db.from('profiles').select('*').eq('id', session.user.id).single(),
+      this._cargarPermisos(null),
+    ]);
     if (error || !data) return null;
-    data.permisos = await this._cargarPermisos(data.rol);
+    data.permisos = permisos === null ? (this.PERMISOS_ANTERIORES[data.rol] || []) : permisos;
+    data._ts = Date.now();
     this._profile = data;
+    this._fresco = true;
     try { sessionStorage.setItem('mhPerfil', JSON.stringify(data)); } catch (e) {}
     return data;
   },
@@ -37,10 +51,8 @@ const Auth = {
   async _cargarPermisos(rol) {
     const { data, error } = await db.rpc('fn_mis_permisos');
     if (!error && Array.isArray(data)) return data;
-    // Todavía no se corrió sql/016: lo que cada rol podía hacer antes
-    if (/could not find the function|schema cache/i.test(error?.message || '')) {
-      return this.PERMISOS_ANTERIORES[rol] || [];
-    }
+    // Todavía no se corrió sql/016: lo que cada rol podía hacer antes (null = usar esa tabla)
+    if (/could not find the function|schema cache/i.test(error?.message || '')) return null;
     return [];
   },
 
@@ -111,8 +123,8 @@ const Auth = {
       return null;
     }
 
-    // Actualizar último acceso (non-blocking)
-    db.from('profiles')
+    // Actualizar último acceso (sin esperar, y solo cuando el perfil se pidió de verdad: cada 5 min)
+    if (this._fresco) db.from('profiles')
       .update({ ultimo_acceso: new Date().toISOString() })
       .eq('id', profile.id)
       .then(() => {});

@@ -54,6 +54,8 @@ Seguir `ADMINISTRADOR-MUNDO-HOGAR.md`:
 2. Correr `sql/001-schema.sql` → `002-rls-policies.sql` → `003-seed-datos.sql` → `004-storage-policies.sql`.
 3. Crear el bucket `producto-imagenes` (público).
 4. Cargar `SUPABASE_URL` y `SUPABASE_ANON_KEY` en `supabase-config.js`, commit y push.
+   La URL también está en `worker/index.js` y en el `<link rel="preconnect">` de cada `admin/*.html`
+   (buscar el identificador viejo del proyecto en todo el repo y reemplazarlo).
 5. Crear el **primer usuario administrador** (ver punto 5).
 
 ## 5. Asignar al nuevo dueño como propietario principal

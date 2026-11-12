@@ -10,6 +10,7 @@
   <title>Inicio — Mundo Hogar Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://zydotmaolgddwenwywyc.supabase.co" crossorigin>
   <link rel="stylesheet" href="/admin/css/admin.css">
 </head>
 <body>
@@ -159,9 +160,10 @@ async function loadData() {
   const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString();
 
   // stock_controlado existe desde sql/013; si la base no lo tiene, se pide sin esa columna
+  const ventasP = db.from('ventas').select('total').gte('fecha', hoy.toISOString()).eq('estado','cerrada');   // a la vez que los productos
   let prodRes = await Utils.traerTodo(() => db.from('productos').select('id,nombre,stock_actual,stock_minimo,estado,precio_minorista,imagen_principal_url,categoria_id,destacado,stock_controlado,seguimiento_inventario,categorias(nombre)').order('stock_actual').order('id'));
   if (prodRes.error) prodRes = await Utils.traerTodo(() => db.from('productos').select('id,nombre,stock_actual,stock_minimo,estado,precio_minorista,imagen_principal_url,categoria_id,destacado,categorias(nombre)').order('stock_actual').order('id'));
-  const ventasRes = await db.from('ventas').select('total').gte('fecha', hoy.toISOString()).eq('estado','cerrada');
+  const ventasRes = await ventasP;
   const ventasHoy = ventasRes.error ? null : (ventasRes.data || []);
   const [
     { count: movHoy },

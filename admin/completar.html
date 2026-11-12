@@ -10,6 +10,7 @@
   <title>Completar productos — Mundo Hogar Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://zydotmaolgddwenwywyc.supabase.co" crossorigin>
   <link rel="stylesheet" href="/admin/css/admin.css">
   <style>
     .cp-progreso { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
@@ -155,21 +156,17 @@ const FILTROS = {
 
 /* ── Datos ── */
 async function cargar() {
-  const [c, p] = await Promise.all([
+  const COLS = 'id, nombre, sku, codigo_anterior, categoria_id, precio_minorista, imagen_principal_url, estado, stock_actual, stock_controlado, marca';
+  const traer = cols => Utils.traerTodo(() => db.from('productos').select(cols).neq('estado', 'archivado').order('nombre').order('id'));
+  let [c, p] = await Promise.all([
     db.from('categorias').select('id, nombre').order('orden').order('nombre'),
-    Utils.traerTodo(() => db.from('productos')
-      .select('id, nombre, sku, codigo_anterior, categoria_id, precio_minorista, imagen_principal_url, estado, stock_actual, stock_controlado, marca')
-      .neq('estado', 'archivado').order('nombre')),
+    traer(COLS + ', ubicacion_id'),
+    MHUbic.cargar(),
   ]);
+  if (p.error) p = await traer(COLS);   // base sin sql/024
   if (p.error) { $id('lista').innerHTML = `<div class="empty-state"><h3>No se pudieron cargar los productos</h3><p>${esc(p.error.message)}</p></div>`; return; }
   cats = c.data || []; prods = p.data || [];
-  await MHUbic.cargar();
-  if (MHUbic.disponible) {
-    const { data } = await Utils.traerTodo(() => db.from('productos').select('id, ubicacion_id').not('ubicacion_id', 'is', null).order('id'));
-    const mapa = new Map((data || []).map(r => [r.id, r.ubicacion_id]));
-    prods.forEach(x => { x.ubicacion_id = mapa.get(x.id) || null; });
-    $id('bulk-ubic').hidden = false;
-  }
+  if (MHUbic.disponible) $id('bulk-ubic').hidden = false;
   $id('f-cat').innerHTML = `<option value="">Todas las categorías</option><option value="0">Sin categoría</option>` + cats.map(x => `<option value="${x.id}">${esc(x.nombre)}</option>`).join('');
   render();
 }

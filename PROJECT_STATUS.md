@@ -39,6 +39,20 @@
 - Pantalla: Ventas → Ver → "Quitar productos"; ticket corregido. Guía: `GUIA-STOCK-Y-VENTAS.md` §12.
 - Pruebas: `node scripts/test-editar-venta-sql.mjs` (33).
 
+## Velocidad del panel (2026-11-12)
+- Por qué tardaba al cambiar de módulo: (1) cada módulo es una página aparte que vuelve a pedir todo;
+  (2) cada consulta a Supabase en Virginia tarda 0,2–0,45 s y las páginas hacían 6–7 EN FILA
+  (perfil → permisos → categorías → productos tanda 1 → tanda 2 → ubicaciones → ubicación de cada
+  producto); (3) el catálogo pasó de 142 a 1.060 productos.
+- Hecho: perfil + permisos recordados 5 min entre páginas (`Auth.PERFIL_TTL`; un cambio de rol o
+  permisos se ve a los 5 min como mucho — la base lo aplica al instante igual); `Utils.traerTodo` pide
+  de a dos tandas en paralelo; la ubicación viene en la misma consulta de productos; categorías,
+  productos y ubicaciones a la vez; la ficha pide producto + costos + fotos a la vez; conexión
+  anticipada a Supabase (`<link rel="preconnect">`, cambiar la URL al mudar a São Paulo).
+  Medido con la clave pública: 6 consultas en fila ≈ 1,4 s → 4 en paralelo ≈ 0,35–0,6 s.
+- Lo que queda: la mudanza a São Paulo (cada consulta ~4 veces más rápida) y, si hiciera falta más,
+  guardar el catálogo en el navegador entre páginas (no hecho: riesgo de precios/stock viejos en caja).
+
 ## Cuentas bancarias en la caja, igual que la web (2026-11-12) — sql/025 EJECUTADO EN PRODUCCIÓN 2026-11-12
 - Antes la cuenta en Crear venta era una etiqueta elegida a mano (sin límites ni cupo). Ahora la asigna
   el sistema con `fn_cobros_elegir_cuenta` (el mismo de la web), con reserva de 15 min (`cobro_reservas`,

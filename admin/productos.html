@@ -10,6 +10,7 @@
   <title>Productos — Mundo Hogar Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://zydotmaolgddwenwywyc.supabase.co" crossorigin>
   <link rel="stylesheet" href="/admin/css/admin.css">
 <style>
   .stock-ref { color:var(--muted); font-weight:600; }
@@ -949,8 +950,12 @@ async function cargarCategorias() {
 async function cargarProductos() {
   // De a tandas: Supabase entrega hasta 1000 filas por pedido y el catálogo ya pasó ese número.
   const COLS = 'id,nombre,slug,sku,codigo_barras,marca,categoria_id,stock_actual,stock_minimo,estado,precio_minorista,precio_oferta,en_oferta,destacado,imagen_principal_url,created_at';
-  let { data, error } = await Utils.traerTodo(() => db.from('productos').select(COLS + ',stock_controlado,codigo_anterior').order('nombre').order('id'));
+  // La ubicación viene en la misma consulta; la lista de ubicaciones se pide a la vez.
+  const ubic = MHUbic.cargar();
+  let { data, error } = await Utils.traerTodo(() => db.from('productos').select(COLS + ',stock_controlado,codigo_anterior,ubicacion_id').order('nombre').order('id'));
+  if (error) ({ data, error } = await Utils.traerTodo(() => db.from('productos').select(COLS + ',stock_controlado,codigo_anterior').order('nombre').order('id')));   // base sin sql/024
   if (error) ({ data, error } = await Utils.traerTodo(() => db.from('productos').select(COLS).order('nombre').order('id')));   // base sin sql/013 o sql/021
+  await ubic;
   if (error) {
     Utils.toast(msgError(error, 'cargar los productos'), 'error');
     document.getElementById('tabla-body').innerHTML =
@@ -963,14 +968,7 @@ async function cargarProductos() {
     return;
   }
   allProducts = data || [];
-  // Dónde está guardado cada uno (sql/024)
-  await MHUbic.cargar();
-  if (MHUbic.disponible) {
-    const u = await Utils.traerTodo(() => db.from('productos').select('id, ubicacion_id').not('ubicacion_id', 'is', null).order('id'));
-    const mapa = new Map((u.data || []).map(r => [r.id, r.ubicacion_id]));
-    allProducts.forEach(p => { p.ubicacion_id = mapa.get(p.id) || null; });
-    document.querySelector('[data-masiva="ubicacion"]')?.removeAttribute('hidden');
-  }
+  if (MHUbic.disponible) document.querySelector('[data-masiva="ubicacion"]')?.removeAttribute('hidden');
 }
 
 function limpiarFiltros() {

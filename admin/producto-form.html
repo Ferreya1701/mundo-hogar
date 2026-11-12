@@ -10,6 +10,7 @@
   <title>Producto — Mundo Hogar Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://zydotmaolgddwenwywyc.supabase.co" crossorigin>
   <link rel="stylesheet" href="/admin/css/admin.css">
 <style>
   .pf-precio { position:relative; }
@@ -433,7 +434,12 @@ async function guardarCostos(id, precio_costo, proveedor) {
 
 async function cargarProducto() {
   if (!isEdit) return;
-  const { data, error } = await db.from('productos').select('*').eq('id',editId).single();
+  // Producto, costos y fotos a la vez (antes eran tres esperas en fila)
+  const [{ data, error }, costosRes, galRes] = await Promise.all([
+    db.from('productos').select('*').eq('id',editId).single(),
+    db.from('producto_costos').select('precio_costo,proveedor').eq('producto_id', editId).maybeSingle(),
+    db.from('producto_imagenes').select('url, orden').eq('producto_id', editId).order('orden'),
+  ]);
   if (error || !data) {
     Utils.toast('No se encontró ese producto. Puede que lo hayan eliminado.','error');
     document.getElementById('form-subtitle').textContent = 'Producto no encontrado';
@@ -451,7 +457,8 @@ async function cargarProducto() {
   setCheck('en_oferta', data.en_oferta);
   mostrarStock(data); setVal('stock_minimo', data.stock_minimo);
   setVal('unidad', data.unidad); setVal('ubicacion', data.ubicacion);
-  const costos = await leerCostos(editId, data);
+  const costos = sinTablaCostos(costosRes.error) ? { precio_costo: data.precio_costo, proveedor: data.proveedor }
+    : (costosRes.data || { precio_costo: null, proveedor: null });
   setVal('precio_costo', costos.precio_costo); setVal('proveedor', costos.proveedor);
   setCheck('seguimiento_inventario', data.seguimiento_inventario);
   setCheck('permite_venta_sin_stock', data.permite_venta_sin_stock);
@@ -466,8 +473,7 @@ async function cargarProducto() {
     document.getElementById('cod-viejo-wrap').hidden = false;
     document.getElementById('cod-viejo').textContent = data.codigo_anterior;
   }
-  const { data: gal } = await db.from('producto_imagenes').select('url, orden').eq('producto_id', editId).order('orden');
-  fotosIniciales = (gal || []).map(g => g.url);
+  fotosIniciales = (galRes.data || []).map(g => g.url);
   if (!fotosIniciales.length && data.imagen_principal_url) fotosIniciales = [data.imagen_principal_url];
 }
 
@@ -705,9 +711,11 @@ async function initPage() {
     return;
   }
   await Layout.init('productos', isEdit ? 'Editar Producto' : 'Nuevo Producto');
-  await cargarCategorias();     // antes del producto: el <select> necesita sus <option>
-  await cargarProducto();
-  await MHUbic.cargar();
+  // Categorías, ubicaciones y producto se piden a la vez; el producto se vuelca
+  // cuando las categorías ya están (el <select> necesita sus <option>).
+  const pUbic = MHUbic.cargar();
+  const pProd = cargarCategorias().then(cargarProducto);
+  await Promise.all([pProd, pUbic]);
   if (MHUbic.disponible) {
     const pintarU = () => { const v = val('ubicacion_id') || ubicacionCargada || ''; document.getElementById('ubicacion_id').innerHTML = MHUbic.opciones(v); setVal('ubicacion_id', v); };
     document.getElementById('ubic-wrap').hidden = false; pintarU();

@@ -19,12 +19,17 @@ const Utils = {
      armar: () => db.from('tabla').select(...).order(...)  (sin range ni limit)
      Pide de a 1000 hasta que no haya más. Devuelve { data, error }. */
   async traerTodo(armar, tanda = 1000) {
+    // De a DOS tandas a la vez: con hasta 2000 filas es una sola espera, no dos en fila.
+    const pedir = desde => armar().range(desde, desde + tanda - 1);
     const filas = [];
-    for (let desde = 0; ; desde += tanda) {
-      const { data, error } = await armar().range(desde, desde + tanda - 1);
-      if (error) return { data: filas.length ? filas : null, error };
-      filas.push(...(data || []));
-      if (!data || data.length < tanda) return { data: filas, error: null };
+    for (let desde = 0; ; desde += 2 * tanda) {
+      const [a, b] = await Promise.all([pedir(desde), pedir(desde + tanda)]);
+      if (a.error) return { data: filas.length ? filas : null, error: a.error };
+      filas.push(...(a.data || []));
+      if (!a.data || a.data.length < tanda) return { data: filas, error: null };
+      if (b.error) return { data: filas, error: b.error };
+      filas.push(...(b.data || []));
+      if (!b.data || b.data.length < tanda) return { data: filas, error: null };
     }
   },
 
