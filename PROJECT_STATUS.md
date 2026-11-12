@@ -47,6 +47,19 @@
 - **El 011 (charla en PanelBot) NUNCA se corrió en producción.** El 016 saltea `crm_base_conversacion`
   si no existe; si algún día se corre el 011, volver a correr el 016 después.
 - La mudanza a São Paulo se lleva todo esto en la copia de la base (no hay que volver a correr nada).
+- **022 EJECUTADO 2026-11-12**: en producción `fn_registrar_movimiento` había quedado en la versión del 007
+  (sin el `mh.stock` del 008) con el guard del 008 activo → TODO movimiento de stock fallaba
+  (`stock_solo_por_movimiento`). Se detectó al importar; comparando las 99 funciones de producción con
+  las del repo era la única distinta. `sql/022-reparar-movimientos-stock.sql` agrega solo esa línea.
+- **Catálogo del sistema viejo IMPORTADO 2026-11-12** (971 artículos; "ENVIO" excluido): 919 productos
+  nuevos INACTIVOS (SKU = código viejo) + 52 vinculados a productos de la web (revisados a mano, solo los
+  claros). 492 con stock de referencia sin contar (14.198 unidades, movimiento "Stock del sistema
+  anterior"). Rubros → categorías y ACCESORIOS (793) clasificado por palabras clave; 26 sin categoría
+  (bicicletas, monopatines, triciclos: no hay categoría para eso). "Marca" Buenos Aires/Córdoba/Rosario/
+  Litoral → proveedor. Hecho con `productos_importar()` en 5 tandas, a nombre del admin
+  joseignaciopivas05. Respaldo previo: `~/mundo-hogar-respaldos/datos-antes-de-importar-20261112-1149.sql`.
+- Falta: precios (lista del sistema viejo → Importar artículos con codigo + precio), fotos, y activar en
+  Productos lo que se quiera publicar.
 - Siguiente: importar el catálogo del sistema viejo (Catálogo → Importar artículos), cargar recargos
   por categoría y saldos iniciales de cuentas corrientes. Falta del sistema viejo la **lista de precios**.
   Pendiente: cotizar envíos fuera de Santa Fe (espera empresa de transporte).
