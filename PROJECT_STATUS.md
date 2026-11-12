@@ -50,7 +50,7 @@
   orden para la caja y ticket con desglose. Guía: `GUIA-STOCK-Y-VENTAS.md` §13. Pruebas (41).
   OJO al correr el 026: desde ese momento NINGUNA venta queda cobrada sin pasar por Caja → avisar al
   personal y tener la caja abierta. Las pantallas viejas en caché (5 min) mostrarían "cobrada" de más.
-- **Etapa B — retiros y envíos (módulo Entregas): EN EL REPO; FALTA CORRER sql/027.** Venta elige se lo lleva / retira después / envío por transporte; Entregas con Para retirar, Envíos por transporte (despacho múltiple con guía), Entregadas; comprobante de retiro con ubicaciones, etiqueta por bulto, hoja de despacho. Lo sin pagar no sale (salvo cuenta corriente). Guía §14 de GUIA-STOCK-Y-VENTAS.md.
+- **Etapa B — retiros y envíos (módulo Entregas): sql/027 EJECUTADO EN PRODUCCIÓN 2026-11-12.** Venta elige se lo lleva / retira después / envío por transporte; Entregas con Para retirar, Envíos por transporte (despacho múltiple con guía), Entregadas; comprobante de retiro con ubicaciones, etiqueta por bulto, hoja de despacho. Lo sin pagar no sale (salvo cuenta corriente). Guía §14 de GUIA-STOCK-Y-VENTAS.md.
 - **Pendiente:** C) pedidos web en el mismo circuito y cobro en
   caja al retirar; D) (comprobante de retiro, etiqueta y hoja de despacho YA HECHOS en la etapa B; falta el ticket por paso para pedidos web);
   E) menú reordenado (Mostrador / Entregas / Pedidos web / Clientes / Catálogo / Stock / Administración)
