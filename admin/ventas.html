@@ -62,7 +62,7 @@
         <input type="date" id="f-hasta" style="min-width:140px">
         <select id="f-medio" style="min-width:150px"><option value="">Todos los medios</option></select>
         <select id="f-vend" style="min-width:150px"><option value="">Todos los vendedores</option></select>
-        <select id="f-estado" style="min-width:130px"><option value="cerrada">Cerradas</option><option value="anulada">Anuladas</option><option value="">Todas</option></select>
+        <select id="f-estado" style="min-width:130px"><option value="cerrada">Cobradas</option><option value="pendiente_cobro">Esperando cobro</option><option value="anulada">Anuladas</option><option value="">Todas</option></select>
         <span class="filter-count" id="filter-count"></span>
       </div>
 
@@ -85,7 +85,7 @@
 <script src="/admin/js/layout.js"></script>
 <script src="/admin/js/impresion.js"></script>
 <script>
-const MEDIOS = { efectivo:'Efectivo', transferencia:'Transferencia', debito:'Débito', credito:'Crédito', mercadopago:'Mercado Pago', cuenta_corriente:'Cuenta corriente', otro:'Otro' };
+const MEDIOS = { efectivo:'Efectivo', transferencia:'Transferencia', debito:'Débito', credito:'Crédito', mercadopago:'Mercado Pago', cuenta_corriente:'Cuenta corriente', otro:'Otro', mixto:'Pago mixto', pendiente:'A cobrar en caja' };
 const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const money = n => Utils.currency(n);
 let ventas = [], perfil = null, rango = 'hoy';
@@ -100,7 +100,7 @@ function setRango(r) {
   if (r === 'ayer') { d.setDate(d.getDate()-1); h = new Date(d); }
   if (r === 'semana') { const dow = (d.getDay()+6)%7; d.setDate(d.getDate()-dow); }
   if (r === 'mes') d = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-  if (r !== 'custom') { $id('f-desde').value = iso(d); $id('f-hasta').value = iso(h); cargar(); }
+  if (r !== 'custom') { $id('f-desde').value = iso(d); $id('f-hasta').value = iso(h); return cargar(); }
 }
 document.getElementById('rangos').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) setRango(b.dataset.r); });
 ['f-desde','f-hasta'].forEach(id => $id(id).addEventListener('change', () => { rango = 'custom'; document.querySelectorAll('#rangos .chip').forEach(c => c.classList.toggle('active', c.dataset.r === 'custom')); cargar(); }));
@@ -109,9 +109,13 @@ document.getElementById('rangos').addEventListener('click', e => { const b = e.t
 async function cargar() {
   const desde = new Date($id('f-desde').value + 'T00:00:00');
   const hasta = new Date($id('f-hasta').value + 'T23:59:59.999');
-  const { data, error } = await db.from('ventas').select('*, venta_items(*)')
+  // venta_pagos existe desde sql/026 (con qué se cobró); sin él, se pide como antes
+  let { data, error } = await db.from('ventas').select('*, venta_items(*), venta_pagos(medio_pago, monto, monto_original, cuenta_cobro_id, nro_operacion, orden)')
     .gte('fecha', desde.toISOString()).lte('fecha', hasta.toISOString())
     .order('fecha', { ascending: false }).limit(2000);
+  if (error && /venta_pagos/.test(error.message || '')) ({ data, error } = await db.from('ventas').select('*, venta_items(*)')
+    .gte('fecha', desde.toISOString()).lte('fecha', hasta.toISOString())
+    .order('fecha', { ascending: false }).limit(2000));
   if (error) {
     const m = (error.message||'').toLowerCase();
     $id('tabla-body').innerHTML = `<tr class="fila-plana"><td colspan="8"><div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>${m.includes('ventas') ? 'Falta ejecutar sql/013 en la base' : 'No se pudieron cargar las ventas'}</h3><p>${esc(error.message)}</p></div></td></tr>`;
@@ -167,7 +171,7 @@ function render() {
     <td class="c-items" data-l="Ítems" style="font-size:12.5px;color:var(--muted)">${(() => { const it = (v.venta_items||[]).filter(i => i.cantidad > 0); return it.slice(0,3).map(i => `${i.cantidad}× ${esc(i.nombre)}`).join('<br>') + (it.length > 3 ? `<br>… y ${it.length - 3} más` : ''); })()}</td>
     <td class="c-medio"><span class="vta-medio vta-medio-${esc(v.medio_pago)}">${esc(MEDIOS[v.medio_pago]||v.medio_pago)}</span></td>
     <td class="c-total" style="text-align:right;font-weight:600">${money(v.total)}</td>
-    <td class="c-est">${v.estado === 'anulada' ? '<span class="badge badge-danger">Anulada</span>' : '<span class="badge badge-success">Cerrada</span>'}${Number(v.ediciones) > 0 ? ' <span class="badge badge-warning" title="Se quitaron productos después de la venta">Modificada</span>' : ''}</td>
+    <td class="c-est">${v.estado === 'anulada' ? '<span class="badge badge-danger">Anulada</span>' : v.estado === 'pendiente_cobro' ? `<span class="badge badge-warning">${v.devuelta_motivo ? 'Devuelta por caja' : 'Esperando cobro'}</span>` : '<span class="badge badge-success">Cobrada</span>'}${Number(v.ediciones) > 0 ? ' <span class="badge badge-warning" title="Se quitaron productos después de la venta">Modificada</span>' : ''}</td>
     <td class="c-acc"><button type="button" class="btn btn-outline btn-sm" data-ver="${v.id}">Ver</button></td>
   </tr>`).join('');
 }
@@ -179,7 +183,7 @@ document.getElementById('tabla-body').addEventListener('click', e => {
 
 // Quitar productos (sql/020): mismas reglas que anular, con sus propios permisos
 function puedeEditar(v) {
-  if (v.estado !== 'cerrada') return false;
+  if (v.estado !== 'cerrada' && v.estado !== 'pendiente_cobro') return false;
   if ((v.venta_items || []).filter(i => i.cantidad > 0).reduce((s, i) => s + i.cantidad, 0) < 2) return false;  // con 1 unidad: anular
   if (Auth.puede('ventas.editar_todas', perfil)) return true;
   if (!Auth.puede('ventas.editar_propias', perfil)) return false;
@@ -187,7 +191,8 @@ function puedeEditar(v) {
 }
 
 function puedeAnular(v) {
-  if (v.estado !== 'cerrada') return false;
+  if (v.estado === 'pendiente_cobro' && Auth.puede('caja.cobrar', perfil)) return true;   // la caja cancela lo que espera cobro
+  if (v.estado !== 'cerrada' && v.estado !== 'pendiente_cobro') return false;
   if (Auth.puede('ventas.anular_todas', perfil)) return true;
   if (!Auth.puede('ventas.anular_propias', perfil)) return false;
   return v.vendedor_id === perfil.id && (Date.now() - new Date(v.fecha).getTime()) < 24*3600e3;
@@ -207,6 +212,9 @@ function abrir(id) {
         ${v.retira_nombre ? `<div><b>Retiró</b>${esc(v.retira_nombre)}</div>` : ''}
         ${Number(v.recargo_total) > 0 ? `<div><b>Recargo cuenta corriente</b>${money(v.recargo_total)}</div>` : ''}
         ${v.notas ? `<div style="grid-column:1/-1"><b>Nota</b>${esc(v.notas)}</div>` : ''}
+        ${v.estado==='pendiente_cobro' ? `<div style="grid-column:1/-1;color:#92400E"><b>Esperando cobro en la caja</b>${v.devuelta_motivo ? 'La caja la devolvió: ' + esc(v.devuelta_motivo) : 'No entregar la mercadería hasta que figure cobrada.'}</div>` : ''}
+        ${v.cobrada_en ? `<div><b>Cobró</b>${esc(v.cobrada_por_nombre || '—')} · ${Utils.datetime(v.cobrada_en)}</div>` : ''}
+        ${(v.venta_pagos || []).length > 1 ? `<div style="grid-column:1/-1"><b>Cómo pagó</b>${v.venta_pagos.slice().sort((a, b) => a.orden - b.orden).map(p => `${esc(MEDIOS[p.medio_pago] || p.medio_pago)} ${money(p.monto)}${Number(p.monto) !== Number(p.monto_original) ? ` <span style="color:var(--muted)">(eran ${money(p.monto_original)})</span>` : ''}`).join(' · ')}</div>` : ''}
         ${v.estado==='anulada' ? `<div style="grid-column:1/-1;color:var(--danger)"><b>Anulada</b>${Utils.datetime(v.anulada_en)} · ${esc(v.motivo_anulacion||'')}</div>` : ''}
       </div>
       <table class="vta-items"><thead><tr><th>Producto</th><th class="r">Cant.</th><th class="r">Precio</th><th class="r">Subtotal</th><th>Stock</th></tr></thead>
@@ -339,7 +347,10 @@ async function initPage() {
     $id('subtitle').textContent = 'Lo que cobraste vos en el mostrador. Los pedidos de la tienda están en Pedidos web.';
     $id('f-vend').hidden = true;
   }
-  setRango('hoy');
+  await setRango('hoy');
+  // Link directo a una venta (desde Crear venta): /admin/ventas?ver=123
+  const ver = Number(new URLSearchParams(location.search).get('ver'));
+  if (ver) { $id('f-estado').value = ''; render(); if (ventas.some(v => v.id === ver)) abrir(ver); }
 }
 initPage();
 </script>

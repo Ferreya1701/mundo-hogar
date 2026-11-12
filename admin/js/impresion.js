@@ -11,7 +11,7 @@ const MHImprimir = (() => {
   const JSBARCODE = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js';
   const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const money = n => new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS', minimumFractionDigits:0, maximumFractionDigits:2 }).format(Number(n || 0));
-  const MEDIOS = { efectivo:'Efectivo', transferencia:'Transferencia', debito:'Débito', credito:'Crédito', mercadopago:'Mercado Pago', cuenta_corriente:'Cuenta corriente', otro:'Otro' };
+  const MEDIOS = { efectivo:'Efectivo', transferencia:'Transferencia', debito:'Débito', credito:'Crédito', mercadopago:'Mercado Pago', cuenta_corriente:'Cuenta corriente', otro:'Otro', mixto:'Pago mixto', pendiente:'A cobrar en caja' };
 
   // Fecha y hora de Argentina con segundos: 11/11/2026 13:23:46
   const fechaHora = d => {
@@ -109,6 +109,8 @@ const MHImprimir = (() => {
     const vendedor = v.vendedor_nombre || v.vendedor || '';
     const retira = (v.retira_nombre || '').trim();
     const cc = v.cuenta_corriente || null;   // solo al imprimir recién vendida (trae los saldos)
+    // Con qué se pagó (sql/026): viene como `pagos` al cobrar, o como venta_pagos al reimprimir
+    const pagos = (v.pagos || (v.venta_pagos || []).map(p => ({ medio: p.medio_pago, monto: p.monto }))).filter(p => Number(p.monto) > 0);
     const filas = items.map(i => {
       const cant = Number(i.cantidad || 0), pu = Number(i.precio_unitario ?? (cant ? Number(i.subtotal || 0) / cant : 0));
       return `<tr><td colspan="2">${esc(i.nombre)}</td></tr>
@@ -123,6 +125,7 @@ const MHImprimir = (() => {
   ${retira ? `<div class="dato">Retira: <b>${esc(retira)}</b></div>` : ''}
   ${vendedor ? `<div class="m">Atendió: ${esc(vendedor)}</div>` : ''}
   ${v.estado === 'anulada' ? '<div class="marca">VENTA ANULADA</div>' : ''}
+  ${v.estado === 'pendiente_cobro' ? '<div class="marca">PENDIENTE DE PAGO</div>' : ''}
   ${v.estado !== 'anulada' && Number(v.ediciones) > 0 ? `<div class="m">Corregida el ${esc(fechaHora(v.editada_en))}: se quitaron productos</div>` : ''}
   <div class="sep"></div>
   <table>${filas}</table>
@@ -130,7 +133,11 @@ const MHImprimir = (() => {
   <table>
     ${Number(v.descuento) > 0 ? `<tr><td>Subtotal</td><td class="r">${money(v.subtotal)}</td></tr><tr><td>Descuento</td><td class="r">−${money(v.descuento)}</td></tr>` : ''}
     <tr class="tot"><td>TOTAL</td><td class="r">${money(v.total)}</td></tr>
-    <tr><td>Pago</td><td class="r">${esc(MEDIOS[v.medio_pago] || v.medio_pago || '')}</td></tr>
+    ${pagos.length > 1
+      ? pagos.map(p => `<tr><td>${esc(MEDIOS[p.medio] || p.medio)}</td><td class="r">${money(p.monto)}</td></tr>`).join('')
+      : `<tr><td>Pago</td><td class="r">${esc(MEDIOS[v.medio_pago] || v.medio_pago || '')}</td></tr>`}
+    ${v.cobrada_por_nombre ? `<tr><td class="m" colspan="2">Cobró: ${esc(v.cobrada_por_nombre)}${v.cobrada_en ? ' · ' + esc(fechaHora(v.cobrada_en)) : ''}</td></tr>` : ''}
+    ${!v.cuenta_cobro && pagos.some(p => p.cuenta) ? pagos.filter(p => p.cuenta).map(p => `<tr><td class="m" colspan="2">Transferido a: ${esc(p.cuenta.alias || p.cuenta.cvu || '')} (${esc(p.cuenta.titular || '')})</td></tr>`).join('') : ''}
     ${v.cuenta_cobro ? `<tr><td class="m" colspan="2">Transferido a: ${esc(v.cuenta_cobro.alias || v.cuenta_cobro.cvu || '')} (${esc(v.cuenta_cobro.titular || '')})</td></tr>` : ''}
     ${v.nro_operacion ? `<tr><td class="m" colspan="2">N° de operación: ${esc(v.nro_operacion)}</td></tr>` : ''}
     ${Number(v.recargo_total) > 0 ? `<tr><td class="m" colspan="2">Incluye recargo cuenta corriente: ${money(v.recargo_total)}</td></tr>` : ''}
@@ -229,6 +236,34 @@ const MHImprimir = (() => {
     if (!res) return;
     const t = { ...(await datosTienda()), _origen: location.origin };
     imprimirHTML(htmlCierreCaja(res, movs, t));
+  }
+
+  /* ── Orden de cobro (HTML puro) ──
+     La lleva el cliente a la caja. NO es comprobante de pago. */
+  function htmlOrdenCobro(v, t = {}) {
+    const items = (v.items || v.venta_items || []).filter(i => Number(i.cantidad) > 0).sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Orden ${esc(v.codigo || '')}</title>
+<style>${ESTILO_80} .cod { text-align:center; font-size:22px; font-weight:bold; letter-spacing:.06em; margin:4px 0; }</style></head><body>
+  <h1>${esc(t.nombre_tienda || 'Mundo Hogar')}</h1>
+  <div class="sep"></div>
+  <div class="tipo">ORDEN PARA LA CAJA</div>
+  <div class="cod">${esc(v.codigo || '')}</div>
+  <div class="dato">Fecha: ${esc(fechaHora(v.fecha))}</div>
+  ${v.cliente_nombre ? `<div class="dato">Cliente: <b>${esc(v.cliente_nombre)}</b></div>` : ''}
+  ${(v.vendedor_nombre || v.vendedor) ? `<div class="m">Atendió: ${esc(v.vendedor_nombre || v.vendedor)}</div>` : ''}
+  <div class="sep"></div>
+  <table>${items.map(i => `<tr><td>${Number(i.cantidad)} × ${esc(i.nombre)}</td><td class="r">${money(i.subtotal)}</td></tr>`).join('')}</table>
+  <div class="sep"></div>
+  <table><tr class="tot"><td>A PAGAR</td><td class="r">${money(v.total)}</td></tr></table>
+  <div class="sep"></div>
+  <div class="c"><b>Pasá por la caja con esta orden.</b></div>
+  <div class="c m">No es comprobante de pago. La mercadería se entrega una vez pagada.</div>
+  ${SCRIPT_LISTO.replace("document.querySelector('img.logo')", 'null')}
+</body></html>`;
+  }
+  async function ordenCobro(v) {
+    if (!v) return;
+    imprimirHTML(htmlOrdenCobro(v, { ...(await datosTienda()), _origen: location.origin }));
   }
 
   async function ticket(v) {
@@ -350,6 +385,6 @@ ${lista.map(p => { const c = valorCodigo(p); return `<div class="et">
   // Después de editar los datos del negocio: la próxima impresión los vuelve a leer
   const refrescar = () => { tienda = null; };
 
-  return { ticket, recibo, cierreCaja, refrescar, etiquetas, pedirEtiquetas, _html: { ticket: htmlTicket, recibo: htmlRecibo, cierreCaja: htmlCierreCaja, cuitFmt, fechaHora } };
+  return { ticket, recibo, cierreCaja, ordenCobro, refrescar, etiquetas, pedirEtiquetas, _html: { ticket: htmlTicket, recibo: htmlRecibo, cierreCaja: htmlCierreCaja, ordenCobro: htmlOrdenCobro, cuitFmt, fechaHora } };
 })();
 window.MHImprimir = MHImprimir;

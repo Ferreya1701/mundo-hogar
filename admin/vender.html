@@ -19,6 +19,15 @@
   .cc-item:hover { border-color:var(--blue); }
   .cc-sel { border:1px solid var(--border); border-radius:var(--r); padding:10px 12px; background:var(--bg); display:flex; flex-direction:column; gap:4px; }
   .cc-dato { font-size:12.5px; color:var(--muted); }
+  #en-caja { padding:10px 14px; border-left:4px solid var(--warning); }
+  .ec-tit { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:6px; }
+  .ec-fila { display:flex; justify-content:space-between; gap:10px; align-items:center; padding:8px 0; border-top:1px solid var(--border); font-size:13.5px; flex-wrap:wrap; }
+  .ec-fila.devuelta { background:var(--danger-bg); margin:0 -14px; padding:8px 14px; }
+  .ec-motivo { color:#B91C1C; font-size:13px; margin-top:3px; }
+  .ec-acc { display:flex; gap:6px; align-items:center; }
+  .pos-espera { background:var(--warning-bg); color:#92400E; font-weight:700; border-radius:var(--r); padding:10px 12px; margin:10px 0; text-align:center; }
+  .pos-espera span { font-weight:500; font-size:13px; }
+  .pos-pagada { background:var(--success-bg); color:#15803D; font-weight:700; border-radius:var(--r); padding:10px 12px; margin-bottom:8px; text-align:center; }
   .cta-banco { margin-top:8px; border:1px solid var(--border); border-left:4px solid var(--blue); border-radius:var(--r); padding:10px 12px; background:var(--bg); font-size:13px; }
   .cta-banco.cta-alerta { border-left-color:var(--danger); color:#B91C1C; }
   .cta-lbl { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
@@ -56,7 +65,7 @@
       </div>
 
       <div class="card mb-3" id="aviso-caja" hidden style="border-left:4px solid var(--warning);padding:10px 14px;font-size:13px">
-        💵 <b>La caja está cerrada.</b> Podés vender igual: el cobro queda pendiente y entra cuando se abra la caja.
+        💵 <b>La caja está cerrada.</b> Podés armar ventas igual: quedan esperando y se cobran cuando se abra la caja.
         <a href="/admin/caja" id="aviso-caja-link" hidden>Abrir la caja →</a>
       </div>
       <div class="card mb-3" id="aviso-sql" hidden style="border-left:4px solid var(--danger)">
@@ -64,6 +73,8 @@
           <b>Falta activar las ventas en la base de datos.</b> Ejecutá <code>sql/013-local-compras-stock.sql</code> en Supabase (ver GUIA-STOCK-Y-VENTAS.md). Hasta entonces esta pantalla no puede registrar ventas.
         </div>
       </div>
+
+      <div class="card mb-3" id="en-caja" hidden></div>
 
       <div class="pos-layout">
         <!-- ── Buscador y productos ── -->
@@ -132,6 +143,11 @@ let perfil = null;
 let ticket = [];           // [{ key, producto_id, nombre, sku, cantidad, precio, imagen }]
 let medio = 'efectivo';
 let ccSel = null;          // cliente de cuenta corriente elegido (cc_buscar)
+/* sql/026: las ventas se cobran en la CAJA. Acá solo se arman y se envían;
+   lo único que se resuelve en el momento es la cuenta corriente (no hay plata). */
+let porCaja = false;
+let enCaja = [];           // mis ventas que esperan cobro (o que la caja devolvió)
+const txtBoton = total => !porCaja ? `Cobrar ${money(total)}` : (esCC() ? `Cargar a la cuenta · ${money(total)}` : `Enviar a caja · ${money(total)}`);
 /* Cuenta bancaria para transferencia / Mercado Pago (sql/025): la asigna el
    sistema con el mismo reparto que la web (límites y rotación) y reserva el monto. */
 let ctaBanco = { modo: 'auto', cuenta: null, monto: null, aviso: null, motivo: null, cargando: false, excluidas: [] };
@@ -385,6 +401,7 @@ document.getElementById('btn-libre').addEventListener('click', () => {
 });
 
 const MEDIOS = { efectivo:'Efectivo', transferencia:'Transferencia', debito:'Débito', credito:'Crédito', mercadopago:'Mercado Pago', cuenta_corriente:'Cuenta corriente', otro:'Otro' };
+const MEDIO_TXT = { ...MEDIOS, pendiente:'A cobrar en caja', mixto:'Pago mixto' };
 const puedeCC = () => Auth.puede('cc.vender', perfil);
 const esCC = () => medio === 'cuenta_corriente';
 
@@ -464,8 +481,12 @@ function renderTicket() {
       <div class="fila"><span>Descuento ($)</span><input type="number" id="desc" inputmode="decimal" min="0" step="1" placeholder="0" value="${esc(descActual)}"></div>
       <div class="pos-total"><span>Total</span><span id="total-txt">${money(subtotal - desc)}</span></div>
     </div>
-    <div class="pos-seccion"><span class="lbl">Medio de pago</span>
-      <div class="chips pay-chips" id="medios">${Object.entries(MEDIOS).filter(([k]) => k !== 'cuenta_corriente' || puedeCC()).map(([k,v]) => `<button type="button" class="chip${medio===k?' active':''}" data-medio="${k}">${v}</button>`).join('')}</div>
+    <div class="pos-seccion"><span class="lbl">${porCaja ? '¿Cómo paga?' : 'Medio de pago'}</span>
+      <div class="chips pay-chips" id="medios">${porCaja
+        ? `<button type="button" class="chip${!esCC() ? ' active' : ''}" data-medio="pendiente">💵 Paga en la caja</button>` +
+          (puedeCC() ? `<button type="button" class="chip${esCC() ? ' active' : ''}" data-medio="cuenta_corriente">📒 Cuenta corriente</button>` : '')
+        : Object.entries(MEDIOS).filter(([k]) => k !== 'cuenta_corriente' || puedeCC()).map(([k,v]) => `<button type="button" class="chip${medio===k?' active':''}" data-medio="${k}">${v}</button>`).join('')}</div>
+      ${porCaja && !esCC() ? '<div class="cta-sub">La cajera elige el medio de pago al cobrar (efectivo, transferencia, tarjeta o mixto).</div>' : ''}
       ${esBanco() ? (ctaBanco.modo === 'viejo'
           ? (cuentas.length ? `<select id="cuenta" style="margin-top:8px;width:100%;min-height:40px"><option value="">¿A qué cuenta entró? (opcional)</option>${cuentas.map(c=>`<option value="${c.id}"${String(c.id)===cuentaSel?' selected':''}>${esc(c.nombre)}${c.alias?' · '+esc(c.alias):''}</option>`).join('')}</select>` : '')
           : `<div id="cta-banco">${htmlCuentaBanco(subtotal - desc)}</div>`) : ''}
@@ -475,7 +496,7 @@ function renderTicket() {
     </div>`}
     <div class="pos-seccion"><input type="text" id="retira" placeholder="Retira (si no es el cliente)" maxlength="80" value="${esc(retira)}"></div>
     <div class="pos-seccion"><input type="text" id="notas" placeholder="Nota interna (opcional)" maxlength="400" value="${esc(notas)}"></div>
-    <button type="button" class="btn btn-primary btn-cobrar" id="btn-cobrar">Cobrar ${money(subtotal - desc)}</button>`;
+    <button type="button" class="btn btn-primary btn-cobrar" id="btn-cobrar">${txtBoton(subtotal - desc)}</button>`;
 }
 
 document.getElementById('ticket-body').addEventListener('click', async e => {
@@ -484,6 +505,7 @@ document.getElementById('ticket-body').addEventListener('click', async e => {
   if (b.id === 'btn-cobrar') { cobrar(); return; }
   if (b.dataset.ok === 'nueva') { ultimaVenta = null; renderTicket(); document.getElementById('q').focus(); return; }
   if (b.dataset.ok === 'wa') { enviarWA(); return; }
+  if (b.dataset.ok === 'orden') { MHImprimir.ordenCobro(ultimaVenta); return; }
   if (b.dataset.ok === 'imprimir') { MHImprimir.ticket(ultimaVenta); return; }
   if (b.dataset.ok === 'copiar') { Utils.copy(textoTicket(ultimaVenta), 'Ticket copiado'); return; }
   if (b.dataset.act === 'cta-otra') { pedirCuenta(true); return; }
@@ -498,6 +520,70 @@ document.getElementById('ticket-body').addEventListener('click', async e => {
   if (b.dataset.act === 'quitar') ticket = ticket.filter(x => x !== t);
   if (b.dataset.act === 'precio') { const v = await pedirPrecio(t.nombre, t.precio); if (v === null) return; t.precio = v; }
   guardarTicket(); renderTicket();
+});
+
+/* ── Mis ventas en la caja (sql/026) ──
+   Lista de lo que mandé y todavía no se cobró, y lo que la caja me devolvió.
+   Se refresca sola mientras haya algo esperando. */
+let cajaTimer = null;
+async function cargarEnCaja() {
+  if (!porCaja) return;
+  const { data, error } = await db.from('ventas')
+    .select('id, codigo, fecha, total, cliente_nombre, devuelta_motivo, devuelta_por_nombre, estado, venta_items(nombre, cantidad, subtotal, orden)')
+    .eq('estado', 'pendiente_cobro').eq('vendedor_id', perfil.id).order('fecha');
+  if (error) return;
+  enCaja = data || [];
+  pintarEnCaja();
+  clearTimeout(cajaTimer);
+  if (enCaja.length || ultimaVenta?.estado === 'pendiente_cobro') cajaTimer = setTimeout(vigilarCobro, 6000);
+}
+function pintarEnCaja() {
+  const el = document.getElementById('en-caja');
+  if (!enCaja.length) { el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = `<div class="ec-tit">En la caja · ${enCaja.length} venta${enCaja.length !== 1 ? 's' : ''} tuya${enCaja.length !== 1 ? 's' : ''} esperando</div>` +
+    enCaja.map(v => `<div class="ec-fila${v.devuelta_motivo ? ' devuelta' : ''}">
+      <div><b>${esc(v.codigo)}</b> · ${money(v.total)}${v.cliente_nombre ? ' · ' + esc(v.cliente_nombre) : ''}
+        <div class="cta-sub">${(v.venta_items || []).filter(i => i.cantidad > 0).map(i => `${i.cantidad}× ${esc(i.nombre)}`).join(', ')}</div>
+        ${v.devuelta_motivo ? `<div class="ec-motivo">↩ La caja la devolvió${v.devuelta_por_nombre ? ' (' + esc(v.devuelta_por_nombre) + ')' : ''}: <b>${esc(v.devuelta_motivo)}</b></div>` : ''}</div>
+      <div class="ec-acc">
+        ${v.devuelta_motivo ? `<button type="button" class="btn btn-primary btn-sm" data-ec="reenviar" data-id="${v.id}">Volver a mandar</button>` : '<span class="badge badge-warning">esperando cobro</span>'}
+        <a class="btn btn-ghost btn-sm" href="/admin/ventas?ver=${v.id}" title="Ver, quitar productos o cancelar">Abrir</a>
+        <button type="button" class="btn btn-ghost btn-sm" data-ec="cancelar" data-id="${v.id}" title="Cancelar la venta (vuelve el stock)">✕</button>
+      </div></div>`).join('');
+}
+// ¿Ya cobraron la que tengo en pantalla? ¿Cambió algo de mi lista?
+async function vigilarCobro() {
+  if (document.hidden) { cajaTimer = setTimeout(vigilarCobro, 6000); return; }
+  if (ultimaVenta?.estado === 'pendiente_cobro') {
+    const { data } = await db.from('ventas').select('estado, medio_pago, cobrada_por_nombre').eq('id', ultimaVenta.id).maybeSingle();
+    if (data && data.estado === 'cerrada') {
+      Object.assign(ultimaVenta, data, { _recienPagada: true });
+      renderTicket(); cargarHoy();
+      Utils.toast(`Venta ${ultimaVenta.codigo} PAGADA en caja: podés entregar`, 'success', 9000);
+      if (navigator.vibrate) navigator.vibrate([80, 60, 80]);
+    } else if (data && data.estado === 'anulada') {
+      Utils.toast(`La venta ${ultimaVenta.codigo} fue cancelada en la caja`, 'warning', 9000);
+      ultimaVenta = null; renderTicket();
+    }
+  }
+  await cargarEnCaja();
+}
+document.getElementById('en-caja').addEventListener('click', async e => {
+  const b = e.target.closest('[data-ec]'); if (!b) return;
+  const id = Number(b.dataset.id), v = enCaja.find(x => x.id === id);
+  if (b.dataset.ec === 'reenviar') {
+    const { error } = await db.rpc('venta_reenviar_a_caja', { p_venta_id: id });
+    if (error) { Utils.toast(error.hint || error.message, 'error'); return; }
+    Utils.toast('Enviada de nuevo a la caja', 'success'); cargarEnCaja();
+  }
+  if (b.dataset.ec === 'cancelar') {
+    if (!await Utils.confirm(`Se cancela la venta <b>${esc(v.codigo)}</b> (${money(v.total)}) y la mercadería vuelve al stock.`, 'Cancelar venta', 'Cancelar la venta')) return;
+    const { error } = await db.rpc('venta_anular', { p_venta_id: id, p_motivo: 'Cancelada antes de cobrar' });
+    if (error) { Utils.toast(error.hint || error.message, 'error'); return; }
+    if (ultimaVenta?.id === id) { ultimaVenta = null; renderTicket(); }
+    Utils.toast('Venta cancelada', 'success'); cargarEnCaja(); cargarDatos();
+  }
 });
 
 /* ── Cuenta bancaria asignada (transferencia / Mercado Pago) ── */
@@ -604,7 +690,7 @@ document.getElementById('ticket-body').addEventListener('input', e => {
     if (t) { t.cantidad = v; guardarTicket(); linea.querySelector('.pos-linea-total').textContent = money(precioFinal(t) * v); }
     const { subtotal, desc } = totales();
     document.getElementById('total-txt').textContent = money(subtotal - desc);
-    document.getElementById('btn-cobrar').textContent = `Cobrar ${money(subtotal - desc)}`;
+    document.getElementById('btn-cobrar').textContent = txtBoton(subtotal - desc);
     document.getElementById('bar-total').textContent = money(subtotal - desc);
   }
   if (e.target.id === 'desc') { pintarCuenta(); }
@@ -612,7 +698,7 @@ document.getElementById('ticket-body').addEventListener('input', e => {
   if (e.target.id === 'desc') {
     const { subtotal, desc } = totales();
     document.getElementById('total-txt').textContent = money(subtotal - desc);
-    document.getElementById('btn-cobrar').textContent = `Cobrar ${money(subtotal - desc)}`;
+    document.getElementById('btn-cobrar').textContent = txtBoton(subtotal - desc);
     document.getElementById('bar-total').textContent = money(subtotal - desc);
   }
 });
@@ -657,20 +743,20 @@ async function cobrar() {
     cuenta = ctaBanco.cuenta ? ctaBanco.cuenta.id : null;
   }
 
-  const resumen = `<b>${money(total)}</b> en ${MEDIOS[medio]}${desc ? ` (descuento ${money(desc)})` : ''}.<br>` +
+  const resumen = `<b>${money(total)}</b>${porCaja ? (esCC() ? ' a cuenta corriente' : ' · se cobra en la caja') : ' en ' + MEDIOS[medio]}${desc ? ` (descuento ${money(desc)})` : ''}.<br>` +
     (esBanco() && ctaBanco.modo === 'auto' && ctaBanco.cuenta ? `Transferido a <b>${esc(ctaBanco.cuenta.alias || ctaBanco.cuenta.cvu)}</b> (${esc(ctaBanco.cuenta.titular)}). ¿Ya viste el comprobante?<br>` : '') +
     (esBanco() && ctaBanco.modo === 'auto' && !ctaBanco.cuenta && ctaBanco.motivo === 'sin_cupo' ? `<span style="color:#B45309">⚠ Ninguna cuenta tiene cupo: la venta queda sin cuenta asignada. Avisale al administrador.</span><br>` : '') +
     (esCC() ? `Cliente: <b>${esc(ccSel.nombre)}</b> · queda debiendo <b>${money(Number(ccSel.saldo) + total)}</b>${recargoTotal ? ` (incluye ${money(recargoTotal)} de recargo)` : ''}.<br>` : '') +
     (retira ? `Retira: ${esc(retira)}<br>` : '') +
     ticket.map(t => `${t.cantidad}× ${esc(t.nombre)}`).join('<br>') +
     (avisos.length ? `<br><br><span style="color:#B45309">⚠ El sistema dice que no alcanza el stock de: ${avisos.map(a => `<b>${esc(a.nombre)}</b> (hay ${a.hay}, se venden ${a.piden})`).join(', ')}. Se vende igual y el stock queda en negativo para que lo revises en Contar stock.</span>` : '');
-  if (!await Utils.confirm(resumen, 'Confirmar venta', `Cobrar ${money(total)}`, false)) return;
+  if (!await Utils.confirm(resumen, porCaja && !esCC() ? 'Enviar a caja' : 'Confirmar venta', txtBoton(total), false)) return;
 
   cobrando = true;
   const btn = document.getElementById('btn-cobrar'); if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Registrando…'; }
   const payload = {
     items: ticket.map(t => ({ producto_id: t.producto_id, nombre: t.producto_id ? undefined : t.nombre, cantidad: t.cantidad, precio_unitario: t.precio })),
-    medio_pago: medio, cuenta_cobro_id: cuenta || null,
+    medio_pago: porCaja && !esCC() ? 'efectivo' : medio, cuenta_cobro_id: cuenta || null,   // con sql/026 el medio lo elige la caja
     cliente_nombre: cliN || null, cliente_telefono: cliT || null, retira_nombre: retira || null,
     cc_cuenta_id: esCC() ? ccSel.id : null,
     nro_operacion: nroOp,
@@ -679,7 +765,7 @@ async function cobrar() {
   const { data, error } = await db.rpc('venta_registrar', { p: payload });
   cobrando = false;
   if (error) {
-    if (btn) { btn.disabled = false; btn.textContent = `Cobrar ${money(total)}`; }
+    if (btn) { btn.disabled = false; btn.textContent = txtBoton(total); }
     Utils.toast(msgError(error), 'error', 8000);
     return;
   }
@@ -695,7 +781,8 @@ async function cobrar() {
   if (data.aviso_cuenta) Utils.toast(data.aviso_cuenta, 'warning', 12000);
   renderTicket(); renderResultados(); cargarHoy();
   toggleTicket(true);
-  Utils.toast(`Venta ${data.codigo} registrada ✅`, 'success');
+  if (data.estado === 'pendiente_cobro') { Utils.toast(`Venta ${data.codigo} enviada a caja`, 'success'); cargarEnCaja(); vigilarCobro(); }
+  else Utils.toast(`Venta ${data.codigo} registrada ✅`, 'success');
 }
 
 function textoTicket(v) {
@@ -708,7 +795,7 @@ function textoTicket(v) {
   (v.items||[]).forEach(i => L.push(`${i.cantidad}× ${i.nombre} — ${money2(i.subtotal)}`));
   L.push('');
   if (Number(v.descuento) > 0) { L.push(`Subtotal: ${money2(v.subtotal)}`); L.push(`Descuento: -${money2(v.descuento)}`); }
-  L.push(`TOTAL: ${money2(v.total)} (${MEDIOS[v.medio_pago]||v.medio_pago})`);
+  L.push(`TOTAL: ${money2(v.total)} (${MEDIO_TXT[v.medio_pago]||v.medio_pago})`);
   if (v.cuenta_cobro) L.push(`Transferido a: ${v.cuenta_cobro.alias || v.cuenta_cobro.cvu} (${v.cuenta_cobro.titular})`);
   if (v.cuenta_corriente) L.push(`Saldo de tu cuenta: ${money2(v.cuenta_corriente.saldo_actual)}`);
   L.push('');
@@ -726,11 +813,28 @@ function enviarWA() {
 function renderVentaOk() {
   const v = ultimaVenta;
   const avisos = v.advertencias || [];
+  if (v.estado === 'pendiente_cobro') {
+    document.getElementById('ticket-body').innerHTML = `
+    <div class="pos-ok">
+      <div class="pos-ok-ic">🧾</div>
+      <div class="pos-ok-total">${money(v.total)}</div>
+      <div class="pos-ok-cod">${esc(v.codigo)}</div>
+      <div class="pos-espera">ESPERANDO EL PAGO EN CAJA<br><span>No entregues la mercadería hasta que figure pagada.</span></div>
+      <div class="pos-ok-items">${(v.items||[]).map(i => `<div><span>${i.cantidad}× ${esc(i.nombre)}</span><b>${money(i.subtotal)}</b></div>`).join('')}</div>
+      ${avisos.length ? `<div class="pos-aviso" style="display:block;text-align:left;padding:8px 10px">⚠ Stock en negativo: ${avisos.map(a => `<b>${esc(a.nombre)}</b> (${a.stock})`).join(', ')}.</div>` : ''}
+      <div class="pos-ok-acciones">
+        <button type="button" class="btn btn-primary" data-ok="nueva">Nueva venta</button>
+        <button type="button" class="btn btn-outline" data-ok="orden">🖨️ Imprimir orden para la caja</button>
+      </div>
+    </div>`;
+    return;
+  }
   document.getElementById('ticket-body').innerHTML = `
     <div class="pos-ok">
       <div class="pos-ok-ic">✅</div>
+      ${v._recienPagada ? '<div class="pos-pagada">PAGADA EN CAJA — podés entregar</div>' : ''}
       <div class="pos-ok-total">${money(v.total)}</div>
-      <div class="pos-ok-cod">${esc(v.codigo)} · ${esc(MEDIOS[v.medio_pago]||v.medio_pago)}</div>
+      <div class="pos-ok-cod">${esc(v.codigo)} · ${esc(MEDIO_TXT[v.medio_pago]||v.medio_pago)}</div>
       ${v.cuenta_cobro ? `<div class="pos-ok-cod">A la cuenta <b>${esc(v.cuenta_cobro.alias || v.cuenta_cobro.cvu)}</b> · ${esc(v.cuenta_cobro.titular)}</div>` : ''}
       ${v.aviso_cuenta ? `<div class="pos-aviso" style="display:block;text-align:left;padding:8px 10px">⚠ ${esc(v.aviso_cuenta)}</div>` : ''}
       ${v.cuenta_corriente ? `<div class="pos-ok-cod">${esc(v.cliente_nombre)} · ahora debe <b>${money(v.cuenta_corriente.saldo_actual)}</b>${Number(v.recargo_total) ? ` · recargo ${money(v.recargo_total)}` : ''}</div>` : ''}
@@ -759,7 +863,13 @@ async function initPage() {
   await Layout.init('vender', 'Crear venta');
   cargarTicket();
   avisoCaja();
-  await cargarDatos();
+  // ¿La base ya cobra por caja (sql/026)? Lo dice el catálogo de permisos.
+  const modo = db.from('permisos').select('clave').eq('clave', 'caja.cobrar').maybeSingle().then(r => { porCaja = !!r.data; });
+  await Promise.all([cargarDatos(), modo]);
+  if (porCaja) {
+    if (medio !== 'cuenta_corriente' || !puedeCC()) medio = 'pendiente';
+    renderTicket(); cargarEnCaja();
+  }
 }
 initPage();
 </script>

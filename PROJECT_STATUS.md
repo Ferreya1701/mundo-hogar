@@ -39,6 +39,25 @@
 - Pantalla: Ventas → Ver → "Quitar productos"; ticket corregido. Guía: `GUIA-STOCK-Y-VENTAS.md` §12.
 - Pruebas: `node scripts/test-editar-venta-sql.mjs` (33).
 
+## Circuito de venta estilo PromRepuestos (2026-11-12) — plan acordado con el dueño
+- **Etapa A — cobrar en caja con pago mixto: EN EL REPO; FALTA CORRER sql/026.** Decisiones del dueño:
+  SIEMPRE por caja (nadie cobra directo) y pago mixto desde el inicio. Cuenta corriente no pasa por caja.
+  `sql/026-cobrar-en-caja.sql`: estado `pendiente_cobro`, `venta_pagos`, `venta_cobrar`, `venta_devolver`,
+  `venta_reenviar_a_caja`, permiso `caja.cobrar`; caja y cuentas bancarias se asientan por medio/cuenta
+  desde `fn_venta_pagado`. Parchea venta_registrar / venta_anular / venta_quitar_items / caja_cuenta_pedir.
+  Pantallas: Crear venta ("Enviar a caja", espera con aviso automático, "mis ventas en la caja"),
+  Caja ("Para cobrar", cobro mixto, devolver, cancelar), Ventas (estado, quién cobró, cómo pagó),
+  orden para la caja y ticket con desglose. Guía: `GUIA-STOCK-Y-VENTAS.md` §13. Pruebas (41).
+  OJO al correr el 026: desde ese momento NINGUNA venta queda cobrada sin pasar por Caja → avisar al
+  personal y tener la caja abierta. Las pantallas viejas en caché (5 min) mostrarían "cobrada" de más.
+- **Pendiente:** B) retiros y envíos (se lleva / retira después / envío con empresa y fecha; módulo
+  Entregas; "sin pagar no sale" salvo cuenta corriente); C) pedidos web en el mismo circuito y cobro en
+  caja al retirar; D) comprobante de retiro con ubicaciones, etiqueta de envío, hoja de despacho del día;
+  E) menú reordenado (Mostrador / Entregas / Pedidos web / Clientes / Catálogo / Stock / Administración)
+  con contadores. Fuera de alcance por ahora: presupuestos, proveedores, estadísticas, facturación.
+- Falta un rol "cajero" si quieren separar quién vende de quién cobra (hoy los roles son fijos:
+  administrador, vendedor, encargado_stock).
+
 ## Velocidad del panel (2026-11-12)
 - Por qué tardaba al cambiar de módulo: (1) cada módulo es una página aparte que vuelve a pedir todo;
   (2) cada consulta a Supabase en Virginia tarda 0,2–0,45 s y las páginas hacían 6–7 EN FILA

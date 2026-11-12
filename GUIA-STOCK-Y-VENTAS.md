@@ -226,3 +226,40 @@ cada producto NO se lleva y el motivo (obligatorio).
 Por dentro: `venta_quitar_items(venta, [{item_id, quitar}], motivo)`, tabla `venta_ediciones`,
 `venta_items.cantidad_original` (un renglón puede quedar en 0). Pruebas:
 `node scripts/test-editar-venta-sql.mjs` (33).
+
+## 13. La venta se cobra en la caja (sql/026, 2026-11-12)
+Desde el 026 **toda venta pasa por la caja**. Quien vende ya no cobra.
+
+**Vendedora (Crear venta):**
+1. Arma el ticket como siempre. El botón ahora dice **"Enviar a caja · $X"**.
+2. La venta queda **esperando el pago**: la mercadería ya está reservada (el stock se descontó), pero
+   **no se entrega** hasta que figure pagada. Si quiere, imprime la **orden para la caja** (el cliente
+   la lleva a la caja; no es comprobante de pago).
+3. La pantalla avisa sola cuando la caja cobra: **"PAGADA EN CAJA — podés entregar"**.
+4. Arriba ve **sus ventas en la caja**. Si la cajera le devuelve una (con el motivo), la corrige
+   (Abrir → Quitar productos) y toca **Volver a mandar**, o la cancela.
+- **Cuenta corriente** no pasa por caja: se elige "Cuenta corriente", el cliente, y se carga a su cuenta.
+
+**Cajera (Caja):**
+- Arriba aparece **"Para cobrar (N)"**: una tarjeta por venta con total, cliente, productos, quién
+  vendió y hace cuánto (en naranja si pasó media hora). Se actualiza sola y suena al llegar una.
+- **Cobrar:** elige el medio. Con **"+ Paga una parte con otro medio"** se reparte el total (pago
+  mixto); muestra "Faltan / Sobran" y solo deja cobrar cuando da justo. En efectivo, "Paga con" calcula
+  el vuelto. En transferencia o Mercado Pago muestra **a qué cuenta transferir** (la asigna el sistema
+  con sus límites, §7 de GUIA-COBROS). Al cobrar sale el **ticket de compra**.
+- **↩ Devolver:** no se puede cobrar así (ej. el cliente quiere otra cosa): vuelve a la vendedora con el motivo.
+- **✕ Cancelar:** el cliente no compra. Se cancela y el stock vuelve.
+- **Hay que tener la caja abierta para cobrar.** Con la caja cerrada las ventas se pueden armar y
+  quedan esperando. Al cerrar la caja avisa si quedan ventas sin cobrar.
+
+**Qué pasa con la plata:** recién al cobrar entra a la caja, cada parte por su medio (solo el efectivo
+suma al cajón). Si después se **quitan productos** de una venta cobrada, la devolución sale primero del
+efectivo; **anular** devuelve todo por los medios con que se pagó.
+
+Permiso nuevo: **"Cobrar ventas en la caja"** (por defecto, vendedor). Para que una vendedora NO pueda
+cobrar, se le saca ese permiso (hoy vendedor y cajera son el mismo rol: si hace falta separarlos, se
+crea un rol "cajero").
+
+Por dentro: estado `pendiente_cobro`, tabla `venta_pagos`, `venta_cobrar(venta, pagos[])`,
+`venta_devolver`, `venta_reenviar_a_caja`; `fn_venta_pagado` es la única fuente para asentar caja y
+cuentas bancarias. Pruebas: `node scripts/test-cobrar-en-caja-sql.mjs` (41).

@@ -31,6 +31,29 @@
     .cierre-linea b { font-size:16px; }
     .aviso-pend { background:var(--warning-bg); color:#92400E; border-radius:var(--r); padding:10px 14px; font-size:13px; margin-bottom:14px; }
     .grande input { font-size:20px; font-weight:600; }
+    /* Ventas que esperan cobro (sql/026) */
+    .pc-tit { display:flex; align-items:center; gap:10px; margin:0 0 10px; font-size:15px; font-weight:700; color:var(--night); }
+    .pc-n { background:var(--gold); color:#fff; border-radius:20px; padding:1px 10px; font-size:13px; }
+    .pc-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px; margin-bottom:20px; }
+    .pc-card { background:#fff; border:1px solid var(--border); border-left:4px solid var(--gold); border-radius:var(--r-lg); padding:12px 14px; display:flex; flex-direction:column; gap:6px; }
+    .pc-card.devuelta { border-left-color:var(--muted); opacity:.75; }
+    .pc-cab { display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
+    .pc-cod { font-family:monospace; font-size:12.5px; color:var(--muted); }
+    .pc-total { font-size:22px; font-weight:700; color:var(--night); }
+    .pc-items { font-size:13px; color:var(--text, #334155); line-height:1.45; max-height:92px; overflow:auto; }
+    .pc-meta { font-size:12px; color:var(--muted); }
+    .pc-acc { display:flex; gap:6px; margin-top:4px; }
+    .pc-acc .btn-primary { flex:1; justify-content:center; }
+    .pc-vieja { color:#B45309; font-weight:600; }
+    /* Cobro con varios medios */
+    .cb-fila { display:grid; grid-template-columns:1fr 130px 30px; gap:8px; align-items:start; margin-bottom:8px; }
+    .cb-fila select, .cb-fila input { min-height:42px; width:100%; }
+    .cb-fila input.monto { text-align:right; font-weight:600; font-size:16px; }
+    .cb-extra { grid-column:1 / -1; }
+    .cb-estado { display:flex; justify-content:space-between; font-size:15px; padding:10px 12px; border-radius:var(--r); background:var(--bg); font-weight:600; }
+    .cb-estado.ok { background:var(--success-bg); color:#15803D; } .cb-estado.mal { background:var(--danger-bg); color:#B91C1C; }
+    .cta-banco { border:1px solid var(--border); border-left:4px solid var(--blue); border-radius:var(--r); padding:8px 10px; background:var(--bg); font-size:13px; }
+    .cta-banco b.dato { font-size:17px; color:var(--night); word-break:break-all; }
   </style>
 </head>
 <body>
@@ -55,6 +78,7 @@
         <div><h1>Caja</h1><p id="subtitulo">Cargando…</p></div>
         <div class="page-header-actions" id="acciones"></div>
       </div>
+      <div id="para-cobrar"></div>
       <div id="contenido"><div class="spinner" style="margin:40px auto"></div></div>
     </main>
   </div>
@@ -93,6 +117,8 @@ let perfil = null;
 let resumen = null;      // caja_resumen()
 let movs = [];
 let porCuenta = [];   // transferencias y Mercado Pago del día, por cuenta bancaria
+let pendientes = [];  // ventas que esperan cobro (sql/026)
+let pcTimer = null;
 let conceptos = [];
 let vista = 'hoy';       // 'hoy' | 'historial'
 
@@ -101,7 +127,7 @@ const puede = k => Auth.puede(k, perfil);
 function msgError(e, accion) {
   const m = (e?.message || '').toLowerCase();
   if (m.includes('could not find the function') || m.includes('schema cache') || m.includes('does not exist'))
-    return 'Falta ejecutar sql/018-caja.sql en la base de datos.';
+    return 'Falta ejecutar una migración en la base de datos (sql/018 a sql/026).';
   if (!navigator.onLine || m.includes('failed to fetch')) return 'Sin conexión. Probá de nuevo.';
   return e?.hint || `No se pudo ${accion}.`;
 }
@@ -126,9 +152,175 @@ async function cargar() {
     porCuenta = pc.error ? [] : (pc.data || []);
   }
   render();
+  cargarPendientes();
 }
 
 const vacio = (icono, texto, extra = '') => `<div class="empty-state"><div class="empty-state-icon">${icono}</div><h3>${esc(texto)}</h3>${extra}</div>`;
+
+/* ── Para cobrar (sql/026) ─────────────────────────────
+   Las ventas que mandaron las vendedoras. Se refresca sola cada 7 s. */
+async function cargarPendientes() {
+  clearTimeout(pcTimer);
+  if (!puede('caja.cobrar')) return;
+  if (!document.hidden && !document.querySelector('.modal-backdrop')) {
+    const { data, error } = await db.from('ventas')
+      .select('id, codigo, fecha, total, subtotal, descuento, cliente_nombre, cliente_telefono, retira_nombre, vendedor_nombre, notas, estado, medio_pago, devuelta_motivo, venta_items(id, nombre, cantidad, precio_unitario, subtotal, orden)')
+      .eq('estado', 'pendiente_cobro').order('fecha');
+    if (error && /column|does not exist|schema cache/i.test(error.message || '')) return;   // base sin sql/026: no hay fila de cobro
+    if (!error) {
+      const antes = new Set(pendientes.map(v => v.id));
+      pendientes = data || [];
+      if (antes.size && pendientes.some(v => !antes.has(v.id) && !v.devuelta_motivo)) avisarNueva();
+      pintarPendientes();
+    }
+  }
+  pcTimer = setTimeout(cargarPendientes, 7000);
+}
+function avisarNueva() {
+  Utils.toast('Llegó una venta para cobrar', 'info', 4000);
+  try { const a = new AudioContext(), o = a.createOscillator(), g = a.createGain(); o.connect(g); g.connect(a.destination); o.frequency.value = 880; g.gain.value = 0.05; o.start(); o.stop(a.currentTime + 0.15); } catch (e) {}
+}
+const minutos = f => Math.max(0, Math.round((Date.now() - new Date(f).getTime()) / 60000));
+function pintarPendientes() {
+  const el = $id('para-cobrar');
+  const fila = pendientes.filter(v => !v.devuelta_motivo), devueltas = pendientes.filter(v => v.devuelta_motivo);
+  if (!pendientes.length) { el.innerHTML = ''; return; }
+  const abierta = !!resumen?.abierta;
+  const card = v => {
+    const m = minutos(v.fecha), its = (v.venta_items || []).filter(i => i.cantidad > 0).sort((a, b) => a.orden - b.orden);
+    return `<div class="pc-card${v.devuelta_motivo ? ' devuelta' : ''}">
+      <div class="pc-cab"><span class="pc-total">${money(v.total)}</span><span class="pc-cod">${esc(v.codigo)}</span></div>
+      <div class="pc-meta"><b>${esc(v.cliente_nombre || 'Consumidor final')}</b>${v.retira_nombre ? ' · retira ' + esc(v.retira_nombre) : ''}</div>
+      <div class="pc-items">${its.map(i => `${i.cantidad}× ${esc(i.nombre)}`).join('<br>')}</div>
+      <div class="pc-meta">Vendió ${esc(v.vendedor_nombre || '—')} · <span class="${m >= 30 ? 'pc-vieja' : ''}">hace ${m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min'}</span>${v.notas ? ' · ' + esc(v.notas) : ''}</div>
+      ${v.devuelta_motivo ? `<div class="pc-meta">↩ Devuelta a la vendedora: ${esc(v.devuelta_motivo)}</div>` : `<div class="pc-acc">
+        <button class="btn btn-primary" data-cobrar="${v.id}" ${abierta ? '' : 'disabled title="Abrí la caja para cobrar"'}>Cobrar</button>
+        <button class="btn btn-outline btn-sm" data-devolver="${v.id}" title="No se puede cobrar así: que la vendedora la corrija">↩ Devolver</button>
+        <button class="btn btn-ghost btn-sm" data-cancelar="${v.id}" title="El cliente no compra: cancelar y devolver el stock">✕</button>
+      </div>`}</div>`;
+  };
+  el.innerHTML = (fila.length ? `<div class="pc-tit">Para cobrar <span class="pc-n">${fila.length}</span>${abierta ? '' : '<span style="font-size:13px;font-weight:500;color:var(--danger)">Abrí la caja para poder cobrarlas</span>'}</div>
+      <div class="pc-grid">${fila.map(card).join('')}</div>` : '') +
+    (devueltas.length ? `<div class="pc-tit" style="font-size:13px;color:var(--muted)">Devueltas a la vendedora (${devueltas.length})</div><div class="pc-grid">${devueltas.map(card).join('')}</div>` : '');
+}
+
+/* ── Cobrar: uno o varios medios ── */
+const MEDIOS_COBRO = { efectivo:'Efectivo', transferencia:'Transferencia', debito:'Débito', credito:'Crédito', mercadopago:'Mercado Pago', otro:'Otro' };
+const esBancoM = m => m === 'transferencia' || m === 'mercadopago';
+function modalCobrar(v) {
+  const total = Number(v.total);
+  let filas = [{ medio: 'efectivo', monto: total, cuenta: null, aviso: null, pedida: null, nro: '' }];
+  let pagaCon = '';
+  const bd = document.createElement('div'); bd.className = 'modal-backdrop';
+  bd.innerHTML = `<div class="modal" style="max-width:520px">
+    <div class="modal-header"><h3 class="modal-title">Cobrar ${esc(v.codigo)}</h3><button class="modal-close" data-x aria-label="Cerrar">×</button></div>
+    <form class="modal-body" novalidate>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px">
+        <span>${esc(v.cliente_nombre || 'Consumidor final')} · vendió ${esc(v.vendedor_nombre || '—')}</span><b style="font-size:26px;color:var(--night)">${money(total)}</b></div>
+      <div id="cb-filas"></div>
+      <button type="button" class="btn btn-ghost btn-sm" id="cb-mas">+ Paga una parte con otro medio</button>
+      <div class="cb-estado" id="cb-estado" style="margin-top:12px"></div>
+      <div class="modal-footer" style="padding:14px 0 0;border:0"><button type="button" class="btn btn-outline" data-x>Cancelar</button><button type="submit" class="btn btn-primary" id="cb-ok">Cobrar</button></div>
+    </form></div>`;
+  document.body.appendChild(bd);
+  const cerrar = () => { bd.remove(); db.rpc('caja_cuenta_soltar').then(() => {}, () => {}); cargarPendientes(); };
+  bd.querySelectorAll('[data-x]').forEach(b => b.onclick = cerrar);
+
+  const suma = () => filas.reduce((s, f) => s + (Number(f.monto) || 0), 0);
+  const htmlCuenta = (f, i) => {
+    if (!esBancoM(f.medio)) return '';
+    if (!(f.monto > 0)) return '';
+    if (f.pedida !== f.monto) { pedirCuenta(i); return `<div class="cb-extra cta-banco"><span class="spinner"></span> Buscando la cuenta para ${money(f.monto)}…</div>`; }
+    if (!f.cuenta) return f.sinCuentas ? '' : `<div class="cb-extra cta-banco" style="border-left-color:var(--danger);color:#B91C1C">⚠ Ninguna cuenta tiene cupo para ${money(f.monto)}. Avisale al administrador antes de pedir la transferencia.</div>`;
+    const dato = f.cuenta.alias || f.cuenta.cvu || '';
+    return `<div class="cb-extra cta-banco">El cliente transfiere <b>${money(f.monto)}</b> a<br><b class="dato">${esc(dato)}</b>
+      <button type="button" class="btn btn-outline btn-sm" data-copiar="${esc(dato)}">Copiar</button>
+      <button type="button" class="btn btn-ghost btn-sm" data-otra="${i}">Otra cuenta</button>
+      <div class="pc-meta">${esc(f.cuenta.titular)} · ${esc(f.cuenta.banco || '')}</div>
+      ${f.aviso ? `<div style="color:#B45309;margin-top:4px">${esc(f.aviso)}</div>` : ''}
+      <input type="text" data-nro="${i}" placeholder="N° de operación (opcional)" maxlength="60" value="${esc(f.nro)}" style="margin-top:6px;min-height:36px;width:100%">
+      <div class="pc-meta">Controlá que el comprobante sea a esta cuenta y por este monto.</div></div>`;
+  };
+  async function pedirCuenta(i, otra = false) {
+    const f = filas[i]; if (!f || f.pidiendo) return;
+    f.pidiendo = true;
+    const excluir = otra && f.cuenta ? [...(f.excluidas || []), f.cuenta.id] : (otra ? f.excluidas : []);
+    f.excluidas = excluir || [];
+    const monto = f.monto;
+    const { data, error } = await db.rpc('caja_cuenta_pedir', { p_monto: monto, p_excluir: f.excluidas.length ? f.excluidas : null });
+    f.pidiendo = false;
+    if (filas[i] !== f) return;
+    f.pedida = monto; f.cuenta = error ? null : data.cuenta; f.aviso = error ? null : (data.aviso || null);
+    f.sinCuentas = !error && data.motivo === 'sin_cuentas';
+    if (error) Utils.toast(msgError(error, 'buscar la cuenta'), 'error');
+    pintar(false);
+  }
+  function pintar(foco = true) {
+    const act = document.activeElement?.dataset || {};
+    bd.querySelector('#cb-filas').innerHTML = filas.map((f, i) => `<div class="cb-fila">
+      <select data-medio="${i}" aria-label="Medio de pago">${Object.entries(MEDIOS_COBRO).map(([k, n]) => `<option value="${k}"${f.medio === k ? ' selected' : ''}>${n}</option>`).join('')}</select>
+      <input class="monto" type="text" inputmode="decimal" data-monto="${i}" value="${f.monto || ''}" aria-label="Monto" autocomplete="off">
+      ${filas.length > 1 ? `<button type="button" class="btn btn-ghost btn-sm" data-quitar="${i}" aria-label="Quitar">✕</button>` : '<span></span>'}
+      ${f.medio === 'efectivo' && filas.length === 1 ? `<div class="cb-extra" style="display:flex;gap:8px;align-items:center;font-size:13px">Paga con <input type="text" inputmode="decimal" id="cb-pagacon" value="${esc(pagaCon)}" placeholder="${total}" style="width:120px;min-height:36px;text-align:right"> <b id="cb-vuelto"></b></div>` : ''}
+      ${htmlCuenta(f, i)}</div>`).join('');
+    estado();
+    if (foco && act.monto !== undefined) bd.querySelector(`[data-monto="${act.monto}"]`)?.focus();
+  }
+  function estado() {
+    const dif = Math.round((total - suma()) * 100) / 100;
+    const el = bd.querySelector('#cb-estado');
+    const esperando = filas.some(f => esBancoM(f.medio) && f.monto > 0 && f.pedida !== f.monto);
+    el.className = 'cb-estado ' + (dif === 0 ? 'ok' : 'mal');
+    el.innerHTML = dif === 0 ? `<span>✓ Completo</span><span>${money(total)}</span>` : dif > 0 ? `<span>Faltan</span><span>${money(dif)}</span>` : `<span>Sobran</span><span>${money(-dif)}</span>`;
+    bd.querySelector('#cb-ok').disabled = dif !== 0 || esperando;
+    const pc = bd.querySelector('#cb-pagacon'), vu = bd.querySelector('#cb-vuelto');
+    if (pc && vu) { const p = num(pc.value); vu.textContent = p > total ? `Vuelto: ${money(p - total)}` : ''; }
+  }
+  bd.addEventListener('input', e => {
+    const t = e.target;
+    if (t.dataset.monto !== undefined) { const n = num(t.value); filas[Number(t.dataset.monto)].monto = n > 0 ? Math.round(n * 100) / 100 : 0; estado(); }
+    if (t.dataset.nro !== undefined) filas[Number(t.dataset.nro)].nro = t.value;
+    if (t.id === 'cb-pagacon') { pagaCon = t.value; estado(); }
+  });
+  bd.addEventListener('change', e => {
+    const t = e.target;
+    if (t.dataset.medio !== undefined) { const f = filas[Number(t.dataset.medio)]; f.medio = t.value; f.cuenta = null; f.pedida = null; f.excluidas = []; pintar(false); }
+    if (t.dataset.monto !== undefined) {
+      // Con dos medios: al escribir uno, el otro se completa solo con lo que falta
+      const i = Number(t.dataset.monto);
+      if (filas.length === 2) { const otro = filas[1 - i]; const resto = Math.round((total - filas[i].monto) * 100) / 100; if (resto >= 0 && (otro.monto === 0 || otro._auto)) { otro.monto = resto; otro._auto = true; } }
+      filas[i]._auto = false;
+      pintar(false);     // y recalcula la cuenta bancaria si corresponde
+    }
+  });
+  bd.addEventListener('click', e => {
+    const t = e.target.closest('[data-quitar], [data-otra], [data-copiar], #cb-mas'); if (!t) return;
+    if (t.id === 'cb-mas') {
+      const falta = Math.max(0, Math.round((total - suma()) * 100) / 100);
+      if (falta === 0 && filas.length === 1) { filas[0].monto = 0; }           // para repartir: se escribe cada parte
+      filas.push({ medio: filas.some(f => f.medio === 'efectivo') ? 'transferencia' : 'efectivo', monto: falta, cuenta: null, pedida: null, nro: '' });
+      pintar(false); bd.querySelector('[data-monto="0"]').focus(); bd.querySelector('[data-monto="0"]').select();
+    }
+    if (t.dataset.quitar !== undefined) { filas.splice(Number(t.dataset.quitar), 1); if (filas.length === 1) filas[0].monto = total; pintar(false); }
+    if (t.dataset.otra !== undefined) pedirCuenta(Number(t.dataset.otra), true);
+    if (t.dataset.copiar !== undefined) Utils.copy(t.dataset.copiar, 'Copiado');
+  });
+  bd.querySelector('form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = bd.querySelector('#cb-ok'); if (btn.disabled) return;
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Cobrando…';
+    const pagos = filas.filter(f => f.monto > 0).map(f => ({ medio: f.medio, monto: f.monto, cuenta_cobro_id: esBancoM(f.medio) && f.cuenta ? f.cuenta.id : null, nro_operacion: f.nro || null }));
+    const { data, error } = await db.rpc('venta_cobrar', { p_venta_id: v.id, p_pagos: pagos });
+    if (error) { btn.disabled = false; btn.textContent = 'Cobrar'; Utils.toast(msgError(error, 'cobrar'), 'error', 8000); if (/ya_cobrada|no_cobrable/.test(error.message)) cerrar(); return; }
+    bd.remove();
+    (data.avisos || []).forEach(a => Utils.toast(a, 'warning', 12000));
+    Utils.toast(`Cobrada ${data.codigo} · ${money(data.total)}`, 'success');
+    MHImprimir.ticket(data);                       // el ticket de compra sale al cobrar
+    await cargar();
+  });
+  pintar(false);
+  setTimeout(() => bd.querySelector('#cb-pagacon')?.focus(), 50);
+}
 
 /* ── Pantalla ──────────────────────────────────────── */
 function render() {
@@ -281,13 +473,13 @@ async function anularMovimiento(id) {
   await cargar();
 }
 
-function pedirTexto(titulo, etiqueta, ayuda) {
+function pedirTexto(titulo, etiqueta, ayuda, boton = 'Anular') {
   return new Promise(resolve => {
     const bd = document.createElement('div'); bd.className = 'modal-backdrop';
     bd.innerHTML = `<div class="modal" style="max-width:420px"><div class="modal-header"><h3 class="modal-title">${esc(titulo)}</h3></div>
       <form class="modal-body form-grid" style="gap:12px" novalidate>
         <div class="form-group"><label>${esc(etiqueta)} <span class="req">*</span></label><input type="text" id="_t" maxlength="300" autocomplete="off"><span class="form-hint">${esc(ayuda)}</span></div>
-        <div class="modal-footer" style="padding:0;border:0"><button type="button" class="btn btn-outline" id="_no">Cancelar</button><button type="submit" class="btn btn-danger">Anular</button></div>
+        <div class="modal-footer" style="padding:0;border:0"><button type="button" class="btn btn-outline" id="_no">Cancelar</button><button type="submit" class="btn btn-danger">${esc(boton)}</button></div>
       </form></div>`;
     document.body.appendChild(bd);
     const inp = bd.querySelector('#_t'); inp.focus();
@@ -298,6 +490,8 @@ function pedirTexto(titulo, etiqueta, ayuda) {
 
 /* ── Cierre ────────────────────────────────────────── */
 function modalCierre() {
+  const sinCobrar = pendientes.filter(v => !v.devuelta_motivo);
+  if (sinCobrar.length) Utils.toast(`Ojo: quedan ${sinCobrar.length} venta${sinCobrar.length !== 1 ? 's' : ''} sin cobrar (${money(sinCobrar.reduce((s, v) => s + Number(v.total), 0))}). Cobralas o cancelalas antes de cerrar.`, 'warning', 9000);
   const esperado = Number(resumen.efectivo.esperado);
   const inicial = Number(resumen.efectivo.inicial);
   const bd = document.createElement('div'); bd.className = 'modal-backdrop';
@@ -430,6 +624,28 @@ document.addEventListener('click', e => {
     else if (k === 'historial') verHistorial();
     else if (k === 'conceptos') modalConceptos();
     else if (k === 'hoy') { vista = 'hoy'; cargar(); }
+    return;
+  }
+  const co = e.target.closest('[data-cobrar], [data-devolver], [data-cancelar]');
+  if (co) {
+    const v = pendientes.find(x => x.id === Number(co.dataset.cobrar || co.dataset.devolver || co.dataset.cancelar));
+    if (!v) return;
+    if (co.dataset.cobrar) return modalCobrar(v);
+    if (co.dataset.devolver) {
+      pedirTexto(`Devolver ${v.codigo} a ${v.vendedor_nombre || 'la vendedora'}`, '¿Qué tiene que corregir?', 'La vendedora lo ve en su pantalla, lo corrige y la vuelve a mandar.', 'Devolver').then(async motivo => {
+        if (!motivo) return;
+        const { error } = await db.rpc('venta_devolver', { p_venta_id: v.id, p_motivo: motivo });
+        if (error) { Utils.toast(msgError(error, 'devolver la venta'), 'error'); return; }
+        Utils.toast('Devuelta a la vendedora', 'success'); cargarPendientes();
+      });
+      return;
+    }
+    pedirTexto(`Cancelar ${v.codigo} (${money(v.total)})`, 'Motivo', 'La venta se cancela y la mercadería vuelve al stock.', 'Cancelar la venta').then(async motivo => {
+      if (!motivo) return;
+      const { error } = await db.rpc('venta_anular', { p_venta_id: v.id, p_motivo: motivo });
+      if (error) { Utils.toast(msgError(error, 'cancelar la venta'), 'error'); return; }
+      Utils.toast('Venta cancelada', 'success'); cargarPendientes();
+    });
     return;
   }
   const an = e.target.closest('[data-anular]');
