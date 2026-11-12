@@ -32,6 +32,7 @@ t('alta válida, limpia espacios y mayúsculas',
 t('email inválido', validarAlta({ email: 'jose@', nombre: 'J', rol: 'vendedor' }), { error: 'email_invalido' });
 t('email sin dominio', validarAlta({ email: 'jose@mail', nombre: 'J', rol: 'vendedor' }), { error: 'email_invalido' });
 t('nombre vacío', validarAlta({ email: 'a@b.com', nombre: '  ', rol: 'vendedor' }), { error: 'nombre_invalido' });
+t('rol cajero (sql/029)', validarAlta({ email: 'caja@b.com', nombre: 'Caro', rol: 'cajero' }).rol, 'cajero');
 t('nombre de más de 80', validarAlta({ email: 'a@b.com', nombre: 'x'.repeat(81), rol: 'vendedor' }), { error: 'nombre_invalido' });
 t('rol inventado', validarAlta({ email: 'a@b.com', nombre: 'A', rol: 'superadmin' }), { error: 'rol_invalido' });
 t('los tres roles válidos',

@@ -61,6 +61,7 @@ const Auth = {
                     'pedidos.gestionar','pedidos.cobrar','pedidos.anular_pago','clientes.gestionar',
                     'productos.editar','categorias.editar','stock.contar','stock.ajustar','compras.gestionar'],
     vendedor:        ['ventas.crear','ventas.anular_propias','pedidos.gestionar','pedidos.cobrar','clientes.gestionar'],
+    cajero:          [],   // existe desde sql/029, que viene después del 016
     encargado_stock: ['ventas.crear','ventas.ver_todas','ventas.anular_propias','productos.editar',
                       'stock.contar','stock.ajustar','compras.gestionar'],
   },

@@ -60,11 +60,12 @@
           <thead><tr>
             <th>Permiso</th>
             <th class="col-rol">Vendedor</th>
+            <th class="col-rol">Cajero</th>
             <th class="col-rol">Encargado de stock</th>
             <th class="col-rol">Administrador</th>
           </tr></thead>
           <tbody id="tabla">
-            <tr><td colspan="4" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr>
+            <tr><td colspan="5" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -94,7 +95,8 @@
 <script src="/admin/js/utils.js"></script>
 <script src="/admin/js/layout.js"></script>
 <script>
-const ROLES = ['vendedor', 'encargado_stock'];
+const ROLES = ['vendedor', 'cajero', 'encargado_stock'];
+const NOMBRE_ROL = { vendedor: 'Vendedor', cajero: 'Cajero', encargado_stock: 'Encargado de stock' };
 const $id = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 
@@ -113,7 +115,7 @@ async function cargar() {
   const err = cat.error || asig.error;
   if (err) {
     const falta = /does not exist|schema cache|relation/i.test(err.message || '');
-    $id('tabla').innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-state-icon">🔐</div>
+    $id('tabla').innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">🔐</div>
       <h3>${falta ? 'Falta ejecutar sql/016-permisos-tildables.sql' : 'No se pudieron cargar los permisos'}</h3>
       <p>${falta ? 'Mientras tanto cada rol sigue con los permisos de siempre.' : esc(err.message)}</p></div></td></tr>`;
     return;
@@ -129,13 +131,13 @@ function render() {
   for (const p of catalogo) {
     if (p.modulo !== modulo) {
       modulo = p.modulo;
-      h += `<tr><td class="modulo" colspan="4">${esc(modulo)}</td></tr>`;
+      h += `<tr><td class="modulo" colspan="5">${esc(modulo)}</td></tr>`;
     }
     const cambiado = ROLES.some(r => actual[r].has(p.clave) !== guardado[r].has(p.clave));
     h += `<tr class="${cambiado ? 'cambiado' : ''}">
       <td><div class="perm-nombre">${esc(p.nombre)}</div><div class="perm-desc">${esc(p.descripcion)}</div></td>
       ${ROLES.map(r => `<td class="col-rol"><input type="checkbox" data-rol="${r}" data-clave="${esc(p.clave)}"
-          aria-label="${esc(p.nombre)} — ${r === 'vendedor' ? 'Vendedor' : 'Encargado de stock'}"
+          aria-label="${esc(p.nombre)} — ${NOMBRE_ROL[r]}"
           ${actual[r].has(p.clave) ? 'checked' : ''}></td>`).join('')}
       <td class="col-rol"><input type="checkbox" checked disabled aria-label="El administrador siempre puede" title="El administrador siempre puede todo"></td>
     </tr>`;

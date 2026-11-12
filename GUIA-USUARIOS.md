@@ -99,3 +99,17 @@ Cómo funciona por dentro:
 - La Edge Function `leer-lista-compra` pide el permiso "Compras, proveedores y costos" (hay que
   volver a desplegarla después de correr el 016).
 - Pruebas: `node scripts/test-permisos-tildables-sql.mjs` (66).
+
+## Rol Cajero (sql/029, 2026-11-12)
+
+Para separar quién vende de quién cobra. El **cajero** arranca con: ver la caja, abrirla y cerrarla,
+cobrar ventas (con pago mixto), cargar ingresos y egresos, ver cuentas corrientes y registrar pagos de
+clientes, cobrar pedidos web, y ver y entregar retiros y envíos. **No crea ventas.** Al entrar al panel
+va directo a la Caja. Todo se cambia en Administración → Permisos (columna "Cajero").
+
+Al vendedor no se le sacó nada al crear el rol. Cuando haya un cajero cargado, si quieren que cobre solo
+él: Permisos → destildar "Cobrar ventas en la caja" (y "Abrir y cerrar la caja") en la columna Vendedor.
+
+Para dar de alta un cajero desde Usuarios hace falta redesplegar la función `usuarios` (ver arriba):
+mientras tanto se crea como vendedor y se le cambia el rol a Cajero editándolo.
+Pruebas: `node scripts/test-rol-cajero-sql.mjs` (18).

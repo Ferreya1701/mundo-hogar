@@ -95,7 +95,8 @@
       return;
     }
 
-    window.location.href = '/admin/dashboard';
+    // El cajero arranca en la caja (sql/029); el resto, en el inicio
+    window.location.href = profile.rol === 'cajero' ? '/admin/caja' : '/admin/dashboard';
   });
 
   function showError(msg) {

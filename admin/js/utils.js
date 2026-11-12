@@ -111,7 +111,8 @@ const Utils = {
     const m = {
       administrador:  {txt:'Administrador',      cls:'badge rol-admin'},
       encargado_stock:{txt:'Encargado de Stock', cls:'badge rol-stock'},
-      vendedor:       {txt:'Vendedor',           cls:'badge rol-vendedor'}
+      vendedor:       {txt:'Vendedor',           cls:'badge rol-vendedor'},
+      cajero:         {txt:'Cajero',             cls:'badge rol-cajero'}
     };
     const x = m[rol]||{txt:rol, cls:'badge badge-muted'};
     return `<span class="${x.cls}">${x.txt}</span>`;

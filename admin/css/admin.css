@@ -1002,6 +1002,7 @@ kbd {
 .rol-admin   { color:#7C3AED; background:#F5F3FF; }
 .rol-stock   { color:#0369A1; background:#E0F2FE; }
 .rol-vendedor{ color:var(--muted); background:var(--bg); }
+.rol-cajero  { color:#15803D; background:#DCFCE7; }
 
 /* ══════════════════════════════════════════════════════════════
    Stock controlado, caja (vender), ventas, compras y conteo (013)

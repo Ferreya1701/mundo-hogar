@@ -1,7 +1,7 @@
 // Lógica pura de la Edge Function "usuarios" (sin Supabase ni red), para
 // poder probarla con node: scripts/test-usuarios-fn.mjs
 
-export const ROLES = ["administrador", "encargado_stock", "vendedor"] as const;
+export const ROLES = ["administrador", "encargado_stock", "vendedor", "cajero"] as const;
 export type Rol = typeof ROLES[number];
 
 // Sin letras que se confunden al dictarla o leerla (0/o, 1/l/i).

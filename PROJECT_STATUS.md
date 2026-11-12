@@ -56,10 +56,7 @@
 - **Limpieza de pruebas en producción (2026-11-12, pedido del dueño):** borradas las ventas, la caja, los pedidos web (con comprobantes y eventos) y el historial de actividad de prueba. Se conservaron las 492 cargas iniciales de stock del catálogo y los 6 contactos del CRM. Respaldo: `~/mundo-hogar-respaldos/datos-antes-limpieza-20261112-1424.sql`.
 - **Etapa D — comprobantes y avisos por paso: HECHO (solo panel).** Retiro con ubicaciones y pedido web, etiqueta por bulto, hoja de despacho, avisos de WhatsApp (pedido tomado / listo para retirar / despachado con guía). Guía §17.
 - **Circuito A–E completo.** Fuera de alcance por ahora: presupuestos, proveedores, estadísticas, facturación.
-- Falta un rol "cajero" si quieren separar quién vende de quién cobra (hoy los roles son fijos:
-  administrador, vendedor, encargado_stock).
-
-## Velocidad del panel (2026-11-12)
+- **Rol cajero: EN EL REPO; FALTA CORRER sql/029 y redesplegar la función `usuarios`.** Cobra, abre/cierra caja, cuenta corriente (ver y cobrar), cobrar pedidos web, entregas; no vende; entra directo a Caja. Al vendedor no se le sacó nada. GUIA-USUARIOS.md.
 - Por qué tardaba al cambiar de módulo: (1) cada módulo es una página aparte que vuelve a pedir todo;
   (2) cada consulta a Supabase en Virginia tarda 0,2–0,45 s y las páginas hacían 6–7 EN FILA
   (perfil → permisos → categorías → productos tanda 1 → tanda 2 → ubicaciones → ubicación de cada

@@ -103,7 +103,7 @@ const Layout = {
     if (profile) {
       const initials = (profile.nombre||'?').split(' ')
         .map(w=>w[0]).join('').slice(0,2).toUpperCase();
-      const roleLabel = { administrador:'Administrador', encargado_stock:'Encargado de Stock', vendedor:'Vendedor' };
+      const roleLabel = { administrador:'Administrador', encargado_stock:'Encargado de Stock', vendedor:'Vendedor', cajero:'Cajero' };
       document.getElementById('user-avatar').textContent = initials;
       document.getElementById('user-name').textContent   = profile.nombre || 'Usuario';
       document.getElementById('user-role').textContent   = roleLabel[profile.rol] || profile.rol;
