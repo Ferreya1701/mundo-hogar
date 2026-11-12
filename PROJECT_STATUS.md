@@ -39,7 +39,7 @@
 - Pantalla: Ventas → Ver → "Quitar productos"; ticket corregido. Guía: `GUIA-STOCK-Y-VENTAS.md` §12.
 - Pruebas: `node scripts/test-editar-venta-sql.mjs` (33).
 
-## Productos simples para los empleados (2026-11-12) — EN EL REPO; FALTA CORRER sql/023
+## Productos simples para los empleados (2026-11-12) — sql/023 EJECUTADO EN PRODUCCIÓN 2026-11-12
 - **Tope de 1000 filas de Supabase:** con ~1060 productos, Productos / Contar stock / Inicio / Crear
   venta / Compras / Ajuste manual perdían ~60 sin avisar. Ahora todo pide de a tandas
   (`Utils.traerTodo`); la tienda pública también (`assets/catalogo.js`).
