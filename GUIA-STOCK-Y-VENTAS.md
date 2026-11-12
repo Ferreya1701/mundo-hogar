@@ -332,3 +332,20 @@ Los números naranjas dicen lo que está esperando a alguien:
 - **Pedidos web**: pedidos nuevos o con comprobante para revisar.
 Se actualizan solos cada minuto y al instante cuando se cobra, se entrega o se pasa un pedido.
 Con el menú achicado se ven como un puntito. Cada persona ve solo los de los módulos que tiene permitidos.
+
+## 17. Comprobantes y avisos en cada paso (2026-11-12)
+
+| Paso | Qué se imprime / manda | Dónde |
+|---|---|---|
+| Se vende en el mostrador | Orden para la caja (si la piden) | Crear venta |
+| Se cobra | Ticket con cómo pagó | Caja |
+| Pedido web tomado | 📲 "Confirmamos tu pedido" (qué lleva, si está pago o cuánto paga, cuándo retira/sale) · 🖨️ "Para preparar" | Pedidos web → pedido ya en el mostrador |
+| Se prepara | Comprobante de retiro: cada producto con su 📍 ubicación y casilla para tildar | Entregas → 🖨️ |
+| Está listo para retirar | 📲 "Ya está listo para retirar" (dirección, horario, cuánto paga si falta) | Entregas → Para retirar → 📲 |
+| Retira | Comprobante firmado (nombre y DNI de quien retira) | Entregas → Entregar |
+| Se embala un envío | Etiqueta por bulto (A6) | Entregas → Envíos → 🏷️ |
+| Sale el transporte | Hoja de despacho del día (A4, la firma el transporte) | Entregas → Envíos |
+| Salió el envío | 📲 "Salió hoy" con transporte y n° de guía | Entregas → Entregadas → 📲 |
+
+Los avisos abren WhatsApp con el mensaje armado: se puede corregir antes de mandarlo. El comprobante de
+un pedido web dice el número de pedido y "PAGADO ONLINE" cuando corresponde.

@@ -118,19 +118,20 @@ function msgError(e, accion) {
 /* ── Datos ── */
 const COLS_V = 'id, codigo, fecha, total, estado, medio_pago, cliente_nombre, cliente_telefono, retira_nombre, vendedor_nombre, entrega_tipo, entrega_estado, entrega_fecha, transporte_id, envio_destinatario, envio_telefono, envio_direccion, envio_localidad, envio_notas, envio_bultos, envio_seguimiento, lista_en, lista_por_nombre, entregada_en, entregada_por_nombre, recibio_nombre, recibio_dni, venta_items(nombre, cantidad, orden, producto_id, productos(ubicacion_id))';
 const pedirVentas = (conOrigen, desde = new Date(Date.now() - 7 * 864e5).toISOString()) => db.from('ventas')
-  .select(COLS_V + (conOrigen ? ', origen' : ''))
+  .select(COLS_V + (conOrigen ? ', origen, solicitud:solicitudes!ventas_solicitud_id_fkey(codigo)' : ''))
   .neq('entrega_tipo', 'en_el_momento').neq('estado', 'anulada')
   .or(`entrega_estado.neq.entregado,entregada_en.gte.${desde}`)
   .order('entrega_fecha').order('fecha');
 async function cargar() {
   clearTimeout(timer);
   const [r, t] = await Promise.all([
-    pedirVentas(true).then(r => r.error && /origen/.test(r.error.message || '') ? pedirVentas(false) : r),
+    pedirVentas(true).then(r => r.error && /origen|solicitud|relationship/i.test(r.error.message || '') ? pedirVentas(false) : r),
     db.from('transportes').select('id, nombre, notas, activo, orden').order('orden').order('nombre'),
     MHUbic.cargar(),
   ]);
   if (r.error) { $id('contenido').innerHTML = `<div class="vacio">${esc(msgError(r.error, 'cargar las entregas'))}</div>`; return; }
   ventas = r.data || []; transportes = t.data || [];
+  ventas.forEach(v => { v.solicitud_codigo = v.solicitud?.codigo || null; v.transporte_nombre = transportes.find(t => t.id === v.transporte_id)?.nombre || ''; });
   ventas.forEach(v => (v.venta_items || []).forEach(i => { i.ubicacion_texto = i.productos?.ubicacion_id ? MHUbic.texto(i.productos.ubicacion_id) : ''; }));
   render();
   timer = setTimeout(() => { if (!document.hidden && !document.querySelector('.modal-backdrop')) cargar(); else timer = setTimeout(cargar, 20000); }, 20000);
@@ -166,7 +167,7 @@ function cardRetiro(v) {
   const p = pago(v), at = v.entrega_fecha && v.entrega_fecha < hoyISO();
   const g = puede('entregas.gestionar');
   return `<div class="card-e ${p === 'ok' ? 'pagada' : p === 'cc' ? 'cc' : 'sinpagar'}${v.entrega_estado === 'listo' ? ' lista' : ''}${at ? ' atrasada' : ''}">
-    <div class="cab"><span class="nom">${v.origen === 'web' ? '<span title="Pedido web">🌐</span> ' : ''}${esc(v.retira_nombre || v.cliente_nombre || 'Consumidor final')}</span><span class="cod">${esc(v.codigo)}</span></div>
+    <div class="cab"><span class="nom">${v.origen === 'web' ? `<span title="Pedido web ${esc(v.solicitud_codigo || '')}">🌐</span> ` : ''}${esc(v.retira_nombre || v.cliente_nombre || 'Consumidor final')}</span><span class="cod">${esc(v.codigo)}</span></div>
     <div class="meta">${pagoTxt(v)} · ${money(v.total)} · pasa <span class="fecha">${esc(diaTxt(v.entrega_fecha))}</span>${v.cliente_telefono ? ' · ' + esc(v.cliente_telefono) : ''}</div>
     ${v.retira_nombre && v.cliente_nombre && v.retira_nombre !== v.cliente_nombre ? `<div class="meta">Cliente: ${esc(v.cliente_nombre)}</div>` : ''}
     ${items(v)}
@@ -177,6 +178,7 @@ function cardRetiro(v) {
       ${p === 'no' ? '<button class="btn btn-outline btn-sm" disabled title="Primero se cobra en la caja">No se entrega: falta cobrar</button>' : ''}
       ${g ? `<button class="btn btn-outline btn-sm" data-lista="${v.id}" data-on="${v.entrega_estado === 'listo' ? 0 : 1}">${v.entrega_estado === 'listo' ? 'Desmarcar' : '✓ Preparado'}</button>` : ''}
       <button class="btn btn-ghost btn-sm" data-imp-retiro="${v.id}" title="Comprobante con la ubicación de cada producto y lugar para la firma">🖨️</button>
+      ${v.cliente_telefono ? `<button class="btn btn-ghost btn-sm" data-avisar="listo" data-id="${v.id}" title="Avisarle por WhatsApp que ya puede pasar">📲</button>` : ''}
       ${g ? `<button class="btn btn-ghost btn-sm" data-editar="${v.id}" title="Cambiar la entrega">✎</button>` : ''}
     </div></div>`;
 }
@@ -192,7 +194,7 @@ function renderRetiros() {
 function cardEnvio(v) {
   const p = pago(v), at = v.entrega_fecha && v.entrega_fecha < hoyISO(), g = puede('entregas.gestionar');
   return `<div class="card-e ${p === 'ok' ? 'pagada' : p === 'cc' ? 'cc' : 'sinpagar'}${v.entrega_estado === 'listo' ? ' lista' : ''}${at ? ' atrasada' : ''}">
-    <div class="cab"><span style="display:flex;gap:8px;align-items:center">${g && p !== 'no' ? `<input type="checkbox" class="sel-e" data-sel="${v.id}" ${sel.has(v.id) ? 'checked' : ''} aria-label="Elegir para despachar">` : ''}<span class="nom">${v.origen === 'web' ? '<span title="Pedido web">🌐</span> ' : ''}${esc(v.envio_destinatario || v.cliente_nombre || '')}</span></span><span class="cod">${esc(v.codigo)}</span></div>
+    <div class="cab"><span style="display:flex;gap:8px;align-items:center">${g && p !== 'no' ? `<input type="checkbox" class="sel-e" data-sel="${v.id}" ${sel.has(v.id) ? 'checked' : ''} aria-label="Elegir para despachar">` : ''}<span class="nom">${v.origen === 'web' ? `<span title="Pedido web ${esc(v.solicitud_codigo || '')}">🌐</span> ` : ''}${esc(v.envio_destinatario || v.cliente_nombre || '')}</span></span><span class="cod">${esc(v.codigo)}</span></div>
     <div class="meta">${esc(v.envio_direccion || '')} · <b>${esc(v.envio_localidad || '')}</b>${v.envio_telefono ? ' · ' + esc(v.envio_telefono) : ''}</div>
     <div class="meta">${pagoTxt(v)} · despachar <span class="fecha">${esc(diaTxt(v.entrega_fecha))}</span>${v.envio_bultos ? ` · ${v.envio_bultos} bulto${v.envio_bultos !== 1 ? 's' : ''}` : ''}</div>
     ${items(v)}
@@ -240,7 +242,7 @@ function renderHechas() {
       <td>${v.entrega_tipo === 'retiro' ? '🏬 Retiró' : '🚚 ' + esc(transportes.find(t => t.id === v.transporte_id)?.nombre || 'Envío')}</td>
       <td>${v.entrega_tipo === 'retiro' ? `${esc(v.recibio_nombre || '')}${v.recibio_dni ? ' · DNI ' + esc(v.recibio_dni) : ''}` : `${esc(v.envio_localidad || '')}${v.envio_seguimiento ? ' · guía ' + esc(v.envio_seguimiento) : ''}`}</td>
       <td>${esc(v.entregada_por_nombre || '')}</td>
-      <td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" data-imp-retiro="${v.id}">🖨️</button>${puede('entregas.gestionar') ? `<button class="btn btn-ghost btn-sm" data-deshacer="${v.id}" title="Se marcó por error">↶</button>` : ''}</td></tr>`).join('')}
+      <td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" data-imp-retiro="${v.id}">🖨️</button>${v.entrega_tipo === 'envio' && (v.cliente_telefono || v.envio_telefono) ? `<button class="btn btn-ghost btn-sm" data-avisar="despachado" data-id="${v.id}" title="Avisarle por WhatsApp que salió, con el n° de guía">📲</button>` : ''}${puede('entregas.gestionar') ? `<button class="btn btn-ghost btn-sm" data-deshacer="${v.id}" title="Se marcó por error">↶</button>` : ''}</td></tr>`).join('')}
   </tbody></table></div>`;
 }
 
@@ -348,6 +350,7 @@ document.addEventListener('click', async e => {
   const id = Number(b.dataset.entregar || b.dataset.lista || b.dataset.impRetiro || b.dataset.etiqueta || b.dataset.editar || b.dataset.deshacer);
   const v = ventas.find(x => x.id === id);
   if (b.dataset.tab) { tab = b.dataset.tab; render(); return; }
+  if (b.dataset.avisar) { const va = ventas.find(x => x.id === Number(b.dataset.id)); if (va) MHImprimir.avisar(va, b.dataset.avisar); return; }
   if (b.dataset.acc === 'transportes') return modalTransportes();
   if (b.dataset.entregar) return entregar(v);
   if (b.dataset.editar) return editar(v);

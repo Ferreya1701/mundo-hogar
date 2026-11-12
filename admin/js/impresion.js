@@ -271,11 +271,12 @@ const MHImprimir = (() => {
      firme quien lo retira. v: venta con venta_items (y opcional ubicacion_texto por ítem). */
   function htmlRetiro(v, t = {}) {
     const items = (v.items || v.venta_items || []).filter(i => Number(i.cantidad) > 0).sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
-    const pagado = v.estado === 'cerrada' ? (v.medio_pago === 'cuenta_corriente' ? 'CUENTA CORRIENTE' : 'PAGADO') : 'PENDIENTE DE PAGO — NO ENTREGAR';
+    const pagado = v.estado === 'cerrada' ? (v.medio_pago === 'cuenta_corriente' ? 'CUENTA CORRIENTE' : v.medio_pago === 'web' ? 'PAGADO ONLINE' : 'PAGADO') : 'PENDIENTE DE PAGO — NO ENTREGAR';
     return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Retiro ${esc(v.codigo || '')}</title>
 <style>${ESTILO_80} .ub { font-size:11px; color:#222; padding-left:8px; } .chk { display:inline-block; width:11px; height:11px; border:1px solid #000; margin-right:4px; vertical-align:-1px; }</style></head><body>
   ${encabezado(t, v.entrega_tipo === 'envio' ? 'PARA ENVIAR' : 'COMPROBANTE DE RETIRO')}
   <div class="dato">Venta: <b>${esc(v.codigo || '')}</b> · ${esc(fechaHora(v.fecha))}</div>
+  ${v.solicitud_codigo ? `<div class="dato">Pedido web: <b>${esc(v.solicitud_codigo)}</b></div>` : ''}
   <div class="dato">Cliente: <b>${esc(v.cliente_nombre || 'Consumidor final')}</b></div>
   ${v.retira_nombre ? `<div class="dato">Retira: <b>${esc(v.retira_nombre)}</b></div>` : ''}
   ${v.entrega_fecha ? `<div class="m">${v.entrega_tipo === 'envio' ? 'Despachar' : 'Retira'} el ${esc(fechaCorta(v.entrega_fecha))}</div>` : ''}
@@ -351,6 +352,37 @@ ${Array.from({ length: n }, (_, k) => una(k + 1)).join('')}
   async function retiro(v) { if (v) imprimirHTML(htmlRetiro(v, await conTienda())); }
   async function etiquetaEnvio(v) { if (v) imprimirHTML(htmlEtiquetaEnvio(v, await conTienda())); }
   async function hojaDespacho(transporte, ventas, fecha) { if (ventas?.length) imprimirHTML(htmlHojaDespacho(transporte, ventas, fecha, await conTienda())); }
+
+  /* ── Avisos por WhatsApp en cada paso (texto editable en WhatsApp antes de mandar) ──
+     tipo: 'pasado' (el pedido web quedó tomado), 'listo' (para retirar), 'despachado' (salió el envío) */
+  const plata = n => '$ ' + Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 });
+  function textoAviso(v, tipo, t = {}) {
+    const nombre = (v.cliente_nombre || '').trim().split(/\s+/)[0] || '';
+    const hola = `¡Hola${nombre ? ' ' + nombre : ''}! Te escribimos de ${t.nombre_tienda || 'Mundo Hogar'}`;
+    const ref = v.solicitud_codigo ? `tu pedido *${v.solicitud_codigo}*` : `tu compra *${v.codigo}*`;
+    const pagada = v.estado === 'cerrada';
+    const pago = pagada ? (v.medio_pago === 'cuenta_corriente' ? 'Va a tu cuenta corriente.' : 'Ya está paga ✅.')
+      : `Total a pagar: *${plata(v.total)}* (efectivo, tarjeta o transferencia en el local).`;
+    const local = [t.direccion, t.horarios].filter(Boolean).join(' · ');
+    const items = (v.items || v.venta_items || []).filter(i => Number(i.cantidad) > 0).map(i => `• ${Number(i.cantidad)} × ${i.nombre}`).join('\n');
+    if (tipo === 'listo') return `${hola}: ${ref} ya está *${v.solicitud_codigo ? 'listo' : 'lista'} para retirar* 🎉\n\n${items}\n\n${pago}${local ? '\n📍 ' + local : ''}\n\nSi pasa otra persona, que traiga el código ${v.codigo}. ¡Te esperamos!`;
+    if (tipo === 'despachado') return `${hola}: ${ref} *salió hoy* 🚚${v.transporte_nombre ? ' por ' + v.transporte_nombre : ''}.${v.envio_seguimiento ? `\nN° de guía: *${v.envio_seguimiento}*` : ''}\n\nDestino: ${[v.envio_direccion, v.envio_localidad].filter(Boolean).join(', ')}.\n\n¡Gracias por tu compra!`;
+    // 'pasado'
+    const cuando = v.entrega_tipo === 'envio'
+      ? `Lo despachamos${v.entrega_fecha ? ' el ' + fechaCorta(v.entrega_fecha) : ''} a ${[v.envio_direccion, v.envio_localidad].filter(Boolean).join(', ')}.${pagada ? '' : ' El envío sale cuando esté pago.'}`
+      : `Lo vas a poder retirar${v.entrega_fecha ? ' desde el ' + fechaCorta(v.entrega_fecha) : ''}; te avisamos cuando esté listo.`;
+    return `${hola}: confirmamos ${ref} ✅\n\n${items}\n\n${pago}\n${cuando}${local && v.entrega_tipo !== 'envio' ? '\n📍 ' + local : ''}`;
+  }
+  function numeroWA(tel) {
+    let n = String(tel || '').replace(/\D/g, '');
+    if (n && !n.startsWith('54')) n = '549' + n.replace(/^0/, '').replace(/^15/, '');
+    return n;
+  }
+  async function avisar(v, tipo) {
+    const n = numeroWA(v.envio_telefono && tipo === 'despachado' ? v.envio_telefono : v.cliente_telefono || v.envio_telefono);
+    const txt = encodeURIComponent(textoAviso(v, tipo, await datosTienda()));
+    window.open(n ? `https://wa.me/${n}?text=${txt}` : `https://wa.me/?text=${txt}`, '_blank', 'noopener');
+  }
 
   async function ticket(v) {
     if (!v) return;
@@ -471,6 +503,6 @@ ${lista.map(p => { const c = valorCodigo(p); return `<div class="et">
   // Después de editar los datos del negocio: la próxima impresión los vuelve a leer
   const refrescar = () => { tienda = null; };
 
-  return { ticket, recibo, cierreCaja, ordenCobro, retiro, etiquetaEnvio, hojaDespacho, refrescar, etiquetas, pedirEtiquetas, _html: { ticket: htmlTicket, recibo: htmlRecibo, cierreCaja: htmlCierreCaja, ordenCobro: htmlOrdenCobro, retiro: htmlRetiro, etiquetaEnvio: htmlEtiquetaEnvio, hojaDespacho: htmlHojaDespacho, cuitFmt, fechaHora } };
+  return { ticket, recibo, cierreCaja, ordenCobro, retiro, etiquetaEnvio, hojaDespacho, avisar, numeroWA, refrescar, etiquetas, pedirEtiquetas, _html: { ticket: htmlTicket, recibo: htmlRecibo, cierreCaja: htmlCierreCaja, ordenCobro: htmlOrdenCobro, retiro: htmlRetiro, etiquetaEnvio: htmlEtiquetaEnvio, hojaDespacho: htmlHojaDespacho, textoAviso, cuitFmt, fechaHora } };
 })();
 window.MHImprimir = MHImprimir;

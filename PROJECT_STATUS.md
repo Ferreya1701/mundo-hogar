@@ -54,9 +54,8 @@
 - **Etapa C — pedidos web en el circuito: sql/028 EJECUTADO EN PRODUCCIÓN 2026-11-12.** "Pasar al mostrador" en Pedidos convierte el pedido en venta: pagado online → venta pagada (medio `web`, no toca caja); sin pagar → Caja "pagan al retirar". Pedido y venta se sincronizan (pago online, entrega, anulación). Guía §15.
 - **Etapa E — menú reordenado con contadores: HECHO (solo panel, sin SQL).** Mostrador / Entregas / Pedidos web / Clientes / Catálogo / Stock / Administración; contadores de caja, entregas y pedidos (head counts en paralelo, cache 60 s en sessionStorage). Guía §16.
 - **Limpieza de pruebas en producción (2026-11-12, pedido del dueño):** borradas las ventas, la caja, los pedidos web (con comprobantes y eventos) y el historial de actividad de prueba. Se conservaron las 492 cargas iniciales de stock del catálogo y los 6 contactos del CRM. Respaldo: `~/mundo-hogar-respaldos/datos-antes-limpieza-20261112-1424.sql`.
-- **Pendiente:** D) (comprobante de retiro, etiqueta y hoja de despacho YA HECHOS en la etapa B; falta el ticket por paso para pedidos web);
-  E) menú reordenado (Mostrador / Entregas / Pedidos web / Clientes / Catálogo / Stock / Administración)
-  con contadores. Fuera de alcance por ahora: presupuestos, proveedores, estadísticas, facturación.
+- **Etapa D — comprobantes y avisos por paso: HECHO (solo panel).** Retiro con ubicaciones y pedido web, etiqueta por bulto, hoja de despacho, avisos de WhatsApp (pedido tomado / listo para retirar / despachado con guía). Guía §17.
+- **Circuito A–E completo.** Fuera de alcance por ahora: presupuestos, proveedores, estadísticas, facturación.
 - Falta un rol "cajero" si quieren separar quién vende de quién cobra (hoy los roles son fijos:
   administrador, vendedor, encargado_stock).
 

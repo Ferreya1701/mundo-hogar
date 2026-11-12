@@ -117,6 +117,21 @@ const hd = hojaDespacho('Andreani', [VE, { ...VE, codigo: 'VL-2', envio_bultos: 
 tiene('hoja de despacho: totales', hd, '14/11/2026 · 2 envíos · 3 bultos');
 tiene('hoja de despacho: firma del transporte', hd, 'Recibió (Andreani)');
 
+grupo('Avisos por WhatsApp');
+const { textoAviso } = ctx.MHImprimir._html;
+const AV = { ...VR, cliente_nombre: 'Laura Gómez', solicitud_codigo: 'MH-261112-AB12', total: 90000 };
+const T2 = { ...TIENDA, direccion: 'Blas Parera 9961', horarios: 'Lun a Sáb 9 a 20' };
+tiene('listo: nombra al cliente y al pedido web', textoAviso(AV, 'listo', T2), '¡Hola Laura!');
+tiene('listo: código del pedido (en masculino)', textoAviso(AV, 'listo', T2), 'tu pedido *MH-261112-AB12* ya está *listo para retirar*');
+tiene('compra del local: en femenino', textoAviso({ ...AV, solicitud_codigo: null }, 'listo', T2), 'tu compra *VL-261111-0007* ya está *lista para retirar*');
+tiene('listo pagado: avisa que ya está paga', textoAviso(AV, 'listo', T2), 'Ya está paga');
+tiene('listo sin pagar: cuánto paga', textoAviso({ ...AV, estado: 'pendiente_cobro' }, 'listo', T2), 'Total a pagar: *$ 90.000*');
+tiene('listo: dónde y cuándo', textoAviso(AV, 'listo', T2), '📍 Blas Parera 9961 · Lun a Sáb 9 a 20');
+tiene('despachado: guía y transporte', textoAviso({ ...VE, envio_seguimiento: 'G-77' }, 'despachado', T2), 'N° de guía: *G-77*');
+tiene('pasado envío sin pagar: avisa que sale pago', textoAviso({ ...VE, estado: 'pendiente_cobro' }, 'pasado', T2), 'El envío sale cuando esté pago');
+t('número argentino para WhatsApp', [ctx.MHImprimir.numeroWA('342 4123456'), ctx.MHImprimir.numeroWA('03424123456'), ctx.MHImprimir.numeroWA('5493424123456')], ['5493424123456', '5493424123456', '5493424123456']);
+tiene('retiro de pedido web: dice el pedido y pagado online', retiro({ ...VR, medio_pago: 'web', solicitud_codigo: 'MH-1' }, TIENDA), 'PAGADO ONLINE');
+
 grupo('Recibo');
 const r = recibo({ numero: 'R-000012', fecha: '2026-11-11T16:23:46Z', cliente_nombre: 'Juan Pérez', monto: 30000,
                    medio_pago: 'transferencia', saldo_anterior: 80000, saldo_actual: 50000, concepto: 'Pago cuenta corriente' }, TIENDA);

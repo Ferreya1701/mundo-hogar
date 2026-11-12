@@ -147,6 +147,8 @@
 <script src="/admin/js/auth.js"></script>
 <script src="/admin/js/utils.js"></script>
 <script src="/admin/js/layout.js"></script>
+<script src="/admin/js/ubicaciones.js"></script>
+<script src="/admin/js/impresion.js"></script>
 <script>
 let solicitudes = [];
 let cuentas = [];
@@ -356,6 +358,7 @@ async function verDetalle(id) {
   document.getElementById('modal-bg').addEventListener('click', e => { if (e.target.id === 'modal-bg') slot.innerHTML = ''; });
 
   document.getElementById('btn-mostrador')?.addEventListener('click', () => pasarAlMostrador(s));
+  document.getElementById('mostrador-box')?.addEventListener('click', e => { const b = e.target.closest('[data-venta-acc]'); if (b) accionVenta(s, b.dataset.ventaAcc, b); });
   if (!sinCobros) { renderPago(s); cargarEventos(s.id); }
 }
 
@@ -614,7 +617,10 @@ function htmlMostrador(s) {
     return `<div class="sol-obs" style="background:#EEF6FF;border-color:#BFD8F6"><b>🏪 Ya está en el mostrador:</b> venta
       <a href="/admin/ventas?ver=${s.venta_id}">${esc(v?.codigo || '#' + s.venta_id)}</a>${v ? ` · ${esc(VENTA_EST(v))}` : ''}
       · <a href="/admin/entregas?tab=${v?.entrega_estado === 'entregado' ? 'hechas' : v?.entrega_tipo === 'envio' ? 'envios' : 'retiros'}">ver en Entregas</a>
-      <div style="font-size:12px;color:#5A6B85;margin-top:4px">Se cobra en Caja y se entrega desde Entregas. Para cancelarlo, anulá la venta.</div></div>`;
+      <div style="font-size:12px;color:#5A6B85;margin-top:4px">Se cobra en Caja y se entrega desde Entregas. Para cancelarlo, anulá la venta.</div>
+      ${v && v.estado !== 'anulada' ? `<div class="d-flex gap-2" style="flex-wrap:wrap;margin-top:8px">
+        <button class="btn btn-outline btn-sm" data-venta-acc="pasado">📲 Avisar al cliente</button>
+        <button class="btn btn-outline btn-sm" data-venta-acc="preparar">🖨️ Para preparar</button></div>` : ''}</div>`;
   }
   if (!puedePasar(s)) return '';
   const pagado = s.estado_pago === 'pagado';
@@ -623,6 +629,19 @@ function htmlMostrador(s) {
       ? 'como ya pagó online, queda <b>pagada</b> y va directo a Entregas.'
       : 'el cliente <b>paga en la caja</b> cuando viene a retirar (o la mercadería sale cuando se cobre).'}</span></div>
     <button class="btn btn-primary btn-sm" id="btn-mostrador">Pasar al mostrador</button></div>`;
+}
+
+async function accionVenta(s, acc, b) {
+  b.disabled = true;
+  const [r] = await Promise.all([
+    db.from('ventas').select('*, venta_items(nombre, cantidad, orden, productos(ubicacion_id)), transporte:transportes(nombre)').eq('id', s.venta_id).maybeSingle(),
+    acc === 'preparar' ? MHUbic.cargar() : null,
+  ]);
+  b.disabled = false;
+  if (r.error || !r.data) { Utils.toast('No se pudo traer la venta', 'error'); return; }
+  const v = { ...r.data, solicitud_codigo: s.codigo, transporte_nombre: r.data.transporte?.nombre || '' };
+  (v.venta_items || []).forEach(i => { i.ubicacion_texto = i.productos?.ubicacion_id ? MHUbic.texto(i.productos.ubicacion_id) : ''; });
+  if (acc === 'preparar') MHImprimir.retiro(v); else MHImprimir.avisar(v, 'pasado');
 }
 
 async function pasarAlMostrador(s) {
