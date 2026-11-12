@@ -40,7 +40,7 @@
 - Pruebas: `node scripts/test-editar-venta-sql.mjs` (33).
 
 ## Circuito de venta estilo PromRepuestos (2026-11-12) — plan acordado con el dueño
-- **Etapa A — cobrar en caja con pago mixto: EN EL REPO; FALTA CORRER sql/026.** Decisiones del dueño:
+- **Etapa A — cobrar en caja con pago mixto: sql/026 EJECUTADO EN PRODUCCIÓN 2026-11-12.** Decisiones del dueño:
   SIEMPRE por caja (nadie cobra directo) y pago mixto desde el inicio. Cuenta corriente no pasa por caja.
   `sql/026-cobrar-en-caja.sql`: estado `pendiente_cobro`, `venta_pagos`, `venta_cobrar`, `venta_devolver`,
   `venta_reenviar_a_caja`, permiso `caja.cobrar`; caja y cuentas bancarias se asientan por medio/cuenta
