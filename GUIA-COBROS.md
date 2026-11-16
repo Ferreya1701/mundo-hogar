@@ -177,8 +177,7 @@ tolerancia y mail de alertas. Ahí está también la dirección de cada cuenta, 
    `mundo-hogar`. El Worker solo acepta `c-<token>@mundohogarstf.com` y rechaza el resto. Si algún día
    se quiere una casilla real (ej. `ventas@`), se agrega una regla propia antes del catch-all.
 5. **Mails de alerta:** en Email Routing → *Destination addresses* agregar y verificar el mail del dueño;
-   después sumar a `wrangler.jsonc` `"send_email": [{ "name": "MAIL_ALERTAS" }]` (push) y cargar ese mail
-   en el panel. Sin esto, las alertas salen solo en el panel.
+   (`send_email` MAIL_ALERTAS ya está en `wrangler.jsonc`) y cargar ese mail en el panel. Sin esto, las alertas salen solo en el panel.
 6. **Cada titular** sigue los 5 pasos del panel (activar avisos en el banco, reenvío en Gmail, código,
    filtro). Unos 5 minutos por persona.
 

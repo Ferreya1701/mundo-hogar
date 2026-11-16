@@ -12,8 +12,10 @@ de activación: `GUIA-COBROS.md` §8.
   cliente no ve), y `pedido_a_venta` / `fn_venta_pago_web` del 028 (margen = tolerancia, antes $1).
 - Edge Function `avisos-banco` (nueva) y `leer-comprobante` (huella + señales de edición): **DESPLEGADAS 2026-11-16** (probadas en vivo: sin clave 401, `revisar` ok, dirección inexistente rechazada).
 - `worker/index.js`: `email()` + `scheduled()` (cron cada minuto), publicado. Secreto `AVISOS_CLAVE` **cargado en
-  Supabase y en el Worker** (2026-11-16). Falta: Email Routing del dominio (catch-all → Worker),
-  binding `send_email` para los mails de alerta (guía, paso 5) y `ANTHROPIC_API_KEY` en Supabase.
+  Supabase y en el Worker** (2026-11-16). Email Routing ACTIVO 2026-11-16 (MX/SPF/DKIM de Cloudflare, catch-all → Worker
+  `mundo-hogar`), probado de punta a punta con un mail real. Binding `send_email` MAIL_ALERTAS agregado.
+  Falta: verificar el mail del dueño en Destination addresses y cargarlo en el panel, `ANTHROPIC_API_KEY`,
+  borrar la "CUENTA DE PRUEBA (borrar)" y cargar las cuentas reales.
 - Los avisos entran por `c-<token>@mundohogarstf.com`. El dueño confirmó (2026-11-16) que nadie usa casillas
   @mundohogarstf.com: Email Routing de Cloudflare reemplaza los MX de GoDaddy.
 - Pruebas: `node scripts/test-avisos-banco-sql.mjs` (63). `test-cobros-sql.mjs` ya se cortaba antes (fechas fijas).

@@ -14,5 +14,7 @@
     "run_worker_first": ["/producto/*"]
   },
   // Cada minuto: alertas de cobros (comprobante sin aviso del banco, etc.). Ver sql/032.
-  "triggers": { "crons": ["* * * * *"] }
+  "triggers": { "crons": ["* * * * *"] },
+  // Mails de alerta de cobros: solo llegan a direcciones verificadas en Email Routing → Destination addresses.
+  "send_email": [{ "name": "MAIL_ALERTAS" }]
 }
