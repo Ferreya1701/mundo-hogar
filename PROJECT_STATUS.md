@@ -10,9 +10,11 @@ de activación: `GUIA-COBROS.md` §8.
   cuenta (`cuentas_cobro_avisos`), alertas (`cobros_alertas`), config privada (`cobros_avisos_config`).
   Redefine `comprobante_registrar_lectura` (tolerancia, huella sha256, fecha+hora, nota interna que el
   cliente no ve), y `pedido_a_venta` / `fn_venta_pago_web` del 028 (margen = tolerancia, antes $1).
-- Edge Function `avisos-banco` (nueva) y `leer-comprobante` (huella + señales de edición): **sin desplegar**.
-- `worker/index.js`: `email()` + `scheduled()` (cron cada minuto). Secreto `AVISOS_CLAVE` sin cargar →
-  el Worker no hace nada hasta cargarlo. Mail de alertas: falta binding `send_email` (ver guía, paso 5).
+- Edge Function `avisos-banco` (nueva) y `leer-comprobante` (huella + señales de edición): **DESPLEGADAS 2026-11-16** (probadas en vivo: sin clave 401, `revisar` ok, dirección inexistente rechazada).
+- `worker/index.js`: `email()` + `scheduled()` (cron cada minuto), publicado. Secreto `AVISOS_CLAVE` **cargado en
+  Supabase y en el Worker** (2026-11-16). Falta: Email Routing del subdominio `avisos.` (desde el panel de
+  Cloudflare: `wrangler email routing enable` solo trabaja sobre el dominio raíz y pisaría los MX de GoDaddy),
+  binding `send_email` para los mails de alerta (guía, paso 5) y `ANTHROPIC_API_KEY` en Supabase.
 - El correo del dominio está en GoDaddy: los avisos entran por el subdominio `avisos.` (no tocar los MX raíz).
 - Pruebas: `node scripts/test-avisos-banco-sql.mjs` (63). `test-cobros-sql.mjs` ya se cortaba antes (fechas fijas).
 
