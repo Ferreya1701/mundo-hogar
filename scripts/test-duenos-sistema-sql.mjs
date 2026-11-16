@@ -191,5 +191,19 @@ await falla('ni por la función de los dueños', () => admin2(`SELECT * FROM liq
 t('el dueño sí', (await admin(`SELECT porcentaje::int p, comision::int c FROM liquidaciones_comision()`)), [{ p: 7, c: 7000 }]);
 await falla('el público no ve nada', () => anon(`SELECT periodo FROM liquidaciones`), /permission denied/);
 
+grupo('035: avisos del banco solo para los dueños');
+err = null;
+const SQL35 = leerSQL('035-avisos-solo-duenos.sql');
+try { await db.exec(SQL35); await db.exec(SQL35); } catch (e) { err = e.message; }
+t('035 corre limpio, dos veces seguidas', err, null);
+t('el dueño ve las direcciones', await cuantos(admin, 'cuentas_cobro_avisos'), 1);
+t('el administrador del local no', await cuantos(admin2, 'cuentas_cobro_avisos'), 0);
+t('el administrador del local no cambia la tolerancia (0 filas)', (await admin2(`UPDATE cobros_avisos_config SET tolerancia = 999 WHERE id = 1`)).afectadas, 0);
+await admin(`UPDATE cobros_avisos_config SET tolerancia = 40 WHERE id = 1`);
+t('el dueño sí', (await q(`SELECT tolerancia::int t FROM cobros_avisos_config`))[0].t, 40);
+t('el vendedor sigue leyendo minutos y tolerancia (detalle del pedido)', (await vend(`SELECT minutos_espera m FROM cobros_avisos_config`)).length, 1);
+await falla('el administrador del local no regenera direcciones', () => admin2(`SELECT cuenta_avisos_regenerar(1)`), /sin_permiso/);
+await pasa('el dueño sí', () => admin(`SELECT cuenta_avisos_regenerar(1)`));
+
 console.log(`\n${ok} pasadas, ${fail} fallidas\n`);
 process.exit(fail ? 1 : 0);

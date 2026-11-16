@@ -78,7 +78,7 @@
         <button class="tab-btn active" data-tab="cuentas">Cuentas</button>
         <button class="tab-btn" data-tab="movimientos">Movimientos</button>
         <button class="tab-btn" data-tab="liquidaciones">Liquidaciones</button>
-        <button class="tab-btn" data-tab="avisos">Avisos del banco <span class="chip-n" id="avisos-n" hidden></span></button>
+        <button class="tab-btn" data-tab="avisos" id="tab-btn-avisos" hidden title="Solo dueños del sistema">Avisos del banco <span class="chip-n" id="avisos-n" hidden></span></button>
         <button class="tab-btn" data-tab="config" id="tab-btn-config" hidden title="Solo dueños del sistema">Configuración web</button>
       </div>
 
@@ -653,7 +653,7 @@ $id('form-avisos').addEventListener('submit', async e => {
 
 // ── Tabs ──
 function irTab(t) {
-  if (t === 'config' && !esDueno) t = 'cuentas';
+  if ((t === 'config' || t === 'avisos') && !esDueno) t = 'cuentas';
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
   ['cuentas', 'movimientos', 'liquidaciones', 'avisos', 'config'].forEach(k => $id('tab-' + k).hidden = k !== t);
   if (t === 'avisos') cargarAvisos();
@@ -673,6 +673,7 @@ $id('btn-refrescar').addEventListener('click', async () => { await cargarConfig(
   try { const r = await db.rpc('fn_es_dueno_sistema'); esDueno = r.data === true; } catch (e) { esDueno = false; }
   $id('tab-btn-config').hidden = !esDueno;
   $id('liq-cerrar-card').hidden = !esDueno;
+  $id('tab-btn-avisos').hidden = !esDueno;
   const hoy = new Date();
   $id('mov-mes').value = hoy.toISOString().slice(0, 7);
   const ant = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
