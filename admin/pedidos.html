@@ -25,6 +25,8 @@
     .pago-sin_pago{background:#EEF1F6;color:#4A5A75}
     .pago-pendiente{background:#EAF2FD;color:#1763C6}
     .pago-comprobante_recibido,.pago-en_revision{background:#FFF4E8;color:#8A4B12}
+    .banco-ok,.banco-mal,.banco-espera{margin-top:10px;border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.45}
+    .banco-ok{background:#E8F6EE;color:#14663A}.banco-mal{background:#FDECEA;color:#8A241C}.banco-espera{background:#FFF4E8;color:#8A4B12}
     .pago-pagado{background:#E9F9EF;color:#14663A}
     .pago-vencido{background:#FDEEED;color:#8A241C}
     .sol-modal-bg{position:fixed;inset:0;background:rgba(10,20,40,.45);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -153,6 +155,7 @@
 let solicitudes = [];
 let cuentas = [];
 let settings = {};
+let avisosCfg = {};      // sql/032: tolerancia y minutos de espera del aviso del banco
 let perfil = null;
 let page = 1;
 let ventasDe = {};       // sql/028: venta_id → {codigo, estado, entrega_*}
@@ -393,6 +396,26 @@ async function renderPago(s) {
     }
   }
 
+  // Verificación con el aviso del banco (sql/032)
+  let avisos = [];
+  if (!sinCobros) {
+    const { data: avs } = await db.from('avisos_ingreso').select('id, monto, ordenante, recibido_en, estado, nro_operacion, remitente_banco')
+      .eq('solicitud_id', s.id).order('id', { ascending: false });
+    avisos = avs || [];
+  }
+  const avOk = avisos.find(a => ['asignado', 'usado'].includes(a.estado));
+  const compOk = comps.filter(x => x.estado === 'coincide').slice(-1)[0];
+  const deQuien = a => `${money2(a.monto)}${a.ordenante ? ` de <b>${esc(a.ordenante)}</b>` : ''} · ${Utils.datetime(a.recibido_en)}${a.nro_operacion ? ` · op. ${esc(a.nro_operacion)}` : ''}`;
+  if (avOk && s.estado_pago === 'pagado') {
+    h += `<div class="banco-ok">🏦 Verificado con el aviso del banco: entraron ${deQuien(avOk)}</div>`;
+  } else if (avOk) {
+    const distinto = compOk && Math.abs(Number(compOk.monto_leido) - Number(avOk.monto)) > 0.005;
+    h += `<div class="${distinto ? 'banco-mal' : 'banco-ok'}">🏦 Aviso del banco: entraron ${deQuien(avOk)}${distinto ? '<br>⚠️ No coincide con el importe del comprobante: revisar a mano.' : compOk ? '' : '<br>Falta el comprobante del cliente (o confirmalo a mano: la plata entró).'}</div>`;
+  } else if (compOk && s.estado_pago !== 'pagado') {
+    const min = Math.max(0, Math.round((Date.now() - new Date(compOk.leido_en || compOk.created_at)) / 60000));
+    h += `<div class="banco-espera">⏳ Esperando el aviso del banco${min ? ` (hace ${min} min)` : ''}. Si llega, el pago se confirma solo. ${min >= (avisosCfg.minutos_espera || 7) ? '<b>Ya pasó el tiempo de espera: revisá el ingreso en la cuenta y confirmalo a mano.</b>' : ''}</div>`;
+  }
+
   // Comprobantes
   if (comps.length) {
     h += `<div style="margin-top:14px;font-size:13px;font-weight:700">Comprobantes (${comps.length})</div>`;
@@ -404,6 +427,7 @@ async function renderPago(s) {
         <div>
           <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span><span class="badge ${cls}">${lbl}</span> <span style="color:#888;font-size:12px">${Utils.datetime(x.created_at)}${x.confianza != null ? ` · confianza ${x.confianza}%` : ''}</span></span></div>
           ${x.motivo ? `<div style="color:#8A241C;font-size:12.5px;margin-top:4px">${esc(x.motivo)}</div>` : ''}
+          ${x.nota_interna ? `<div style="color:#8A4B12;font-size:12.5px;margin-top:4px">📝 ${esc(x.nota_interna)}</div>` : ''}
           ${x.leido_en ? `<dl>
             <dt>Monto leído</dt><dd>${x.monto_leido != null ? money2(x.monto_leido) : '—'}${s.monto_a_pagar != null ? ` <span style="color:#888;font-weight:400">(esperado ${money2(s.monto_a_pagar)})</span>` : ''}</dd>
             <dt>Fecha</dt><dd>${x.fecha_leida ? Utils.date(x.fecha_leida) : '—'}${lec.hora ? ' ' + esc(lec.hora) : ''}</dd>
@@ -710,6 +734,8 @@ async function cargarCuentasYSettings() {
   ]);
   cuentas = c || [];
   settings = st || {};
+  db.from('cobros_avisos_config').select('tolerancia, minutos_espera, auto_con_aviso').eq('id', 1).maybeSingle()
+    .then(r => { avisosCfg = r.data || {}; }, () => {});
   const sel = document.getElementById('filtro-cuenta');
   sel.innerHTML = '<option value="">Todas las cuentas</option>' + cuentas.map(k => `<option value="${k.id}">${esc(k.nombre)}</option>`).join('');
 }

@@ -138,3 +138,58 @@ Para prevenir problemas:
 - Sin ninguna cuenta activa cargada, todo sigue como antes (transferencia sin cuenta).
 
 Pruebas: `node scripts/test-caja-cuentas-sql.mjs` (34).
+
+## 8. Verificación con el aviso del banco (sql/032, 2026-11-16)
+
+Un comprobante es una captura y se puede editar. La prueba de que la plata entró es el mail que el
+banco o Mercado Pago le manda a quien **recibe** ("Recibiste una transferencia de $X"). Sin pasarela
+y sin comisión: cada titular reenvía esos mails a la dirección secreta de su cuenta y el sistema los
+empareja con el pedido por **cuenta + importe** (los centavos son únicos por cuenta, punto 2).
+
+### Cómo decide
+| Situación | Qué pasa |
+|---|---|
+| Comprobante coincide **y** llega el aviso por el mismo importe (en cualquier orden) | Pago confirmado solo, por lo que entró de verdad |
+| Comprobante coincide y en **7 min** no llegó el aviso | Alerta en el panel y por mail para revisar a mano. Sigue esperando: si el aviso llega después, se confirma solo y la alerta se cierra |
+| Diferencia de hasta **$50** (configurable) | Se acepta y queda anotada ("pagó $2 menos"). Más que eso: no coincide |
+| Comprobante que no coincide, ilegible o sin leer | Alerta para revisar ya (sin leer: a los 7 min) |
+| Mismo archivo de comprobante en otro pedido / hora anterior a habilitar el pago | No coincide |
+| La IA ve señales de edición | Queda anotado (solo en el panel) y no confirma sin aviso |
+| Entró plata y no hay pedido que coincida (30 min) | Alerta "entraron $X sin pedido": asignarla o descartarla en Cuentas bancarias → Avisos del banco. Las transferencias de la caja del local se reconocen solas |
+| Una cuenta que mandaba avisos deja de mandarlos (2 pedidos sin aviso en 24 h) | Alerta "el reenvío de X parece caído" |
+| Aviso de un remitente que no es un banco conocido | Se guarda pero **nunca** confirma solo (podría ser un mail trucho) |
+
+Todo se configura en **Cuentas bancarias → Avisos del banco**: confirmar solo sí/no, minutos de espera,
+tolerancia y mail de alertas. Ahí está también la dirección de cada cuenta, su estado (✅ verificando /
+⏳ falta confirmar Gmail / ⚪ sin configurar), el código de confirmación que manda Gmail y el instructivo.
+
+### Activar (una sola vez)
+1. **Base:** ejecutar `sql/032-avisos-banco.sql` (idempotente; requiere 001..031).
+2. **Clave compartida:** generar una (`openssl rand -hex 24`) y cargarla en los dos lados:
+   - Supabase: `npx supabase secrets set AVISOS_CLAVE=<clave> --project-ref vduinkzeneokkqzdgxig`
+   - Cloudflare: Workers → mundo-hogar → Settings → Variables and Secrets → Add → Secret `AVISOS_CLAVE`.
+   Recomendado también `ANTHROPIC_API_KEY` en Supabase (sin ella los avisos se leen con reglas simples).
+3. **Edge Functions:** `npx supabase functions deploy avisos-banco --project-ref vduinkzeneokkqzdgxig --no-verify-jwt --use-api`
+   y volver a desplegar `leer-comprobante` (ahora manda la huella del archivo y las señales de edición).
+4. **Recepción de mails (Cloudflare → mundohogarstf.com → Email → Email Routing):** el correo del
+   dominio principal está en **GoDaddy** (MX `secureserver.net`): **no cambiar esos MX**. Los avisos usan
+   el subdominio `avisos.mundohogarstf.com`: en Email Routing → Settings → *Subdomains* agregar `avisos`
+   (crea MX solo para el subdominio) y en *Routing rules* → *Catch-all* → **Send to a Worker** →
+   `mundo-hogar`. Si Cloudflare pidiera borrar los MX del dominio principal, frenar: hay que usar otro
+   dominio para los avisos.
+5. **Mails de alerta:** en Email Routing → *Destination addresses* agregar y verificar el mail del dueño;
+   después sumar a `wrangler.jsonc` `"send_email": [{ "name": "MAIL_ALERTAS" }]` (push) y cargar ese mail
+   en el panel. Sin esto, las alertas salen solo en el panel.
+6. **Cada titular** sigue los 5 pasos del panel (activar avisos en el banco, reenvío en Gmail, código,
+   filtro). Unos 5 minutos por persona.
+
+### Piezas
+- `worker/index.js`: `email()` recibe en `c-<token>@avisos.mundohogarstf.com`; `scheduled()` cada minuto
+  (cron en `wrangler.jsonc`) pide la revisión y manda los mails.
+- `supabase/functions/avisos-banco`: arma el mail, la IA saca monto / ordenante / nº de operación,
+  detecta la confirmación de Gmail. La base decide (`aviso_registrar`, `fn_aviso_emparejar`,
+  `fn_cobros_conciliar`, `cobros_revisar`).
+- Panel: recuadro de alertas abajo a la derecha en cualquier módulo (`admin/js/alertas-cobros.js`, cada
+  minuto; opcional notificación del sistema), estado del aviso en el detalle del pedido.
+
+Pruebas: `node scripts/test-avisos-banco-sql.mjs` (59).

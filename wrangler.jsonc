@@ -1,5 +1,6 @@
 // Cloudflare Workers: archivos estáticos + un Worker mínimo solo para /producto/*
-// (worker/index.js completa los metadatos de la ficha para WhatsApp y buscadores).
+// (worker/index.js completa los metadatos de la ficha para WhatsApp y buscadores),
+// y para los avisos del banco: mails entrantes y revisión cada minuto (sql/032).
 // Las reglas de rutas y encabezados viven en _redirects y _headers.
 {
   "name": "mundo-hogar",
@@ -11,5 +12,7 @@
     "not_found_handling": "404-page",
     "html_handling": "auto-trailing-slash",
     "run_worker_first": ["/producto/*"]
-  }
+  },
+  // Cada minuto: alertas de cobros (comprobante sin aviso del banco, etc.). Ver sql/032.
+  "triggers": { "crons": ["* * * * *"] }
 }

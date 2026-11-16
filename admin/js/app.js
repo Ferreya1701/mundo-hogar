@@ -158,6 +158,7 @@ const MHApp = (() => {
     const { ruta, busca } = leerHash();
     history.replaceState(null, '', hashDe(ruta, busca));
     mostrar(ruta, busca);
+    window.AlertasCobros?.iniciar(perfil);   // alertas de cobros (sql/032)
   }
   arrancar();
 

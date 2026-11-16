@@ -24,6 +24,16 @@
     .liq{border:1px solid var(--border,#e5e7eb);border-radius:10px;padding:12px 14px;margin-top:10px;font-size:13.5px}
     .liq table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
     .liq td,.liq th{padding:4px 6px;border-bottom:1px solid #f0f0f0;text-align:left}
+    .av-cta{border:1px solid var(--border,#e5e7eb);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+    .av-dir{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+    .av-dir code{background:#F3F6FB;border-radius:6px;padding:4px 8px;font-size:13px;word-break:break-all}
+    .av-estado{font-size:13px;margin-top:4px}
+    .av-gmail{background:#EAF1FB;border-radius:8px;padding:8px 10px;margin-top:8px;font-size:13px}
+    .av-pasos{font-size:13px;line-height:1.6;margin:8px 0 0 18px}
+    .av-est{font-size:12px;font-weight:700;border-radius:20px;padding:2px 8px;white-space:nowrap}
+    .av-est-usado{background:#E8F6EE;color:#14663A}.av-est-asignado{background:#EAF1FB;color:#0A2E63}
+    .av-est-sin_asignar{background:#FFF4E8;color:#8A4B12}.av-est-venta_local{background:#F3F0FF;color:#4B2E83}
+    .av-est-descartado,.av-est-no_es_ingreso{background:#f0f0f0;color:#777}
     .aviso-legal{background:#FFF4E8;border-radius:10px;padding:12px 14px;font-size:12.5px;color:#8A4B12;line-height:1.5;margin-top:14px}
   </style>
 </head>
@@ -68,6 +78,7 @@
         <button class="tab-btn active" data-tab="cuentas">Cuentas</button>
         <button class="tab-btn" data-tab="movimientos">Movimientos</button>
         <button class="tab-btn" data-tab="liquidaciones">Liquidaciones</button>
+        <button class="tab-btn" data-tab="avisos">Avisos del banco <span class="chip-n" id="avisos-n" hidden></span></button>
         <button class="tab-btn" data-tab="config">Configuración</button>
       </div>
 
@@ -117,6 +128,67 @@
           </div>
         </div>
         <div id="liq-lista" style="margin-top:16px"></div>
+      </section>
+
+      <!-- AVISOS DEL BANCO (sql/032) -->
+      <section id="tab-avisos" hidden>
+        <div id="avisos-falta" class="card" style="margin-bottom:16px" hidden><div class="card-body" style="color:#8A4B12">Falta ejecutar <code>sql/032-avisos-banco.sql</code> en Supabase para usar los avisos del banco.</div></div>
+        <div class="card">
+          <div class="card-body" style="font-size:13.5px;line-height:1.6">
+            <b>Cómo se verifica un pago sin pasarela.</b> Cada titular reenvía a su dirección (abajo) los mails de <i>"Recibiste una transferencia"</i> de su banco o Mercado Pago.
+            Cuando el comprobante del cliente coincide <b>y</b> llega el aviso del banco por el mismo importe, el pago se confirma solo.
+            Si en <b id="av-min-txt">7</b> minutos no llega el aviso, sale una alerta acá en el panel y por mail para revisarlo a mano, y si el aviso llega después, igual se confirma solo.
+            Un aviso de un remitente que no es un banco conocido nunca confirma nada solo.
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <div class="card-header"><span class="card-title">📬 Dirección de cada cuenta</span></div>
+          <div class="card-body" id="avisos-cuentas">Cargando…</div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <div class="card-header"><span class="card-title">⚙️ Verificación</span></div>
+          <div class="card-body">
+            <form id="form-avisos" novalidate>
+              <div class="cfg-grid">
+                <div class="form-group">
+                  <label class="toggle-wrap"><div class="toggle"><input type="checkbox" id="av-auto"><div class="toggle-track"></div><div class="toggle-thumb"></div></div><span class="toggle-label">Confirmar solo con comprobante + aviso del banco</span></label>
+                  <span class="form-hint">Apagado: todo coincide pero una persona aprieta "Confirmar pago".</span>
+                </div>
+                <div class="form-group">
+                  <label>Minutos de espera del aviso</label>
+                  <input type="number" id="av-min" min="1" max="240" step="1">
+                  <span class="form-hint">Pasado este tiempo sin aviso, sale la alerta para revisar a mano (sigue esperando).</span>
+                </div>
+                <div class="form-group">
+                  <label>Tolerancia ($)</label>
+                  <input type="number" id="av-tol" min="0" max="5000" step="1">
+                  <span class="form-hint">Si pagó hasta esto de menos o de más, se acepta y queda anotada la diferencia.</span>
+                </div>
+                <div class="form-group">
+                  <label>Mail para las alertas</label>
+                  <input type="email" id="av-mail" placeholder="dueño@gmail.com" maxlength="120">
+                  <span class="form-hint">Tiene que estar verificado en Cloudflare (ver GUIA-COBROS.md §8). Vacío: solo alertas en el panel.</span>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary" style="margin-top:6px">Guardar</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+            <span class="card-title">🏦 Últimos avisos recibidos</span>
+            <label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="av-solo-sueltos"> Solo los que no tienen pedido</label>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Recibido</th><th>Cuenta</th><th class="num">Monto</th><th>De</th><th>Estado</th><th>Pedido</th><th></th></tr></thead>
+              <tbody id="tabla-avisos"></tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       <!-- CONFIG -->
@@ -429,17 +501,147 @@ async function estadoIA() {
   }
 }
 
+// ── Avisos del banco (sql/032) ──
+const DOMINIO_AVISOS = 'avisos.mundohogarstf.com';
+const AV_EST = { sin_asignar: 'Sin pedido', asignado: 'Con pedido', usado: 'Confirmó el pago', venta_local: 'Venta del local', descartado: 'Descartado', no_es_ingreso: 'No es un ingreso' };
+let avisosCca = [], avisosLista = [];
+
+async function cargarAvisos() {
+  const [cfg, cca, avs] = await Promise.all([
+    db.from('cobros_avisos_config').select('*').eq('id', 1).maybeSingle(),
+    db.from('cuentas_cobro_avisos').select('*'),
+    db.from('avisos_ingreso').select('id, cuenta_cobro_id, recibido_en, tipo, monto, ordenante, estado, nota, solicitud_id, remitente, remitente_banco, asunto, solicitudes(codigo)')
+      .order('recibido_en', { ascending: false }).limit(200)
+  ]);
+  if (cfg.error) { $id('avisos-falta').hidden = false; $id('avisos-cuentas').textContent = ''; return; }
+  const c = cfg.data || {};
+  $id('av-auto').checked = c.auto_con_aviso !== false;
+  $id('av-min').value = c.minutos_espera ?? 7;
+  $id('av-tol').value = Number(c.tolerancia ?? 50);
+  $id('av-mail').value = c.mail_alertas || '';
+  $id('av-min-txt').textContent = c.minutos_espera ?? 7;
+  avisosCca = cca.data || [];
+  avisosLista = avs.data || [];
+  renderAvisosCuentas(); renderAvisos();
+}
+
+function estadoCuentaAvisos(k) {
+  if (k.ultimo_aviso_en) {
+    const viejo = Date.now() - new Date(k.ultimo_aviso_en) > 3 * 86400000;
+    return `${viejo ? '🟡' : '✅'} <b>Verificando.</b> Último aviso del banco ${Utils.timeAgo(k.ultimo_aviso_en)}${viejo ? ' (hace varios días: si hubo cobros en el medio, revisá el filtro de Gmail)' : ''}.`;
+  }
+  if (k.gmail_codigo || k.gmail_link) return '⏳ <b>Falta confirmar el reenvío en Gmail</b> (paso 3).';
+  if (k.ultimo_mail_en) return `⏳ Llegan mails (${Utils.timeAgo(k.ultimo_mail_en)}) pero todavía ningún aviso de transferencia recibida.`;
+  return '⚪ <b>Sin configurar.</b> Todavía no llegó nada a esta dirección. Sus pedidos se revisan a mano.';
+}
+
+function renderAvisosCuentas() {
+  const el = $id('avisos-cuentas');
+  if (!cuentas.length) { el.innerHTML = '<p style="font-size:13.5px;color:var(--muted)">Primero cargá las cuentas en la pestaña Cuentas.</p>'; return; }
+  el.innerHTML = cuentas.map(c => {
+    const k = avisosCca.find(x => x.cuenta_cobro_id === c.id);
+    if (!k) return '';
+    const dir = `c-${k.token}@${DOMINIO_AVISOS}`;
+    return `<div class="av-cta${c.activa ? '' : ' cta-off'}">
+      <div><b>${esc(c.nombre)}</b> · ${esc(c.titular)} · <span style="color:#888">${esc(c.banco)}</span></div>
+      <div class="av-estado">${estadoCuentaAvisos(k)}</div>
+      <div class="av-dir"><code>${esc(dir)}</code><button class="btn btn-outline btn-sm" data-copiar="${esc(dir)}">Copiar</button></div>
+      ${k.gmail_codigo || k.gmail_link ? `<div class="av-gmail">📩 Gmail pidió confirmar el reenvío ${k.gmail_en ? Utils.timeAgo(k.gmail_en) : ''}:
+        ${k.gmail_codigo ? ` código <b style="font-size:15px;letter-spacing:1px">${esc(k.gmail_codigo)}</b> <button class="btn btn-ghost btn-sm" data-copiar="${esc(k.gmail_codigo)}">Copiar</button>` : ''}
+        ${k.gmail_link ? ` · <a href="${esc(k.gmail_link)}" target="_blank" rel="noopener">o abrí este enlace</a> (con la sesión de Gmail del titular)` : ''}</div>` : ''}
+      <details style="margin-top:8px"><summary style="cursor:pointer;font-size:13px;font-weight:700">Cómo configurarlo (una sola vez, 5 minutos)</summary>
+        <ol class="av-pasos">
+          <li>En la app del banco o de Mercado Pago, prendé los <b>avisos por mail de transferencias recibidas</b> (Configuración → Notificaciones; en los bancos, Homebanking → Avisos).</li>
+          <li>En Gmail, <b>desde la computadora</b>: ⚙️ → <i>Ver todos los ajustes</i> → <i>Reenvío y correo POP/IMAP</i> → <i>Agregar una dirección de reenvío</i> → pegá la dirección de arriba → <i>Siguiente</i> → <i>Continuar</i>.</li>
+          <li>Gmail manda un código a esa dirección: aparece en este recuadro en unos segundos (tocá <i>↻ Actualizar</i>). Pegalo en Gmail → <i>Verificar</i>. Dejá marcado <i>"Inhabilitar el reenvío"</i>: no hay que reenviar todo el correo.</li>
+          <li>Abrí un mail de <i>"Recibiste…"</i> del banco → <b>⋮</b> → <i>Filtrar mensajes similares</i> → <i>Crear filtro</i> → tildá <i>Reenviarlo a</i> y elegí la dirección → <i>Crear filtro</i>.</li>
+          <li>Listo: con la próxima transferencia que entre, esta cuenta pasa a <b>✅ Verificando</b>.</li>
+        </ol>
+        <p style="font-size:12.5px;color:#888;margin-top:6px">La dirección es secreta: no la compartas. Si se filtró, generá otra (y cambiá el filtro de Gmail). <button class="btn btn-ghost btn-sm" data-regenerar="${c.id}">Generar dirección nueva</button></p>
+      </details>
+    </div>`;
+  }).join('');
+}
+
+function renderAvisos() {
+  const sueltos = avisosLista.filter(a => a.tipo === 'ingreso' && a.estado === 'sin_asignar');
+  const n = $id('avisos-n'); n.hidden = !sueltos.length; n.textContent = sueltos.length;
+  const lista = $id('av-solo-sueltos').checked ? sueltos : avisosLista.filter(a => a.tipo !== 'confirmacion_gmail');
+  const nombreCta = id => (cuentas.find(c => c.id === id) || {}).nombre || '—';
+  $id('tabla-avisos').innerHTML = lista.length ? lista.map(a => `<tr>
+    <td style="white-space:nowrap;font-size:12.5px">${Utils.datetime(a.recibido_en)}</td>
+    <td>${esc(nombreCta(a.cuenta_cobro_id))}</td>
+    <td class="num">${a.monto != null ? money(a.monto) : '—'}</td>
+    <td style="font-size:12.5px">${esc(a.ordenante || '')}${a.remitente_banco ? '' : `<div style="color:#8A241C;font-size:11.5px">⚠️ remitente no reconocido: ${esc(a.remitente || '')}</div>`}${a.tipo !== 'ingreso' ? `<div style="color:#888;font-size:11.5px">${esc(a.asunto || '')}</div>` : ''}</td>
+    <td><span class="av-est av-est-${a.estado}">${AV_EST[a.estado] || a.estado}</span>${a.nota ? `<div style="font-size:11.5px;color:#888">${esc(a.nota)}</div>` : ''}</td>
+    <td style="font-family:monospace;font-size:12px">${a.solicitud_id ? `<a href="/admin/pedidos?ver=${a.solicitud_id}">${esc(a.solicitudes?.codigo || '#' + a.solicitud_id)}</a>` : ''}</td>
+    <td style="white-space:nowrap">${a.tipo === 'ingreso' && a.estado === 'sin_asignar' ? `<button class="btn btn-outline btn-sm" data-av-asignar="${a.id}">Asignar a pedido</button> <button class="btn btn-ghost btn-sm" data-av-descartar="${a.id}">Descartar</button>` : ''}</td>
+  </tr>`).join('') : `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📭</div><h3>Sin avisos</h3><p>Cuando un titular reenvíe su primer aviso del banco, aparece acá.</p></div></td></tr>`;
+}
+
+$id('av-solo-sueltos').addEventListener('change', renderAvisos);
+$id('tab-avisos').addEventListener('click', async e => {
+  const cp = e.target.closest('[data-copiar]');
+  if (cp) { try { await navigator.clipboard.writeText(cp.dataset.copiar); Utils.toast('Copiado', 'success'); } catch (x) { Utils.toast('No se pudo copiar: seleccionalo a mano', 'warning'); } return; }
+  const rg = e.target.closest('[data-regenerar]');
+  if (rg) {
+    const ok = await Utils.confirm('La dirección actual deja de funcionar y hay que volver a hacer los pasos 2 a 4 en Gmail con la nueva. ¿Seguro?', 'Generar dirección nueva', 'Generar', true);
+    if (!ok) return;
+    const { error } = await db.rpc('cuenta_avisos_regenerar', { p_cuenta_id: Number(rg.dataset.regenerar) });
+    if (error) return Utils.toast(err(error), 'error');
+    Utils.toast('Dirección nueva generada: actualizá el reenvío en Gmail', 'success', 6000);
+    return cargarAvisos();
+  }
+  const as = e.target.closest('[data-av-asignar]');
+  if (as) {
+    const codigo = (prompt('Código del pedido al que corresponde esta transferencia (ej: MH-261116-AB12):') || '').trim().toUpperCase();
+    if (!codigo) return;
+    const { data: sol } = await db.from('solicitudes').select('id').eq('codigo', codigo).maybeSingle();
+    if (!sol) return Utils.toast('No encontré ese pedido', 'error');
+    const { data, error } = await db.rpc('aviso_asignar', { p_aviso_id: Number(as.dataset.avAsignar), p_solicitud_id: sol.id });
+    if (error) return Utils.toast(err(error), 'error');
+    Utils.toast(data?.conciliacion?.estado_pago === 'pagado' ? 'Asignado: coincide con el comprobante y el pago quedó confirmado' : 'Asignado al pedido. Confirmá el pago desde Pedidos si corresponde.', 'success', 6000);
+    return cargarAvisos();
+  }
+  const ds = e.target.closest('[data-av-descartar]');
+  if (ds) {
+    const nota = (prompt('¿Por qué se descarta? (ej.: transferencia personal, devolución)') || '').trim();
+    if (!nota) return;
+    const { error } = await db.rpc('aviso_descartar', { p_aviso_id: Number(ds.dataset.avDescartar), p_nota: nota });
+    if (error) return Utils.toast(err(error), 'error');
+    Utils.toast('Aviso descartado', 'success');
+    return cargarAvisos();
+  }
+});
+$id('form-avisos').addEventListener('submit', async e => {
+  e.preventDefault();
+  const mail = $id('av-mail').value.trim();
+  if (mail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) return Utils.toast('El mail no parece válido', 'warning');
+  const payload = {
+    auto_con_aviso: $id('av-auto').checked,
+    minutos_espera: Math.min(240, Math.max(1, Math.round(Number($id('av-min').value) || 7))),
+    tolerancia: Math.min(5000, Math.max(0, Number($id('av-tol').value) || 0)),
+    mail_alertas: mail || null, updated_at: new Date().toISOString()
+  };
+  const { error } = await db.from('cobros_avisos_config').update(payload).eq('id', 1);
+  if (error) return Utils.toast(err(error), 'error');
+  Utils.toast('Verificación guardada', 'success');
+  Utils.log('editar', 'cobros_avisos_config', 1, `Avisos del banco: auto ${payload.auto_con_aviso ? 'sí' : 'no'}, ${payload.minutos_espera} min, tolerancia $${payload.tolerancia}`);
+  $id('av-min-txt').textContent = payload.minutos_espera;
+});
+
 // ── Tabs ──
 function irTab(t) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
-  ['cuentas', 'movimientos', 'liquidaciones', 'config'].forEach(k => $id('tab-' + k).hidden = k !== t);
+  ['cuentas', 'movimientos', 'liquidaciones', 'avisos', 'config'].forEach(k => $id('tab-' + k).hidden = k !== t);
+  if (t === 'avisos') cargarAvisos();
   if (t === 'movimientos') cargarMovimientos();
   if (t === 'liquidaciones') cargarLiquidaciones();
   if (t === 'config') estadoIA();
 }
 document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => irTab(b.dataset.tab)));
 document.querySelectorAll('.kpi-card[data-href]').forEach(k => k.addEventListener('click', () => location.href = k.dataset.href));
-$id('btn-refrescar').addEventListener('click', async () => { await cargarConfig(); await cargarCuentas(); });
+$id('btn-refrescar').addEventListener('click', async () => { await cargarConfig(); await cargarCuentas(); if (!$id('tab-avisos').hidden) await cargarAvisos(); });
 
 (async function () {
   const profile = await Auth.init();

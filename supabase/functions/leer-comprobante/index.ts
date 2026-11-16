@@ -48,6 +48,7 @@ Mirá el comprobante adjunto y devolvé SOLO un objeto JSON con esta forma exact
   "origen_banco": "Banco Galicia",
   "nro_operacion": "123456789",
   "confianza": 90,
+  "posible_edicion": false,
   "notas": "cualquier aclaración breve"
 }
 
@@ -59,6 +60,7 @@ Reglas:
 - "destino_cvu": solo dígitos (CBU o CVU de 22 dígitos). Si figura parcialmente oculto, null.
 - "nro_operacion": el número de operación, comprobante, transacción o referencia tal como figura. Si no hay, null.
 - "confianza": de 0 a 100, qué tan seguro estás de monto, fecha y destino en conjunto.
+- "posible_edicion": true si ves señales de que la imagen fue editada o armada (tipografías o tamaños que no coinciden en el monto o la fecha, números desalineados, recortes, fondos con parches, una captura de pantalla de otra captura). Si no ves nada raro, false.
 - No inventes datos. Lo que no esté en el comprobante va en null.`;
 
 type Lectura = Record<string, unknown>;
@@ -143,6 +145,9 @@ Deno.serve(async (req) => {
       if (eArch || !archivo) return json({ error: "archivo_no_disponible" }, 404);
       const bytes = new Uint8Array(await archivo.arrayBuffer());
       const data = b64(bytes);
+      // Huella del archivo: el mismo comprobante subido en otro pedido se detecta (sql/032)
+      const sha256 = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)))
+        .map((b) => b.toString(16).padStart(2, "0")).join("");
 
       const adjunto = esPDF
         ? { type: "document", source: { type: "base64", media_type: "application/pdf", data } }
@@ -177,6 +182,7 @@ Deno.serve(async (req) => {
           lectura.modelo = msg.model;
         }
       }
+      lectura._sha256 = sha256;
     }
 
     // ── 4) La base decide si coincide con el pedido ──

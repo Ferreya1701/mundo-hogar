@@ -1,6 +1,20 @@
 # PROJECT_STATUS — Mundo Hogar / TIAF
 
-> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-12 (mudanza a São Paulo).
+> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-16 (verificación con el aviso del banco).
+
+## Verificación de pagos con el aviso del banco (2026-11-16) — CÓDIGO LISTO, FALTA ACTIVAR
+Pedido del dueño: cobrar en la web sin pasarela (alias y listo) y que el pago se valide solo. Decisiones:
+alerta en panel **y** mail a los **7 min** sin aviso (sigue esperando), tolerancia **$50**. Detalle y pasos
+de activación: `GUIA-COBROS.md` §8.
+- `sql/032-avisos-banco.sql` — **NO ejecutado en producción.** Avisos (`avisos_ingreso`), dirección secreta por
+  cuenta (`cuentas_cobro_avisos`), alertas (`cobros_alertas`), config privada (`cobros_avisos_config`).
+  Redefine `comprobante_registrar_lectura` (tolerancia, huella sha256, fecha+hora, nota interna que el
+  cliente no ve), y `pedido_a_venta` / `fn_venta_pago_web` del 028 (margen = tolerancia, antes $1).
+- Edge Function `avisos-banco` (nueva) y `leer-comprobante` (huella + señales de edición): **sin desplegar**.
+- `worker/index.js`: `email()` + `scheduled()` (cron cada minuto). Secreto `AVISOS_CLAVE` sin cargar →
+  el Worker no hace nada hasta cargarlo. Mail de alertas: falta binding `send_email` (ver guía, paso 5).
+- El correo del dominio está en GoDaddy: los avisos entran por el subdominio `avisos.` (no tocar los MX raíz).
+- Pruebas: `node scripts/test-avisos-banco-sql.mjs` (59). `test-cobros-sql.mjs` ya se cortaba antes (fechas fijas).
 
 ## Supabase en São Paulo (desde 2026-11-12)
 - **Proyecto en uso:** `vduinkzeneokkqzdgxig` (sa-east-1), organización **MundoHogar1** de la cuenta TIAF.
