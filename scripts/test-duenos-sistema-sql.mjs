@@ -168,11 +168,28 @@ await pasa('y guardar la fila entera sin tocar lo de cobros', () => admin2(`UPDA
 await admin(`UPDATE site_settings SET cobros_auto_confirmar = false, cobros_plazo_horas = 48 WHERE id = 1`);
 t('el dueño sí cambia la configuración web', (await q(`SELECT cobros_plazo_horas p FROM site_settings`))[0].p, 48);
 
-grupo('Liquidación con la comisión privada');
+grupo('034: liquidación solo de pedidos web');
+err = null;
+const SQL34 = leerSQL('034-liquidacion-web.sql');
+try { await db.exec(SQL34); await db.exec(SQL34); } catch (e) { err = e.message; }
+t('034 corre limpio, dos veces seguidas', err, null);
 await q(`INSERT INTO cuentas_cobro (nombre, titular, alias) VALUES ('C1', 'T', 'mh.c1')`);
-await q(`INSERT INTO movimientos_cobro (cuenta_cobro_id, tipo, monto, fecha) VALUES (1, 'cobro', 100000, '2026-09-10 12:00-03')`);
+const [ped] = await q(`INSERT INTO solicitudes (codigo, cliente_nombre, telefono) VALUES ('MH-L1', 'Web', '1') RETURNING id::int`);
+const vta = await vend(`SELECT venta_registrar($1::jsonb) AS r`, [JSON.stringify({ items: [{ producto_id: 2, cantidad: 1, precio_unitario: 50000 }], medio_pago: 'efectivo' })]).then(r => ({ id: Number(r[0].r.id) }));
+await q(`INSERT INTO movimientos_cobro (cuenta_cobro_id, solicitud_id, tipo, monto, fecha) VALUES (1, $1, 'cobro', 100000, '2026-09-10 12:00-03')`, [ped.id]);
+if (vta?.id) await q(`INSERT INTO movimientos_cobro (cuenta_cobro_id, venta_id, tipo, monto, fecha) VALUES (1, $1, 'cobro', 50000, '2026-09-11 12:00-03')`, [vta.id]);
+t('hay una venta del local en el mes (para probar que no cuenta)', !!vta?.id, true);
+await falla('el administrador del local no cierra el mes', () => admin2(`SELECT cerrar_liquidacion('2026-09')`), /sin_permiso/);
 const liq = (await admin(`SELECT cerrar_liquidacion('2026-09') r`))[0].r;
-t('usa el 7% de config_duenos', [Number(liq.porcentaje), Number(liq.comision)], [7, 7000]);
+t('el dueño cierra: solo el pedido web, con el 7%', [Number(liq.total_cobrado), Number(liq.porcentaje), Number(liq.comision)], [100000, 7, 7000]);
+t('el detalle tiene solo el pedido web', (await q(`SELECT jsonb_array_length(detalle->'pedidos') n FROM liquidaciones`))[0].n, 1);
+t('el administrador del local ve el total del mes', (await admin2(`SELECT periodo, total_cobrado::int t FROM liquidaciones`)), [{ periodo: '2026-09', t: 100000 }]);
+await falla('pero no el porcentaje', () => admin2(`SELECT porcentaje FROM liquidaciones`), /permission denied/);
+await falla('ni la comisión', () => admin2(`SELECT comision FROM liquidaciones`), /permission denied/);
+await falla('ni con select *', () => admin2(`SELECT * FROM liquidaciones`), /permission denied/);
+await falla('ni por la función de los dueños', () => admin2(`SELECT * FROM liquidaciones_comision()`), /sin_permiso/);
+t('el dueño sí', (await admin(`SELECT porcentaje::int p, comision::int c FROM liquidaciones_comision()`)), [{ p: 7, c: 7000 }]);
+await falla('el público no ve nada', () => anon(`SELECT periodo FROM liquidaciones`), /permission denied/);
 
 console.log(`\n${ok} pasadas, ${fail} fallidas\n`);
 process.exit(fail ? 1 : 0);

@@ -2,6 +2,14 @@
 
 > Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-16 (verificación con el aviso del banco).
 
+## Liquidación solo de pedidos web (2026-11-16) — sql/034 SIN EJECUTAR
+Pedido del dueño: la comisión se cobra solo sobre pedidos web (no Crear venta / caja) y el administrador
+del local ve las liquidaciones sin porcentaje ni comisión.
+- `sql/034-liquidacion-web.sql`: permisos por columna en `liquidaciones` (sin `porcentaje`/`comision` para
+  `authenticated`), `liquidaciones_comision()` y `comision_estimada_mes()` solo dueños, `cerrar_liquidacion`
+  solo dueños y solo movimientos con pedido. Pruebas en `test-duenos-sistema-sql.mjs` (33).
+- Quedan en el Historial (inborrable) los dos cambios de comisión del 16/11 (0→5 y 5→0 por el 033).
+
 ## Dueños del sistema y "Configuración web" (2026-11-16) — sql/033 EJECUTADO EN PRODUCCIÓN
 Pedido del dueño: la pestaña de configuración de cobros se llama "Configuración web" y solo la ven y
 cambian los dueños del sistema (José y Tomás, TIAF), no el administrador del local.

@@ -71,7 +71,7 @@
         <div class="kpi-card"><div class="kpi-icon green">💵</div><div class="kpi-label">Cobrado hoy</div><div class="kpi-value" id="k-hoy">—</div><div class="kpi-sub" id="k-hoy-sub"></div></div>
         <div class="kpi-card"><div class="kpi-icon blue">📅</div><div class="kpi-label">Cobrado este mes</div><div class="kpi-value" id="k-mes">—</div><div class="kpi-sub" id="k-mes-sub"></div></div>
         <div class="kpi-card" data-href="/admin/pedidos?pago=pendiente"><div class="kpi-icon amber">⏳</div><div class="kpi-label">Esperando pago</div><div class="kpi-value" id="k-pend">—</div><div class="kpi-sub" id="k-pend-sub">pedidos con cuenta asignada</div></div>
-        <div class="kpi-card"><div class="kpi-icon violet">🧮</div><div class="kpi-label">Comisión estimada del mes</div><div class="kpi-value" id="k-com">—</div><div class="kpi-sub" id="k-com-sub"></div></div>
+        <div class="kpi-card"><div class="kpi-icon violet">🧮</div><div class="kpi-label">Comisión estimada del mes (pedidos web)</div><div class="kpi-value" id="k-com">—</div><div class="kpi-sub" id="k-com-sub"></div></div>
       </div>
 
       <div class="tabs" style="margin-top:20px">
@@ -116,10 +116,10 @@
 
       <!-- LIQUIDACIONES -->
       <section id="tab-liquidaciones" hidden>
-        <div class="card">
-          <div class="card-header"><span class="card-title">Cerrar un mes</span></div>
+        <div class="card" id="liq-cerrar-card" hidden>
+          <div class="card-header"><span class="card-title">Cerrar un mes</span><span style="font-size:12px;color:#888">Solo dueños del sistema</span></div>
           <div class="card-body">
-            <p style="font-size:13.5px;color:var(--muted);margin-bottom:12px">El cierre congela el total cobrado por cuenta en ese mes (cobros menos anulaciones) y calcula la comisión con el porcentaje configurado. Un mes cerrado no cambia aunque después se anule un pago: la diferencia se ve en el mes siguiente.</p>
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:12px">El cierre congela lo cobrado por <b>pedidos web</b> en ese mes, por cuenta (cobros menos anulaciones; las ventas del local no entran), y calcula la comisión con el porcentaje de Configuración web. Un mes cerrado no cambia aunque después se anule un pago: la diferencia se ve en el mes siguiente.</p>
             <div class="d-flex gap-2" style="align-items:center;flex-wrap:wrap">
               <input type="month" id="liq-periodo" style="min-width:150px">
               <button class="btn btn-primary btn-sm" id="btn-cerrar-liq">Cerrar liquidación</button>
@@ -304,9 +304,13 @@ function renderKpis() {
   $id('k-pend').textContent = money(pend);
   $id('k-pend-sub').textContent = `${nPend} pedido${nPend === 1 ? '' : 's'} con cuenta asignada`;
   $id('k-com').closest('.kpi-card').hidden = !esDueno;
-  const pct = Number(settings.comision_pct || 0);
-  $id('k-com').textContent = money(mes * pct / 100);
-  $id('k-com-sub').textContent = pct ? `${pct}% de lo cobrado este mes` : 'configurá el porcentaje';
+  if (esDueno) {
+    db.rpc('comision_estimada_mes').then(({ data: c }) => {
+      if (!c) return;
+      $id('k-com').textContent = money(c.comision);
+      $id('k-com-sub').textContent = Number(c.porcentaje) ? `${Number(c.porcentaje)}% de ${money(c.total_web)} en pedidos web` : 'configurá el porcentaje';
+    });
+  }
 }
 
 function modalCuenta(c) {
@@ -423,14 +427,19 @@ $id('mov-export').addEventListener('click', () => {
 
 // ── Liquidaciones ──
 async function cargarLiquidaciones() {
-  const { data, error } = await db.from('liquidaciones').select('*').order('periodo', { ascending: false });
+  // El porcentaje y la comisión solo los leen los dueños del sistema (sql/034)
+  const { data, error } = await db.from('liquidaciones').select('id, periodo, total_cobrado, detalle, cerrada_por, created_at').order('periodo', { ascending: false });
   if (error) { Utils.toast(err(error), 'error'); return; }
+  if (esDueno && data && data.length) {
+    const { data: com } = await db.rpc('liquidaciones_comision');
+    (com || []).forEach(c => { const l = data.find(x => x.id === c.id); if (l) { l.porcentaje = c.porcentaje; l.comision = c.comision; } });
+  }
   const el = $id('liq-lista');
   if (!data || !data.length) { el.innerHTML = '<p style="font-size:13.5px;color:var(--muted)">Todavía no hay meses cerrados.</p>'; return; }
   el.innerHTML = data.map(l => {
     const ctas = (l.detalle && l.detalle.cuentas) || [];
     return `<div class="liq">
-      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><b>${l.periodo}</b><span>Cobrado <b>${money(l.total_cobrado)}</b> · Comisión ${l.porcentaje}% = <b>${money(l.comision)}</b></span></div>
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><b>${l.periodo}</b><span>Cobrado por pedidos web <b>${money(l.total_cobrado)}</b>${esDueno && l.comision != null ? ` · Comisión ${l.porcentaje}% = <b>${money(l.comision)}</b>` : ''}</span></div>
       <div style="font-size:12px;color:#888">Cerrada el ${Utils.datetime(l.created_at)}</div>
       ${ctas.length ? `<table><thead><tr><th>Cuenta</th><th>Titular</th><th class="num">Cobros</th><th class="num">Anulaciones</th><th class="num">Total</th></tr></thead><tbody>
         ${ctas.map(c => `<tr><td>${esc(c.nombre)}</td><td>${esc(c.titular)}</td><td class="num">${c.cobros}</td><td class="num">${c.anulaciones}</td><td class="num">${money(c.total)}</td></tr>`).join('')}</tbody></table>` : '<div style="font-size:12.5px;color:#888;margin-top:6px">Sin movimientos en el mes.</div>'}
@@ -663,6 +672,7 @@ $id('btn-refrescar').addEventListener('click', async () => { await cargarConfig(
   await Layout.init('cuentas-cobro', 'Cuentas bancarias');
   try { const r = await db.rpc('fn_es_dueno_sistema'); esDueno = r.data === true; } catch (e) { esDueno = false; }
   $id('tab-btn-config').hidden = !esDueno;
+  $id('liq-cerrar-card').hidden = !esDueno;
   const hoy = new Date();
   $id('mov-mes').value = hoy.toISOString().slice(0, 7);
   const ant = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);

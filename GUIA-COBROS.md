@@ -70,8 +70,9 @@ mensual con el porcentaje de comisión.
   el límite. Pausar una cuenta la saca del reparto sin borrar nada.
 - **Movimientos**: libro inmutable (cobros y anulaciones) por cuenta y mes, con pedido, cliente,
   nº de operación y usuario. Exportable a CSV para conciliar con el extracto.
-- **Liquidaciones**: cerrar un mes congela el total por cuenta y la comisión. No se puede cerrar
-  dos veces ni el mes en curso.
+- **Liquidaciones**: cerrar un mes congela lo cobrado por **pedidos web** (no las ventas del local) por
+  cuenta y la comisión. No se puede cerrar dos veces ni el mes en curso. Desde sql/034 cierran solo los
+  dueños del sistema; el administrador del local ve los totales pero no el porcentaje ni la comisión.
 
 ## 3. Reparto automático entre cuentas
 
