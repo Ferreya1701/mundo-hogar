@@ -2,7 +2,7 @@
 
 > Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-16 (verificación con el aviso del banco).
 
-## Dueños del sistema y "Configuración web" (2026-11-16) — sql/033 SIN EJECUTAR
+## Dueños del sistema y "Configuración web" (2026-11-16) — sql/033 EJECUTADO EN PRODUCCIÓN
 Pedido del dueño: la pestaña de configuración de cobros se llama "Configuración web" y solo la ven y
 cambian los dueños del sistema (José y Tomás, TIAF), no el administrador del local.
 - `sql/033-duenos-sistema.sql`: `duenos_sistema` + `fn_es_dueno_sistema()`, comisión a `config_duenos`
@@ -11,9 +11,9 @@ cambian los dueños del sistema (José y Tomás, TIAF), no el administrador del 
   comisión privada. Pruebas: `node scripts/test-duenos-sistema-sql.mjs` (22).
 - Los dueños se cargan aparte, NO en el repo (es público): `INSERT INTO duenos_sistema (user_id)
   SELECT id FROM auth.users WHERE email IN (…los dos mails…)`.
-- Decidido también: `cobros_auto_confirmar = false` (solo con comprobante: apagado; se confirma con
-  comprobante + aviso del banco). Pendiente de aplicar junto con el 033.
-- Mientras el 033 no esté ejecutado, la pestaña "Configuración web" no la ve nadie.
+- Ejecutado 2026-11-16 y verificado: dueños = José y Tomás; comisión 5% en `config_duenos` (la API
+  pública ya no la ve: `site_settings.comision_pct` = 0, `config_duenos` da permiso denegado);
+  trigger activo; `cerrar_liquidacion` lee la comisión privada; `cobros_auto_confirmar = false`.
 - Mail de alertas: acepta varios separados por coma (hasta 5), cada uno verificado en Cloudflare.
 
 ## Verificación de pagos con el aviso del banco (2026-11-16) — CÓDIGO LISTO, FALTA ACTIVAR
