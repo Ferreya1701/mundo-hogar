@@ -2,6 +2,9 @@
 
 > Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-16 (verificación con el aviso del banco).
 
+- 2026-11-16: borrada la "CUENTA DE PRUEBA (borrar)" (sin cobros ni pedidos) y su mail de prueba. Hoy no hay
+  cuentas de cobro cargadas: falta cargar las reales.
+
 ## "Avisos del banco" solo para los dueños (2026-11-16) — sql/035 EJECUTADO EN PRODUCCIÓN (verificado)
 Pedido del dueño: la pestaña Avisos del banco (direcciones de reenvío, código de Gmail, verificación y
 mails de alerta) solo la ven y cambian José y Tomás. `sql/035-avisos-solo-duenos.sql` (políticas de
