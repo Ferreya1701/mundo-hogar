@@ -164,7 +164,7 @@ tolerancia y mail de alertas. Ahí está también la dirección de cada cuenta, 
 ⏳ falta confirmar Gmail / ⚪ sin configurar), el código de confirmación que manda Gmail y el instructivo.
 
 ### Activar (una sola vez)
-1. **Base:** ejecutar `sql/032-avisos-banco.sql` (idempotente; requiere 001..031).
+1. **Base:** ejecutar `sql/032-avisos-banco.sql` (idempotente; requiere 001..031). Ya ejecutado en producción (2026-11-16).
 2. **Clave compartida:** generar una (`openssl rand -hex 24`) y cargarla en los dos lados:
    - Supabase: `npx supabase secrets set AVISOS_CLAVE=<clave> --project-ref vduinkzeneokkqzdgxig`
    - Cloudflare: Workers → mundo-hogar → Settings → Variables and Secrets → Add → Secret `AVISOS_CLAVE`.
@@ -192,4 +192,4 @@ tolerancia y mail de alertas. Ahí está también la dirección de cada cuenta, 
 - Panel: recuadro de alertas abajo a la derecha en cualquier módulo (`admin/js/alertas-cobros.js`, cada
   minuto; opcional notificación del sistema), estado del aviso en el detalle del pedido.
 
-Pruebas: `node scripts/test-avisos-banco-sql.mjs` (59).
+Pruebas: `node scripts/test-avisos-banco-sql.mjs` (63).

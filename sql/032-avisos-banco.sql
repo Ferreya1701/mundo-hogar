@@ -998,3 +998,13 @@ END;
 $$;
 REVOKE ALL ON FUNCTION cuenta_avisos_regenerar(BIGINT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION cuenta_avisos_regenerar(BIGINT) TO authenticated;
+
+
+-- ──────────────────────────────────────────────
+-- 11) Permisos justos (Supabase da de más por defecto a las tablas nuevas;
+--     RLS ya frena, pero se deja solo lo que se usa)
+-- ──────────────────────────────────────────────
+REVOKE ALL ON avisos_ingreso, cuentas_cobro_avisos, cobros_alertas, cobros_avisos_config FROM anon, authenticated;
+GRANT SELECT ON avisos_ingreso, cuentas_cobro_avisos, cobros_alertas, cobros_avisos_config TO authenticated;
+GRANT UPDATE ON cobros_avisos_config TO authenticated;
+REVOKE ALL ON SEQUENCE avisos_ingreso_id_seq, cobros_alertas_id_seq FROM anon, authenticated;

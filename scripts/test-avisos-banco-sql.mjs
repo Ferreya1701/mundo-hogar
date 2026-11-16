@@ -304,7 +304,9 @@ await falla('ni correr la revisión', () => vend(`SELECT cobros_revisar()`), /pe
 await falla('ni marcar mails como enviados', () => vend(`SELECT cobros_alertas_mail_resultado(ARRAY[1]::bigint[], true)`), /permission denied/);
 t('el vendedor ve avisos y alertas', [await cuantos(vend, 'avisos_ingreso') > 0, await cuantos(vend, 'cobros_alertas') > 0], [true, true]);
 t('el encargado de stock no', [await cuantos(stock, 'avisos_ingreso'), await cuantos(stock, 'cobros_alertas')], [0, 0]);
-t('el público no', [await cuantos(anon, 'avisos_ingreso'), await cuantos(anon, 'cobros_alertas'), await cuantos(anon, 'cobros_avisos_config')], [0, 0, 0]);
+for (const tb of ['avisos_ingreso', 'cobros_alertas', 'cobros_avisos_config', 'cuentas_cobro_avisos'])
+  await falla(`el público ni consulta ${tb}`, () => cuantos(anon, tb), /permission denied/);
+await falla('el vendedor no inserta avisos a mano', () => vend(`INSERT INTO avisos_ingreso (tipo) VALUES ('ingreso')`), /permission denied/);
 await falla('el vendedor no cambia la tolerancia', async () => { const r = await vend(`UPDATE cobros_avisos_config SET tolerancia = 5000 WHERE id = 1`); if (!r.afectadas) throw new Error('permission denied (0 filas)'); }, /permission denied/);
 await admin(`UPDATE cobros_avisos_config SET tolerancia = 30 WHERE id = 1`);
 t('el administrador sí', (await q(`SELECT tolerancia::int t FROM cobros_avisos_config`))[0].t, 30);
