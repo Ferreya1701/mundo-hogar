@@ -2,7 +2,7 @@
 
 > Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-16 (verificación con el aviso del banco).
 
-## "Avisos del banco" solo para los dueños (2026-11-16) — sql/035 SIN EJECUTAR
+## "Avisos del banco" solo para los dueños (2026-11-16) — sql/035 EJECUTADO EN PRODUCCIÓN (verificado)
 Pedido del dueño: la pestaña Avisos del banco (direcciones de reenvío, código de Gmail, verificación y
 mails de alerta) solo la ven y cambian José y Tomás. `sql/035-avisos-solo-duenos.sql` (políticas de
 `cuentas_cobro_avisos` y `cobros_avisos_config`, `cuenta_avisos_regenerar` solo dueños). El staff sigue
