@@ -160,7 +160,9 @@ empareja con el pedido por **cuenta + importe** (los centavos son únicos por cu
 | Aviso de un remitente que no es un banco conocido | Se guarda pero **nunca** confirma solo (podría ser un mail trucho) |
 
 Todo se configura en **Cuentas bancarias → Avisos del banco**: confirmar solo sí/no, minutos de espera,
-tolerancia y mail de alertas. Ahí está también la dirección de cada cuenta, su estado (✅ verificando /
+tolerancia y mails de alertas (uno o varios separados por coma, hasta 5; cada uno verificado en Cloudflare →
+Email Routing → Destination addresses). La pestaña **Configuración web** (cobros activos, plazo,
+instrucciones, comisión) la ven solo los dueños del sistema (sql/033). Ahí está también la dirección de cada cuenta, su estado (✅ verificando /
 ⏳ falta confirmar Gmail / ⚪ sin configurar), el código de confirmación que manda Gmail y el instructivo.
 
 ### Activar (una sola vez)

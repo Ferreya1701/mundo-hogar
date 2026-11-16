@@ -79,7 +79,7 @@
         <button class="tab-btn" data-tab="movimientos">Movimientos</button>
         <button class="tab-btn" data-tab="liquidaciones">Liquidaciones</button>
         <button class="tab-btn" data-tab="avisos">Avisos del banco <span class="chip-n" id="avisos-n" hidden></span></button>
-        <button class="tab-btn" data-tab="config">Configuración</button>
+        <button class="tab-btn" data-tab="config" id="tab-btn-config" hidden title="Solo dueños del sistema">Configuración web</button>
       </div>
 
       <!-- CUENTAS -->
@@ -168,8 +168,8 @@
                 </div>
                 <div class="form-group">
                   <label>Mail para las alertas</label>
-                  <input type="email" id="av-mail" placeholder="dueño@gmail.com" maxlength="120">
-                  <span class="form-hint">Tiene que estar verificado en Cloudflare (ver GUIA-COBROS.md §8). Vacío: solo alertas en el panel.</span>
+                  <input type="text" id="av-mail" placeholder="uno@gmail.com, otro@gmail.com" maxlength="400">
+                  <span class="form-hint">Uno o varios, separados por coma. Cada uno tiene que estar verificado en Cloudflare (Email Routing → Destination addresses). Vacío: solo alertas en el panel.</span>
                 </div>
               </div>
               <button type="submit" class="btn btn-primary" style="margin-top:6px">Guardar</button>
@@ -194,7 +194,7 @@
       <!-- CONFIG -->
       <section id="tab-config" hidden>
         <div class="card">
-          <div class="card-header"><span class="card-title">⚙️ Cobros por transferencia</span></div>
+          <div class="card-header"><span class="card-title">⚙️ Configuración web: cobros por transferencia</span><span style="font-size:12px;color:#888">Solo la ven y la cambian los dueños del sistema</span></div>
           <div class="card-body">
             <form id="form-cfg" novalidate>
               <div class="cfg-grid">
@@ -249,6 +249,7 @@ let cuentas = [];      // v_cuentas_cobro_resumen
 let settings = {};
 let movimientos = [];
 let perfiles = {};
+let esDueno = false;    // sql/033: dueños del sistema (ven la configuración web y la comisión)
 
 const err = e => e.hint || e.message || 'Error';
 
@@ -302,6 +303,7 @@ function renderKpis() {
   $id('k-mes-sub').textContent = `${nMes} cobro${nMes === 1 ? '' : 's'} confirmado${nMes === 1 ? '' : 's'}`;
   $id('k-pend').textContent = money(pend);
   $id('k-pend-sub').textContent = `${nPend} pedido${nPend === 1 ? '' : 's'} con cuenta asignada`;
+  $id('k-com').closest('.kpi-card').hidden = !esDueno;
   const pct = Number(settings.comision_pct || 0);
   $id('k-com').textContent = money(mes * pct / 100);
   $id('k-com-sub').textContent = pct ? `${pct}% de lo cobrado este mes` : 'configurá el porcentaje';
@@ -446,7 +448,7 @@ async function cargarLiquidaciones() {
 $id('btn-cerrar-liq').addEventListener('click', async () => {
   const per = $id('liq-periodo').value;
   if (!per) return Utils.toast('Elegí el mes a cerrar.', 'warning');
-  const ok = await Utils.confirm(`Se cierra <b>${per}</b> con el ${Number(settings.comision_pct || 0)}% de comisión. No se puede deshacer.`, 'Cerrar liquidación', 'Cerrar', false);
+  const ok = await Utils.confirm(`Se cierra <b>${per}</b> ${esDueno ? `con el ${Number(settings.comision_pct || 0)}% de comisión` : 'con la comisión configurada'}. No se puede deshacer.`, 'Cerrar liquidación', 'Cerrar', false);
   if (!ok) return;
   const { data, error } = await db.rpc('cerrar_liquidacion', { p_periodo: per });
   if (error) return Utils.toast(err(error), 'error');
@@ -456,8 +458,12 @@ $id('btn-cerrar-liq').addEventListener('click', async () => {
 
 // ── Configuración ──
 async function cargarConfig() {
-  const { data } = await db.from('site_settings').select('cobros_activos, cobros_plazo_horas, cobros_auto_confirmar, comision_pct, cobros_instrucciones').eq('id', 1).maybeSingle();
+  const { data } = await db.from('site_settings').select('cobros_activos, cobros_plazo_horas, cobros_auto_confirmar, cobros_instrucciones').eq('id', 1).maybeSingle();
   settings = data || {};
+  if (esDueno) {
+    const { data: cd } = await db.from('config_duenos').select('comision_pct').eq('id', 1).maybeSingle();
+    settings.comision_pct = cd ? cd.comision_pct : 0;
+  }
   $id('cfg-activos').checked = !!settings.cobros_activos;
   $id('cfg-auto').checked = !!settings.cobros_auto_confirmar;
   $id('cfg-plazo').value = settings.cobros_plazo_horas ?? 72;
@@ -475,8 +481,11 @@ $id('form-cfg').addEventListener('submit', async e => {
   if (payload.cobros_activos && !cuentas.some(c => c.activa)) {
     Utils.toast('No hay ninguna cuenta activa: cargá una antes de prender los cobros.', 'warning', 6000);
   }
-  const { error } = await db.from('site_settings').update(payload).eq('id', 1);
+  const { comision_pct, ...web } = payload;
+  const { error } = await db.from('site_settings').update(web).eq('id', 1);
   if (error) return Utils.toast(err(error), 'error');
+  const { error: e2 } = await db.from('config_duenos').update({ comision_pct, updated_at: new Date().toISOString() }).eq('id', 1);
+  if (e2) return Utils.toast(err(e2), 'error');
   settings = { ...settings, ...payload };
   Utils.toast('Configuración de cobros guardada', 'success');
   Utils.log('editar', 'site_settings', 1, `Cobros: ${payload.cobros_activos ? 'activos' : 'apagados'}, auto ${payload.cobros_auto_confirmar ? 'sí' : 'no'}, ${payload.comision_pct}%`);
@@ -615,8 +624,11 @@ $id('tab-avisos').addEventListener('click', async e => {
 });
 $id('form-avisos').addEventListener('submit', async e => {
   e.preventDefault();
-  const mail = $id('av-mail').value.trim();
-  if (mail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) return Utils.toast('El mail no parece válido', 'warning');
+  const mails = [...new Set($id('av-mail').value.split(/[\s,;]+/).map(x => x.trim().toLowerCase()).filter(Boolean))];
+  const malo = mails.find(x => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
+  if (malo) return Utils.toast(`"${malo}" no parece un mail válido`, 'warning');
+  if (mails.length > 5) return Utils.toast('Hasta 5 mails', 'warning');
+  const mail = mails.join(', ');
   const payload = {
     auto_con_aviso: $id('av-auto').checked,
     minutos_espera: Math.min(240, Math.max(1, Math.round(Number($id('av-min').value) || 7))),
@@ -632,6 +644,7 @@ $id('form-avisos').addEventListener('submit', async e => {
 
 // ── Tabs ──
 function irTab(t) {
+  if (t === 'config' && !esDueno) t = 'cuentas';
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
   ['cuentas', 'movimientos', 'liquidaciones', 'avisos', 'config'].forEach(k => $id('tab-' + k).hidden = k !== t);
   if (t === 'avisos') cargarAvisos();
@@ -648,6 +661,8 @@ $id('btn-refrescar').addEventListener('click', async () => { await cargarConfig(
   if (!profile) return;
   await Auth.requireRole(['administrador']);
   await Layout.init('cuentas-cobro', 'Cuentas bancarias');
+  try { const r = await db.rpc('fn_es_dueno_sistema'); esDueno = r.data === true; } catch (e) { esDueno = false; }
+  $id('tab-btn-config').hidden = !esDueno;
   const hoy = new Date();
   $id('mov-mes').value = hoy.toISOString().slice(0, 7);
   const ant = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);

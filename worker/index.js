@@ -93,15 +93,20 @@ async function revisarCobros(env) {
   const mails = Array.isArray(r.mails) ? r.mails : [];
   if (!mails.length || !r.para || !env.MAIL_ALERTAS) return;
   const { EmailMessage } = await import('cloudflare:email');
+  // Uno o varios destinatarios ("a@x.com, b@y.com"); cada uno verificado en Email Routing
+  const para = String(r.para).split(/[\s,;]+/).filter(x => /^[^@\s]+@[^@\s]+$/.test(x)).slice(0, 5);
   const bien = [], mal = [];
   for (const m of mails) {
-    try {
-      await env.MAIL_ALERTAS.send(new EmailMessage(MAIL_DE, r.para, armarMail(r.para, m)));
-      bien.push(m.id);
-    } catch (e) {
-      console.error('mail de alerta', m.id, e.message);
-      mal.push(m.id);
+    let alguno = false;
+    for (const dest of para) {
+      try {
+        await env.MAIL_ALERTAS.send(new EmailMessage(MAIL_DE, dest, armarMail(dest, m)));
+        alguno = true;
+      } catch (e) {
+        console.error('mail de alerta', m.id, dest, e.message);
+      }
     }
+    (alguno ? bien : mal).push(m.id);
   }
   if (bien.length) await llamarAvisos(env, { accion: 'mail_resultado', ids: bien, ok: true });
   if (mal.length) await llamarAvisos(env, { accion: 'mail_resultado', ids: mal, ok: false });
