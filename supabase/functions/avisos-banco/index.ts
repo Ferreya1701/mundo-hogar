@@ -22,7 +22,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import PostalMime from "npm:postal-mime@4.2.0";
 
-const MODEL = "claude-haiku-4-5";
+const MODEL = "claude-haiku-5-5";
 
 const PROMPT = `Sos un lector de avisos por mail de bancos y billeteras virtuales de Argentina (Mercado Pago, Ualá, Brubank, Galicia, Santander, BBVA, Nación, Macro, etc.).
 
@@ -121,6 +121,7 @@ async function leerConIA(apiKey: string, asunto: string, de: string, texto: stri
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 1024,
+      thinking: { type: "disabled" },
       messages: [{
         role: "user",
         content: `${PROMPT}\n\n<mail>\nDe: ${de}\nAsunto: ${asunto}\n\n${texto.slice(0, 12000)}\n</mail>`,

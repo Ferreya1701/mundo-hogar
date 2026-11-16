@@ -25,10 +25,11 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Haiku 4.5: alcanza para extraer datos de un comprobante legible y cuesta
-// ~USD 0,003 por lectura. Si aparecen muchas fotos borrosas, subir a
-// "claude-sonnet-5" (y ahí sí se pueden sumar fallbacks y effort).
-const MODEL = "claude-haiku-4-5";
+// Haiku 5.5 (USD 0,10 / 0,50 por millón de tokens): alcanza para extraer los
+// datos de un comprobante y cuesta ~USD 0,0003 por lectura. Sin "thinking":
+// es una extracción simple. Si aparecen muchas fotos borrosas, probar con
+// "claude-sonnet-5-5".
+const MODEL = "claude-haiku-5-5";
 
 const PROMPT = `Sos un lector de comprobantes de transferencia bancaria y de billeteras virtuales de Argentina (Mercado Pago, Ualá, bancos, etc.).
 
@@ -164,6 +165,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           model: MODEL,
           max_tokens: 2048,
+          thinking: { type: "disabled" },   // extracción simple: sin razonamiento extra
           messages: [{ role: "user", content: [adjunto, { type: "text", text: PROMPT }] }],
         }),
       });
