@@ -2,7 +2,7 @@
 
 > Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-16 (verificación con el aviso del banco).
 
-## Liquidación solo de pedidos web (2026-11-16) — sql/034 SIN EJECUTAR
+## Liquidación solo de pedidos web (2026-11-16) — sql/034 EJECUTADO EN PRODUCCIÓN (verificado)
 Pedido del dueño: la comisión se cobra solo sobre pedidos web (no Crear venta / caja) y el administrador
 del local ve las liquidaciones sin porcentaje ni comisión.
 - `sql/034-liquidacion-web.sql`: permisos por columna en `liquidaciones` (sin `porcentaje`/`comision` para
