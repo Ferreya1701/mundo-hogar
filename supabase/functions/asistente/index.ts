@@ -65,8 +65,9 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-haiku-5-5",   // USD 0,10 / 0,50 por millón de tokens
         max_tokens: 400,
+        thinking: { type: "disabled" },   // respuestas cortas: sin razonamiento extra
         system: SYSTEM_PROMPT,
         messages: [{
           role: "user",
@@ -81,7 +82,10 @@ Deno.serve(async (req) => {
       return json({ error: "ia_error" }, 502);
     }
     const data = await res.json();
-    const respuesta = data?.content?.[0]?.text ?? "No pude generar una respuesta.";
+    if (data?.stop_reason === "refusal") return json({ respuesta: "No puedo responder eso." });
+    const texto = (data?.content ?? []).filter((b: { type: string }) => b.type === "text")
+      .map((b: { text: string }) => b.text).join("\n").trim();
+    const respuesta = texto || "No pude generar una respuesta.";
     return json({ respuesta });
   } catch (e) {
     console.error(e);

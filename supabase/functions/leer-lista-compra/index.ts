@@ -24,11 +24,11 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Opus 5: las listas de China vienen en inglés/chino, con columnas
-// desordenadas y nombres que hay que traducir bien. Si el costo importa
-// más que la calidad, se puede bajar a "claude-haiku-4-5" (hasta 10×
-// más barato; conviene revisar más a mano).
-const MODEL = "claude-opus-5";
+// Haiku 5.5 (USD 0,10 / 0,50 por millón de tokens, pedido del dueño 2026-11-16):
+// las listas de China vienen en inglés/chino, con columnas desordenadas;
+// conviene revisar lo leído antes de confirmar. Si la calidad no alcanza,
+// volver a "claude-sonnet-5-5" u "claude-opus-5-5" (y ahí sumar fallbacks).
+const MODEL = "claude-haiku-5-5";
 const MAX_TOKENS = 24000;
 
 const PROMPT = `Sos el asistente de un comercio de artículos para el hogar en Argentina que importa mercadería (sobre todo de China). Te paso la lista de un pedido de compra o de lo que llegó, tal como la mandó el proveedor (puede ser una planilla, una foto, un PDF, una factura proforma o un packing list; en inglés, chino o español).
@@ -132,12 +132,10 @@ Deno.serve(async (req) => {
       headers: {
         "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
-        "anthropic-beta": "server-side-fallback-2026-07-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: MODEL,
-        fallbacks: "default",
         max_tokens: MAX_TOKENS,
         output_config: { effort: "medium", format: { type: "json_schema", schema: SCHEMA } },
         messages: [{ role: "user", content: contenido }],
