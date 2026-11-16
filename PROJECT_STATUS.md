@@ -359,7 +359,7 @@ Guía: `GUIA-STOCK-Y-VENTAS.md`. Objetivo: que el stock sea confiable para vende
   y ficha muestran "Consultar stock" para productos sin controlar; ficha limita la cantidad al disponible
   y dice "¡Últimas N!"; carrito avisa y, ante 'sin_stock' del servidor, ajusta cantidades y lo explica.
 - **Edge Function `supabase/functions/leer-lista-compra/index.ts`** — DESPLEGADA 2026-11-02 (`--no-verify-jwt`, valida sesión y rol sola). Lee foto/PDF/
-  texto de la lista del proveedor con Claude (`claude-opus-5`, salida JSON con esquema, fallbacks por
+  texto de la lista del proveedor con Claude (`claude-haiku-5-5` desde 2026-11-16, antes `claude-opus-5`, salida JSON con esquema, fallbacks por
   defecto) y devuelve renglones en español. Requiere el mismo `ANTHROPIC_API_KEY` que falta.
 - **Hosting:** `_headers` y `vercel.json` permiten la cámara en `/admin/*` (Permissions-Policy).
 - **Decisiones:** la caja nunca frena por stock (la realidad gana; queda negativo para revisar). Productos
@@ -381,7 +381,7 @@ Gestor de ventas y cobros (no factura, no se conecta con ARCA). Guía: `GUIA-COB
   `comprobante_registrar_lectura`. Probado con `scripts/test-cobros-sql.mjs` (68 pruebas, PGlite).
 - **Edge Function `leer-comprobante`** — DESPLEGADA (`--no-verify-jwt`, valida sola). **Falta el secreto
   `ANTHROPIC_API_KEY`** (el proyecto no lo tiene; sin él los comprobantes quedan "ilegible" y se revisan a mano): lee imagen/PDF con Claude
-  (`claude-haiku-4-5`, ~USD 0,003 por lectura) y registra la lectura; la base decide si coincide.
+  (`claude-haiku-5-5` desde 2026-11-16, ~USD 0,0003 por lectura) y registra la lectura; la base decide si coincide.
 - **Tienda:** `pedido.html` en `/pedido/<código>` (estado, datos para transferir, subida de
   comprobante); `carrito.html` ofrece "Pagar por transferencia" si hay total y
   `site_settings.cobros_activos`; `assets/catalogo.js` expone `MH.cobrosActivos()`.
