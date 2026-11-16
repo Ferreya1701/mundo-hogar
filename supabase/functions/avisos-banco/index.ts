@@ -4,7 +4,7 @@
 // La llama SOLO el Worker de Cloudflare (worker/index.js), con la clave
 // compartida AVISOS_CLAVE en el encabezado x-avisos-clave. Tres acciones:
 //
-//   aviso          → llegó un mail a c-<token>@avisos.mundohogarstf.com
+//   aviso          → llegó un mail a c-<token>@mundohogarstf.com
 //                    (el titular de la cuenta reenvía los "Recibiste $X"
 //                    de su banco / Mercado Pago). Se arma el mail, Claude
 //                    saca monto / ordenante / nº de operación, y la base

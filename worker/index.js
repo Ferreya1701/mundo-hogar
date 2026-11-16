@@ -13,7 +13,7 @@
 //
 // Además (sql/032, verificación de pagos con el aviso del banco):
 //   • email(): recibe los avisos "Recibiste $X" que cada titular reenvía a
-//     c-<token>@avisos.mundohogarstf.com y se los pasa a la Edge Function
+//     c-<token>@mundohogarstf.com y se los pasa a la Edge Function
 //     "avisos-banco", que los empareja con el pedido.
 //   • scheduled(): cada minuto pide la revisión (alertas a los N minutos sin
 //     aviso) y manda los mails de alerta.
@@ -51,7 +51,7 @@ async function buscarProducto(slug) {
 
 // ── Avisos del banco ─────────────────────────────────────
 const AVISOS_FN = `${SUPABASE_URL}/functions/v1/avisos-banco`;
-const MAIL_DE = 'alertas@avisos.mundohogarstf.com';
+const MAIL_DE = 'alertas@mundohogarstf.com';
 
 function aBase64(bytes) {
   let s = '';
@@ -79,7 +79,7 @@ function armarMail(para, alerta) {
     `To: ${para}`,
     `Subject: =?UTF-8?B?${utf8b64('⚠️ ' + alerta.titulo)}?=`,
     `Date: ${new Date().toUTCString()}`,
-    `Message-ID: <alerta-${alerta.id}-${Date.now()}@avisos.mundohogarstf.com>`,
+    `Message-ID: <alerta-${alerta.id}-${Date.now()}@mundohogarstf.com>`,
     'MIME-Version: 1.0',
     'Content-Type: text/plain; charset=utf-8',
     'Content-Transfer-Encoding: base64',
@@ -109,7 +109,7 @@ async function revisarCobros(env) {
 
 export default {
   async email(message, env) {
-    const m = String(message.to || '').toLowerCase().match(/^c-([0-9a-f]{12})@avisos\.mundohogarstf\.com$/);
+    const m = String(message.to || '').toLowerCase().match(/^c-([0-9a-f]{12})@mundohogarstf\.com$/);
     if (!m) { message.setReject('Dirección desconocida'); return; }
     if (!env.AVISOS_CLAVE) { message.setReject('Los avisos de cobro todavía no están activados'); return; }
     if (message.rawSize > 3 * 1024 * 1024) { message.setReject('Mail demasiado grande'); return; }

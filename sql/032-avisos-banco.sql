@@ -5,7 +5,7 @@
 -- entró es el mail que manda el banco / Mercado Pago a quien RECIBE
 -- ("Recibiste una transferencia de $X"). Cada titular reenvía esos avisos
 -- (filtro de Gmail) a la dirección secreta de su cuenta:
---     c-<token>@avisos.mundohogarstf.com
+--     c-<token>@mundohogarstf.com
 -- Cloudflare (worker/index.js) recibe el mail, la Edge Function
 -- "avisos-banco" saca monto / ordenante / nº de operación, y esta base
 -- empareja el aviso con el pedido por CUENTA + MONTO (los centavos son

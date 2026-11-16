@@ -171,12 +171,11 @@ tolerancia y mail de alertas. Ahí está también la dirección de cada cuenta, 
    Recomendado también `ANTHROPIC_API_KEY` en Supabase (sin ella los avisos se leen con reglas simples).
 3. **Edge Functions:** `npx supabase functions deploy avisos-banco --project-ref vduinkzeneokkqzdgxig --no-verify-jwt --use-api`
    y volver a desplegar `leer-comprobante` (ahora manda la huella del archivo y las señales de edición).
-4. **Recepción de mails (Cloudflare → mundohogarstf.com → Email → Email Routing):** el correo del
-   dominio principal está en **GoDaddy** (MX `secureserver.net`): **no cambiar esos MX**. Los avisos usan
-   el subdominio `avisos.mundohogarstf.com`: en Email Routing → Settings → *Subdomains* agregar `avisos`
-   (crea MX solo para el subdominio) y en *Routing rules* → *Catch-all* → **Send to a Worker** →
-   `mundo-hogar`. Si Cloudflare pidiera borrar los MX del dominio principal, frenar: hay que usar otro
-   dominio para los avisos.
+4. **Recepción de mails (Cloudflare → Email → Email Routing):** se activa en el dominio principal
+   `mundohogarstf.com` (2026-11-16: el dueño confirmó que nadie usa casillas @mundohogarstf.com, así que
+   se reemplazaron los MX de GoDaddy por los de Cloudflare). Regla *Catch-all* → **Send to a Worker** →
+   `mundo-hogar`. El Worker solo acepta `c-<token>@mundohogarstf.com` y rechaza el resto. Si algún día
+   se quiere una casilla real (ej. `ventas@`), se agrega una regla propia antes del catch-all.
 5. **Mails de alerta:** en Email Routing → *Destination addresses* agregar y verificar el mail del dueño;
    después sumar a `wrangler.jsonc` `"send_email": [{ "name": "MAIL_ALERTAS" }]` (push) y cargar ese mail
    en el panel. Sin esto, las alertas salen solo en el panel.
@@ -184,7 +183,7 @@ tolerancia y mail de alertas. Ahí está también la dirección de cada cuenta, 
    filtro). Unos 5 minutos por persona.
 
 ### Piezas
-- `worker/index.js`: `email()` recibe en `c-<token>@avisos.mundohogarstf.com`; `scheduled()` cada minuto
+- `worker/index.js`: `email()` recibe en `c-<token>@mundohogarstf.com`; `scheduled()` cada minuto
   (cron en `wrangler.jsonc`) pide la revisión y manda los mails.
 - `supabase/functions/avisos-banco`: arma el mail, la IA saca monto / ordenante / nº de operación,
   detecta la confirmación de Gmail. La base decide (`aviso_registrar`, `fn_aviso_emparejar`,
