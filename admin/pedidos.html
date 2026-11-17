@@ -307,7 +307,7 @@ async function verDetalle(id) {
       <div class="sol-grid">
         <div><b>Teléfono</b><a href="https://wa.me/${tel}" target="_blank" rel="noopener">${esc(s.telefono)||'—'}</a></div>
         <div><b>Localidad</b>${esc(s.localidad)||'—'}</div>
-        <div><b>Entrega</b>${ENTREGA[s.tipo_entrega]||'—'}${s.direccion?` — ${esc(s.direccion)}`:''}</div>
+        <div><b>Entrega</b>${ENTREGA[s.tipo_entrega]||'—'}${s.direccion?` — ${esc(s.direccion)}`:''}${s.codigo_postal?` · CP <b>${esc(s.codigo_postal)}</b>`:''}</div>
         <div><b>Estado</b>${ESTADOS[s.estado]||s.estado}</div>
         ${s.es_mayorista?`<div><b>Comercio</b>${esc(s.comercio)||'—'}</div><div><b>CUIT</b>${esc(s.cuit)||'—'}</div>`:''}
       </div>
@@ -688,7 +688,7 @@ async function pasarAlMostrador(s) {
       <div id="pm-env" class="form-grid" style="gap:10px">
         <div class="form-group"><label>Transporte</label><select id="pm-tr"><option value="">A definir</option>${transportes.filter(t => t.activo).map(t => `<option value="${t.id}">${esc(t.nombre)}</option>`).join('')}</select></div>
         <div class="form-group"><label>Dirección *</label><input type="text" id="pm-dir" maxlength="200" value="${esc(s.direccion || '')}"></div>
-        <div class="form-group"><label>Localidad *</label><input type="text" id="pm-loc" maxlength="120" value="${esc(s.localidad || '')}"></div>
+        <div class="form-group"><label>Localidad *</label><input type="text" id="pm-loc" maxlength="120" value="${esc([s.localidad, s.codigo_postal && !String(s.localidad || '').includes(s.codigo_postal) ? `CP ${s.codigo_postal}` : ''].filter(Boolean).join(' · '))}"></div>
         <div class="form-group"><label>Bultos</label><input type="number" id="pm-bul" min="1" max="99"></div>
       </div>
       <div class="form-group"><label>Nota</label><input type="text" id="pm-nota" maxlength="300" placeholder="Ej. pasa el sábado a la mañana"></div>

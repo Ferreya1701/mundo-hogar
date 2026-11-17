@@ -1,6 +1,21 @@
 # PROJECT_STATUS — Mundo Hogar / TIAF
 
-> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-16 (verificación con el aviso del banco).
+> Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-17 (revisión UX y código postal).
+
+## Código postal en pedidos web (2026-11-17) — sql/036 ESCRITO, FALTA EJECUTAR EN PRODUCCIÓN
+Pedido del dueño: el carrito pide código postal cuando el cliente elige envío (4 números o CPA, obligatorio
+con envío) y va en el mensaje de WhatsApp. `sql/036-codigo-postal.sql`: columna `solicitudes.codigo_postal`
+y `crear_solicitud` = la de sql/013 + el CP (lo inválido se descarta, nunca frena el pedido). **Si otra
+migración redefine `crear_solicitud`, partir de la de 036.** La web ya lo manda: hasta ejecutar el 036 la
+función vieja lo ignora (va solo en el WhatsApp). Pedidos web lo muestra y lo suma a la localidad al pasar
+a envío. Pruebas: `node scripts/test-codigo-postal-sql.mjs` (11).
+
+## Revisión UI/UX (2026-11-17) — solo frontend, sin SQL
+Commits 6f451d6…bde2e11: arreglos (venta siguiente tras cobrar, WhatsApp bloqueado en iPhone, textos sin
+escapar, tablas en celular), mostrador (Cobrar fijo, teclado, deshacer, `Utils.num` para montos con coma,
+caja con efectivo rápido), tienda (`MH.search` tolerante + sugerencias, barra de compra, 44px, galería con
+zoom, 404 con buscador), panel (menú en 6 grupos, Ctrl+K, Inicio con el negocio, contraste AA, tokens de
+diseño `--fs-*`/`--surface`/`--*-ink`, modo oscuro opcional con `data-theme="dark"` guardado en `mhTema`).
 
 - 2026-11-16: borrada la "CUENTA DE PRUEBA (borrar)" (sin cobros ni pedidos) y su mail de prueba. Hoy no hay
   cuentas de cobro cargadas: falta cargar las reales.

@@ -156,6 +156,12 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
               <input id="f-direccion" name="direccion" type="text" autocomplete="street-address" maxlength="160">
               <div class="field-error">Ingresá la dirección para el envío.</div>
             </div>
+            <div class="field" id="f-cp-wrap" hidden>
+              <label for="f-cp">Código postal <span class="req">*</span></label>
+              <input id="f-cp" name="codigo_postal" type="text" autocomplete="postal-code" inputmode="text" autocapitalize="characters" placeholder="Ej: 3000" maxlength="10" aria-describedby="f-cp-ayuda">
+              <div class="field-hint" id="f-cp-ayuda">¿No lo sabés? <a href="https://www.correoargentino.com.ar/formularios/cpa" target="_blank" rel="noopener">Buscalo en Correo Argentino</a>.</div>
+              <div class="field-error">Escribí los 4 números (ej. 3000) o el código completo (ej. S3000ABC).</div>
+            </div>
             <div class="field full">
               <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:0">
                 <input type="checkbox" id="f-mayorista" style="width:auto;accent-color:var(--blue)"> Soy cliente mayorista / compro para mi comercio
@@ -327,7 +333,7 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
 
   // ── Campos condicionales ──
   document.querySelectorAll('input[name="entrega"]').forEach(r =>
-    r.addEventListener('change', () => { $('#f-dir-wrap').hidden = getEntrega() !== 'envio'; }));
+    r.addEventListener('change', () => { const env = getEntrega() !== 'envio'; $('#f-dir-wrap').hidden = env; $('#f-cp-wrap').hidden = env; }));
   const getEntrega = () => (document.querySelector('input[name="entrega"]:checked') || {}).value || 'retiro';
   $('#f-mayorista').addEventListener('change', e => {
     $('#f-com-wrap').hidden = !e.target.checked;
@@ -347,6 +353,8 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
     '#f-telefono':  v => v.replace(/\D/g, '').length < 8,
     '#f-localidad': v => !v.trim(),
     '#f-direccion': v => getEntrega() === 'envio' && !v.trim(),
+    // 4 números (3000) o el CPA completo (S3000ABC); la base guarda lo mismo (sql/036)
+    '#f-cp':        v => getEntrega() === 'envio' && !/^(\d{4}|[A-Za-z]\d{4}[A-Za-z]{3})$/.test(v.replace(/[\s.-]/g, '')),
   };
   Object.entries(REGLAS).forEach(([id, malo]) => {
     const inp = $(id); if (!inp) return;
@@ -366,6 +374,7 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
     L.push(`Localidad: ${datos.localidad}`);
     L.push(`Entrega: ${datos.tipo_entrega === 'envio' ? 'Envío a domicilio' : 'Retiro'}`);
     if (datos.tipo_entrega === 'envio' && datos.direccion) L.push(`Dirección: ${datos.direccion}`);
+    if (datos.tipo_entrega === 'envio' && datos.codigo_postal) L.push(`Código postal: ${datos.codigo_postal}`);
     if (datos.es_mayorista) {
       L.push('Cliente mayorista: Sí' + (datos.comercio ? ` — ${datos.comercio}` : '') + (datos.cuit ? ` — CUIT ${datos.cuit}` : ''));
     }
@@ -400,6 +409,7 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
       localidad: $('#f-localidad').value.trim(),
       tipo_entrega: getEntrega(),
       direccion: $('#f-direccion').value.trim(),
+      codigo_postal: $('#f-cp').value.replace(/[\s.-]/g, '').toUpperCase(),
       es_mayorista: $('#f-mayorista').checked,
       comercio: $('#f-comercio').value.trim(),
       cuit: $('#f-cuit').value.trim(),
@@ -411,6 +421,7 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
     bad = invalid('#f-telefono', REGLAS['#f-telefono'](datos.telefono)) || bad;
     bad = invalid('#f-localidad', !datos.localidad) || bad;
     bad = invalid('#f-direccion', datos.tipo_entrega === 'envio' && !datos.direccion) || bad;
+    bad = invalid('#f-cp', REGLAS['#f-cp'](datos.codigo_postal)) || bad;
     if (bad) { document.querySelector('.field.invalid input')?.focus(); return; }
     if (!Cart.items.length) return;
 
