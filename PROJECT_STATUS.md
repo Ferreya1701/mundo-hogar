@@ -2,13 +2,18 @@
 
 > Consultar este archivo antes de re-analizar el proyecto. Actualizado: 2026-11-17 (revisión UX y código postal).
 
-## Código postal en pedidos web (2026-11-17) — sql/036 ESCRITO, FALTA EJECUTAR EN PRODUCCIÓN
+## Código postal en pedidos web (2026-11-17) — sql/036 EJECUTADO EN PRODUCCIÓN (verificado)
 Pedido del dueño: el carrito pide código postal cuando el cliente elige envío (4 números o CPA, obligatorio
 con envío) y va en el mensaje de WhatsApp. `sql/036-codigo-postal.sql`: columna `solicitudes.codigo_postal`
 y `crear_solicitud` = la de sql/013 + el CP (lo inválido se descarta, nunca frena el pedido). **Si otra
 migración redefine `crear_solicitud`, partir de la de 036.** La web ya lo manda: hasta ejecutar el 036 la
 función vieja lo ignora (va solo en el WhatsApp). Pedidos web lo muestra y lo suma a la localidad al pasar
 a envío. Pruebas: `node scripts/test-codigo-postal-sql.mjs` (11).
+- Ejecutado 2026-11-17 con `npx supabase db query --remote=vduinkzeneokkqzdgxig --yes -f` dentro de
+  BEGIN/COMMIT, + `NOTIFY pgrst, 'reload schema'`. Antes se comprobó que la `crear_solicitud` de producción
+  era idéntica a la de sql/013; respaldo en `~/mundo-hogar-respaldos/crear_solicitud-antes-036-2026-11-17.sql`
+  (máquina del dueño). Verificado: columna `codigo_postal` (text), función con el CP, SECURITY DEFINER,
+  EXECUTE para anon y authenticated, la API la reconoce. No se creó ningún pedido de prueba en producción.
 
 ## Revisión UI/UX (2026-11-17) — solo frontend, sin SQL
 Commits 6f451d6…bde2e11: arreglos (venta siguiente tras cobrar, WhatsApp bloqueado en iPhone, textos sin
