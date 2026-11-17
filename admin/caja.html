@@ -49,6 +49,16 @@
     .cb-fila { display:grid; grid-template-columns:1fr 130px 30px; gap:8px; align-items:start; margin-bottom:8px; }
     .cb-fila select, .cb-fila input { min-height:42px; width:100%; }
     .cb-fila input.monto { text-align:right; font-weight:600; font-size:16px; }
+    .pc-cancelar { margin-left:auto; color:var(--muted); }
+    .pc-cancelar:hover { color:var(--danger); }
+    .cb-medios { grid-column:1 / -1; display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; }
+    .cb-medio { min-height:44px; border:1px solid var(--border); background:#fff; border-radius:var(--r); font:inherit; font-size:14px; font-weight:600; color:var(--night); cursor:pointer; }
+    .cb-medio:hover { border-color:var(--blue); }
+    .cb-medio.sel { background:var(--night); border-color:var(--night); color:#fff; }
+    .cb-efectivo { display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:13px; }
+    .cb-efectivo input { width:130px; min-height:40px; text-align:right; font-size:16px; margin-left:6px; }
+    .cb-rapido { flex:1 1 100%; display:flex; flex-wrap:wrap; gap:6px; }
+    .cb-rapido .chip { min-height:40px; font-size:14px; }
     .cb-extra { grid-column:1 / -1; }
     .cb-estado { display:flex; justify-content:space-between; font-size:15px; padding:10px 12px; border-radius:var(--r); background:var(--bg); font-weight:600; }
     .cb-estado.ok { background:var(--success-bg); color:#15803D; } .cb-estado.mal { background:var(--danger-bg); color:#B91C1C; }
@@ -209,7 +219,7 @@ function pintarPendientes0() {
       ${v.devuelta_motivo ? `<div class="pc-meta">↩ Devuelta a la vendedora: ${esc(v.devuelta_motivo)}</div>` : `<div class="pc-acc">
         <button class="btn btn-primary" data-cobrar="${v.id}" ${abierta ? '' : 'disabled title="Abrí la caja para cobrar"'}>Cobrar</button>
         <button class="btn btn-outline btn-sm" data-devolver="${v.id}" title="No se puede cobrar así: que la vendedora la corrija">↩ Devolver</button>
-        <button class="btn btn-ghost btn-sm" data-cancelar="${v.id}" title="El cliente no compra: cancelar y devolver el stock">✕</button>
+        <button class="btn btn-ghost btn-sm pc-cancelar" data-cancelar="${v.id}" title="El cliente no compra: cancelar y devolver el stock" aria-label="Cancelar la venta ${esc(v.codigo)}">✕ Cancelar</button>
       </div>`}</div>`;
   };
   el.innerHTML = (fila.length ? `<div class="pc-tit">Para cobrar <span class="pc-n">${fila.length}</span>${abierta ? '' : '<span style="font-size:13px;font-weight:500;color:var(--danger)">Abrí la caja para poder cobrarlas</span>'}</div>
@@ -243,6 +253,12 @@ function modalCobrar(v) {
   bd.querySelectorAll('[data-x]').forEach(b => b.onclick = cerrar);
 
   const suma = () => filas.reduce((s, f) => s + (Number(f.monto) || 0), 0);
+  // Efectivo rápido (como Square): exacto y los redondeos para arriba más comunes
+  const billetes = () => {
+    const out = [total];
+    for (const m of [1000, 5000, 10000, 20000]) { const r = Math.ceil(total / m) * m; if (r > total && !out.includes(r) && out.length < 4) out.push(r); }
+    return out;
+  };
   const htmlCuenta = (f, i) => {
     if (!esBancoM(f.medio)) return '';
     if (!(f.monto > 0)) return '';
@@ -274,10 +290,14 @@ function modalCobrar(v) {
   function pintar(foco = true) {
     const act = document.activeElement?.dataset || {};
     bd.querySelector('#cb-filas').innerHTML = filas.map((f, i) => `<div class="cb-fila">
-      <select data-medio="${i}" aria-label="Medio de pago">${Object.entries(MEDIOS_COBRO).map(([k, n]) => `<option value="${k}"${f.medio === k ? ' selected' : ''}>${n}</option>`).join('')}</select>
+      ${filas.length === 1
+        ? `<div class="cb-medios" role="radiogroup" aria-label="Medio de pago">${Object.entries(MEDIOS_COBRO).map(([k, n]) => `<button type="button" role="radio" aria-checked="${f.medio === k}" class="cb-medio${f.medio === k ? ' sel' : ''}" data-medio-btn="${k}">${n}</button>`).join('')}</div>`
+        : `<select data-medio="${i}" aria-label="Medio de pago">${Object.entries(MEDIOS_COBRO).map(([k, n]) => `<option value="${k}"${f.medio === k ? ' selected' : ''}>${n}</option>`).join('')}</select>
       <input class="monto" type="text" inputmode="decimal" data-monto="${i}" value="${f.monto || ''}" aria-label="Monto" autocomplete="off">
-      ${filas.length > 1 ? `<button type="button" class="btn btn-ghost btn-sm" data-quitar="${i}" aria-label="Quitar">✕</button>` : '<span></span>'}
-      ${f.medio === 'efectivo' && filas.length === 1 ? `<div class="cb-extra" style="display:flex;gap:8px;align-items:center;font-size:13px">Paga con <input type="text" inputmode="decimal" id="cb-pagacon" value="${esc(pagaCon)}" placeholder="${total}" style="width:120px;min-height:36px;text-align:right"> <b id="cb-vuelto"></b></div>` : ''}
+      <button type="button" class="btn btn-ghost btn-sm" data-quitar="${i}" aria-label="Quitar">✕</button>`}
+      ${f.medio === 'efectivo' && filas.length === 1 ? `<div class="cb-extra cb-efectivo">
+        <label>Paga con <input type="text" inputmode="decimal" id="cb-pagacon" value="${esc(pagaCon)}" placeholder="${total}" autocomplete="off"></label> <b id="cb-vuelto"></b>
+        <div class="cb-rapido">${billetes().map(b => `<button type="button" class="chip" data-paga="${b}">${b === total ? 'Exacto' : money(b)}</button>`).join('')}</div></div>` : ''}
       ${htmlCuenta(f, i)}</div>`).join('');
     estado();
     if (foco && act.monto !== undefined) bd.querySelector(`[data-monto="${act.monto}"]`)?.focus();
@@ -310,7 +330,9 @@ function modalCobrar(v) {
     }
   });
   bd.addEventListener('click', e => {
-    const t = e.target.closest('[data-quitar], [data-otra], [data-copiar], #cb-mas'); if (!t) return;
+    const t = e.target.closest('[data-quitar], [data-otra], [data-copiar], [data-medio-btn], [data-paga], #cb-mas'); if (!t) return;
+    if (t.dataset.medioBtn) { const f = filas[0]; f.medio = t.dataset.medioBtn; f.cuenta = null; f.pedida = null; f.excluidas = []; pintar(false); return; }
+    if (t.dataset.paga) { pagaCon = t.dataset.paga; const pc = bd.querySelector('#cb-pagacon'); if (pc) pc.value = pagaCon; estado(); bd.querySelector('#cb-ok').focus(); return; }
     if (t.id === 'cb-mas') {
       const falta = Math.max(0, Math.round((total - suma()) * 100) / 100);
       if (falta === 0 && filas.length === 1) { filas[0].monto = 0; }           // para repartir: se escribe cada parte

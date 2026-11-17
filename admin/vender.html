@@ -124,7 +124,7 @@
             <div class="card-body">
               <div class="pos-libre">
                 <div class="form-group"><label>Qué se vendió</label><input type="text" id="libre-nombre" placeholder="Ej: Cable alargue 5 m" maxlength="120"></div>
-                <div class="form-group"><label>Precio</label><input type="number" id="libre-precio" inputmode="decimal" min="0" step="0.01" placeholder="0"></div>
+                <div class="form-group"><label>Precio</label><input type="text" id="libre-precio" inputmode="decimal" autocomplete="off" placeholder="0"></div>
                 <button type="button" class="btn btn-outline" id="btn-libre">Agregar</button>
               </div>
               <div class="form-hint" style="margin-top:6px">No toca el stock. Si el producto va a volver a venderse, conviene crearlo en Productos.</div>
@@ -187,6 +187,8 @@ let ctaBanco = { modo: 'auto', cuenta: null, monto: null, aviso: null, motivo: n
 let recargos = {};         // categoria_id -> recargo por unidad en cuenta corriente (sql/019)
 let catSel = '';
 let ultimaVenta = null;    // resultado de la última venta para mostrar el ticket
+let kbIdx = -1;            // resultado del buscador marcado con las flechas
+let masDatos = false;       // "Más datos" del ticket abierto (se mantiene al redibujar)
 
 const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const money = n => Utils.currency(n);
@@ -336,6 +338,7 @@ function stockBadge(p) {
 }
 
 function renderResultados() {
+  kbIdx = -1;
   const q = document.getElementById('q').value;
   const lista = buscar(q);
   const el = document.getElementById('resultados');
@@ -477,11 +480,35 @@ const Ficha = (() => {
 })();
 
 let tmr = null;
-document.getElementById('q').addEventListener('input', () => { clearTimeout(tmr); tmr = setTimeout(renderResultados, 90); });
+
+function marcarKb(i) {
+  const items = [...document.querySelectorAll('#resultados .pos-item')];
+  if (!items.length) { kbIdx = -1; return; }
+  kbIdx = Math.max(0, Math.min(items.length - 1, i));
+  items.forEach((b, j) => b.classList.toggle('kb', j === kbIdx));
+  items[kbIdx].scrollIntoView({ block: 'nearest' });
+}
+document.getElementById('q').addEventListener('input', () => { kbIdx = -1; clearTimeout(tmr); tmr = setTimeout(renderResultados, 90); });
 document.getElementById('q').addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); marcarKb(kbIdx + (e.key === 'ArrowDown' ? 1 : -1)); return; }
+  // Con el buscador vacío: + y − cambian la cantidad de la última línea, Supr la quita
+  if (!e.target.value && ticket.length && !ultimaVenta && ['+', '-', 'Delete'].includes(e.key)) {
+    e.preventDefault();
+    const t = ticket[ticket.length - 1];
+    if (e.key === '+') { t.cantidad = Math.min(9999, t.cantidad + 1); guardarTicket(); renderTicket(); }
+    else quitarConDeshacer(t, e.key === '-');
+    return;
+  }
   if (e.key !== 'Enter') return;
   e.preventDefault();
   const q = e.target.value;
+  const marcado = kbIdx >= 0 && document.querySelectorAll('#resultados .pos-item')[kbIdx];
+  if (marcado) {
+    const p = productos.find(x => x.id === Number(marcado.dataset.id));
+    kbIdx = -1;
+    if (p) { agregarProducto(p); e.target.value = ''; renderResultados(); }
+    return;
+  }
   const ex = exacto(q);
   if (ex) { agregarProducto(ex); e.target.value = ''; renderResultados(); return; }
   const lista = buscar(q);
@@ -509,12 +536,12 @@ async function pedirPrecio(nombre, actual) {
       <div class="modal-header"><h3 class="modal-title">Precio de venta</h3></div>
       <div class="modal-body">
         <p style="font-size:13px;color:var(--muted);margin-bottom:10px">${esc(nombre)}${actual==null?' no tiene precio cargado. Escribí a cuánto se vende:':''}</p>
-        <input type="number" id="_pp" inputmode="decimal" min="0" step="0.01" value="${actual ?? ''}" placeholder="0" style="width:100%;min-height:48px;font-size:18px;text-align:right">
+        <input type="text" id="_pp" inputmode="decimal" autocomplete="off" value="${actual ?? ''}" placeholder="0" style="width:100%;min-height:48px;font-size:18px;text-align:right">
       </div>
       <div class="modal-footer"><button class="btn btn-outline" id="_pno">Cancelar</button><button class="btn btn-primary" id="_pok">Aceptar</button></div></div>`;
     document.body.appendChild(bd);
     const inp = bd.querySelector('#_pp'); setTimeout(() => { inp.focus(); inp.select(); }, 30);
-    const ok = () => { const v = Number(inp.value); if (!isFinite(v) || v < 0) { inp.focus(); return; } bd.remove(); resolve(v); };
+    const ok = () => { const v = Utils.num(inp.value); if (!isFinite(v) || v < 0) { inp.focus(); return; } bd.remove(); resolve(v); };
     bd.querySelector('#_pok').onclick = ok;
     bd.querySelector('#_pno').onclick = () => { bd.remove(); resolve(null); };
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') ok(); if (e.key === 'Escape') { bd.remove(); resolve(null); } });
@@ -542,7 +569,7 @@ async function agregarProducto(p) {
 
 document.getElementById('btn-libre').addEventListener('click', () => {
   const nombre = document.getElementById('libre-nombre').value.trim();
-  const precio = Number(document.getElementById('libre-precio').value);
+  const precio = Utils.num(document.getElementById('libre-precio').value);
   if (nombre.length < 2) { Utils.toast('Escribí qué se vendió', 'warning'); document.getElementById('libre-nombre').focus(); return; }
   if (!isFinite(precio) || precio < 0 || document.getElementById('libre-precio').value === '') { Utils.toast('Indicá el precio', 'warning'); document.getElementById('libre-precio').focus(); return; }
   if (ultimaVenta) ultimaVenta = null;
@@ -567,7 +594,7 @@ const precioFinal = t => t.precio + recargoDe(t);
 
 function totales() {
   const subtotal = ticket.reduce((s,t) => s + precioFinal(t) * t.cantidad, 0);
-  const desc = Math.max(0, Number(document.getElementById('desc')?.value || 0) || 0);
+  const desc = Math.max(0, Utils.num(document.getElementById('desc')?.value) || 0);
   return { subtotal, desc: Math.min(desc, subtotal), total: Math.max(0, subtotal - Math.min(desc, subtotal)) };
 }
 
@@ -629,7 +656,7 @@ function renderTicket() {
     <div class="pos-totales">
       <div class="fila"><span>Subtotal</span><b>${money(subtotal)}</b></div>
       ${recargoTotal ? `<div class="fila" style="font-size:12.5px;color:var(--muted)"><span>incluye recargo cta. cte.</span><span>${money(recargoTotal)}</span></div>` : ''}
-      <div class="fila"><span>Descuento ($)</span><input type="number" id="desc" inputmode="decimal" min="0" step="1" placeholder="0" value="${esc(descActual)}"></div>
+      <div class="fila"><span>Descuento ($)</span><input type="text" id="desc" inputmode="decimal" autocomplete="off" placeholder="0" value="${esc(descActual)}"></div>
       <div class="pos-total"><span>Total</span><span id="total-txt">${money(subtotal - desc)}</span></div>
     </div>
     <div class="pos-seccion"><span class="lbl">${porCaja ? '¿Cómo paga?' : 'Medio de pago'}</span>
@@ -642,12 +669,16 @@ function renderTicket() {
           ? (cuentas.length ? `<select id="cuenta" style="margin-top:8px;width:100%;min-height:40px"><option value="">¿A qué cuenta entró? (opcional)</option>${cuentas.map(c=>`<option value="${c.id}"${String(c.id)===cuentaSel?' selected':''}>${esc(c.nombre)}${c.alias?' · '+esc(c.alias):''}</option>`).join('')}</select>` : '')
           : `<div id="cta-banco">${htmlCuentaBanco(subtotal - desc)}</div>`) : ''}
     </div>
-    ${esCC() ? htmlClienteCC(subtotal - desc) : `<div class="pos-seccion"><span class="lbl">Cliente (opcional)</span>
-      <div class="pos-cliente"><input type="text" id="cli-nombre" placeholder="Nombre" maxlength="80" value="${esc(cliN)}"><input type="tel" id="cli-tel" placeholder="Teléfono (para mandar el ticket)" maxlength="25" value="${esc(cliT)}"></div>
-    </div>`}
+    ${esCC() ? htmlClienteCC(subtotal - desc) : ''}
     ${conEntregas ? htmlEntrega() : ''}
-    <div class="pos-seccion"><input type="text" id="retira" placeholder="Retira (si no es el cliente)" maxlength="80" value="${esc(retira)}"></div>
-    <div class="pos-seccion"><input type="text" id="notas" placeholder="Nota interna (opcional)" maxlength="400" value="${esc(notas)}"></div>
+    <details class="pos-mas" id="pos-mas"${masDatos || cliN || cliT || retira || notas ? ' open' : ''}>
+      <summary>Más datos <span>cliente, quién retira, nota</span></summary>
+      ${esCC() ? '' : `<div class="pos-seccion"><span class="lbl">Cliente (opcional)</span>
+        <div class="pos-cliente"><input type="text" id="cli-nombre" placeholder="Nombre" maxlength="80" autocomplete="off" value="${esc(cliN)}"><input type="tel" id="cli-tel" placeholder="Teléfono (para mandar el ticket)" maxlength="25" autocomplete="off" value="${esc(cliT)}"></div>
+      </div>`}
+      <div class="pos-seccion"><input type="text" id="retira" placeholder="Retira (si no es el cliente)" maxlength="80" aria-label="Retira (si no es el cliente)" value="${esc(retira)}"></div>
+      <div class="pos-seccion"><input type="text" id="notas" placeholder="Nota interna (opcional)" maxlength="400" aria-label="Nota interna" value="${esc(notas)}"></div>
+    </details>
     <button type="button" class="btn btn-primary btn-cobrar" id="btn-cobrar">${txtBoton(subtotal - desc)}</button>`;
 }
 
@@ -673,8 +704,8 @@ document.getElementById('ticket-body').addEventListener('click', async e => {
   const linea = b.closest('.pos-linea'); if (!linea) return;
   const t = ticket.find(x => x.key === linea.dataset.key); if (!t) return;
   if (b.dataset.act === 'mas') t.cantidad = Math.min(9999, t.cantidad + 1);
-  if (b.dataset.act === 'menos') { t.cantidad -= 1; if (t.cantidad < 1) ticket = ticket.filter(x => x !== t); }
-  if (b.dataset.act === 'quitar') ticket = ticket.filter(x => x !== t);
+  if (b.dataset.act === 'menos') { if (t.cantidad <= 1) { quitarConDeshacer(t); return; } t.cantidad -= 1; }
+  if (b.dataset.act === 'quitar') { quitarConDeshacer(t); return; }
   if (b.dataset.act === 'precio') { const v = await pedirPrecio(t.nombre, t.precio); if (v === null) return; t.precio = v; }
   guardarTicket(); renderTicket();
 });
@@ -884,6 +915,9 @@ document.getElementById('ticket-body').addEventListener('input', e => {
 document.getElementById('ticket-body').addEventListener('input', e => {
   if (e.target.dataset.ent) { entrega[e.target.dataset.ent] = e.target.value; guardarTicket(); }
 });
+document.getElementById('ticket-body').addEventListener('toggle', e => {
+  if (e.target.id === 'pos-mas') masDatos = e.target.open;
+}, true);
 document.getElementById('ticket-body').addEventListener('change', e => {
   if (e.target.dataset.ent) { entrega[e.target.dataset.ent] = e.target.value; guardarTicket(); }
   if (e.target.dataset.act === 'cant') renderTicket();
@@ -892,9 +926,26 @@ document.getElementById('ticket-body').addEventListener('change', e => {
 document.getElementById('btn-vaciar').addEventListener('click', async () => {
   if (ultimaVenta) { ultimaVenta = null; renderTicket(); return; }
   if (!ticket.length) return;
-  if (!await Utils.confirm('Se quitan todos los productos del ticket.', 'Vaciar ticket', 'Vaciar')) return;
+  const copia = JSON.parse(JSON.stringify(ticket));
   ticket = []; soltarCuenta(); guardarTicket(); renderTicket();
+  ofrecerDeshacer('Ticket vaciado', copia);
 });
+
+/* Deshacer en vez de "¿Seguro?": la acción se hace al toque y durante
+   6 segundos el aviso deja volver atrás (como Gmail). */
+function ofrecerDeshacer(msg, copia) {
+  Utils.toast(msg, 'info', 6000, { accion: 'Deshacer', onAccion: () => {
+    if (ultimaVenta) return;            // ya se cobró otra venta en el medio
+    ticket = copia; guardarTicket(); renderTicket();
+  }});
+}
+// menos=true: baja una unidad y, si era la última, quita la línea
+function quitarConDeshacer(t, menos = false) {
+  if (menos && t.cantidad > 1) { t.cantidad -= 1; guardarTicket(); renderTicket(); return; }
+  const copia = JSON.parse(JSON.stringify(ticket));
+  ticket = ticket.filter(x => x !== t); guardarTicket(); renderTicket();
+  ofrecerDeshacer(`${esc(t.nombre)} quitado del ticket`, copia);
+}
 
 // Ticket como panel deslizable en celular
 const ticketEl = document.getElementById('ticket');
@@ -938,7 +989,10 @@ async function cobrar() {
     (conEntregas && entrega.tipo === 'envio' ? `🚚 <b>Envío</b> a ${esc(entrega.direccion)}, ${esc(entrega.localidad)}${entrega.transporte_id ? ' por ' + esc(transportes.find(t => String(t.id) === String(entrega.transporte_id))?.nombre || '') : ''} · despachar el ${esc((entrega.fecha || hoyISO()).split('-').reverse().join('/'))}<br>` : '') +
     ticket.map(t => `${t.cantidad}× ${esc(t.nombre)}`).join('<br>') +
     (avisos.length ? `<br><br><span style="color:#B45309">⚠ El sistema dice que no alcanza el stock de: ${avisos.map(a => `<b>${esc(a.nombre)}</b> (hay ${a.hay}, se venden ${a.piden})`).join(', ')}. Se vende igual y el stock queda en negativo para que lo revises en Contar stock.</span>` : '');
-  if (!await Utils.confirm(resumen, porCaja && !esCC() ? 'Enviar a caja' : 'Confirmar venta', txtBoton(total), false)) return;
+  // El ticket ya muestra todo: el cartel aparece solo si hay algo para revisar
+  // (stock que no alcanza, cuenta corriente, transferencia, envío o retiro).
+  const hayQueAvisar = avisos.length || esCC() || esBanco() || (conEntregas && entrega.tipo !== 'en_el_momento');
+  if (hayQueAvisar && !await Utils.confirm(resumen, porCaja && !esCC() ? 'Enviar a caja' : 'Confirmar venta', txtBoton(total), false)) return;
 
   cobrando = true;
   const btn = document.getElementById('btn-cobrar'); if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Registrando…'; }
@@ -965,7 +1019,7 @@ async function cobrar() {
     if (p && i.afecto_stock && typeof i.stock_posterior === 'number') p.stock_actual = i.stock_posterior;
   });
   ultimaVenta = Object.assign({}, data, { cliente_nombre: data.cliente_nombre || cliN, cliente_telefono: cliT, retira_nombre: retira, _entrega: conEntregas ? { ...entrega } : null });
-  ticket = []; ccSel = null; entrega = ENTREGA_VACIA(); guardarTicket();
+  ticket = []; ccSel = null; entrega = ENTREGA_VACIA(); masDatos = false; guardarTicket();
   Object.assign(ctaBanco, { cuenta: null, monto: null, aviso: null, motivo: null, excluidas: [] });   // la reserva ya la consumió la venta
   if (data.aviso_cuenta) Utils.toast(data.aviso_cuenta, 'warning', 12000);
   renderTicket(); renderResultados(); cargarHoy();

@@ -81,7 +81,7 @@
                   </div>
                   <div class="form-group">
                     <label>Precio de venta</label>
-                    <div class="pf-precio"><input type="number" id="precio_minorista" placeholder="0" min="0" step="0.01" inputmode="decimal"></div>
+                    <div class="pf-precio"><input type="text" id="precio_minorista" placeholder="0" inputmode="decimal" autocomplete="off"></div>
                     <span class="form-hint" id="hint-precio">Sin precio, en la tienda dice "Consultar".</span>
                   </div>
                   <div class="form-group">
@@ -117,7 +117,7 @@
                 </label>
                 <div class="form-group" id="oferta-campos" hidden style="margin-top:12px;max-width:260px">
                   <label>Precio de oferta</label>
-                  <div class="pf-precio"><input type="number" id="precio_oferta" placeholder="0" min="0" step="0.01" inputmode="decimal"></div>
+                  <div class="pf-precio"><input type="text" id="precio_oferta" placeholder="0" inputmode="decimal" autocomplete="off"></div>
                   <span class="form-hint" id="hint-oferta">En la tienda se muestra el precio de venta tachado y este al lado.</span>
                 </div>
               </div>
@@ -165,13 +165,13 @@
                 <div class="form-grid form-grid-3">
                   <div class="form-group">
                     <label>Costo</label>
-                    <input type="number" id="precio_costo" placeholder="0" min="0" step="0.01" inputmode="decimal">
+                    <input type="text" id="precio_costo" placeholder="0" inputmode="decimal" autocomplete="off">
                     <span class="form-hint" id="hint-costo">Solo lo ven administración y stock.</span>
                   </div>
                   <div class="form-group"><label>Proveedor</label><input type="text" id="proveedor" placeholder="Nombre del proveedor"></div>
                   <div class="form-group">
                     <label>Precio mayorista</label>
-                    <input type="number" id="precio_mayorista" placeholder="0" min="0" step="0.01" inputmode="decimal">
+                    <input type="text" id="precio_mayorista" placeholder="0" inputmode="decimal" autocomplete="off">
                   </div>
                 </div>
               </div>
@@ -391,6 +391,8 @@ function val(id) { return document.getElementById(id)?.value || ''; }
 function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = v ?? ''; }
 function setCheck(id, v) { const el = document.getElementById(id); if (el) el.checked = !!v; }
 function num(v) { const n = parseFloat(v); return isNaN(n) ? null : n; }
+// Precios como los escribe la gente: "15.000", "15000,50" (medidas y peso siguen con num)
+function numP(v) { const n = Utils.num(v); return Number.isFinite(n) ? n : null; }
 function int(v) { const n = parseInt(v); return isNaN(n) ? 0 : n; }
 
 async function cargarCategorias() {
@@ -497,7 +499,7 @@ function iniciarFotos() {
 
 /* ── Ayudas en vivo: qué falta para publicar, margen, oferta, resúmenes ── */
 function pintarAyudas() {
-  const precio = num(val('precio_minorista')) || 0, costo = num(val('precio_costo')) || 0, oferta = num(val('precio_oferta')) || 0;
+  const precio = numP(val('precio_minorista')) || 0, costo = numP(val('precio_costo')) || 0, oferta = numP(val('precio_oferta')) || 0;
   const enOferta = document.getElementById('en_oferta').checked;
   const foto = !!val('imagen_principal_url'), cat = !!val('categoria_id');
   const fila = (ok, txt) => `<div class="${ok ? 'ok' : 'no'}">${ok ? '✓' : '✕'} ${txt}</div>`;
@@ -595,7 +597,7 @@ async function guardar(volverAlListado) {
   const cat = val('categoria_id');
   if (!cat) { Utils.toast('Seleccioná una categoría','warning'); document.getElementById('categoria_id').focus(); return false; }
 
-  const precioV = num(val('precio_minorista')) || 0, ofertaV = num(val('precio_oferta')) || 0;
+  const precioV = numP(val('precio_minorista')) || 0, ofertaV = numP(val('precio_oferta')) || 0;
   if (document.getElementById('en_oferta').checked && (!(ofertaV > 0) || (precioV > 0 && ofertaV >= precioV))) {
     Utils.toast(ofertaV > 0 ? 'La oferta tiene que ser más barata que el precio de venta' : 'Escribí el precio de oferta, o apagá "Está en oferta"', 'warning', 6000);
     document.getElementById('precio_oferta').focus(); return false;
@@ -615,9 +617,9 @@ async function guardar(volverAlListado) {
     codigo_barras: val('codigo_barras')||null,
     descripcion_corta: val('descripcion_corta')||null,
     descripcion: val('descripcion')||null,
-    precio_minorista: num(val('precio_minorista')),
-    precio_mayorista: num(val('precio_mayorista')),
-    precio_oferta: num(val('precio_oferta')),
+    precio_minorista: numP(val('precio_minorista')),
+    precio_mayorista: numP(val('precio_mayorista')),
+    precio_oferta: numP(val('precio_oferta')),
     en_oferta: document.getElementById('en_oferta').checked,
     stock_minimo: int(val('stock_minimo')),
     unidad: val('unidad')||'unidad',
@@ -659,7 +661,7 @@ async function guardar(volverAlListado) {
 
   if (error) { Utils.toast(msgError(error), 'error', 6000); return false; }
 
-  const eCostos = await guardarCostos(data?.id || editId, num(val('precio_costo')), val('proveedor') || null);
+  const eCostos = await guardarCostos(data?.id || editId, numP(val('precio_costo')), val('proveedor') || null);
   if (eCostos) Utils.toast('El producto se guardó, pero no el costo ni el proveedor: ' + msgError(eCostos), 'warning', 7000);
 
   // Tras un alta se pasa a modo edición: si vuelven a tocar "Guardar"

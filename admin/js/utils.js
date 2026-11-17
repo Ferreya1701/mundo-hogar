@@ -2,17 +2,42 @@
 const Utils = {
 
   /* ── Toasts ─────────────────────────────────────── */
-  toast(msg, type = 'success', ms = 3600) {
+  // opts.accion + opts.onAccion: botón en el aviso (ej. "Deshacer"), como Gmail.
+  toast(msg, type = 'success', ms = 3600, opts = {}) {
     const icons = { success:'✅', error:'❌', warning:'⚠️', info:'ℹ️' };
+    const cont = document.getElementById('toast-container');
+    if (!cont) return;
+    if (!cont.hasAttribute('aria-live')) { cont.setAttribute('role', 'status'); cont.setAttribute('aria-live', 'polite'); }
     const el = document.createElement('div');
     el.className = `toast toast-${type}`;
     el.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ️'}</span>
                     <span class="toast-msg">${msg}</span>`;
-    document.getElementById('toast-container').appendChild(el);
-    setTimeout(() => {
+    let t = null;
+    const quitar = () => {
+      clearTimeout(t);
       el.style.cssText = 'opacity:0;transform:translateX(18px);transition:.3s';
       setTimeout(() => el.remove(), 310);
-    }, ms);
+    };
+    if (opts.accion) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'toast-accion'; b.textContent = opts.accion;
+      b.onclick = () => { quitar(); opts.onAccion?.(); };
+      el.appendChild(b);
+    }
+    cont.appendChild(el);
+    t = setTimeout(quitar, ms);
+    return quitar;
+  },
+
+  /* ── Montos como los escribe la gente: "12.500", "12500,50", "12500.5", "$ 12.500" ──
+     Devuelve NaN si no es un número. */
+  num(v) {
+    let s = String(v ?? '').trim().replace(/[\s$]/g, '');
+    if (!s) return NaN;
+    if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+    else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+    const n = Number(s);
+    return Number.isFinite(n) ? n : NaN;
   },
 
   /* ── Traer TODO (Supabase corta en 1000 filas por pedido) ──
@@ -119,20 +144,38 @@ const Utils = {
   },
 
   /* ── Confirmación ─────────────────────────────── */
+  // Enter confirma, Escape o clic afuera cancela; el foco arranca en el botón.
   confirm(msg, title = 'Confirmar acción', confirmLabel = 'Confirmar', danger = true) {
     return new Promise(resolve => {
+      const previo = document.activeElement;
       const bd = document.createElement('div');
       bd.className = 'modal-backdrop';
-      bd.innerHTML = `<div class="modal" style="max-width:370px">
-        <div class="modal-header"><h3 class="modal-title">${title}</h3></div>
+      bd.innerHTML = `<div class="modal" style="max-width:370px" role="dialog" aria-modal="true" aria-labelledby="_ctit">
+        <div class="modal-header"><h3 class="modal-title" id="_ctit">${title}</h3></div>
         <div class="modal-body"><p style="color:var(--muted)">${msg}</p></div>
         <div class="modal-footer">
-          <button class="btn btn-outline" id="_cno">Cancelar</button>
-          <button class="btn ${danger?'btn-danger':'btn-primary'}" id="_cyes">${confirmLabel}</button>
+          <button type="button" class="btn btn-outline" id="_cno">Volver</button>
+          <button type="button" class="btn ${danger?'btn-danger':'btn-primary'}" id="_cyes">${confirmLabel}</button>
         </div></div>`;
       document.body.appendChild(bd);
-      bd.querySelector('#_cyes').onclick = () => { bd.remove(); resolve(true); };
-      bd.querySelector('#_cno').onclick  = () => { bd.remove(); resolve(false); };
+      const fin = ok => {
+        document.removeEventListener('keydown', tecla, true);
+        bd.remove(); previo?.focus?.(); resolve(ok);
+      };
+      const tecla = e => {
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fin(false); }
+        else if (e.key === 'Enter' && document.activeElement?.id !== '_cno') { e.preventDefault(); e.stopPropagation(); fin(true); }
+        else if (e.key === 'Tab') {   // el foco no se escapa del cartel
+          const a = bd.querySelector('#_cno'), b = bd.querySelector('#_cyes');
+          if (e.shiftKey && document.activeElement === a) { e.preventDefault(); b.focus(); }
+          else if (!e.shiftKey && document.activeElement === b) { e.preventDefault(); a.focus(); }
+        }
+      };
+      document.addEventListener('keydown', tecla, true);
+      bd.querySelector('#_cyes').onclick = () => fin(true);
+      bd.querySelector('#_cno').onclick  = () => fin(false);
+      bd.addEventListener('mousedown', e => { if (e.target === bd) fin(false); });
+      bd.querySelector('#_cyes').focus();
     });
   },
 

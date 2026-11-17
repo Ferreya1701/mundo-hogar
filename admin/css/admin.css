@@ -1223,3 +1223,48 @@ textarea.lista-pegar { width:100%; min-height:160px; font-family:ui-monospace,mo
   .cmp-grid { grid-template-columns:1fr; }
   .map-grid { grid-template-columns:1fr 1fr; }
 }
+
+/* ── Mostrador y accesibilidad (revisión UX 2026-11) ─────────── */
+/* Foco visible al usar el teclado, en todo el panel */
+:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+.sidebar :focus-visible { outline-color:#FFB37A; }
+
+/* Botón del aviso ("Deshacer") */
+.toast-accion { margin-left:4px; align-self:center; background:none; border:none; color:var(--blue-dark); font:inherit; font-weight:700; cursor:pointer; padding:6px 8px; border-radius:6px; white-space:nowrap; }
+.toast-accion:hover { background:var(--info-bg); }
+
+/* Resultado del buscador elegido con las flechas */
+.pos-item.kb { border-color:var(--blue); box-shadow:0 0 0 2px rgba(23,99,198,.25); }
+
+/* Cobrar siempre a la vista: el ticket no pasa el alto de la pantalla y el
+   botón queda pegado abajo aunque haya muchas líneas (como Square). */
+.btn-cobrar { position:sticky; bottom:0; z-index:2; box-shadow:0 -12px 14px -6px #fff; }
+@media (min-width:981px) {
+  .pos-ticket { max-height:calc(100vh - var(--header-h) - 24px); display:flex; flex-direction:column; }
+  .pos-ticket .card-body { overflow:auto; min-height:0; }
+}
+/* Atajo a la vista en computadora */
+@media (hover:hover) and (pointer:fine) {
+  .btn-cobrar::after { content:'F9'; font-size:11px; font-weight:600; opacity:.8; border:1px solid rgba(255,255,255,.55); border-radius:4px; padding:1px 5px; margin-left:10px; }
+}
+
+/* Dedos: mínimo 44px en los controles del ticket (Apple HIG) */
+@media (pointer:coarse) {
+  .qty-ctl button { width:44px; height:44px; }
+  .qty-ctl input { height:44px; }
+  .pos-quitar { min-height:44px; padding:0 10px; }
+  .pos-precio-btn { min-height:32px; padding:4px 0; }
+  .btn-sm { min-height:36px; }
+}
+/* En iPhone, un campo de menos de 16px hace zoom al tocarlo */
+@media (max-width:768px) {
+  input, select, textarea { font-size:16px; }
+}
+/* "Más datos" del ticket: lo opcional plegado para que Cobrar quede cerca */
+.pos-mas { margin-top:12px; border-top:1px solid var(--border); padding-top:8px; }
+.pos-mas > summary { cursor:pointer; font-size:13px; font-weight:600; color:var(--night); min-height:36px; display:flex; align-items:center; gap:8px; list-style:none; }
+.pos-mas > summary::-webkit-details-marker { display:none; }
+.pos-mas > summary::before { content:'▸'; color:var(--muted); transition:transform .15s; }
+.pos-mas[open] > summary::before { transform:rotate(90deg); }
+.pos-mas > summary span { font-weight:400; font-size:12px; color:var(--muted); }
+.pos-mas .pos-seccion:first-of-type { margin-top:4px; }
