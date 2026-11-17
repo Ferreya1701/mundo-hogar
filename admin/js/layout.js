@@ -176,6 +176,31 @@ const Layout = {
       if (e.key === 'Escape' && sb.classList.contains('mobile-open')) this.toggleSidebar(true);
     });
 
+    // En celular las tablas pasan a tarjetas y se oculta el encabezado:
+    // cada celda sin etiqueta toma la de su columna para que un número
+    // suelto se entienda. Sirve para las filas que se dibujan después.
+    const etiquetar = () => document.querySelectorAll('.table-wrap table').forEach(t => {
+      const ths = [...t.querySelectorAll('thead th')].map(th => th.textContent.trim());
+      if (!ths.length) return;
+      t.querySelectorAll('tbody tr').forEach(tr => {
+        // Productos, Compras y Ventas ya traen su tarjeta armada a mano
+        if (tr.querySelector(':scope > td[class*="c-"]')) return;
+        let col = 0;
+        for (const td of tr.children) {
+          const span = td.colSpan || 1;
+          if (span === 1 && !td.hasAttribute('data-l') && ths[col]) td.setAttribute('data-l', ths[col]);
+          col += span;
+        }
+      });
+    });
+    etiquetar();
+    let pendiente = false;
+    new MutationObserver(() => {
+      if (pendiente) return;
+      pendiente = true;
+      requestAnimationFrame(() => { pendiente = false; etiquetar(); });
+    }).observe(document.body, { childList: true, subtree: true });
+
     const salir = document.getElementById('logout-btn');
     salir?.addEventListener('click', () => Auth.logout());
     // "Mi contraseña" al lado de Salir, en todas las páginas del panel

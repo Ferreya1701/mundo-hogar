@@ -522,6 +522,9 @@ async function pedirPrecio(nombre, actual) {
 }
 
 async function agregarProducto(p) {
+  // Escanear después de cobrar arranca la venta siguiente: sin esto el
+  // producto se sumaba a un ticket oculto detrás de "venta registrada".
+  if (ultimaVenta) ultimaVenta = null;
   const key = 'p' + p.id;
   const ya = ticket.find(t => t.key === key);
   if (ya) { ya.cantidad = Math.min(ya.cantidad + 1, 9999); }
@@ -542,6 +545,7 @@ document.getElementById('btn-libre').addEventListener('click', () => {
   const precio = Number(document.getElementById('libre-precio').value);
   if (nombre.length < 2) { Utils.toast('Escribí qué se vendió', 'warning'); document.getElementById('libre-nombre').focus(); return; }
   if (!isFinite(precio) || precio < 0 || document.getElementById('libre-precio').value === '') { Utils.toast('Indicá el precio', 'warning'); document.getElementById('libre-precio').focus(); return; }
+  if (ultimaVenta) ultimaVenta = null;
   ticket.push({ key: 'l' + Date.now(), producto_id: null, nombre, sku: null, cantidad: 1, precio, imagen: null });
   document.getElementById('libre-nombre').value = ''; document.getElementById('libre-precio').value = '';
   guardarTicket(); renderTicket();

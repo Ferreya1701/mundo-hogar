@@ -397,6 +397,14 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
     if (bad) { document.querySelector('.field.invalid input')?.focus(); return; }
     if (!Cart.items.length) return;
 
+    // La pestaña de WhatsApp se abre YA, en el mismo toque: si se abre
+    // después de esperar a la base, Safari en iPhone y los navegadores de
+    // Instagram/Facebook la bloquean. Cuando el mensaje está listo se le
+    // carga la dirección; si hay que frenar (sin stock, datos) se cierra.
+    let waWin = null;
+    try { waWin = window.open('', '_blank'); if (waWin) waWin.opener = null; } catch (e) {}
+    const cerrarWa = () => { try { if (waWin && !waWin.closed) waWin.close(); } catch (e) {} };
+
     enviando = true;
     const btn = $('#btn-enviar');
     btn.disabled = true; btn.textContent = 'Generando solicitud…';
@@ -429,6 +437,7 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
             ? 'Mientras armabas el pedido se vendió parte del stock: ' + faltan.map(f => `${f.nombre} (quedan ${f.disponible})`).join(', ') + '. Ajustamos el carrito; revisalo y volvé a enviar.'
             : (err.hint || 'Algunos productos ya no tienen stock disponible.');
           $('#form-fail').hidden = false;
+          cerrarWa();
           enviando = false; btn.disabled = false; btn.textContent = 'Enviar pedido por WhatsApp';
           return;
         }
@@ -437,6 +446,7 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
         if (r.status === 400 && msg && /Ingresá|Agregá|solicitudes|minutos|disponibles/.test(msg)) {
           $('#form-fail').textContent = msg;
           $('#form-fail').hidden = false;
+          cerrarWa();
           enviando = false; btn.disabled = false; btn.textContent = 'Enviar pedido por WhatsApp';
           return;
         }
@@ -462,7 +472,8 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
 
     // 3) Abrir WhatsApp y mostrar confirmación
     MH.track('solicitud_enviada', { items: itemsMsg.length });
-    window.open(waUrl, '_blank', 'noopener');
+    if (waWin && !waWin.closed) waWin.location.href = waUrl;
+    else window.open(waUrl, '_blank', 'noopener');   // si igual lo bloquean, queda el botón de la confirmación
     Cart.clear();
     $('#cart-layout').hidden = true;
     $('#ok-codigo').textContent = codigo;

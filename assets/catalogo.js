@@ -311,11 +311,16 @@ window.MH = (function () {
 
   // Crea la tarjeta de producto (DOM). Dos estados: con precio (agregar al carrito)
   // y sin precio ("Consultar precio" + cotización). Nunca muestra $0/NaN.
+  // Los textos del producto vienen de la base: se escapan antes de ir al HTML.
+  function escHTML(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  }
+
   function createCard(p) {
     const card = document.createElement('article');
     card.className = 'mh-card';
     card.dataset.category = p.categoria;
-    const ficha = p.slug ? `/producto/${p.slug}` : null;
+    const ficha = p.slug ? `/producto/${encodeURIComponent(p.slug)}` : null;
     const badges = [];
     const precio = effectivePrice(p);
     const conOferta = precio !== null && p.enOferta && isValidPrice(p.precioOferta) && isValidPrice(p.precio) && p.precioOferta < p.precio;
@@ -324,7 +329,7 @@ window.MH = (function () {
     if (p._nuevo) badges.push('<span class="badge badge-new">Nuevo</span>');
     const disp = availability(p);
     if (disp === 'sin_stock') badges.push('<span class="badge badge-nostock">Sin stock</span>');
-    const nombreAttr = (p.nombre || '').replace(/"/g, '&quot;');
+    const nombreAttr = escHTML(p.nombre);
     const wa = waLink(`Hola! Me interesa ${p.nombre}${p.sku ? ` (código ${p.sku})` : ''}. ¿Tienen stock y precio?`);
 
     const precioHTML = precio !== null
@@ -348,13 +353,13 @@ window.MH = (function () {
       <div class="mh-card-imgwrap">
         ${badges.length ? `<div class="mh-badges">${badges.join('')}</div>` : ''}
         ${ficha ? `<a href="${ficha}" class="mh-card-imglink" aria-hidden="true" tabindex="-1">` : ''}
-        <img alt="${(p.alt || p.nombre || '').replace(/"/g,'&quot;')}" loading="lazy" decoding="async">
+        <img alt="${escHTML(p.alt || p.nombre)}" loading="lazy" decoding="async">
         ${ficha ? `</a>` : ''}
       </div>
       <div class="mh-card-body">
-        <div class="mh-card-cat">${catLabel(p.categoria)}</div>
-        <h3 class="mh-card-title">${ficha ? `<a href="${ficha}">${p.nombre || ''}</a>` : (p.nombre || '')}</h3>
-        ${p.descripcion ? `<p class="mh-card-desc">${p.descripcion}</p>` : ''}
+        <div class="mh-card-cat">${escHTML(catLabel(p.categoria))}</div>
+        <h3 class="mh-card-title">${ficha ? `<a href="${ficha}">${nombreAttr}</a>` : nombreAttr}</h3>
+        ${p.descripcion ? `<p class="mh-card-desc">${escHTML(p.descripcion)}</p>` : ''}
         ${precioHTML}
         <div class="mh-card-cta">${ctaHTML}</div>
       </div>`;

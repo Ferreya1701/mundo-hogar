@@ -895,8 +895,23 @@ kbd {
   .table-wrap td { display:block; border:none; padding:0; }
   .table-wrap tbody tr:hover td { background:transparent; }
 
+  /* Tarjeta genérica (Movimientos, Usuarios, Pedidos, Cuentas…):
+     dos columnas; el primer dato es el título y va a todo el ancho.
+     Las etiquetas (data-l) las completa Layout desde el encabezado. */
   .table-wrap tbody tr {
     display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:7px 12px; align-items:center;
+    background:#fff; border:1px solid var(--border);
+    border-radius:var(--r-lg); box-shadow:var(--shadow-sm);
+    padding:14px; margin-bottom:10px;
+    position:relative;
+  }
+  .table-wrap td { min-width:0; overflow-wrap:anywhere; }
+  .table-wrap td[colspan] { grid-column:1/-1; }
+  .table-wrap tbody tr:not(:has(> td[class*="c-"])) > td:first-child { grid-column:1/-1; font-weight:600; }
+  /* Distribución de Productos y Compras (celdas c-img, c-prod, …) */
+  .table-wrap tbody tr:has(> .c-prod) {
     grid-template-columns:52px 1fr;
     grid-template-areas:
       "img    prod"
@@ -904,11 +919,6 @@ kbd {
       "sku    stock"
       "estado estado"
       "acc    acc";
-    gap:7px 12px; align-items:center;
-    background:#fff; border:1px solid var(--border);
-    border-radius:var(--r-lg); box-shadow:var(--shadow-sm);
-    padding:14px; margin-bottom:10px;
-    position:relative;
   }
   /* La casilla va fuera de la grilla, en la esquina de la tarjeta */
   .c-sel { position:absolute; top:10px; right:10px; }

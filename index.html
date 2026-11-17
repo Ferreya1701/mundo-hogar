@@ -784,6 +784,10 @@ mnav?.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
     mal = malo('m-localidad', !d.localidad) || mal;
     if (mal) return;
 
+    // WhatsApp se abre en el mismo toque (si no, iPhone e Instagram lo bloquean)
+    let waWin = null;
+    try { waWin = window.open('', '_blank'); if (waWin) waWin.opener = null; } catch (e) {}
+
     enviando = true;
     const btn = g('m-enviar');
     btn.disabled = true; btn.textContent = 'Enviando…';
@@ -812,11 +816,13 @@ mnav?.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
     if (d.interes) { L.push(''); L.push('Productos de interés:'); L.push(d.interes); }
     if (codigo) { L.push(''); L.push(`Código de solicitud: ${codigo}`); }
     MH.track('mayorista_enviado', {});
-    window.open(MH.waLink(L.join('\n')), '_blank', 'noopener');
+    const waUrl = MH.waLink(L.join('\n'));
+    if (waWin && !waWin.closed) waWin.location.href = waUrl;
+    else window.open(waUrl, '_blank', 'noopener');
 
     form.innerHTML = `<div class="form-ok"><b>¡Listo!</b> Te abrimos WhatsApp con tu consulta.
       ${codigo ? `Tu código es <b>${esc(codigo)}</b>.` : ''}
-      Si no se abrió, escribinos directo y mencionalo.</div>`;
+      Si no se abrió, <a href="${esc(waUrl)}" target="_blank" rel="noopener">tocá acá para abrir WhatsApp</a>.</div>`;
   });
 })();
 </script>
