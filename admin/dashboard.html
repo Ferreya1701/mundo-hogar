@@ -60,15 +60,22 @@
 
       <!-- KPIs -->
       <div id="pendientes" style="display:none;gap:14px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-left:4px solid var(--gold);border-radius:var(--r-lg);padding:14px 18px;margin-bottom:18px"></div>
+      <!-- El negocio: plata y lo que espera a alguien, comparado con la semana pasada (como Shopify/Stripe) -->
+      <h2 class="dash-tit">El negocio hoy</h2>
+      <div class="kpi-grid" id="kpi-negocio">
+        <a class="kpi-card" href="/admin/ventas"><div class="kpi-label" id="nv-hoy-lbl">Ventas de hoy</div><div class="kpi-value" id="nv-hoy">—</div><div class="kpi-sub" id="nv-hoy-sub">&nbsp;</div><svg class="kpi-spark" id="nv-spark" viewBox="0 0 80 24" width="80" height="24" aria-hidden="true"></svg></a>
+        <a class="kpi-card" href="/admin/ventas"><div class="kpi-label">Ticket promedio</div><div class="kpi-value" id="nv-ticket">—</div><div class="kpi-sub" id="nv-ticket-sub">&nbsp;</div></a>
+        <a class="kpi-card" href="/admin/cuentas-corrientes" id="nv-cc-card" hidden><div class="kpi-label">A cobrar en cuentas corrientes</div><div class="kpi-value" id="nv-cc">—</div><div class="kpi-sub" id="nv-cc-sub">&nbsp;</div></a>
+        <a class="kpi-card" href="/admin/pedidos?estado=nueva"><div class="kpi-label">Pedidos web por atender</div><div class="kpi-value" id="kpi-solicitudes">—</div><div class="kpi-sub" id="kpi-sol-sub">&nbsp;</div></a>
+      </div>
+      <h2 class="dash-tit">Catálogo y stock</h2>
       <div class="kpi-grid" id="kpi-grid">
-        <div class="kpi-card" data-href="/admin/productos"><div class="kpi-icon gold">🛍️</div><div class="kpi-label">Productos activos</div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-sub" id="kpi-activos">—</div></div>
-        <div class="kpi-card" data-href="/admin/productos?precio=sin"><div class="kpi-icon amber">💲</div><div class="kpi-label">Sin precio</div><div class="kpi-value" id="kpi-sin-precio">—</div><div class="kpi-sub">clic para cargarlos</div></div>
-        <div class="kpi-card" data-href="/admin/productos?destacados=1"><div class="kpi-icon violet">⭐</div><div class="kpi-label">Destacados</div><div class="kpi-value" id="kpi-destacados">—</div><div class="kpi-sub">visibles en portada</div></div>
-        <div class="kpi-card" data-href="/admin/ventas"><div class="kpi-icon green">🛒</div><div class="kpi-label">Ventas de hoy</div><div class="kpi-value" id="kpi-ventas-hoy">—</div><div class="kpi-sub" id="kpi-ventas-sub">—</div></div>
-        <div class="kpi-card" data-href="/admin/carga-stock?filtro=cero"><div class="kpi-icon red">⚠️</div><div class="kpi-label">Sin stock</div><div class="kpi-value" id="kpi-sin-stock">—</div><div class="kpi-sub" id="kpi-bajo-sub">—</div></div>
-        <div class="kpi-card" data-href="/admin/carga-stock"><div class="kpi-icon blue">📥</div><div class="kpi-label">Sin contar</div><div class="kpi-value" id="kpi-sin-contar">—</div><div class="kpi-sub">productos sin stock controlado</div></div>
-        <div class="kpi-card" data-href="/admin/pedidos?estado=nueva"><div class="kpi-icon blue">💬</div><div class="kpi-label">Pedidos web nuevos</div><div class="kpi-value" id="kpi-solicitudes">—</div><div class="kpi-sub" id="kpi-sol-sub">—</div></div>
-        <div class="kpi-card" data-href="/admin/movimientos"><div class="kpi-icon green">📦</div><div class="kpi-label">Movimientos hoy</div><div class="kpi-value" id="kpi-mov-hoy">—</div><div class="kpi-sub" id="kpi-mov-mes">—</div></div>
+        <a class="kpi-card" href="/admin/productos"><div class="kpi-icon gold">🛍️</div><div class="kpi-label">Productos activos</div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-sub" id="kpi-activos">—</div></a>
+        <a class="kpi-card" href="/admin/productos?precio=sin"><div class="kpi-icon amber">💲</div><div class="kpi-label">Sin precio</div><div class="kpi-value" id="kpi-sin-precio">—</div><div class="kpi-sub">clic para cargarlos</div></a>
+        <a class="kpi-card" href="/admin/productos?destacados=1"><div class="kpi-icon violet">⭐</div><div class="kpi-label">Destacados</div><div class="kpi-value" id="kpi-destacados">—</div><div class="kpi-sub">visibles en portada</div></a>
+        <a class="kpi-card" href="/admin/carga-stock?filtro=cero"><div class="kpi-icon red">⚠️</div><div class="kpi-label">Sin stock</div><div class="kpi-value" id="kpi-sin-stock">—</div><div class="kpi-sub" id="kpi-bajo-sub">—</div></a>
+        <a class="kpi-card" href="/admin/carga-stock"><div class="kpi-icon blue">📥</div><div class="kpi-label">Sin contar</div><div class="kpi-value" id="kpi-sin-contar">—</div><div class="kpi-sub">productos sin stock controlado</div></a>
+        <a class="kpi-card" href="/admin/movimientos"><div class="kpi-icon green">📦</div><div class="kpi-label">Movimientos hoy</div><div class="kpi-value" id="kpi-mov-hoy">—</div><div class="kpi-sub" id="kpi-mov-mes">—</div></a>
       </div>
 
       <!-- Acciones rápidas -->
@@ -160,11 +167,13 @@ async function loadData() {
   const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString();
 
   // stock_controlado existe desde sql/013; si la base no lo tiene, se pide sin esa columna
-  const ventasP = db.from('ventas').select('total').gte('fecha', hoy.toISOString()).eq('estado','cerrada');   // a la vez que los productos
+  const hace7 = new Date(hoy); hace7.setDate(hace7.getDate() - 7);
+  const ventasP = Utils.traerTodo(() => db.from('ventas').select('total,fecha').gte('fecha', hace7.toISOString()).eq('estado','cerrada').order('id'));   // a la vez que los productos
+  const ccP = Auth.puede('cc.ver', profileActual) ? db.from('v_cc_cuentas').select('saldo') : Promise.resolve({ data: null });
   let prodRes = await Utils.traerTodo(() => db.from('productos').select('id,nombre,stock_actual,stock_minimo,estado,precio_minorista,imagen_principal_url,categoria_id,destacado,stock_controlado,seguimiento_inventario,categorias(nombre)').order('stock_actual').order('id'));
   if (prodRes.error) prodRes = await Utils.traerTodo(() => db.from('productos').select('id,nombre,stock_actual,stock_minimo,estado,precio_minorista,imagen_principal_url,categoria_id,destacado,categorias(nombre)').order('stock_actual').order('id'));
-  const ventasRes = await ventasP;
-  const ventasHoy = ventasRes.error ? null : (ventasRes.data || []);
+  const [ventasRes, ccRes] = await Promise.all([ventasP, ccP]);
+  pintarNegocio(ventasRes.error ? null : (ventasRes.data || []), hoy, ccRes.error ? null : ccRes.data);
   const [
     { count: movHoy },
     { count: movMes },
@@ -200,15 +209,8 @@ async function loadData() {
   document.getElementById('kpi-sin-stock').textContent  = sinStock;
   document.getElementById('kpi-bajo-sub').textContent   = stockBajo ? `+ ${stockBajo} con stock bajo` : 'controlados en 0';
   document.getElementById('kpi-sin-contar').textContent = sinContar;
-  if (ventasHoy === null) {
-    document.getElementById('kpi-ventas-hoy').textContent = '—';
-    document.getElementById('kpi-ventas-sub').textContent = 'falta ejecutar sql/013';
-  } else {
-    document.getElementById('kpi-ventas-hoy').textContent = Utils.currency(ventasHoy.reduce((s,v)=>s+Number(v.total||0),0));
-    document.getElementById('kpi-ventas-sub').textContent = `${ventasHoy.length} venta${ventasHoy.length!==1?'s':''} · clic para ver`;
-  }
   document.getElementById('kpi-solicitudes').textContent = solNuevas;
-  document.getElementById('kpi-sol-sub').textContent    = `${solicitudes.length} en total`;
+  document.getElementById('kpi-sol-sub').textContent    = solNuevas ? 'nuevos, esperan respuesta' : 'todo al día ✓';
   document.getElementById('kpi-mov-hoy').textContent    = movHoy||0;
   document.getElementById('kpi-mov-mes').textContent    = `${movMes||0} este mes`;
 
@@ -324,11 +326,49 @@ async function loadData() {
     </div>`).join('');
 }
 
-// KPI cards clickeables
-document.getElementById('kpi-grid').addEventListener('click', e => {
-  const card = e.target.closest('.kpi-card[data-href]');
-  if (card) window.location.href = card.dataset.href;
-});
+/* ── El negocio hoy ──
+   ventas: cerradas de los últimos 8 días (hoy incluido). Se compara hoy con
+   el mismo día de la semana pasada HASTA LA MISMA HORA, para que a las 11 no
+   parezca que se vende menos que un día entero. */
+function pintarNegocio(ventas, hoy, cc) {
+  const $ = id => document.getElementById(id);
+  if (ventas === null) { $('nv-hoy-sub').textContent = 'No se pudieron leer las ventas'; return; }
+  const DIA = 86400000, ahora = Date.now();
+  const dias = Array(8).fill(0), cant = Array(8).fill(0);   // 0 = hace 7 días … 7 = hoy
+  let semPasadaHastaAhora = 0;
+  ventas.forEach(v => {
+    const t = new Date(v.fecha).getTime(), d = new Date(v.fecha); d.setHours(0,0,0,0);
+    const i = 7 - Math.round((hoy - d) / DIA);
+    if (i < 0 || i > 7) return;
+    dias[i] += Number(v.total || 0); cant[i]++;
+    if (i === 0 && t <= ahora - 7 * DIA) semPasadaHastaAhora += Number(v.total || 0);
+  });
+  const totHoy = dias[7], nHoy = cant[7];
+  $('nv-hoy').textContent = Utils.currency(totHoy);
+  const cmp = (act, ant, txt) => {
+    if (!ant) return `<span class="kpi-sub">${txt}: ${Utils.currency(ant)}</span>`;
+    const pct = Math.round((act - ant) / ant * 100);
+    return `<span class="kpi-delta ${pct >= 0 ? 'up' : 'down'}">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct)}%</span> <span>${txt}</span>`;
+  };
+  $('nv-hoy-sub').innerHTML = `${nHoy} venta${nHoy !== 1 ? 's' : ''} · ` + cmp(totHoy, semPasadaHastaAhora, 'vs. el ' + hoy.toLocaleDateString('es-AR', { weekday: 'long' }) + ' pasado a esta hora');
+  // Minigráfico: los últimos 7 días (hoy a la derecha)
+  const serie = dias.slice(1), max = Math.max(...serie, 1);
+  const pts = serie.map((v, i) => `${(i * 80 / 6).toFixed(1)},${(22 - v / max * 20).toFixed(1)}`).join(' ');
+  $('nv-spark').innerHTML = `<polyline points="${pts}" fill="none" stroke="var(--blue)" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"/><circle cx="80" cy="${(22 - serie[6] / max * 20).toFixed(1)}" r="2.2" fill="var(--blue)"/>`;
+  $('nv-spark').setAttribute('aria-label', 'Ventas de los últimos 7 días');
+  // Ticket promedio: hoy contra el promedio de los 7 días anteriores
+  const n7 = cant.slice(0, 7).reduce((a, b) => a + b, 0), t7 = dias.slice(0, 7).reduce((a, b) => a + b, 0);
+  const prom7 = n7 ? t7 / n7 : 0;
+  $('nv-ticket').textContent = nHoy ? Utils.currency(totHoy / nHoy) : '—';
+  $('nv-ticket-sub').innerHTML = nHoy ? cmp(totHoy / nHoy, prom7, 'vs. promedio de 7 días') : (prom7 ? `Promedio de 7 días: ${Utils.currency(prom7)}` : 'Sin ventas todavía');
+  // Cuentas corrientes (solo quien las ve)
+  if (cc) {
+    const deudas = cc.filter(c => Number(c.saldo) > 0);
+    $('nv-cc-card').hidden = false;
+    $('nv-cc').textContent = Utils.currency(deudas.reduce((s, c) => s + Number(c.saldo), 0));
+    $('nv-cc-sub').textContent = `${deudas.length} cuenta${deudas.length !== 1 ? 's' : ''} con saldo`;
+  }
+}
 
 let profileActual = null;
 async function initPage() {
@@ -340,7 +380,7 @@ async function initPage() {
   const greet = new Date().getHours() < 12 ? 'Buenos días' : new Date().getHours() < 19 ? 'Buenas tardes' : 'Buenas noches';
   document.getElementById('welcome-msg').textContent = `${greet}, ${profile.nombre.split(' ')[0]}`;
   // Sin "ver las ventas de todos" (sql/016) el total es solo el suyo
-  if (!Auth.puede('ventas.ver_todas', profile)) document.getElementById('kpi-ventas-hoy').previousElementSibling.textContent = 'Mis ventas de hoy';
+  if (!Auth.puede('ventas.ver_todas', profile)) document.getElementById('nv-hoy-lbl').textContent = 'Mis ventas de hoy';
 
   await loadData();
 }

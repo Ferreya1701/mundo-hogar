@@ -1,24 +1,24 @@
 // Renderiza sidebar + header compartidos
 const Layout = {
   NAV: [
-    { id:'dashboard',  label:'Inicio',              icon:'📊', href:'/admin/dashboard',      section:'Principal' },
-    { id:'vender',     label:'Crear venta',         icon:'🛒', href:'/admin/vender',         section:'Mostrador', permiso:'ventas.crear' },
-    { id:'caja',       label:'Caja',                icon:'💵', href:'/admin/caja',           section:'Mostrador', permiso:'caja.ver', contador:'caja' },
-    { id:'ventas',     label:'Ventas',              icon:'🧮', href:'/admin/ventas',         section:'Mostrador' },
-    { id:'entregas',   label:'Retiros y envíos',    icon:'📦', href:'/admin/entregas',       section:'Entregas', permiso:'entregas.ver', contador:'entregas' },
-    { id:'pedidos',    label:'Pedidos web',         icon:'🧾', href:'/admin/pedidos',        section:'Pedidos web', contador:'pedidos' },
-    { id:'crm',        label:'Clientes',            icon:'🤝', href:'/admin/crm',            section:'Clientes', permiso:'clientes.gestionar' },
+    { id:'dashboard',  label:'Inicio',              icon:'📊', href:'/admin/dashboard',      section:'' },
+    { id:'vender',     label:'Crear venta',         icon:'🛒', href:'/admin/vender',         section:'Ventas', permiso:'ventas.crear' , claves:'nueva venta cobrar ticket' },
+    { id:'caja',       label:'Caja',                icon:'💵', href:'/admin/caja',           section:'Ventas', permiso:'caja.ver', contador:'caja' },
+    { id:'ventas',     label:'Ventas',              icon:'🧮', href:'/admin/ventas',         section:'Ventas' },
+    { id:'pedidos',    label:'Pedidos web',         icon:'🧾', href:'/admin/pedidos',        section:'Ventas', contador:'pedidos' },
+    { id:'entregas',   label:'Retiros y envíos',    icon:'📦', href:'/admin/entregas',       section:'Ventas', permiso:'entregas.ver', contador:'entregas' , claves:'envio retiro despacho' },
+    { id:'crm',        label:'Clientes',            icon:'🤝', href:'/admin/crm',            section:'Clientes', permiso:'clientes.gestionar' , claves:'cliente buscar' },
     { id:'cuentas-corrientes', label:'Cuentas corrientes', icon:'📒', href:'/admin/cuentas-corrientes', section:'Clientes', permiso:'cc.ver' },
     { id:'completar',  label:'Completar productos',  icon:'✨', href:'/admin/completar',      section:'Catálogo', permiso:'productos.editar' },
     { id:'fotos-revisar', label:'Fotos para revisar', icon:'🖼️', href:'/admin/fotos-revisar', section:'Catálogo', permiso:'productos.editar' },
     { id:'productos',  label:'Productos',            icon:'🛍️', href:'/admin/productos',      section:'Catálogo' },
     { id:'categorias', label:'Categorías',           icon:'🏷️', href:'/admin/categorias',     section:'Catálogo' },
     { id:'importar',   label:'Importar artículos',   icon:'📥', href:'/admin/importar',       section:'Catálogo', permiso:'productos.editar' },
-    { id:'carga-stock',label:'Contar stock',         icon:'🔢', href:'/admin/carga-stock',    section:'Stock', permiso:'stock.contar' },
+    { id:'carga-stock',label:'Contar stock',         icon:'🔢', href:'/admin/carga-stock',    section:'Stock', permiso:'stock.contar' , claves:'inventario conteo' },
     { id:'compras',    label:'Compras',             icon:'🚢', href:'/admin/compras',        section:'Stock', permiso:'compras.gestionar' },
     { id:'inventario', label:'Ajuste manual',       icon:'🛠️', href:'/admin/inventario',     section:'Stock', permiso:'stock.ajustar' },
     { id:'movimientos',label:'Movimientos de stock', icon:'📋', href:'/admin/movimientos',    section:'Stock' },
-    { id:'cuentas-cobro', label:'Cuentas bancarias',icon:'🏦', href:'/admin/cuentas-cobro',  section:'Administración', adminOnly:true },
+    { id:'cuentas-cobro', label:'Cuentas bancarias',icon:'🏦', href:'/admin/cuentas-cobro',  section:'Administración', adminOnly:true , claves:'alias cbu transferencia' },
     { id:'usuarios',   label:'Usuarios',             icon:'👥', href:'/admin/usuarios',       section:'Administración', adminOnly:true },
     { id:'permisos',   label:'Permisos',             icon:'🔐', href:'/admin/permisos',       section:'Administración', adminOnly:true },
     { id:'historial',  label:'Historial',            icon:'🕵️', href:'/admin/historial',      section:'Administración', permiso:'auditoria.ver' },
@@ -86,17 +86,23 @@ const Layout = {
     });
 
     let navHTML = '';
-    Object.entries(sections).forEach(([sec, items]) => {
-      navHTML += `<div><div class="sidebar-section-title">${sec}</div>`;
-      items.forEach(item => {
-        navHTML += `<a href="${item.href}" class="sidebar-link${item.id===pageId?' active':''}"${item.contador ? ` data-cont="${item.contador}"` : ''}>
+    const link = item => `<a href="${item.href}" class="sidebar-link${item.id===pageId?' active':''}"${item.contador ? ` data-cont="${item.contador}"` : ''}${item.id===pageId ? ' aria-current="page"' : ''}>
           <span class="nav-icon">${item.icon}</span>
           <span class="nav-label">${item.label}</span>
         </a>`;
-      });
-      navHTML += '</div>';
+    Object.entries(sections).forEach(([sec, items]) => {
+      // Administración se usa poco: va plegada salvo que se esté adentro
+      if (sec === 'Administración') {
+        const abierta = items.some(i => i.id === pageId) || localStorage.getItem('sbAdmin') === '1';
+        navHTML += `<details class="sidebar-grupo"${abierta ? ' open' : ''}><summary class="sidebar-section-title">${sec}</summary>${items.map(link).join('')}</details>`;
+        return;
+      }
+      navHTML += `<div>${sec ? `<div class="sidebar-section-title">${sec}</div>` : ''}${items.map(link).join('')}</div>`;
     });
-    document.getElementById('sidebar-nav').innerHTML = navHTML;
+    const navEl = document.getElementById('sidebar-nav');
+    navEl.innerHTML = navHTML;
+    navEl.querySelector('.sidebar-grupo')?.addEventListener('toggle', e => { try { localStorage.setItem('sbAdmin', e.target.open ? '1' : '0'); } catch (x) {} });
+    this._navPerfil = profile;
     const cc = this.contCache();
     if (cc && cc.u === profile?.id) this.pintarContadores(cc.n);
 
@@ -112,6 +118,69 @@ const Layout = {
       document.getElementById('user-name').textContent   = profile.nombre || 'Usuario';
       document.getElementById('user-role').textContent   = roleLabel[profile.rol] || profile.rol;
     }
+  },
+
+  /* ── Buscador de pantallas y acciones (Ctrl+K / ⌘K), como Linear o Stripe ──
+     Lista las pantallas que el usuario puede abrir y algunas acciones. Escribir
+     filtra (sin acentos); ↑/↓ eligen, Enter abre, Escape cierra. Dentro del
+     armazón la abre el armazón, para que cubra toda la pantalla. */
+  ACCIONES: [
+    { label:'Nuevo producto',     icon:'➕', href:'/admin/producto-form', permiso:'productos.editar', claves:'agregar cargar alta' },
+    { label:'Cambiar mi contraseña', icon:'🔑', href:'/admin/clave', claves:'clave password' },
+  ],
+  irA(href) {
+    try { if (window.top !== window && window.top.MHApp) { window.top.MHApp.ir(href); return; } } catch (e) {}
+    if (window.MHApp) { MHApp.ir(href); return; }
+    location.href = href;
+  },
+  abrirPaleta() {
+    // En un módulo dentro del armazón, la abre el armazón
+    try { if (window.top !== window && window.top.Layout?.abrirPaleta) { window.top.Layout.abrirPaleta(); return; } } catch (e) {}
+    if (document.getElementById('mh-paleta')) return;
+    const perfil = this._navPerfil || this._perfil || Auth.cachedProfile?.();
+    const vale = i => (!i.adminOnly || perfil?.rol === 'administrador') && (!i.permiso || Auth.puede(i.permiso, perfil));
+    const items = [
+      ...this.ACCIONES.filter(vale).map(a => ({ ...a, tipo: 'Acción' })),
+      ...this.NAV.filter(vale).map(i => ({ ...i, tipo: i.section || 'Inicio' })),
+    ];
+    const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+    const previo = document.activeElement;
+    const bd = document.createElement('div');
+    bd.id = 'mh-paleta'; bd.className = 'paleta-bg';
+    bd.innerHTML = `<div class="paleta" role="dialog" aria-modal="true" aria-label="Ir a">
+      <input type="text" class="paleta-q" placeholder="Ir a… (pantalla o acción)" aria-label="Buscar pantalla o acción" autocomplete="off" role="combobox" aria-controls="paleta-lista" aria-expanded="true">
+      <div class="paleta-lista" id="paleta-lista" role="listbox"></div>
+      <div class="paleta-pie"><span><kbd>↑</kbd><kbd>↓</kbd> elegir</span><span><kbd>Enter</kbd> abrir</span><span><kbd>Esc</kbd> cerrar</span></div></div>`;
+    document.body.appendChild(bd);
+    const q = bd.querySelector('.paleta-q'), lista = bd.querySelector('.paleta-lista');
+    let vis = [], sel = 0;
+    const pintar = () => {
+      const ts = norm(q.value).split(/\s+/).filter(Boolean);
+      vis = items.filter(i => { const h = norm(`${i.label} ${i.tipo} ${i.claves || ''}`); return ts.every(t => h.includes(t)); });
+      sel = Math.min(sel, Math.max(0, vis.length - 1));
+      lista.innerHTML = vis.length ? vis.map((i, n) => `<a href="${i.href}" class="paleta-it${n === sel ? ' sel' : ''}" role="option" aria-selected="${n === sel}" data-n="${n}"><span class="paleta-ic">${i.icon}</span><span class="paleta-lbl">${esc(i.label)}</span><span class="paleta-tipo">${esc(i.tipo)}</span></a>`).join('')
+        : '<div class="paleta-vacio">Nada con ese nombre</div>';
+      lista.querySelector('.sel')?.scrollIntoView({ block: 'nearest' });
+    };
+    const cerrar = () => { bd.remove(); previo?.focus?.(); };
+    const abrir = i => { if (!i) return; cerrar(); this.irA(i.href); };
+    q.addEventListener('input', () => { sel = 0; pintar(); });
+    q.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(vis.length - 1, sel + 1); pintar(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(0, sel - 1); pintar(); }
+      else if (e.key === 'Enter') { e.preventDefault(); abrir(vis[sel]); }
+      else if (e.key === 'Escape') { e.preventDefault(); cerrar(); }
+    });
+    lista.addEventListener('click', e => { const a = e.target.closest('[data-n]'); if (!a) return; e.preventDefault(); e.stopPropagation(); abrir(vis[+a.dataset.n]); });
+    bd.addEventListener('mousedown', e => { if (e.target === bd) cerrar(); });
+    pintar(); q.focus();
+  },
+  atajoPaleta() {
+    if (this._atajo) return; this._atajo = true;
+    document.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'k') { e.preventDefault(); this.abrirPaleta(); }
+    });
   },
 
   esMovil: () => window.innerWidth <= 768,
@@ -150,9 +219,16 @@ const Layout = {
     const profile = await Auth.getProfile();
     this.render(pageId, pageTitle, profile);
     // Módulo dentro del armazón: el menú, la barra y los contadores son del armazón
+    this.atajoPaleta();
     if (typeof MH_EMBEBIDO !== 'undefined' && MH_EMBEBIDO) {
       try { window.top.MHApp.titulo(pageId, pageTitle); } catch (e) {}
       return;
+    }
+    const acciones = document.querySelector('.main-header .header-actions');
+    if (acciones && !document.getElementById('paleta-btn')) {
+      const esMac = /Mac|iPhone|iPad/.test(navigator.platform || '');
+      acciones.insertAdjacentHTML('afterbegin', `<button type="button" id="paleta-btn" class="btn btn-ghost btn-sm paleta-btn" aria-label="Ir a una pantalla (${esMac ? '⌘' : 'Ctrl'}+K)">🔍 <span class="paleta-btn-txt">Ir a…</span> <kbd>${esMac ? '⌘' : 'Ctrl'} K</kbd></button>`);
+      document.getElementById('paleta-btn').addEventListener('click', () => this.abrirPaleta());
     }
     this._perfil = profile;
     this.contar(profile);
