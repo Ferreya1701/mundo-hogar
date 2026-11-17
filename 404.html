@@ -12,7 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Inter',system-ui,sans-serif;background:radial-gradient(60vw 60vw at -5vw -8vw,rgba(23,99,198,.55),transparent 66%),#1F3050;color:#E8EEF9;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;overflow:hidden;position:relative}
+  body{font-family:'Inter',system-ui,sans-serif;background:radial-gradient(60vw 60vw at -5vw -8vw,rgba(23,99,198,.55),transparent 66%),#1F3050;color:#E8EEF9;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;overflow-x:hidden;position:relative}
   body::after{content:"";position:absolute;right:-120px;top:-120px;width:480px;height:480px;border-radius:50%;background:radial-gradient(circle,rgba(255,138,43,.24),transparent 62%);pointer-events:none}
   .wm{position:absolute;right:-1rem;bottom:-7rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:clamp(220px,40vw,520px);color:rgba(255,255,255,.05);line-height:1;pointer-events:none;user-select:none}
   .box{position:relative;z-index:1;max-width:520px}
@@ -30,6 +30,15 @@
   .btn-outline:hover{border-color:rgba(46,139,255,.6);background:rgba(46,139,255,.12)}
   .btn-wa{background:linear-gradient(135deg,#25D366,#12A150);color:#061018}
   .btn-wa:hover{background:linear-gradient(135deg,#2BE070,#14B15A)}
+  .busca{display:flex;gap:8px;margin:0 auto 22px;max-width:440px}
+  .busca input{flex:1;min-width:0;height:48px;border-radius:13px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#E8EEF9;font:inherit;font-size:16px;padding:0 16px}
+  .busca input::placeholder{color:#8FA0BC}
+  .busca input:focus{outline:2px solid #2E8BFF;outline-offset:1px}
+  .busca button{height:48px;padding:0 20px;border:0;border-radius:13px;font:inherit;font-weight:700;cursor:pointer;background:#2E8BFF;color:#fff}
+  .cats{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:0 0 28px}
+  .cats a{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.055);color:#E8EEF9;text-decoration:none;font-size:14px;font-weight:600}
+  .cats a:hover{border-color:rgba(46,139,255,.6)}
+  .cats-tit{color:#AFBDD2;font-size:13px;margin-bottom:10px}
   @media(prefers-reduced-motion:no-preference){
     .box{animation:up .6s cubic-bezier(.2,.7,.3,1)}
     @keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
@@ -42,12 +51,36 @@
     <img class="logo" src="/images/marca/logo-mundo-hogar.png" alt="Mundo Hogar" width="74" height="74">
     <div class="code">Error 404</div>
     <h1>Esta página<br><em>no existe.</em></h1>
-    <p>Puede que el enlace esté roto o que la página se haya movido. Volvé al inicio, mirá el catálogo o escribinos por WhatsApp y te ayudamos.</p>
+    <p>Puede que el enlace esté roto o que la página se haya movido. Buscá lo que querías o elegí una categoría.</p>
+    <form class="busca" action="/productos" method="get" role="search">
+      <input type="search" name="q" id="q404" placeholder="¿Qué estás buscando?" aria-label="Buscar productos" maxlength="80" autocomplete="off">
+      <button type="submit">Buscar</button>
+    </form>
+    <div class="cats-tit">Categorías</div>
+    <nav class="cats" aria-label="Categorías">
+      <a href="/categorias/electrodomesticos">Electrodomésticos</a>
+      <a href="/categorias/herramientas">Herramientas</a>
+      <a href="/categorias/tecnologia-celulares">Tecnología y Celulares</a>
+      <a href="/categorias/muebles-hogar">Muebles y Hogar</a>
+      <a href="/categorias/cuidado-personal">Cuidado Personal</a>
+      <a href="/categorias/salud">Salud</a>
+      <a href="/categorias/seguridad">Seguridad</a>
+    </nav>
     <div class="ctas">
       <a class="btn btn-primary" href="/">Ir al inicio</a>
       <a class="btn btn-outline" href="/productos">Ver productos</a>
       <a class="btn btn-wa" href="https://wa.me/5493426481326?text=Hola!%20Estaba%20navegando%20la%20web%20y%20tengo%20una%20consulta." target="_blank" rel="noopener">WhatsApp</a>
     </div>
   </div>
+<script>
+// Lo que traía la dirección rota se ofrece como búsqueda: /producto/pava-electrica → "pava electrica"
+(function () {
+  try {
+    const ult = decodeURIComponent(location.pathname).split('/').filter(Boolean).pop() || '';
+    const t = ult.replace(/\.html?$/, '').replace(/[-_+]+/g, ' ').replace(/[^\p{L}\p{N} ]/gu, '').trim();
+    if (t && t.length >= 3 && !/^(404|index)$/i.test(t)) document.getElementById('q404').value = t.slice(0, 80);
+  } catch (e) {}
+})();
+</script>
 </body>
 </html>

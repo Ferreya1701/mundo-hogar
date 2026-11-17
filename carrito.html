@@ -135,8 +135,9 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
             </div>
             <div class="field">
               <label for="f-telefono">Teléfono <span class="req">*</span></label>
-              <input id="f-telefono" name="telefono" type="tel" autocomplete="tel" inputmode="tel" placeholder="Ej: 342 5 123456" maxlength="25" required>
-              <div class="field-error">Ingresá un teléfono válido.</div>
+              <input id="f-telefono" name="telefono" type="tel" autocomplete="tel" inputmode="tel" placeholder="Ej: 342 5 123456" maxlength="25" required aria-describedby="f-telefono-ayuda">
+              <div class="field-hint" id="f-telefono-ayuda">Con código de área, sin 0 ni 15.</div>
+              <div class="field-error">Revisá el teléfono: escribilo con el código de área.</div>
             </div>
             <div class="field">
               <label for="f-localidad">Localidad <span class="req">*</span></label>
@@ -334,10 +335,26 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
   });
 
   function invalid(id, bad) {
-    const wrap = $(id).closest('.field');
+    const inp = $(id), wrap = inp.closest('.field');
     wrap.classList.toggle('invalid', bad);
+    inp.setAttribute('aria-invalid', String(!!bad));
     return bad;
   }
+  // Cada campo se revisa al salir de él (no recién al enviar), y el error se
+  // borra apenas se corrige. Los mensajes quedan atados al campo (lectores de pantalla).
+  const REGLAS = {
+    '#f-nombre':    v => v.trim().length < 2,
+    '#f-telefono':  v => v.replace(/\D/g, '').length < 8,
+    '#f-localidad': v => !v.trim(),
+    '#f-direccion': v => getEntrega() === 'envio' && !v.trim(),
+  };
+  Object.entries(REGLAS).forEach(([id, malo]) => {
+    const inp = $(id); if (!inp) return;
+    const err = inp.closest('.field')?.querySelector('.field-error');
+    if (err) { err.id = id.slice(1) + '-err'; inp.setAttribute('aria-describedby', [inp.getAttribute('aria-describedby'), err.id].filter(Boolean).join(' ')); }
+    inp.addEventListener('blur', () => { if (inp.value !== '') invalid(id, malo(inp.value)); });
+    inp.addEventListener('input', () => { if (inp.closest('.field').classList.contains('invalid') && !malo(inp.value)) invalid(id, false); });
+  });
 
   // ── Mensaje de WhatsApp (siempre a partir de datos validados) ──
   function buildMessage(datos, items, total, tienePendientes, codigo) {
@@ -391,7 +408,7 @@ h1.page-t{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:var(--navy)
     };
     let bad = false;
     bad = invalid('#f-nombre', datos.nombre.length < 2) || bad;
-    bad = invalid('#f-telefono', datos.telefono.replace(/\D/g, '').length < 6) || bad;
+    bad = invalid('#f-telefono', REGLAS['#f-telefono'](datos.telefono)) || bad;
     bad = invalid('#f-localidad', !datos.localidad) || bad;
     bad = invalid('#f-direccion', datos.tipo_entrega === 'envio' && !datos.direccion) || bad;
     if (bad) { document.querySelector('.field.invalid input')?.focus(); return; }

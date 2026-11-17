@@ -72,6 +72,7 @@
           <thead><tr><th>Fecha</th><th>Código</th><th>Cliente / vendedor</th><th>Ítems</th><th>Medio</th><th style="text-align:right">Total</th><th>Estado</th><th></th></tr></thead>
           <tbody id="tabla-body"><tr class="fila-plana"><td colspan="8" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr></tbody>
         </table>
+        <div class="pagination" id="paginacion" hidden></div>
       </div>
     </main>
   </div>
@@ -90,6 +91,23 @@ const MEDIOS = { efectivo:'Efectivo', transferencia:'Transferencia', debito:'Dé
 const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const money = n => Utils.currency(n);
 let ventas = [], perfil = null, rango = 'hoy';
+let pagina = 1;
+const PER = 50;   // filas por página (igual que Movimientos)
+
+/* Los filtros viajan en la dirección: al recargar o compartir el enlace se ve
+   lo mismo (como Shopify). Dentro del armazón se actualiza la dirección de arriba. */
+function syncURL() {
+  const u = new URLSearchParams();
+  if (rango !== 'hoy') u.set('r', rango);
+  if (rango === 'custom') { u.set('desde', $id('f-desde').value); u.set('hasta', $id('f-hasta').value); }
+  const q = $id('q').value.trim(); if (q) u.set('q', q);
+  if ($id('f-medio').value) u.set('medio', $id('f-medio').value);
+  if ($id('f-vend').value) u.set('vend', $id('f-vend').value);
+  if ($id('f-estado').value !== 'cerrada') u.set('estado', $id('f-estado').value || 'todas');
+  const busca = u.toString() ? '?' + u : '';
+  history.replaceState(null, '', location.pathname + busca);
+  try { if (window.top !== window && window.top.MHApp?.actual === '/admin/ventas') window.top.history.replaceState(null, '', '#/ventas' + busca); } catch (e) {}
+}
 const $id = id => document.getElementById(id);
 const iso = d => d.toISOString().slice(0,10);
 
@@ -101,11 +119,14 @@ function setRango(r) {
   if (r === 'ayer') { d.setDate(d.getDate()-1); h = new Date(d); }
   if (r === 'semana') { const dow = (d.getDay()+6)%7; d.setDate(d.getDate()-dow); }
   if (r === 'mes') d = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-  if (r !== 'custom') { $id('f-desde').value = iso(d); $id('f-hasta').value = iso(h); return cargar(); }
+  pagina = 1;
+  if (r !== 'custom') { $id('f-desde').value = iso(d); $id('f-hasta').value = iso(h); syncURL(); return cargar(); }
+  syncURL();
 }
 document.getElementById('rangos').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) setRango(b.dataset.r); });
-['f-desde','f-hasta'].forEach(id => $id(id).addEventListener('change', () => { rango = 'custom'; document.querySelectorAll('#rangos .chip').forEach(c => c.classList.toggle('active', c.dataset.r === 'custom')); cargar(); }));
-['q','f-medio','f-vend','f-estado'].forEach(id => { $id(id).addEventListener('input', render); $id(id).addEventListener('change', render); });
+['f-desde','f-hasta'].forEach(id => $id(id).addEventListener('change', () => { rango = 'custom'; pagina = 1; document.querySelectorAll('#rangos .chip').forEach(c => c.classList.toggle('active', c.dataset.r === 'custom')); syncURL(); cargar(); }));
+const alFiltrar = () => { pagina = 1; render(); syncURL(); };
+['q','f-medio','f-vend','f-estado'].forEach(id => { $id(id).addEventListener('input', alFiltrar); $id(id).addEventListener('change', alFiltrar); });
 
 async function cargar() {
   const desde = new Date($id('f-desde').value + 'T00:00:00');
@@ -161,11 +182,16 @@ function render() {
   $id('k-medios').innerHTML = Object.entries(porMedio).sort((a,b)=>b[1]-a[1]).map(([m,t]) => `<div style="display:flex;justify-content:space-between;gap:8px"><span>${esc(MEDIOS[m]||m)}</span><b>${money(t)}</b></div>`).join('') || '—';
   $id('filter-count').textContent = `${lista.length} venta${lista.length!==1?'s':''}`;
 
+  const pag = $id('paginacion');
+  pag.hidden = lista.length <= PER;
+  const paginas = Math.max(1, Math.ceil(lista.length / PER));
+  if (pagina > paginas) pagina = paginas;
+  if (!pag.hidden) Utils.renderPagination(pag, pagina, lista.length, PER, p => { pagina = p; render(); $id('tabla-body').closest('.table-wrap').scrollIntoView({ block: 'start', behavior: 'smooth' }); });
   if (!lista.length) {
     $id('tabla-body').innerHTML = `<tr class="fila-plana"><td colspan="8"><div class="empty-state"><div class="empty-state-icon">🧮</div><h3>Sin ventas</h3><p>No hay ventas del local en este período con esos filtros.</p><a class="btn btn-primary" href="/admin/vender">🛒 Vender</a></div></td></tr>`;
     return;
   }
-  $id('tabla-body').innerHTML = lista.map(v => `<tr class="${v.estado==='anulada'?'vta-estado-anulada':''}" data-id="${v.id}">
+  $id('tabla-body').innerHTML = lista.slice((pagina - 1) * PER, pagina * PER).map(v => `<tr class="${v.estado==='anulada'?'vta-estado-anulada':''}" data-id="${v.id}">
     <td class="c-fecha" style="white-space:nowrap;color:var(--muted);font-size:var(--fs-sm)">${Utils.datetime(v.fecha)}</td>
     <td class="c-cod" style="font-family:monospace;font-size:var(--fs-sm)">${esc(v.codigo)}</td>
     <td class="c-cli"><div style="font-weight:500;font-size:var(--fs-base)">${esc(v.cliente_nombre || 'Consumidor final')}</div><div style="font-size:var(--fs-sm);color:var(--muted)">${esc(v.vendedor_nombre||'')}</div></td>
@@ -354,9 +380,22 @@ async function initPage() {
     $id('subtitle').textContent = 'Lo que cobraste vos en el mostrador. Los pedidos de la tienda están en Pedidos web.';
     $id('f-vend').hidden = true;
   }
-  await setRango('hoy');
+  // Filtros guardados en la dirección (?r=semana&q=…&medio=…)
+  const u = new URLSearchParams(location.search);
+  if (u.get('q')) $id('q').value = u.get('q');
+  if (u.get('estado')) $id('f-estado').value = u.get('estado') === 'todas' ? '' : u.get('estado');
+  const r = ['ayer', 'semana', 'mes', 'custom'].includes(u.get('r')) ? u.get('r') : 'hoy';
+  if (r === 'custom' && /^\d{4}-\d{2}-\d{2}$/.test(u.get('desde') || '') && /^\d{4}-\d{2}-\d{2}$/.test(u.get('hasta') || '')) {
+    $id('f-desde').value = u.get('desde'); $id('f-hasta').value = u.get('hasta');
+    rango = 'custom'; document.querySelectorAll('#rangos .chip').forEach(c => c.classList.toggle('active', c.dataset.r === 'custom'));
+    await cargar();
+  } else await setRango(r === 'custom' ? 'hoy' : r);
+  // medio y vendedor: las opciones se arman al cargar
+  if (u.get('medio')) $id('f-medio').value = u.get('medio');
+  if (u.get('vend') && !$id('f-vend').hidden) $id('f-vend').value = u.get('vend');
+  if (u.get('medio') || u.get('vend')) render();
   // Link directo a una venta (desde Crear venta): /admin/ventas?ver=123
-  const ver = Number(new URLSearchParams(location.search).get('ver'));
+  const ver = Number(u.get('ver'));   // (u se leyó antes de que syncURL reescriba la dirección)
   if (ver) { $id('f-estado').value = ''; render(); if (ventas.some(v => v.id === ver)) abrir(ver); }
 }
 // Al volver a este módulo dentro del armazón: datos al día (salvo con un diálogo abierto)

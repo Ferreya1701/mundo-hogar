@@ -323,3 +323,19 @@ h1,h2,h3{font-family:'Plus Jakarta Sans','Inter',sans-serif;line-height:1.15;let
 .cart-remove{min-height:44px;padding:0 10px}
 /* El "levantar" de la tarjeta queda solo con mouse: en pantallas táctiles quedaba pegado */
 @media (hover:none){.mh-card:hover{transform:none}}
+
+/* ── Galería de la ficha: miniaturas como botones y foto en grande con zoom ── */
+.pd-thumbs button{width:66px;height:66px;padding:0;background:#fff;border:2px solid var(--border);border-radius:10px;cursor:pointer;overflow:hidden;transition:border-color var(--t)}
+.pd-thumbs button img{width:100%;height:100%;object-fit:contain;padding:5px;border:0;display:block}
+.pd-thumbs button.active,.pd-thumbs button:hover{border-color:var(--blue)}
+.pd-main-img{touch-action:pan-y}
+.pd-lb{position:fixed;inset:0;z-index:1000;background:rgba(6,12,24,.94);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.pd-lb img{max-width:94vw;max-height:88vh;object-fit:contain;background:#fff;border-radius:12px;cursor:zoom-in;transition:transform .25s ease}
+.pd-lb img.zoom{transform:scale(2.2);cursor:zoom-out}
+.pd-lb-x,.pd-lb-nav{position:absolute;width:48px;height:48px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.pd-lb-x{top:16px;right:16px}
+.pd-lb-nav{top:50%;transform:translateY(-50%);font-size:32px}
+.pd-lb-nav.prev{left:12px}.pd-lb-nav.next{right:12px}
+.pd-lb-x:hover,.pd-lb-nav:hover{background:rgba(255,255,255,.26)}
+.pd-lb-n{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:#fff;font-size:14px;background:rgba(0,0,0,.4);padding:4px 12px;border-radius:999px}
+.field-hint{font-size:12.5px;color:var(--muted);margin-top:4px}

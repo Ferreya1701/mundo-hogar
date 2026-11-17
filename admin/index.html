@@ -24,23 +24,31 @@
       <p>Panel de Administración</p>
     </div>
 
-    <div class="login-err" id="login-error"></div>
+    <div class="login-err" id="login-error" role="alert" aria-live="assertive"></div>
 
     <form class="login-form" id="login-form" novalidate>
       <div class="form-group">
         <label for="email">Correo electrónico</label>
         <input type="email" id="email" name="email"
-               placeholder="admin@mundohogar.com" required autocomplete="email">
+               placeholder="nombre@correo.com" required autocomplete="email" autocapitalize="off" spellcheck="false">
       </div>
       <div class="form-group">
         <label for="password">Contraseña</label>
-        <input type="password" id="password" name="password"
-               placeholder="••••••••" required autocomplete="current-password">
+        <div class="login-clave">
+          <input type="password" id="password" name="password"
+                 placeholder="••••••••" required autocomplete="current-password" aria-describedby="caps-aviso">
+          <button type="button" class="login-ver" id="ver-clave" aria-label="Mostrar contraseña" aria-pressed="false">👁</button>
+        </div>
+        <div class="login-caps" id="caps-aviso" hidden>⇪ Está activado Bloq Mayús</div>
       </div>
-      <button type="submit" class="btn btn-primary btn-lg" id="login-btn" style="width:100%;justify-content:center;">
+      <button type="submit" class="btn btn-primary btn-lg login-btn" id="login-btn">
         Ingresar
       </button>
     </form>
+    <details class="login-olvido">
+      <summary>¿Olvidaste tu contraseña?</summary>
+      <p>Pedile al administrador una nueva: en <b>Usuarios → 🔑 Clave nueva</b> te genera una contraseña temporal. Al entrar con esa, el panel te pide elegir una propia.</p>
+    </details>
   </div>
 </div>
 
@@ -58,6 +66,21 @@
   const form = document.getElementById('login-form');
   const btn  = document.getElementById('login-btn');
   const err  = document.getElementById('login-error');
+
+  // Ver / ocultar la contraseña
+  const pass = document.getElementById('password'), ver = document.getElementById('ver-clave');
+  ver.addEventListener('click', () => {
+    const mostrar = pass.type === 'password';
+    pass.type = mostrar ? 'text' : 'password';
+    ver.setAttribute('aria-pressed', String(mostrar));
+    ver.setAttribute('aria-label', mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña');
+    ver.textContent = mostrar ? '🙈' : '👁';
+    pass.focus();
+  });
+  // Aviso de Bloq Mayús (la causa más común de "contraseña incorrecta")
+  const caps = document.getElementById('caps-aviso');
+  ['keydown', 'keyup'].forEach(t => pass.addEventListener(t, e => { if (e.getModifierState) caps.hidden = !e.getModifierState('CapsLock'); }));
+  pass.addEventListener('blur', () => { caps.hidden = true; });
 
   form.addEventListener('submit', async e => {
     e.preventDefault();

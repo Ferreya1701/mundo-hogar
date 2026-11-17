@@ -217,16 +217,62 @@ body.con-barra{padding-bottom:76px}
     .filter(i => i.url);
   const main = $('#pd-img');
   main.alt = p.nombre;
+  let fotoIdx = 0;
+  const verFoto = i => {
+    if (!imgs.length) return;
+    fotoIdx = (i + imgs.length) % imgs.length;
+    MH.setImg(main, imgs[fotoIdx].url);
+    $('#pd-thumbs').querySelectorAll('button').forEach((x, j) => { x.classList.toggle('active', j === fotoIdx); x.setAttribute('aria-pressed', String(j === fotoIdx)); });
+  };
   MH.setImg(main, imgs.length ? imgs[0].url : null);
   if (imgs.length > 1) {
     const th = $('#pd-thumbs');
     th.hidden = false;
-    th.innerHTML = imgs.map((i, idx) => `<img src="${esc(MH.webpUrl(i.url) || i.url)}" alt="${esc(i.alt)}" class="${idx===0?'active':''}" data-i="${idx}" loading="lazy">`).join('');
-    th.addEventListener('click', e => {
-      const t = e.target.closest('img[data-i]'); if (!t) return;
-      MH.setImg(main, imgs[+t.dataset.i].url);
-      th.querySelectorAll('img').forEach(x => x.classList.toggle('active', x === t));
-    });
+    th.innerHTML = imgs.map((i, idx) => `<button type="button" class="${idx===0?'active':''}" aria-pressed="${idx===0}" aria-label="Foto ${idx+1} de ${imgs.length}" data-i="${idx}"><img src="${esc(MH.webpUrl(i.url) || i.url)}" alt="" loading="lazy"></button>`).join('');
+    th.addEventListener('click', e => { const t = e.target.closest('button[data-i]'); if (t) verFoto(+t.dataset.i); });
+    // Deslizar con el dedo sobre la foto cambia de foto (como Mercado Libre)
+    let x0 = null;
+    main.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+    main.addEventListener('touchend', e => {
+      if (x0 === null) return;
+      const dx = e.changedTouches[0].clientX - x0; x0 = null;
+      if (Math.abs(dx) > 40) verFoto(fotoIdx + (dx < 0 ? 1 : -1));
+    }, { passive: true });
+  }
+  // Tocar la foto la abre en grande; otro toque hace zoom donde se tocó
+  if (imgs.length) {
+    main.style.cursor = 'zoom-in';
+    main.tabIndex = 0; main.setAttribute('role', 'button'); main.setAttribute('aria-label', 'Ver la foto en grande');
+    const abrirGrande = () => {
+      const bg = document.createElement('div');
+      bg.className = 'pd-lb'; bg.setAttribute('role', 'dialog'); bg.setAttribute('aria-modal', 'true'); bg.setAttribute('aria-label', 'Foto de ' + p.nombre);
+      bg.innerHTML = `<img alt="${esc(p.nombre)}"><button type="button" class="pd-lb-x" aria-label="Cerrar">✕</button>` +
+        (imgs.length > 1 ? `<button type="button" class="pd-lb-nav prev" aria-label="Foto anterior">‹</button><button type="button" class="pd-lb-nav next" aria-label="Foto siguiente">›</button><div class="pd-lb-n"></div>` : '');
+      document.body.appendChild(bg); document.body.style.overflow = 'hidden';
+      const im = bg.querySelector('img');
+      const pintar = () => { MH.setImg(im, imgs[fotoIdx].url); im.classList.remove('zoom'); const n = bg.querySelector('.pd-lb-n'); if (n) n.textContent = `${fotoIdx + 1} / ${imgs.length}`; };
+      const mover = d => { verFoto(fotoIdx + d); pintar(); };
+      const cerrar = () => { bg.remove(); document.body.style.overflow = ''; document.removeEventListener('keydown', tecla); main.focus(); };
+      const tecla = e => { if (e.key === 'Escape') cerrar(); else if (e.key === 'ArrowRight' && imgs.length > 1) mover(1); else if (e.key === 'ArrowLeft' && imgs.length > 1) mover(-1); };
+      document.addEventListener('keydown', tecla);
+      bg.addEventListener('click', e => {
+        if (e.target.closest('.pd-lb-x')) return cerrar();
+        if (e.target.closest('.prev')) return mover(-1);
+        if (e.target.closest('.next')) return mover(1);
+        if (e.target === im) {
+          const r = im.getBoundingClientRect();
+          im.style.transformOrigin = `${((e.clientX - r.left) / r.width * 100).toFixed(0)}% ${((e.clientY - r.top) / r.height * 100).toFixed(0)}%`;
+          im.classList.toggle('zoom'); return;
+        }
+        cerrar();
+      });
+      let x1 = null;
+      bg.addEventListener('touchstart', e => { x1 = e.touches[0].clientX; }, { passive: true });
+      bg.addEventListener('touchend', e => { if (x1 === null || imgs.length < 2 || im.classList.contains('zoom')) return; const dx = e.changedTouches[0].clientX - x1; x1 = null; if (Math.abs(dx) > 40) mover(dx < 0 ? 1 : -1); }, { passive: true });
+      pintar(); bg.querySelector('.pd-lb-x').focus();
+    };
+    main.addEventListener('click', abrirGrande);
+    main.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirGrande(); } });
   }
 
   // ── Datos ──

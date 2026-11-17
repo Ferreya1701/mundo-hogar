@@ -265,11 +265,12 @@ const Utils = {
     const from  = (page-1)*perPage + 1;
     const to    = Math.min(page*perPage, total);
     let html = `<span class="pagination-info">Mostrando ${from}–${to} de ${total}</span>`;
-    html += `<button class="page-btn" ${page<=1?'disabled':''} id="_pprev">‹</button>`;
+    html += `<button type="button" class="page-btn" ${page<=1?'disabled':''} id="_pprev" aria-label="Página anterior">‹</button>`;
     for (let i = Math.max(1,page-2); i <= Math.min(pages,page+2); i++) {
-      html += `<button class="page-btn${i===page?' active':''}" data-p="${i}">${i}</button>`;
+      html += `<button type="button" class="page-btn${i===page?' active':''}" data-p="${i}" aria-label="Página ${i}"${i===page?' aria-current="page"':''}>${i}</button>`;
     }
-    html += `<button class="page-btn" ${page>=pages?'disabled':''} id="_pnext">›</button>`;
+    html += `<button type="button" class="page-btn" ${page>=pages?'disabled':''} id="_pnext" aria-label="Página siguiente">›</button>`;
+    containerEl.setAttribute('role', 'navigation'); containerEl.setAttribute('aria-label', 'Páginas');
     containerEl.innerHTML = html;
     containerEl.querySelectorAll('[data-p]').forEach(b => b.onclick = ()=>onPage(+b.dataset.p));
     containerEl.querySelector('#_pprev')?.addEventListener('click',()=>onPage(page-1));

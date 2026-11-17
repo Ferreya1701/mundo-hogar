@@ -255,10 +255,22 @@ window.MHAssistant = (function () {
     ocupado = false;
   }
 
+  // El panel se crea una vez y después se oculta/muestra: cerrarlo ya no borra la charla.
+  function cerrarPanel() {
+    if (!panel || panel.hidden) return;
+    panel.hidden = true;
+    document.getElementById('mh-asst-fab')?.focus();
+  }
   function abrirPanel() {
-    if (panel) { panel.remove(); panel = null; return; }
+    if (panel) {
+      if (panel.hidden) { panel.hidden = false; panel.querySelector('input').focus(); }
+      else cerrarPanel();
+      return;
+    }
     panel = document.createElement('div');
     panel.className = 'mh-asst-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-label', 'Asistente MH');
     const sugs = SUGERENCIAS[seccion()] || SUGERENCIAS.panel;
     panel.innerHTML = `
       <div class="mh-asst-head">
@@ -266,7 +278,7 @@ window.MHAssistant = (function () {
         <div><b>Asistente MH</b><span class="asst-status">Conectado a tu negocio</span></div>
         <button class="asst-close" aria-label="Cerrar">✕</button>
       </div>
-      <div class="mh-asst-body"></div>
+      <div class="mh-asst-body" aria-live="polite"></div>
       <div class="mh-asst-sug">${sugs.map(s => `<button class="asst-chip">${s}</button>`).join('')}</div>
       <div class="mh-asst-input">
         <input type="text" placeholder="Preguntame algo del negocio…" aria-label="Pregunta al asistente">
@@ -276,7 +288,8 @@ window.MHAssistant = (function () {
     agregarMsg('¡Hola! Soy el <b>Asistente MH</b> 👋. Puedo mostrarte el estado real del negocio (stock, precios, solicitudes) y explicarte cómo usar cada parte del panel. ¿En qué te ayudo?', 'bot');
 
     const input = panel.querySelector('input');
-    panel.querySelector('.asst-close').onclick = () => { panel.remove(); panel = null; };
+    panel.querySelector('.asst-close').onclick = cerrarPanel;
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel && !panel.hidden) cerrarPanel(); });
     panel.querySelector('.mh-asst-input button').onclick = () => { const v = input.value; input.value = ''; enviar(v); };
     input.addEventListener('keydown', e => { if (e.key === 'Enter') { const v = input.value; input.value = ''; enviar(v); } });
     panel.querySelectorAll('.asst-chip').forEach(c => c.addEventListener('click', () => enviar(c.textContent)));
@@ -302,7 +315,7 @@ window.MHAssistant = (function () {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 
-  return { open: () => { if (!panel) abrirPanel(); }, seccion };
+  return { open: () => { if (!panel || panel.hidden) abrirPanel(); }, seccion };
 })();
 // Módulo dentro del armazón: usa el asistente del armazón (un solo panel)
 try { if (window.top !== window && window.top.MHAssistant) window.MHAssistant = window.top.MHAssistant; } catch (e) {}

@@ -343,7 +343,7 @@ document.getElementById('form-nuevo').addEventListener('submit', async ev => {
 async function claveNueva(id) {
   const u = users.find(x => x.id === id);
   if (!u) return;
-  if (!confirm(`¿Generar una contraseña temporal nueva para ${u.nombre}?\n\nLa que usa ahora deja de funcionar.`)) return;
+  if (!await Utils.confirm(`Se genera una contraseña temporal nueva para <b>${esc(u.nombre)}</b>. La que usa ahora deja de funcionar.`, 'Clave nueva', 'Generar clave')) return;
   Utils.showLoading('Generando contraseña…');
   const { data, error } = await llamarUsuarios({ accion: 'restablecer', id });
   Utils.hideLoading();

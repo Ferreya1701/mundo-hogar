@@ -129,6 +129,7 @@
       <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <h3>No encontramos productos</h3>
       <p>Probá con otra palabra o quitá los filtros. También podés consultarnos por WhatsApp.</p>
+      <div id="sugerir" class="chips" style="justify-content:center;margin-top:12px" hidden></div>
       <a class="btn btn-primary btn-sm" style="margin-top:14px" href="https://wa.me/5493426481326?text=Hola!%20Estoy%20buscando%20un%20producto." target="_blank" rel="noopener">Consultar por WhatsApp</a>
     </div>
     <div style="text-align:center;margin-top:30px">
@@ -190,6 +191,18 @@ function applyFilters() {
   grid.innerHTML = ''; shown = 0;
   renderMore();
   empty.hidden = filtered.length > 0;
+  // Sin resultados: ofrecer búsquedas que sí encuentran algo
+  const sug = document.getElementById('sugerir');
+  if (sug) {
+    const ops = [];
+    if (!filtered.length && q) {
+      if (state.cat !== 'all' || state.solo) { const n = MH.search(all, q).length; if (n) ops.push({ q, todo: true, n }); }
+      q.split(/\s+/).filter(w => w.length >= 3).forEach(w => { const n = MH.search(all, w).length; if (n && !ops.some(o => o.q === w)) ops.push({ q: w, n }); });
+    }
+    sug.hidden = !ops.length;
+    sug.innerHTML = ops.length ? '<span style="width:100%;font-size:14px;color:var(--muted)">¿Quisiste decir…?</span>' + ops.slice(0, 4).map(o =>
+      `<button type="button" class="chip" data-sq="${o.q.replace(/"/g, '&quot;')}"${o.todo ? ' data-todo="1"' : ''}>${o.todo ? `"${o.q.replace(/</g, '&lt;')}" en todas las categorías` : o.q.replace(/</g, '&lt;')} (${o.n})</button>`).join('') : '';
+  }
   results.textContent = `${filtered.length} producto${filtered.length===1?'':'s'}`;
 }
 function renderMore() {
@@ -226,6 +239,15 @@ function renderMore() {
     syncURL(); applyFilters();
   });
   moreBtn.addEventListener('click', renderMore);
+  document.getElementById('sugerir')?.addEventListener('click', e => {
+    const b = e.target.closest('[data-sq]'); if (!b) return;
+    if (b.dataset.todo) {
+      state.cat = 'all'; state.solo = '';
+      chips.querySelectorAll('.chip[data-solo]').forEach(x => x.classList.remove('active'));
+      chips.querySelectorAll('.chip[data-cat]').forEach(x => x.classList.toggle('active', x.dataset.cat === 'all'));
+    }
+    state.q = b.dataset.sq; $('#q').value = state.q; syncURL(); applyFilters();
+  });
 
   function syncURL(){
     const u=new URL(location);

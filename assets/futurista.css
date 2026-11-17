@@ -240,3 +240,4 @@ nav.top a:hover,nav.top a[aria-current]{color:var(--ink);background:var(--glass)
   .toolbar .chip{flex:0 0 auto}
   .toolbar-row2{margin-top:8px}
 }
+.pd-thumbs button.active,.pd-thumbs button:hover{border-color:var(--blue-glow)}
