@@ -1371,3 +1371,15 @@ a.kpi-card { display:block; color:inherit; text-decoration:none; }
 .login-olvido { margin-top:16px; font-size:var(--fs-base); color:var(--muted); text-align:center; }
 .login-olvido summary { cursor:pointer; color:var(--blue-dark); font-weight:600; min-height:32px; display:inline-flex; align-items:center; }
 .login-olvido p { margin-top:8px; text-align:left; line-height:1.5; }
+
+/* ── Encabezado de tabla fijo al bajar (computadora). Layout.prepararTablas
+   marca .ancha las tablas que no entran en el ancho. ── */
+@media (min-width:769px) {
+  :root { --th-top: var(--header-h); }
+  html.mh-embebido { --th-top: 0px; }   /* dentro del armazón el módulo no tiene barra propia */
+  /* clip (no auto): no crea caja de desplazamiento, así el encabezado se pega a la página */
+  .table-wrap:not(.ancha) { overflow-x:clip; }
+  .table-wrap:not(.ancha) thead th { position:sticky; top:var(--th-top); z-index:3; background:var(--bg); box-shadow:inset 0 -1px 0 var(--border); }
+  .table-wrap.ancha { overflow:auto; max-height:calc(100dvh - var(--th-top) - 96px); overscroll-behavior-x:contain; }
+  .table-wrap.ancha thead th { position:sticky; top:0; z-index:3; background:var(--bg); box-shadow:inset 0 -1px 0 var(--border); }
+}

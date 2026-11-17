@@ -229,11 +229,47 @@ const Layout = {
     this.render(actual?.id, undefined, profile);
   },
 
+  /* Tablas del panel (todas las .table-wrap, también las que se dibujan después):
+     • Celular: pasan a tarjetas sin encabezado; cada celda toma la etiqueta de
+       su columna para que un número suelto se entienda.
+     • Computadora: el encabezado queda fijo al bajar (como Shopify/Stripe). Si
+       la tabla entra en el ancho, se pega arriba de la página; si es más ancha
+       (clase "ancha"), conserva el desplazamiento lateral y baja dentro de su
+       propio cuadro, con el encabezado fijo arriba. */
+  prepararTablas() {
+    if (this._tablas) return; this._tablas = true;
+    const etiquetar = () => document.querySelectorAll('.table-wrap table').forEach(t => {
+      const ths = [...t.querySelectorAll('thead th')].map(th => th.textContent.trim());
+      if (!ths.length) return;
+      t.querySelectorAll('tbody tr').forEach(tr => {
+        // Productos, Compras y Ventas ya traen su tarjeta armada a mano
+        if (tr.querySelector(':scope > td[class*="c-"]')) return;
+        let col = 0;
+        for (const td of tr.children) {
+          const span = td.colSpan || 1;
+          if (span === 1 && !td.hasAttribute('data-l') && ths[col]) td.setAttribute('data-l', ths[col]);
+          col += span;
+        }
+      });
+    });
+    const medir = () => document.querySelectorAll('.table-wrap').forEach(w => {
+      const t = w.querySelector(':scope > table'); if (!t) return;
+      w.classList.toggle('ancha', t.scrollWidth > w.clientWidth + 1);
+    });
+    const todo = () => { etiquetar(); medir(); };
+    let pendiente = false;
+    const luego = () => { if (pendiente) return; pendiente = true; requestAnimationFrame(() => { pendiente = false; todo(); }); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', todo); else todo();
+    new MutationObserver(luego).observe(document.body, { childList: true, subtree: true });
+    addEventListener('resize', luego);
+  },
+
   async init(pageId, pageTitle) {
     const profile = await Auth.getProfile();
     this.render(pageId, pageTitle, profile);
     // Módulo dentro del armazón: el menú, la barra y los contadores son del armazón
     this.atajoPaleta();
+    this.prepararTablas();   // también dentro del armazón (antes quedaba después del return)
     if (typeof MH_EMBEBIDO !== 'undefined' && MH_EMBEBIDO) {
       try { window.top.MHApp.titulo(pageId, pageTitle); } catch (e) {}
       return;
@@ -268,31 +304,6 @@ const Layout = {
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && sb.classList.contains('mobile-open')) this.toggleSidebar(true);
     });
-
-    // En celular las tablas pasan a tarjetas y se oculta el encabezado:
-    // cada celda sin etiqueta toma la de su columna para que un número
-    // suelto se entienda. Sirve para las filas que se dibujan después.
-    const etiquetar = () => document.querySelectorAll('.table-wrap table').forEach(t => {
-      const ths = [...t.querySelectorAll('thead th')].map(th => th.textContent.trim());
-      if (!ths.length) return;
-      t.querySelectorAll('tbody tr').forEach(tr => {
-        // Productos, Compras y Ventas ya traen su tarjeta armada a mano
-        if (tr.querySelector(':scope > td[class*="c-"]')) return;
-        let col = 0;
-        for (const td of tr.children) {
-          const span = td.colSpan || 1;
-          if (span === 1 && !td.hasAttribute('data-l') && ths[col]) td.setAttribute('data-l', ths[col]);
-          col += span;
-        }
-      });
-    });
-    etiquetar();
-    let pendiente = false;
-    new MutationObserver(() => {
-      if (pendiente) return;
-      pendiente = true;
-      requestAnimationFrame(() => { pendiente = false; etiquetar(); });
-    }).observe(document.body, { childList: true, subtree: true });
 
     const salir = document.getElementById('logout-btn');
     salir?.addEventListener('click', () => Auth.logout());
