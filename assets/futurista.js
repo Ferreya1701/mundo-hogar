@@ -15,6 +15,7 @@
   ['q-top', 'q-side', 'q-mov'].forEach(id => {
     const input = document.getElementById(id);
     if (!input) return;
+    if (window.MH && MH.initSuggest) MH.initSuggest(input);
     input.addEventListener('keydown', e => {
       if (e.key !== 'Enter') return;
       e.preventDefault();

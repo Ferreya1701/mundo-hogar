@@ -229,3 +229,14 @@ nav.top a:hover,nav.top a[aria-current]{color:var(--ink);background:var(--glass)
 [style*="#B45309"],[style*="#8A4B12"]{color:#FFC27A!important}
 [style*="#14663A"]{color:#8EF0B8!important}
 [style*="#0D3A7A"]{color:#9CC9FF!important}
+
+/* ── Filtros en celular: debajo del encabezado fijo (antes quedaban tapados)
+   y los chips en una sola fila que se desliza, como Mercado Libre ── */
+.toolbar{top:68px}
+@media(max-width:560px){
+  .toolbar{padding:10px 0}
+  .toolbar .chips{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -16px;padding:0 16px 2px}
+  .toolbar .chips::-webkit-scrollbar{display:none}
+  .toolbar .chip{flex:0 0 auto}
+  .toolbar-row2{margin-top:8px}
+}

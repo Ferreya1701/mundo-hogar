@@ -193,6 +193,8 @@ section{padding:84px 0;position:relative}
 .card-b{padding:15px 16px 17px;display:flex;flex-direction:column;flex:1;gap:4px}
 .card-cat{font:500 12px/1 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--blue)}
 .card-t{font-family:'Plus Jakarta Sans';font-size:14.5px;font-weight:700;line-height:1.3;letter-spacing:-.01em}
+.card-t a{color:inherit}.card-t a:hover{text-decoration:underline}
+.card-ph-link{display:block;width:100%;height:100%}
 .card-p{font-family:'Plus Jakarta Sans';font-size:1.32rem;font-weight:800;margin-top:7px;letter-spacing:-.02em}
 .card-p.ask{font-size:14px;color:var(--blue);font-weight:700}
 .card-note{font:500 12px/1.4 'JetBrains Mono',monospace;color:var(--muted)}
@@ -203,12 +205,12 @@ section{padding:84px 0;position:relative}
 .chip-s{background:#5A6B85;color:#fff}
 /* Con el carrito prendido: botón principal + atajo a WhatsApp */
 .card-cta{display:flex;gap:8px}
-.card-cta .comprar{flex:1;padding:11px;border-radius:11px;border:1px solid transparent;cursor:pointer;
+.card-cta .comprar{flex:1;min-height:44px;padding:11px;border-radius:11px;border:1px solid transparent;cursor:pointer;
   font:700 13px/1 Inter,sans-serif;background:linear-gradient(135deg,var(--orange),#E0660C);color:#120700;
   transition:transform var(--t),box-shadow var(--t)}
 .card-cta .comprar:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(255,138,43,.34)}
 .card-cta .comprar:disabled{opacity:.6;cursor:default;transform:none}
-.card-cta .wa-mini{flex:0 0 auto;padding:11px 13px;font-size:12px}
+.card-cta .wa-mini{flex:0 0 auto;min-width:44px;min-height:44px;padding:11px 13px;font-size:12px}
 
 /* ── Franja de confianza ───────────────────────────────────── */
 .strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
@@ -615,7 +617,7 @@ const foto = u => {
 };
 
 function reveal() {
-  const els = document.querySelectorAll('.rv');
+  const els = document.querySelectorAll('.rv:not(.in)');
   if (!('IntersectionObserver' in window)) return els.forEach(e => e.classList.add('in'));
   const io = new IntersectionObserver(en => en.forEach(x => {
     if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); }
@@ -638,16 +640,19 @@ function tarjeta(p) {
   // botón pasa a "Agregar" solo. Hasta entonces, consulta por WhatsApp.
   const puedeComprar = MH.canBuy(p) && MH.carritoVisible();
 
+  const ficha = p.slug ? `/producto/${encodeURIComponent(p.slug)}` : null;
   const art = document.createElement('article');
   art.className = 'card rv';
   art.innerHTML = `
     <div class="card-ph">
       ${chips.length ? `<div class="chips">${chips.join('')}</div>` : ''}
+      ${ficha ? `<a href="${ficha}" class="card-ph-link" tabindex="-1" aria-hidden="true">` : ''}
       ${img ? `<img src="${esc(img)}" alt="${esc(p.nombre)}" loading="lazy" decoding="async" onerror="this.remove()">` : ''}
+      ${ficha ? '</a>' : ''}
     </div>
     <div class="card-b">
       <div class="card-cat">${esc(MH.catLabel(p.categoria))}</div>
-      <div class="card-t">${esc(p.nombre)}</div>
+      <div class="card-t">${ficha ? `<a href="${ficha}">${esc(p.nombre)}</a>` : esc(p.nombre)}</div>
       ${precio !== null
         ? `<div class="card-p">${esc(MH.fmtPrice(precio))}</div>`
         : `<div class="card-p ask">Consultar precio</div>`}
@@ -666,6 +671,7 @@ function tarjeta(p) {
 // Buscador: manda al catálogo ya filtrado. /productos lee ?q= al cargar.
 ['#q', '#q-mov', '#q-side'].forEach(sel => {
   const i = $(sel);
+  if (i) MH.initSuggest(i);
   i?.addEventListener('keydown', e => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
@@ -689,12 +695,16 @@ mnav?.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
   $('#yr').textContent = new Date().getFullYear();
   const rail = $('#rail-dest');
   rail.innerHTML = Array.from({ length: 5 }, () => '<div class="skel"></div>').join('');
+  // La portada y los títulos se ven ya, sin esperar al catálogo (antes la
+  // pantalla quedaba vacía hasta que cargaba todo)
+  reveal();
 
-  let prods = [];
-  try { prods = await MH.loadProducts(); } catch (e) { prods = []; }
+  // Catálogo, configuración y textos se piden a la vez, no uno detrás del otro
+  const pTxt = MH.loadContent().catch(() => null);
+  const [prodsR] = await Promise.all([MH.loadProducts().catch(() => []), MH.loadSettings().catch(() => {})]);
+  let prods = prodsR || [];
 
   // Links de WhatsApp con el número que configura el panel
-  await MH.loadSettings();
   const wa = MH.waLink('Hola! Quiero hacer una consulta.');
   ['#wa-top', '#wa-side', '#wa-hero', '#wa-cierre'].forEach(s => { const a = $(s); if (a) { a.href = wa; a.target = '_blank'; a.rel = 'noopener'; } });
   const wm = $('#wa-may');
@@ -702,7 +712,8 @@ mnav?.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
 
   // Textos editables desde el panel (site_content), igual que la versión clásica
   try {
-    const txt = await MH.loadContent();
+    const txt = await pTxt;
+    if (!txt) throw new Error('sin textos');
     MH.applyContent(txt, 'mayorista_titulo', $('#txt-mayorista-titulo'));
     MH.applyContent(txt, 'mayorista_texto',  $('#txt-mayorista-texto'));
     MH.applyContent(txt, 'envios_texto',     $('#txt-envios'));

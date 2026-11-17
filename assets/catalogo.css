@@ -311,3 +311,15 @@ h1,h2,h3{font-family:'Plus Jakarta Sans','Inter',sans-serif;line-height:1.15;let
 /* ── Carrito oculto (site_settings.carrito_activo = false y sin ?preview=1) ── */
 .mh-no-cart .mh-add,.mh-no-cart #mh-cart-fab,.mh-no-cart #btn-add,.mh-no-cart #pd-ctas .qty,.mh-no-cart .mh-cart-only{display:none !important}
 .mh-preview::before{content:"Modo prueba: el carrito está oculto para el público. Salir: agregá ?preview=0 a la dirección.";display:block;background:#0A2E63;color:#fff;font-size:12px;text-align:center;padding:5px 12px}
+
+/* ── Dedos: 44px mínimo en lo que se toca (Apple HIG) ── */
+.btn-sm{min-height:44px}
+.mh-card-cta{display:flex;gap:6px}
+.mh-card-cta .btn{flex:1;width:auto;min-height:44px}
+.mh-card-cta .btn-icon{flex:0 0 44px;padding:0}
+.chip{min-height:44px;display:inline-flex;align-items:center}
+.qty-sm button{width:44px;height:44px}
+.qty-sm input{height:44px}
+.cart-remove{min-height:44px;padding:0 10px}
+/* El "levantar" de la tarjeta queda solo con mouse: en pantallas táctiles quedaba pegado */
+@media (hover:none){.mh-card:hover{transform:none}}

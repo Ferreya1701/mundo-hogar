@@ -13,6 +13,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/catalogo.css">
 <style>
+/* Barra de compra fija en celular (como Mercado Libre): aparece cuando los
+   botones de la ficha salen de la pantalla. */
+.pd-bar{position:fixed;left:0;right:0;bottom:0;z-index:320;display:flex;align-items:center;gap:12px;
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(20,32,56,.96);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,.1);
+  transform:translateY(110%);transition:transform .25s ease}
+.pd-bar.on{transform:none}
+.pd-bar-precio{flex:1;min-width:0}
+.pd-bar-precio b{display:block;font-size:19px;color:#fff;white-space:nowrap}
+.pd-bar-precio span{display:block;font-size:12px;color:#B9C6DC;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pd-bar .btn{min-height:48px;padding:0 20px;flex-shrink:0}
+body.con-barra #wa-float,body.con-barra #mh-cart-fab{opacity:0;pointer-events:none}
+body.con-barra{padding-bottom:76px}
+@media(min-width:861px){.pd-bar{display:none}}
 </style>
 <link rel="stylesheet" href="/assets/futurista.css">
 </head>
@@ -314,6 +328,27 @@
 
   MH.track('view_item', { item_name: p.nombre, item_category: catSlug || undefined });
 
+  // La ficha se muestra ya; los relacionados llegan después (antes esperaba
+  // a traer el catálogo entero y quedaba un hueco en blanco)
+  $('#pd').hidden = false;
+
+  // ── Barra fija de compra (celular) ──
+  if ('IntersectionObserver' in window && window.matchMedia('(max-width:860px)').matches) {
+    const bar = document.createElement('div');
+    bar.className = 'pd-bar'; bar.id = 'pd-bar';
+    const btnAdd = $('#btn-add');
+    bar.innerHTML = `<div class="pd-bar-precio"><b>${precio !== null ? esc(MH.fmtPrice(precio)) : 'Consultar precio'}</b><span>${esc(p.nombre)}</span></div>` +
+      (btnAdd ? `<button type="button" class="btn ${precio !== null ? 'btn-primary' : 'btn-outline'}">${precio !== null ? 'Agregar' : 'Cotizar'}</button>`
+              : `<a class="btn btn-wa" href="${wa}" target="_blank" rel="noopener">Consultar</a>`);
+    document.body.appendChild(bar);
+    if (btnAdd) bar.querySelector('button').addEventListener('click', function () { btnAdd.click(); MH.Cart.flash(this); });
+    new IntersectionObserver(([en]) => {
+      const mostrar = !en.isIntersecting && en.boundingClientRect.top < 0;   // ya pasaron los botones
+      bar.classList.toggle('on', mostrar);
+      document.body.classList.toggle('con-barra', mostrar);
+    }).observe($('#pd-ctas'));
+  }
+
   // ── Relacionados (misma categoría) ──
   try {
     const all = await MH.loadProducts();
@@ -325,8 +360,6 @@
       $('#related-sec').hidden = false;
     }
   } catch (e) {}
-
-  $('#pd').hidden = false;
 })();
 </script>
 <script src="/assets/futurista.js" defer></script>

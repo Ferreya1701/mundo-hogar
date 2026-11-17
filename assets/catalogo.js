@@ -542,6 +542,123 @@ window.MH = (function () {
     if (on) Cart.initFab();
   }
 
+  // ── Búsqueda ─────────────────────────────────────────────────────
+  // Sin acentos ni mayúsculas, palabra por palabra (todas tienen que estar,
+  // en cualquier orden) y con un error de tipeo permitido en palabras de 5+
+  // letras: "lampara", "freidora aire" y "heldera" encuentran lo que buscan.
+  const NORM = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const VACIAS = new Set(['de', 'del', 'la', 'las', 'el', 'los', 'para', 'con', 'y', 'en', 'un', 'una', 'a', 'x']);
+  function tokens(q) { return NORM(q).split(/[^a-z0-9ñ]+/).filter(t => t && !VACIAS.has(t)); }
+  // ¿a y b difieren en a lo sumo una letra (cambiada, sobrante o faltante)?
+  function unaLetra(a, b) {
+    if (Math.abs(a.length - b.length) > 1) return false;
+    let i = 0, j = 0, dif = 0;
+    while (i < a.length && j < b.length) {
+      if (a[i] === b[j]) { i++; j++; continue; }
+      if (++dif > 1) return false;
+      if (a.length > b.length) i++; else if (b.length > a.length) j++; else { i++; j++; }
+    }
+    return dif + (a.length - i) + (b.length - j) <= 1;
+  }
+  const _idx = new WeakMap();
+  function indice(p) {
+    let x = _idx.get(p);
+    if (!x) {
+      const nombre = NORM(p.nombre);
+      const resto = NORM([p.marca, p.sku, catLabel(p.categoria), p.descripcion].filter(Boolean).join(' '));
+      x = { nombre, resto, palabras: (nombre + ' ' + resto).split(/[^a-z0-9ñ]+/).filter(w => w.length >= 4) };
+      _idx.set(p, x);
+    }
+    return x;
+  }
+  // Puntaje de coincidencia (0 = no coincide). Más alto si está en el nombre.
+  function searchScore(p, q) {
+    const ts = Array.isArray(q) ? q : tokens(q);
+    if (!ts.length) return 1;
+    const x = indice(p);
+    let total = 0;
+    for (const t of ts) {
+      if (x.nombre.includes(t)) total += new RegExp('(^|[^a-z0-9ñ])' + t).test(x.nombre) ? 4 : 3;   // empieza palabra: mejor
+      else if (x.resto.includes(t)) total += 1;
+      else if (t.length >= 5 && x.palabras.some(w => unaLetra(t, w.slice(0, t.length + 1)) || unaLetra(t, w))) total += 0.5;
+      else return 0;
+    }
+    return total;
+  }
+  function search(list, q) {
+    const ts = tokens(q);
+    if (!ts.length) return list.slice();
+    return list.map(p => [p, searchScore(p, ts)]).filter(([, sc]) => sc > 0)
+      .sort((a, b) => b[1] - a[1]).map(([p]) => p);
+  }
+
+  // Sugerencias debajo del buscador (como Mercado Libre): hasta 6 productos con
+  // foto y precio mientras se escribe. ↑/↓ eligen, Enter abre; si no hay nada
+  // elegido, Enter sigue yendo al catálogo con la búsqueda.
+  function initSuggest(input) {
+    if (!input || input._mhSug) return;
+    input._mhSug = true;
+    if (!document.getElementById('mh-sug-css')) {
+      const st = document.createElement('style'); st.id = 'mh-sug-css';
+      st.textContent = `.mh-sug{position:fixed;z-index:1000;background:#fff;color:#16243B;border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.35);overflow:hidden;max-height:70vh;overflow-y:auto;font-family:Inter,system-ui,sans-serif}
+.mh-sug a{display:flex;align-items:center;gap:10px;padding:8px 12px;min-height:56px;color:inherit;text-decoration:none;border-bottom:1px solid #EEF1F6}
+.mh-sug a:last-child{border-bottom:0}.mh-sug a.sel,.mh-sug a:hover{background:#EEF4FF}
+.mh-sug img{width:40px;height:40px;object-fit:contain;background:#fff;border-radius:6px;flex-shrink:0}
+.mh-sug .n{flex:1;min-width:0;font-size:13.5px;font-weight:600;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.mh-sug .p{font-size:13px;font-weight:700;white-space:nowrap;color:#0A2E63}
+.mh-sug .todo{justify-content:center;font-size:13px;color:#1763C6;font-weight:600;min-height:44px}`;
+      document.head.appendChild(st);
+    }
+    const box = document.createElement('div');
+    box.className = 'mh-sug'; box.hidden = true; box.setAttribute('role', 'listbox');
+    box.id = 'mh-sug-' + (input.id || Math.random().toString(36).slice(2));
+    document.body.appendChild(box);
+    input.setAttribute('aria-controls', box.id); input.setAttribute('aria-autocomplete', 'list');
+    let sel = -1, t = null, lista = [];
+    const cerrar = () => { box.hidden = true; sel = -1; input.setAttribute('aria-expanded', 'false'); };
+    const ubicar = () => {
+      const r = input.closest('label, .find, .search, form')?.getBoundingClientRect() || input.getBoundingClientRect();
+      const w = Math.max(r.width, Math.min(380, innerWidth - 24));
+      box.style.top = (r.bottom + 6) + 'px';
+      box.style.left = Math.max(12, Math.min(r.left, innerWidth - w - 12)) + 'px';
+      box.style.width = w + 'px';
+    };
+    const pintar = async () => {
+      const q = input.value.trim();
+      if (q.length < 2) { cerrar(); return; }
+      let prods = [];
+      try { prods = await loadProducts(); } catch (e) { return; }
+      if (input.value.trim() !== q) return;
+      lista = search(prods, q).slice(0, 6);
+      const todo = `/productos?q=${encodeURIComponent(q.slice(0, 80))}`;
+      const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+      box.innerHTML = lista.map((p, i) => {
+        const pr = effectivePrice(p);
+        return `<a href="/producto/${encodeURIComponent(p.slug)}" role="option" id="${box.id}-${i}"><img src="${esc(webpUrl(p.imagen) || p.imagen || PLACEHOLDER)}" alt="" loading="lazy" onerror="this.src='${PLACEHOLDER}'"><span class="n">${esc(p.nombre)}</span><span class="p">${pr !== null ? esc(fmtPrice(pr)) : ''}</span></a>`;
+      }).join('') + `<a class="todo" href="${todo}">${lista.length ? 'Ver todos los resultados' : `Sin coincidencias para "${esc(q)}" · ver catálogo`}</a>`;
+      sel = -1; ubicar(); box.hidden = false; input.setAttribute('aria-expanded', 'true');
+    };
+    input.addEventListener('input', () => { clearTimeout(t); t = setTimeout(pintar, 180); });
+    input.addEventListener('focus', () => { if (input.value.trim().length >= 2) pintar(); });
+    input.addEventListener('blur', () => setTimeout(cerrar, 150));
+    input.addEventListener('keydown', e => {
+      if (box.hidden) return;
+      const as = [...box.querySelectorAll('a')];
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        // recorre -1 (ninguno, queda el texto) → 0 … último → -1
+        const n = as.length + 1;
+        sel = ((sel + 1 + (e.key === 'ArrowDown' ? 1 : -1)) % n + n) % n - 1;
+        as.forEach((a, i) => a.classList.toggle('sel', i === sel));
+        if (sel >= 0) input.setAttribute('aria-activedescendant', as[sel].id || ''); else input.removeAttribute('aria-activedescendant');
+      } else if (e.key === 'Enter' && sel >= 0 && as[sel]) {
+        e.preventDefault(); e.stopImmediatePropagation(); location.href = as[sel].href;
+      } else if (e.key === 'Escape') cerrar();
+    }, true);   // captura: corre antes que el "Enter = ir al catálogo" de cada página
+    addEventListener('resize', () => { if (!box.hidden) ubicar(); });
+    addEventListener('scroll', () => { if (!box.hidden) ubicar(); }, { passive: true });
+  }
+
   return {
     ONLINE_PAYMENTS_ENABLED, cobrosActivos, carritoVisible, isPreview,
     get WA_NUMBER() { return WA_NUMBER; },
@@ -549,6 +666,7 @@ window.MH = (function () {
     loadProducts, createCard, skeletons, initCarousel, initReveal, stagger,
     initCounters, animateCount, initScrollProgress,
     loadSettings, loadContent, applyContent, syncWaLinks, isValidPrice, effectivePrice, hasPrice, fmtPrice,
-    isAvailable, availability, canBuy, track, Cart
+    isAvailable, availability, canBuy, track, Cart,
+    normSearch: NORM, search, searchScore, initSuggest
   };
 })();

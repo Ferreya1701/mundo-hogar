@@ -177,18 +177,16 @@ function applySort(list) {
   return a;
 }
 function applyFilters() {
-  const q = state.q.trim().toLowerCase();
-  filtered = applySort(all.filter(p => {
+  const q = state.q.trim();
+  const base = all.filter(p => {
     if (state.cat !== 'all' && p.categoria !== state.cat) return false;
     if (state.solo === 'ofertas' && !(p.enOferta && MH.isValidPrice(p.precioOferta))) return false;
     if (state.solo === 'conprecio' && !MH.hasPrice(p)) return false;
-    if (q) {
-      const hay = [p.nombre, p.descripcion, p.marca, p.sku, MH.catLabel(p.categoria)]
-        .filter(Boolean).join(' ').toLowerCase();
-      if (!hay.includes(q)) return false;
-    }
     return true;
-  }));
+  });
+  // Con búsqueda y el orden por defecto, primero lo que más se parece
+  filtered = q ? MH.search(base, q) : base;
+  if (!q || state.sort !== 'destacados') filtered = applySort(filtered);
   grid.innerHTML = ''; shown = 0;
   renderMore();
   empty.hidden = filtered.length > 0;
@@ -218,7 +216,8 @@ function renderMore() {
     chips.querySelectorAll('.chip[data-cat]').forEach(x=>x.classList.remove('active'));
     b.classList.add('active'); state.cat = b.dataset.cat; syncURL(); applyFilters();
   });
-  $('#q').addEventListener('input', e => { state.q = e.target.value; syncURL(); applyFilters(); });
+  let tq = null;   // espera a que termine de escribir: no rearma la grilla en cada tecla
+  $('#q').addEventListener('input', e => { state.q = e.target.value; clearTimeout(tq); tq = setTimeout(() => { syncURL(); applyFilters(); }, 200); });
   $('#sort').addEventListener('change', e => { state.sort = e.target.value; applyFilters(); });
   $('#clear').addEventListener('click', () => {
     state = { q:'', cat:'all', sort:'destacados', solo:'' };

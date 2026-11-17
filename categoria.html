@@ -116,6 +116,8 @@
         <select class="select" id="sort" aria-label="Ordenar">
           <option value="destacados">Destacados primero</option>
           <option value="nuevos">Más nuevos</option>
+          <option value="precio-asc">Menor precio</option>
+          <option value="precio-desc">Mayor precio</option>
           <option value="az">Nombre: A → Z</option>
           <option value="za">Nombre: Z → A</option>
         </select>
@@ -180,12 +182,15 @@ function applySort(list){
   if(state.sort==='az')a.sort((x,y)=>x.nombre.localeCompare(y.nombre,'es'));
   else if(state.sort==='za')a.sort((x,y)=>y.nombre.localeCompare(x.nombre,'es'));
   else if(state.sort==='nuevos')a.sort((x,y)=>(y.orden||0)-(x.orden||0));
+  else if(state.sort==='precio-asc')a.sort((x,y)=>(MH.effectivePrice(x)??Infinity)-(MH.effectivePrice(y)??Infinity));
+  else if(state.sort==='precio-desc')a.sort((x,y)=>(MH.effectivePrice(y)??-1)-(MH.effectivePrice(x)??-1));
   else a.sort((x,y)=>(y.destacado?1:0)-(x.destacado?1:0)||(y.orden||0)-(x.orden||0));
   return a;
 }
 function applyFilters(){
-  const q=state.q.trim().toLowerCase();
-  filtered=applySort(catProducts.filter(p=>!q||[p.nombre,p.descripcion,p.marca,p.sku].filter(Boolean).join(' ').toLowerCase().includes(q)));
+  const q=state.q.trim();
+  filtered=q?MH.search(catProducts,q):catProducts;
+  if(!q||state.sort!=='destacados')filtered=applySort(filtered);
   $('#grid').innerHTML='';shown=0;renderMore();
   $('#empty').hidden=filtered.length>0;
   $('#results').textContent=`${filtered.length} producto${filtered.length===1?'':'s'}`;
@@ -251,7 +256,8 @@ function showHub(){
   $('#listing').hidden = false;
   catProducts = all.filter(p => p.categoria === slug);
 
-  $('#q').addEventListener('input', e=>{ state.q=e.target.value; applyFilters(); });
+  let tq=null;
+  $('#q').addEventListener('input', e=>{ state.q=e.target.value; clearTimeout(tq); tq=setTimeout(applyFilters,200); });
   $('#sort').addEventListener('change', e=>{ state.sort=e.target.value; applyFilters(); });
   $('#more').addEventListener('click', renderMore);
   applyFilters();
