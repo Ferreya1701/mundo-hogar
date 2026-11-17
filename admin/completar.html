@@ -11,40 +11,41 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://vduinkzeneokkqzdgxig.supabase.co" crossorigin>
+  <script>try{if(localStorage.getItem('mhTema')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
   <link rel="stylesheet" href="/admin/css/admin.css">
   <style>
     .cp-progreso { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
-    .cp-barra { flex:1; min-width:200px; height:10px; background:var(--border); border-radius:6px; overflow:hidden; }
+    .cp-barra { flex:1; min-width:200px; height:10px; background:var(--border); border-radius:var(--r-sm); overflow:hidden; }
     .cp-barra > div { height:100%; background:var(--success); transition:width .4s; }
-    .cp-progreso b { font-size:15px; color:var(--night); }
+    .cp-progreso b { font-size:var(--fs-lg); color:var(--night); }
     .cp-herr { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
     .cp-herr .search-bar { flex:1; min-width:220px; }
     .cp-herr select { min-height:40px; }
     .cp-lista { display:flex; flex-direction:column; gap:10px; }
     .cp-fila { display:grid; grid-template-columns:28px 210px 1fr 150px 190px 150px; gap:14px; align-items:center;
-               background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:12px 14px; }
+               background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:12px 14px; }
     .cp-fila.listo { border-left:4px solid var(--success); }
     .cp-fila.publicado { background:#F6FEF9; }
     .cp-nom { font-weight:600; color:var(--night); line-height:1.3; }
     .cp-nom a { color:inherit; text-decoration:none; } .cp-nom a:hover { text-decoration:underline; }
-    .cp-sub { font-size:12px; color:var(--muted); margin-top:3px; }
+    .cp-sub { font-size:var(--fs-sm); color:var(--muted); margin-top:3px; }
     .cp-falta { display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }
-    .cp-falta span { font-size:11px; padding:1px 7px; border-radius:20px; background:var(--danger-bg); color:#B91C1C; font-weight:600; }
-    .cp-falta span.ok { background:var(--success-bg); color:#15803D; }
+    .cp-falta span { font-size:var(--fs-xs); padding:1px 7px; border-radius:var(--r-full); background:var(--danger-bg); color:var(--danger-ink); font-weight:600; }
+    .cp-falta span.ok { background:var(--success-bg); color:var(--success-ink); }
     .cp-precio { position:relative; }
-    .cp-precio input { width:100%; min-height:42px; font-size:16px; font-weight:600; padding-left:22px; text-align:right; }
+    .cp-precio input { width:100%; min-height:42px; font-size:var(--fs-lg); font-weight:600; padding-left:22px; text-align:right; }
     .cp-precio::before { content:'$'; position:absolute; left:9px; top:50%; transform:translateY(-50%); color:var(--muted); font-weight:600; }
     .cp-cat select { width:100%; min-height:42px; }
-    .cp-lbl { display:block; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:3px; }
-    .cp-guardado { font-size:11px; color:var(--success); height:14px; margin-top:2px; }
+    .cp-lbl { display:block; font-size:var(--fs-xs); font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:3px; }
+    .cp-guardado { font-size:var(--fs-xs); color:var(--success); height:14px; margin-top:2px; }
     .cp-guardado.error { color:var(--danger); }
     .cp-pub .btn { width:100%; justify-content:center; }
     .cp-pub .cp-sub { text-align:center; }
     .cp-bulk { position:sticky; bottom:0; z-index:5; display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:12px 14px; margin-top:12px;
-               background:var(--night); color:#fff; border-radius:var(--r-lg); box-shadow:0 -4px 16px rgba(0,0,0,.12); }
+               background:var(--brand-night); color:#fff; border-radius:var(--r-lg); box-shadow:0 -4px 16px rgba(0,0,0,.12); }
     .cp-bulk .btn-outline { background:transparent; color:#fff; border-color:rgba(255,255,255,.5); }
     .cp-bulk b { margin-right:auto; }
-    .cp-ayuda { background:var(--info-bg); color:var(--blue-dark); border-radius:var(--r); padding:10px 14px; font-size:13px; margin-bottom:14px; line-height:1.5; }
+    .cp-ayuda { background:var(--info-bg); color:var(--blue-dark); border-radius:var(--r); padding:10px 14px; font-size:var(--fs-base); margin-bottom:14px; line-height:1.5; }
     .cp-ayuda b { color:var(--night); }
     @media (max-width: 1100px) {
       .cp-fila { grid-template-columns:28px 1fr 1fr; grid-template-areas:"sel info info" "fotos fotos fotos" "precio precio cat" "pub pub pub"; }
@@ -85,7 +86,7 @@
       <div class="cp-progreso">
         <b id="prog-txt">…</b>
         <div class="cp-barra" title="Productos publicados sobre el total"><div id="prog-barra" style="width:0"></div></div>
-        <span class="sub" id="prog-sub" style="font-size:13px;color:var(--muted)"></span>
+        <span class="sub" id="prog-sub" style="font-size:var(--fs-base);color:var(--muted)"></span>
       </div>
 
       <div class="chips chips-filtro" id="chips"></div>

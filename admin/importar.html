@@ -11,19 +11,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://vduinkzeneokkqzdgxig.supabase.co" crossorigin>
+  <script>try{if(localStorage.getItem('mhTema')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
   <link rel="stylesheet" href="/admin/css/admin.css">
   <style>
     .paso { margin-bottom:18px; }
-    .paso h2 { font-size:15px; font-weight:700; color:var(--night); margin-bottom:4px; }
-    .paso > p { font-size:13px; color:var(--muted); margin-bottom:10px; }
+    .paso h2 { font-size:var(--fs-lg); font-weight:700; color:var(--night); margin-bottom:4px; }
+    .paso > p { font-size:var(--fs-base); color:var(--muted); margin-bottom:10px; }
     .r { text-align:right; white-space:nowrap; }
-    .sub { font-size:11.5px; color:var(--muted); }
-    .mini td, .mini th { padding:6px 10px; font-size:13px; }
-    .mini select { min-height:32px; font-size:13px; max-width:260px; }
+    .sub { font-size:var(--fs-sm); color:var(--muted); }
+    .mini td, .mini th { padding:6px 10px; font-size:var(--fs-base); }
+    .mini select { min-height:32px; font-size:var(--fs-base); max-width:260px; }
     tr.excluido td { color:var(--muted); text-decoration:line-through; }
     tr.excluido td.sel, tr.excluido td.acc { text-decoration:none; }
     .barra { position:sticky; bottom:0; background:linear-gradient(transparent, var(--bg) 25%); padding:14px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .barra .res { margin-right:auto; font-size:13px; }
+    .barra .res { margin-right:auto; font-size:var(--fs-base); }
     .prog { height:8px; background:var(--border); border-radius:4px; overflow:hidden; width:240px; }
     .prog > div { height:100%; background:var(--gold); width:0; transition:width .3s; }
     .dup select { max-width:300px; }
@@ -296,7 +297,7 @@ function renderArticulos() {
   const pag = lista.slice((pagina - 1) * TAM_PAG, pagina * TAM_PAG);
   $id('t-art').innerHTML = pag.length ? pag.map(f => `<tr class="${f.incluir ? '' : 'excluido'}">
     <td class="sel"><input type="checkbox" data-incl="${f.i}" ${f.incluir ? 'checked' : ''} ${f.codigo ? '' : 'disabled'} aria-label="Importar ${esc(f.descripcion)}"></td>
-    <td style="font-family:monospace;font-size:12px">${esc(f.codigo) || '<span style="color:var(--danger)">falta</span>'}</td>
+    <td style="font-family:monospace;font-size:var(--fs-sm)">${esc(f.codigo) || '<span style="color:var(--danger)">falta</span>'}</td>
     <td>${esc(f.descripcion)}<div class="sub">${esc(f.marca)}${f.obs ? ' · ' + esc(f.obs) : ''}</div></td>
     <td class="sub">${esc(nombreCat(mapRubro[f.rubro]) || '—')}<div>${esc(f.rubro)}</div></td>
     <td class="r">${f.stock == null ? '—' : f.stock < 0 ? `<span title="Negativo en el sistema anterior: entra como 0" style="color:var(--danger)">${f.stock} → 0</span>` : f.stock}</td>
@@ -366,7 +367,7 @@ $id('btn-importar').addEventListener('click', async () => {
   btn.disabled = false;
   const errores = items.filter(r => r.accion === 'error');
   $id('resultado').innerHTML = `<div class="card"><div class="card-body">
-    <h2 style="font-size:15px;margin-bottom:6px">Listo</h2>
+    <h2 style="font-size:var(--fs-lg);margin-bottom:6px">Listo</h2>
     <p>${tot.creados} productos nuevos · ${tot.vinculados} vinculados a productos que ya estaban · ${tot.actualizados} actualizados · ${tot.errores} con error.</p>
     ${errores.length ? `<div class="table-wrap" style="margin-top:10px"><table class="mini"><thead><tr><th>Código</th><th>Artículo</th><th>Problema</th></tr></thead><tbody>
       ${errores.map(r => `<tr><td>${esc(r.codigo || '—')}</td><td>${esc(r.descripcion)}</td><td>${esc(r.detalle || r.error)}</td></tr>`).join('')}</tbody></table></div>` : ''}

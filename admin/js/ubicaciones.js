@@ -53,7 +53,7 @@ const MHUbic = (() => {
   api.administrar = alCerrar => {
     const bd = modal(`<div class="modal-header"><h3 class="modal-title">📍 Ubicaciones</h3><button class="modal-close" data-x aria-label="Cerrar">×</button></div>
       <div class="modal-body">
-        <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Los lugares donde hay mercadería. El sector es opcional (estante, fila, góndola).</p>
+        <p style="font-size:var(--fs-base);color:var(--muted);margin-bottom:10px">Los lugares donde hay mercadería. El sector es opcional (estante, fila, góndola).</p>
         <form id="_uf" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" novalidate>
           <input type="text" id="_ul" list="_ulugares" maxlength="60" placeholder="Lugar (ej: Depósito 1)" style="flex:1;min-width:150px">
           <datalist id="_ulugares"></datalist>

@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://vduinkzeneokkqzdgxig.supabase.co" crossorigin>
+  <script>try{if(localStorage.getItem('mhTema')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
   <link rel="stylesheet" href="/admin/css/admin.css">
 </head>
 <body>
@@ -38,7 +39,7 @@
       </div>
 
       <div class="card mb-3" style="border-left:4px solid var(--info)">
-        <div class="card-body" style="font-size:13px;color:var(--muted)">
+        <div class="card-body" style="font-size:var(--fs-base);color:var(--muted)">
           Usá esta pantalla solo para lo que no pasa por otro lado: una rotura, algo que faltó o apareció, una devolución.
           Lo que se vende se registra en <a href="/admin/vender">Crear venta</a>, lo que llega del proveedor en <a href="/admin/compras">Compras</a>,
           y para dejar un producto con la cantidad real es más fácil <a href="/admin/carga-stock">Contar stock</a>.
@@ -83,13 +84,13 @@
               <!-- Info del producto seleccionado -->
               <div id="prod-info" style="display:none;background:var(--bg);border-radius:var(--r);padding:14px">
                 <div style="display:flex;justify-content:space-between;align-items:center">
-                  <div id="prod-info-nombre" style="font-weight:600;font-size:14px"></div>
+                  <div id="prod-info-nombre" style="font-weight:600;font-size:var(--fs-md)"></div>
                   <div style="text-align:right">
-                    <div style="font-size:11px;color:var(--muted)">Stock actual</div>
-                    <div id="prod-info-stock" style="font-size:22px;font-weight:700"></div>
+                    <div style="font-size:var(--fs-xs);color:var(--muted)">Stock actual</div>
+                    <div id="prod-info-stock" style="font-size:var(--fs-2xl);font-weight:700"></div>
                   </div>
                 </div>
-                <div id="prod-info-sku" style="font-size:12px;color:var(--muted);margin-top:4px"></div>
+                <div id="prod-info-sku" style="font-size:var(--fs-sm);color:var(--muted);margin-top:4px"></div>
               </div>
 
               <div class="form-group">
@@ -116,11 +117,11 @@
 
               <!-- Preview del resultado -->
               <div id="preview-result" style="display:none;background:var(--bg);border-radius:var(--r);padding:14px">
-                <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Resultado del movimiento</div>
+                <div style="font-size:var(--fs-sm);color:var(--muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Resultado del movimiento</div>
                 <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;text-align:center">
-                  <div><div style="font-size:11px;color:var(--muted)">Antes</div><div id="prev-antes" style="font-size:24px;font-weight:700"></div></div>
-                  <div id="prev-arrow" style="font-size:20px;color:var(--muted)">→</div>
-                  <div><div style="font-size:11px;color:var(--muted)">Después</div><div id="prev-despues" style="font-size:24px;font-weight:700"></div></div>
+                  <div><div style="font-size:var(--fs-xs);color:var(--muted)">Antes</div><div id="prev-antes" style="font-size:var(--fs-2xl);font-weight:700"></div></div>
+                  <div id="prev-arrow" style="font-size:var(--fs-xl);color:var(--muted)">→</div>
+                  <div><div style="font-size:var(--fs-xs);color:var(--muted)">Después</div><div id="prev-despues" style="font-size:var(--fs-2xl);font-weight:700"></div></div>
                 </div>
               </div>
 
@@ -244,13 +245,13 @@ async function cargarMovHoy() {
   el.innerHTML = '<div>' + data.map(m=>`
     <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border)">
       <div style="flex:1;overflow:hidden">
-        <div style="font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.productos?.nombre||'—'}</div>
-        <div style="font-size:11px;color:var(--muted)">${Utils.datetime(m.created_at)}</div>
+        <div style="font-size:var(--fs-base);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.productos?.nombre||'—'}</div>
+        <div style="font-size:var(--fs-xs);color:var(--muted)">${Utils.datetime(m.created_at)}</div>
       </div>
       ${Utils.tipoMovBadge(m.tipo)}
-      <div style="font-size:12px;text-align:right;min-width:70px">
+      <div style="font-size:var(--fs-sm);text-align:right;min-width:70px">
         <span style="font-weight:600">${m.cantidad > 0 ? '+' : ''}${m.cantidad}</span>
-        <div style="color:var(--muted);font-size:11px">→ ${m.stock_posterior}</div>
+        <div style="color:var(--muted);font-size:var(--fs-xs)">→ ${m.stock_posterior}</div>
       </div>
     </div>`).join('') + '</div>';
 }

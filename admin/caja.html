@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://vduinkzeneokkqzdgxig.supabase.co" crossorigin>
+  <script>try{if(localStorage.getItem('mhTema')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
   <link rel="stylesheet" href="/admin/css/admin.css">
   <style>
     .caja-estado { display:inline-flex; align-items:center; gap:6px; font-weight:600; }
@@ -20,50 +21,50 @@
     .kpi-esperado .kpi-value { color:var(--night); }
     .split-caja { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
     @media (max-width: 900px) { .split-caja { grid-template-columns:1fr; } }
-    .mini-tabla td, .mini-tabla th { padding:7px 10px; font-size:13px; }
+    .mini-tabla td, .mini-tabla th { padding:7px 10px; font-size:var(--fs-base); }
     .mini-tabla td.r, .mini-tabla th.r { text-align:right; white-space:nowrap; }
-    .monto-ing { color:#15803D; font-weight:600; white-space:nowrap; }
-    .monto-egr { color:#B91C1C; font-weight:600; white-space:nowrap; }
+    .monto-ing { color:var(--success-ink); font-weight:600; white-space:nowrap; }
+    .monto-egr { color:var(--danger-ink); font-weight:600; white-space:nowrap; }
     tr.anulado td { text-decoration:line-through; color:var(--muted); }
     tr.anulado td.acc { text-decoration:none; }
-    .dif-0 { color:#15803D; } .dif-mas { color:#1D4ED8; } .dif-menos { color:#B91C1C; }
-    .cierre-linea { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed var(--border); font-size:14px; }
-    .cierre-linea b { font-size:16px; }
-    .aviso-pend { background:var(--warning-bg); color:#92400E; border-radius:var(--r); padding:10px 14px; font-size:13px; margin-bottom:14px; }
-    .grande input { font-size:20px; font-weight:600; }
+    .dif-0 { color:var(--success-ink); } .dif-mas { color:#1D4ED8; } .dif-menos { color:var(--danger-ink); }
+    .cierre-linea { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed var(--border); font-size:var(--fs-md); }
+    .cierre-linea b { font-size:var(--fs-lg); }
+    .aviso-pend { background:var(--warning-bg); color:var(--warning-ink); border-radius:var(--r); padding:10px 14px; font-size:var(--fs-base); margin-bottom:14px; }
+    .grande input { font-size:var(--fs-xl); font-weight:600; }
     /* Ventas que esperan cobro (sql/026) */
-    .pc-tit { display:flex; align-items:center; gap:10px; margin:0 0 10px; font-size:15px; font-weight:700; color:var(--night); }
-    .pc-n { background:var(--gold); color:#fff; border-radius:20px; padding:1px 10px; font-size:13px; }
+    .pc-tit { display:flex; align-items:center; gap:10px; margin:0 0 10px; font-size:var(--fs-lg); font-weight:700; color:var(--night); }
+    .pc-n { background:var(--gold); color:#fff; border-radius:var(--r-full); padding:1px 10px; font-size:var(--fs-base); }
     .pc-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px; margin-bottom:20px; }
-    .pc-card { background:#fff; border:1px solid var(--border); border-left:4px solid var(--gold); border-radius:var(--r-lg); padding:12px 14px; display:flex; flex-direction:column; gap:6px; }
+    .pc-card { background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--gold); border-radius:var(--r-lg); padding:12px 14px; display:flex; flex-direction:column; gap:6px; }
     .pc-card.devuelta { border-left-color:var(--muted); opacity:.75; }
     .pc-cab { display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
-    .pc-cod { font-family:monospace; font-size:12.5px; color:var(--muted); }
-    .pc-total { font-size:22px; font-weight:700; color:var(--night); }
-    .pc-items { font-size:13px; color:var(--text, #334155); line-height:1.45; max-height:92px; overflow:auto; }
-    .pc-meta { font-size:12px; color:var(--muted); }
+    .pc-cod { font-family:monospace; font-size:var(--fs-base); color:var(--muted); }
+    .pc-total { font-size:var(--fs-2xl); font-weight:700; color:var(--night); }
+    .pc-items { font-size:var(--fs-base); color:var(--text, #334155); line-height:1.45; max-height:92px; overflow:auto; }
+    .pc-meta { font-size:var(--fs-sm); color:var(--muted); }
     .pc-acc { display:flex; gap:6px; margin-top:4px; }
     .pc-acc .btn-primary { flex:1; justify-content:center; }
-    .pc-vieja { color:#B45309; font-weight:600; }
+    .pc-vieja { color:var(--warning-ink); font-weight:600; }
     /* Cobro con varios medios */
     .cb-fila { display:grid; grid-template-columns:1fr 130px 30px; gap:8px; align-items:start; margin-bottom:8px; }
     .cb-fila select, .cb-fila input { min-height:42px; width:100%; }
-    .cb-fila input.monto { text-align:right; font-weight:600; font-size:16px; }
+    .cb-fila input.monto { text-align:right; font-weight:600; font-size:var(--fs-lg); }
     .pc-cancelar { margin-left:auto; color:var(--muted); }
     .pc-cancelar:hover { color:var(--danger); }
     .cb-medios { grid-column:1 / -1; display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; }
-    .cb-medio { min-height:44px; border:1px solid var(--border); background:#fff; border-radius:var(--r); font:inherit; font-size:14px; font-weight:600; color:var(--night); cursor:pointer; }
+    .cb-medio { min-height:44px; border:1px solid var(--border); background:var(--surface); border-radius:var(--r); font:inherit; font-size:var(--fs-md); font-weight:600; color:var(--night); cursor:pointer; }
     .cb-medio:hover { border-color:var(--blue); }
-    .cb-medio.sel { background:var(--night); border-color:var(--night); color:#fff; }
-    .cb-efectivo { display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:13px; }
-    .cb-efectivo input { width:130px; min-height:40px; text-align:right; font-size:16px; margin-left:6px; }
+    .cb-medio.sel { background:var(--brand-night); border-color:var(--brand-night); color:#fff; }
+    .cb-efectivo { display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:var(--fs-base); }
+    .cb-efectivo input { width:130px; min-height:40px; text-align:right; font-size:var(--fs-lg); margin-left:6px; }
     .cb-rapido { flex:1 1 100%; display:flex; flex-wrap:wrap; gap:6px; }
-    .cb-rapido .chip { min-height:40px; font-size:14px; }
+    .cb-rapido .chip { min-height:40px; font-size:var(--fs-md); }
     .cb-extra { grid-column:1 / -1; }
-    .cb-estado { display:flex; justify-content:space-between; font-size:15px; padding:10px 12px; border-radius:var(--r); background:var(--bg); font-weight:600; }
-    .cb-estado.ok { background:var(--success-bg); color:#15803D; } .cb-estado.mal { background:var(--danger-bg); color:#B91C1C; }
-    .cta-banco { border:1px solid var(--border); border-left:4px solid var(--blue); border-radius:var(--r); padding:8px 10px; background:var(--bg); font-size:13px; }
-    .cta-banco b.dato { font-size:17px; color:var(--night); word-break:break-all; }
+    .cb-estado { display:flex; justify-content:space-between; font-size:var(--fs-lg); padding:10px 12px; border-radius:var(--r); background:var(--bg); font-weight:600; }
+    .cb-estado.ok { background:var(--success-bg); color:var(--success-ink); } .cb-estado.mal { background:var(--danger-bg); color:var(--danger-ink); }
+    .cta-banco { border:1px solid var(--border); border-left:4px solid var(--blue); border-radius:var(--r); padding:8px 10px; background:var(--bg); font-size:var(--fs-base); }
+    .cta-banco b.dato { font-size:var(--fs-lg); color:var(--night); word-break:break-all; }
   </style>
 </head>
 <body>
@@ -222,12 +223,12 @@ function pintarPendientes0() {
         <button class="btn btn-ghost btn-sm pc-cancelar" data-cancelar="${v.id}" title="El cliente no compra: cancelar y devolver el stock" aria-label="Cancelar la venta ${esc(v.codigo)}">✕ Cancelar</button>
       </div>`}</div>`;
   };
-  el.innerHTML = (fila.length ? `<div class="pc-tit">Para cobrar <span class="pc-n">${fila.length}</span>${abierta ? '' : '<span style="font-size:13px;font-weight:500;color:var(--danger)">Abrí la caja para poder cobrarlas</span>'}</div>
+  el.innerHTML = (fila.length ? `<div class="pc-tit">Para cobrar <span class="pc-n">${fila.length}</span>${abierta ? '' : '<span style="font-size:var(--fs-base);font-weight:500;color:var(--danger)">Abrí la caja para poder cobrarlas</span>'}</div>
       <div class="pc-grid">${fila.map(card).join('')}</div>` : '') +
-    (webTodas.length ? `<details class="pc-web" ${webAbierto ? 'open' : ''}><summary class="pc-tit" style="font-size:14px;cursor:pointer">🌐 Pedidos web: pagan al retirar <span class="pc-n">${webTodas.length}</span></summary>
+    (webTodas.length ? `<details class="pc-web" ${webAbierto ? 'open' : ''}><summary class="pc-tit" style="font-size:var(--fs-md);cursor:pointer">🌐 Pedidos web: pagan al retirar <span class="pc-n">${webTodas.length}</span></summary>
       <div style="margin:6px 0 10px"><input type="search" id="web-q" placeholder="Buscar por nombre, teléfono o código del pedido…" value="${esc(webQ)}" style="max-width:380px;width:100%"></div>
       <div class="pc-grid">${web.map(card).join('') || '<div class="pc-meta">Nada coincide.</div>'}</div></details>` : '') +
-    (devueltas.length ? `<div class="pc-tit" style="font-size:13px;color:var(--muted)">Devueltas a la vendedora (${devueltas.length})</div><div class="pc-grid">${devueltas.map(card).join('')}</div>` : '');
+    (devueltas.length ? `<div class="pc-tit" style="font-size:var(--fs-base);color:var(--muted)">Devueltas a la vendedora (${devueltas.length})</div><div class="pc-grid">${devueltas.map(card).join('')}</div>` : '');
 }
 
 /* ── Cobrar: uno o varios medios ── */
@@ -242,7 +243,7 @@ function modalCobrar(v) {
     <div class="modal-header"><h3 class="modal-title">Cobrar ${esc(v.codigo)}</h3><button class="modal-close" data-x aria-label="Cerrar">×</button></div>
     <form class="modal-body" novalidate>
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px">
-        <span>${esc(v.cliente_nombre || 'Consumidor final')} · vendió ${esc(v.vendedor_nombre || '—')}</span><b style="font-size:26px;color:var(--night)">${money(total)}</b></div>
+        <span>${esc(v.cliente_nombre || 'Consumidor final')} · vendió ${esc(v.vendedor_nombre || '—')}</span><b style="font-size:var(--fs-2xl);color:var(--night)">${money(total)}</b></div>
       <div id="cb-filas"></div>
       <button type="button" class="btn btn-ghost btn-sm" id="cb-mas">+ Paga una parte con otro medio</button>
       <div class="cb-estado" id="cb-estado" style="margin-top:12px"></div>
@@ -269,7 +270,7 @@ function modalCobrar(v) {
       <button type="button" class="btn btn-outline btn-sm" data-copiar="${esc(dato)}">Copiar</button>
       <button type="button" class="btn btn-ghost btn-sm" data-otra="${i}">Otra cuenta</button>
       <div class="pc-meta">${esc(f.cuenta.titular)} · ${esc(f.cuenta.banco || '')}</div>
-      ${f.aviso ? `<div style="color:#B45309;margin-top:4px">${esc(f.aviso)}</div>` : ''}
+      ${f.aviso ? `<div style="color:var(--warning-ink);margin-top:4px">${esc(f.aviso)}</div>` : ''}
       <input type="text" data-nro="${i}" placeholder="N° de operación (opcional)" maxlength="60" value="${esc(f.nro)}" style="margin-top:6px;min-height:36px;width:100%">
       <div class="pc-meta">Controlá que el comprobante sea a esta cuenta y por este monto.</div></div>`;
   };
@@ -435,9 +436,9 @@ function renderAbierta() {
     <div class="card"><div class="card-header"><span class="card-title">Otros medios (no están en el cajón)</span></div>
       <div class="card-body" style="padding:0">${otros.length ? `<table class="mini-tabla" style="width:100%"><thead><tr><th>Medio</th><th class="r">Ingresos</th><th class="r">Egresos</th><th class="r">Neto</th></tr></thead><tbody>
         ${otros.map(m => `<tr><td>${esc(MEDIOS[m.medio] || m.medio)}</td><td class="r">${money(m.ingresos)}</td><td class="r">${money(m.egresos)}</td><td class="r"><b>${money(m.neto)}</b></td></tr>`).join('')}
-      </tbody></table>` : '<p style="padding:14px 18px;color:var(--muted);font-size:13px">Todavía nada por transferencia, tarjeta ni Mercado Pago.</p>'}
-      ${porCuenta.length ? `<div style="border-top:1px solid var(--border);padding:10px 12px 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Transferencias por cuenta (controlá contra el homebanking)</div>
-        <table class="mini-tabla" style="width:100%"><tbody>${porCuenta.map(c => `<tr><td>${esc(c.cuenta)}${c.titular ? `<div style="font-size:11.5px;color:var(--muted)">${esc(c.titular)}${c.alias ? ' · ' + esc(c.alias) : ''}</div>` : ''}</td><td class="r">${c.ventas} venta${c.ventas !== 1 ? 's' : ''}</td><td class="r"><b>${money(c.total)}</b></td></tr>`).join('')}</tbody></table>` : ''}</div></div>
+      </tbody></table>` : '<p style="padding:14px 18px;color:var(--muted);font-size:var(--fs-base)">Todavía nada por transferencia, tarjeta ni Mercado Pago.</p>'}
+      ${porCuenta.length ? `<div style="border-top:1px solid var(--border);padding:10px 12px 4px;font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Transferencias por cuenta (controlá contra el homebanking)</div>
+        <table class="mini-tabla" style="width:100%"><tbody>${porCuenta.map(c => `<tr><td>${esc(c.cuenta)}${c.titular ? `<div style="font-size:var(--fs-sm);color:var(--muted)">${esc(c.titular)}${c.alias ? ' · ' + esc(c.alias) : ''}</div>` : ''}</td><td class="r">${c.ventas} venta${c.ventas !== 1 ? 's' : ''}</td><td class="r"><b>${money(c.total)}</b></td></tr>`).join('')}</tbody></table>` : ''}</div></div>
     <div class="card"><div class="card-header"><span class="card-title">Ventas y gastos</span></div>
       <div class="card-body" style="padding:0"><table class="mini-tabla" style="width:100%"><tbody>
         <tr><td>Ventas (${resumen.ventas.cantidad})</td><td class="r"><b>${money(resumen.ventas.total)}</b></td></tr>
@@ -457,9 +458,9 @@ function filaMov(m) {
   return `<tr class="${m.anulado ? 'anulado' : ''}">
     <td>${hora(m.fecha)}</td>
     <td>${esc(m.concepto_nombre)}</td>
-    <td style="max-width:280px">${esc(m.descripcion || '')}${m.anulado ? `<div style="font-size:11.5px;text-decoration:none">Anulado: ${esc(m.motivo_anulacion)}</div>` : ''}</td>
+    <td style="max-width:280px">${esc(m.descripcion || '')}${m.anulado ? `<div style="font-size:var(--fs-sm);text-decoration:none">Anulado: ${esc(m.motivo_anulacion)}</div>` : ''}</td>
     <td>${esc(MEDIOS[m.medio_pago] || m.medio_pago)}</td>
-    <td style="font-size:12.5px">${esc(m.usuario_nombre || '')}</td>
+    <td style="font-size:var(--fs-base)">${esc(m.usuario_nombre || '')}</td>
     <td style="text-align:right" class="${ing ? 'monto-ing' : 'monto-egr'}">${ing ? '+' : '−'}${money(m.monto)}</td>
     <td class="acc">${puedeAnular ? `<button class="btn btn-ghost btn-sm" data-anular="${m.id}" title="Anular">✕</button>` : ''}</td>
   </tr>`;
@@ -604,8 +605,8 @@ async function verHistorial() {
     <thead><tr><th>Día</th><th>Abrió</th><th>Cerró</th><th style="text-align:right">Inicial</th><th style="text-align:right">Esperado</th><th style="text-align:right">Contado</th><th style="text-align:right">Diferencia</th><th style="text-align:right">Retiro</th><th></th></tr></thead>
     <tbody>${data.map(s => `<tr>
       <td>${Utils.date(s.abierta_en)}</td>
-      <td style="font-size:12.5px">${hora(s.abierta_en)} · ${esc(s.abierta_por_nombre || '')}</td>
-      <td style="font-size:12.5px">${s.cerrada_en ? `${hora(s.cerrada_en)} · ${esc(s.cerrada_por_nombre || '')}` : '<span class="badge badge-success">abierta</span>'}</td>
+      <td style="font-size:var(--fs-base)">${hora(s.abierta_en)} · ${esc(s.abierta_por_nombre || '')}</td>
+      <td style="font-size:var(--fs-base)">${s.cerrada_en ? `${hora(s.cerrada_en)} · ${esc(s.cerrada_por_nombre || '')}` : '<span class="badge badge-success">abierta</span>'}</td>
       <td style="text-align:right">${money(s.monto_inicial)}</td>
       <td style="text-align:right">${s.efectivo_esperado != null ? money(s.efectivo_esperado) : '—'}</td>
       <td style="text-align:right">${s.efectivo_contado != null ? money(s.efectivo_contado) : '—'}</td>

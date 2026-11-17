@@ -11,53 +11,54 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://vduinkzeneokkqzdgxig.supabase.co" crossorigin>
+  <script>try{if(localStorage.getItem('mhTema')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
   <link rel="stylesheet" href="/admin/css/admin.css">
   <style>
-    .estado-select{padding:5px 8px;border-radius:6px;border:1px solid var(--border,#ddd);font-size:12px;font-weight:600;cursor:pointer}
-    .est-nueva{background:#FFF4E8;color:#8A4B12}
-    .est-contactado{background:#EAF2FD;color:#1763C6}
+    .estado-select{padding:5px 8px;border-radius:var(--r-sm);border:1px solid var(--border,#ddd);font-size:var(--fs-sm);font-weight:600;cursor:pointer}
+    .est-nueva{background:var(--warning-bg);color:var(--warning-ink)}
+    .est-contactado{background:var(--info-bg);color:var(--blue)}
     .est-cotizacion_enviada{background:#F3EDFD;color:#6B3FC0}
-    .est-confirmado{background:#E9F9EF;color:#14663A}
+    .est-confirmado{background:var(--success-bg);color:var(--success-ink)}
     .est-en_preparacion{background:#FDF8E4;color:#8A6D0B}
     .est-entregado{background:#EDF6EF;color:#2F6B3D}
-    .est-cancelado{background:#FDEEED;color:#8A241C}
-    .pago{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap}
+    .est-cancelado{background:var(--danger-bg);color:var(--danger-ink)}
+    .pago{display:inline-block;font-size:var(--fs-xs);font-weight:700;border-radius:var(--r-full);padding:3px 9px;white-space:nowrap}
     .pago-sin_pago{background:#EEF1F6;color:#4A5A75}
-    .pago-pendiente{background:#EAF2FD;color:#1763C6}
-    .pago-comprobante_recibido,.pago-en_revision{background:#FFF4E8;color:#8A4B12}
-    .banco-ok,.banco-mal,.banco-espera{margin-top:10px;border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.45}
-    .banco-ok{background:#E8F6EE;color:#14663A}.banco-mal{background:#FDECEA;color:#8A241C}.banco-espera{background:#FFF4E8;color:#8A4B12}
-    .pago-pagado{background:#E9F9EF;color:#14663A}
-    .pago-vencido{background:#FDEEED;color:#8A241C}
+    .pago-pendiente{background:var(--info-bg);color:var(--blue)}
+    .pago-comprobante_recibido,.pago-en_revision{background:var(--warning-bg);color:var(--warning-ink)}
+    .banco-ok,.banco-mal,.banco-espera{margin-top:10px;border-radius:8px;padding:8px 10px;font-size:var(--fs-base);line-height:1.45}
+    .banco-ok{background:var(--success-bg);color:var(--success-ink)}.banco-mal{background:#FDECEA;color:var(--danger-ink)}.banco-espera{background:var(--warning-bg);color:var(--warning-ink)}
+    .pago-pagado{background:var(--success-bg);color:var(--success-ink)}
+    .pago-vencido{background:var(--danger-bg);color:var(--danger-ink)}
     .sol-modal-bg{position:fixed;inset:0;background:rgba(10,20,40,.45);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px}
-    .sol-modal{background:#fff;border-radius:14px;max-width:760px;width:100%;max-height:92vh;overflow:auto;padding:26px}
+    .sol-modal{background:var(--surface);border-radius:var(--r-lg);max-width:760px;width:100%;max-height:92vh;overflow:auto;padding:26px}
     .sol-modal h3{margin-bottom:4px}
-    .sol-modal .cod{font-family:monospace;font-size:13px;color:#666}
-    .sol-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;margin:14px 0;font-size:13.5px}
-    .sol-grid b{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:#888;font-weight:600;margin-bottom:1px}
-    .sol-items{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
-    .sol-items th{text-align:left;font-size:11px;text-transform:uppercase;color:#888;padding:6px 8px;border-bottom:2px solid #eee}
+    .sol-modal .cod{font-family:monospace;font-size:var(--fs-base);color:#666}
+    .sol-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;margin:14px 0;font-size:var(--fs-md)}
+    .sol-grid b{display:block;font-size:var(--fs-sm);text-transform:uppercase;letter-spacing:.05em;color:#888;font-weight:600;margin-bottom:1px}
+    .sol-items{width:100%;border-collapse:collapse;font-size:var(--fs-base);margin:10px 0}
+    .sol-items th{text-align:left;font-size:var(--fs-xs);text-transform:uppercase;color:#888;padding:6px 8px;border-bottom:2px solid #eee}
     .sol-items td{padding:7px 8px;border-bottom:1px solid #f0f0f0}
-    .sol-obs{background:#F7F8FA;border-radius:8px;padding:10px 12px;font-size:13px;margin-top:10px;white-space:pre-wrap}
-    .pend-tag{background:#FFF4E8;color:#8A4B12;font-size:11px;font-weight:700;border-radius:5px;padding:2px 6px}
+    .sol-obs{background:#F7F8FA;border-radius:8px;padding:10px 12px;font-size:var(--fs-base);margin-top:10px;white-space:pre-wrap}
+    .pend-tag{background:var(--warning-bg);color:var(--warning-ink);font-size:var(--fs-xs);font-weight:700;border-radius:var(--r-sm);padding:2px 6px}
     .pago-box{border:1px solid var(--border,#e5e7eb);border-radius:12px;padding:16px;margin-top:16px}
-    .pago-box h4{font-size:14px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    .comp{border:1px solid var(--border,#e5e7eb);border-radius:10px;padding:10px 12px;margin-top:8px;display:grid;grid-template-columns:72px 1fr;gap:12px;font-size:13px}
+    .pago-box h4{font-size:var(--fs-md);margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .comp{border:1px solid var(--border,#e5e7eb);border-radius:var(--r);padding:10px 12px;margin-top:8px;display:grid;grid-template-columns:72px 1fr;gap:12px;font-size:var(--fs-base)}
     .comp img{width:72px;height:72px;object-fit:cover;border-radius:8px;background:#f3f4f6;cursor:zoom-in}
-    .comp .ph{width:72px;height:72px;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:24px}
-    .comp dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:6px 0;font-size:12.5px}
+    .comp .ph{width:72px;height:72px;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:var(--fs-2xl)}
+    .comp dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:6px 0;font-size:var(--fs-base)}
     .comp dt{color:#888}.comp dd{font-weight:600}
     .comp-coincide{border-color:#8fd3a6;background:#F4FBF6}
     .comp-no_coincide,.comp-ilegible{border-color:#f0c58f;background:#FFFAF3}
     .comp-rechazado{opacity:.7}
     .comp-aceptado{border-color:#8fd3a6}
-    .eventos{font-size:12.5px;color:#555;margin-top:12px;max-height:160px;overflow:auto;border-top:1px solid #eee;padding-top:8px}
+    .eventos{font-size:var(--fs-base);color:#555;margin-top:12px;max-height:160px;overflow:auto;border-top:1px solid #eee;padding-top:8px}
     .eventos div{padding:3px 0}
-    .eventos span{color:#999;font-family:monospace;font-size:11px;margin-right:6px}
+    .eventos span{color:#999;font-family:monospace;font-size:var(--fs-xs);margin-right:6px}
     .mini-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
     .mini-form .full{grid-column:1/-1}
-    .mini-form input,.mini-form select{width:100%;padding:7px 9px;border:1px solid var(--border,#ddd);border-radius:7px;font-size:13px}
-    .mini-form label{font-size:11px;text-transform:uppercase;color:#888;font-weight:600;display:block;margin-bottom:3px}
+    .mini-form input,.mini-form select{width:100%;padding:7px 9px;border:1px solid var(--border,#ddd);border-radius:7px;font-size:var(--fs-base)}
+    .mini-form label{font-size:var(--fs-xs);text-transform:uppercase;color:#888;font-weight:600;display:block;margin-bottom:3px}
     .img-zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:700;display:flex;align-items:center;justify-content:center;cursor:zoom-out}
     .img-zoom img{max-width:95vw;max-height:95vh;border-radius:8px}
     @media (max-width:768px){ .sol-grid,.mini-form{grid-template-columns:1fr} }
@@ -124,7 +125,7 @@
           <option value="web">Tienda web</option>
           <option value="mayorista">Mayorista</option>
         </select>
-        <span id="filter-count" style="font-size:13px;color:var(--muted,#888);font-weight:600"></span>
+        <span id="filter-count" style="font-size:var(--fs-base);color:var(--muted,#888);font-weight:600"></span>
       </div>
 
       <div class="table-wrap">
@@ -239,12 +240,12 @@ function renderTable() {
   document.getElementById('tabla-body').innerHTML = slice.map(s => {
     const c = cuentaDe(s.cuenta_cobro_id);
     return `<tr${paraRevisar(s) ? ' style="background:#FFFBF5"' : ''}>
-    <td style="font-family:monospace;font-size:12px;white-space:nowrap">${esc(s.codigo)}${s.canal==='mayorista'?' <span class="pend-tag">Mayorista</span>':''}${s.venta_id ? `<div style="font-size:11px;color:#2563EB" title="Pasó al mostrador">🏪 ${esc(ventasDe[s.venta_id]?.codigo || 'en venta')}</div>` : ''}</td>
-    <td style="white-space:nowrap;color:var(--muted,#888);font-size:12px">${Utils.datetime(s.created_at)}</td>
-    <td style="font-weight:500">${esc(s.cliente_nombre)}<div style="font-size:11.5px;color:#888">${esc(s.telefono)}${s.comercio?` · ${esc(s.comercio)}`:''}</div></td>
+    <td style="font-family:monospace;font-size:var(--fs-sm);white-space:nowrap">${esc(s.codigo)}${s.canal==='mayorista'?' <span class="pend-tag">Mayorista</span>':''}${s.venta_id ? `<div style="font-size:var(--fs-xs);color:#2563EB" title="Pasó al mostrador">🏪 ${esc(ventasDe[s.venta_id]?.codigo || 'en venta')}</div>` : ''}</td>
+    <td style="white-space:nowrap;color:var(--muted,#888);font-size:var(--fs-sm)">${Utils.datetime(s.created_at)}</td>
+    <td style="font-weight:500">${esc(s.cliente_nombre)}<div style="font-size:var(--fs-sm);color:#888">${esc(s.telefono)}${s.comercio?` · ${esc(s.comercio)}`:''}</div></td>
     <td style="white-space:nowrap;font-weight:600;text-align:right">${s.monto_a_pagar != null && s.estado_pago !== 'sin_pago' ? money2(s.monto_a_pagar) : money(s.total_estimado)}${s.tiene_pendientes?' <span class="pend-tag" title="Tiene productos sin precio o con stock a confirmar">a confirmar</span>':''}</td>
     <td>${pagoPill(s)}</td>
-    <td style="font-size:12.5px;white-space:nowrap">${c ? esc(c.nombre) : '<span style="color:#aaa">—</span>'}</td>
+    <td style="font-size:var(--fs-base);white-space:nowrap">${c ? esc(c.nombre) : '<span style="color:#aaa">—</span>'}</td>
     <td>${estadoSelect(s)}</td>
     <td><button class="btn ${paraRevisar(s) ? 'btn-primary' : 'btn-ghost'} btn-sm" data-ver="${s.id}">${paraRevisar(s) ? 'Revisar' : 'Ver'}</button></td>
   </tr>`; }).join('');
@@ -313,19 +314,19 @@ async function verDetalle(id) {
       ${items.length ? `<table class="sol-items">
         <thead><tr><th>Producto</th><th>Código</th><th style="text-align:center">Cant.</th><th style="text-align:right">Precio</th><th style="text-align:right">Subtotal</th></tr></thead>
         <tbody>${items.map(i => `<tr>
-          <td>${esc(i.nombre)}</td><td style="font-size:11.5px;color:#888">${esc(i.sku)||'—'}</td>
+          <td>${esc(i.nombre)}</td><td style="font-size:var(--fs-sm);color:#888">${esc(i.sku)||'—'}</td>
           <td style="text-align:center">${i.cantidad}</td>
           <td style="text-align:right">${i.precio_unitario==null?'<span class="pend-tag">a cotizar</span>':money(i.precio_unitario)}${i.stock_a_confirmar?' <span class="pend-tag" title="El producto no tenía stock controlado cuando se pidió: confirmá que haya">stock a confirmar</span>':''}</td>
           <td style="text-align:right">${i.subtotal==null?'—':money(i.subtotal)}</td>
         </tr>`).join('')}</tbody></table>
-      <div style="text-align:right;font-weight:700;margin-top:6px">Total estimado: ${money(s.total_estimado)}</div>` : '<p style="color:#888;font-size:13px;margin:12px 0">Sin productos (consulta general).</p>'}
+      <div style="text-align:right;font-weight:700;margin-top:6px">Total estimado: ${money(s.total_estimado)}</div>` : '<p style="color:#888;font-size:var(--fs-base);margin:12px 0">Sin productos (consulta general).</p>'}
       ${s.observaciones ? `<div class="sol-obs"><b>Observaciones del cliente:</b><br>${esc(s.observaciones)}</div>` : ''}
 
       <div id="mostrador-box">${htmlMostrador(s)}</div>
-      <div class="pago-box" id="pago-box">${sinCobros ? '<p style="font-size:13px;color:#8A4B12">Falta ejecutar <code>sql/012-cobros.sql</code> en Supabase para gestionar cobros.</p>' : '<div class="spinner" style="margin:10px auto"></div>'}</div>
+      <div class="pago-box" id="pago-box">${sinCobros ? '<p style="font-size:var(--fs-base);color:#8A4B12">Falta ejecutar <code>sql/012-cobros.sql</code> en Supabase para gestionar cobros.</p>' : '<div class="spinner" style="margin:10px auto"></div>'}</div>
 
-      <div style="background:var(--violet-bg,#F3F0FF);border-radius:10px;padding:14px;margin-top:16px">
-        <div style="font-size:12px;font-weight:700;color:var(--violet-dark,#6244E0);margin-bottom:8px">✨ Mensaje de WhatsApp (editalo antes de enviar)</div>
+      <div style="background:var(--violet-bg,var(--violet-bg));border-radius:var(--r);padding:14px;margin-top:16px">
+        <div style="font-size:var(--fs-sm);font-weight:700;color:var(--violet-dark,#6244E0);margin-bottom:8px">✨ Mensaje de WhatsApp (editalo antes de enviar)</div>
         <div class="d-flex gap-2" style="flex-wrap:wrap;margin-bottom:8px">
           <button class="chip" data-plantilla="contacto">👋 Primer contacto</button>
           <button class="chip" data-plantilla="cotizacion">💲 Cotización</button>
@@ -335,7 +336,7 @@ async function verDetalle(id) {
           <button class="chip" data-plantilla="pagado">✅ Pago confirmado</button>
           <button class="chip" data-plantilla="seguimiento">🔄 Seguimiento</button>
         </div>
-        <textarea id="respuesta-txt" rows="6" style="font-size:12.5px;background:#fff"></textarea>
+        <textarea id="respuesta-txt" rows="6" style="font-size:var(--fs-base);background:var(--surface)"></textarea>
         <div class="d-flex gap-2" style="justify-content:flex-end;margin-top:8px">
           <button class="btn btn-outline btn-sm" id="btn-copiar-resp">📋 Copiar</button>
           <a class="btn btn-primary btn-sm" id="btn-wa-resp" target="_blank" rel="noopener" href="#">Abrir WhatsApp con este mensaje</a>
@@ -370,7 +371,7 @@ async function cargarEventos(id) {
   const { data } = await db.from('solicitud_eventos').select('created_at, estado_anterior, estado_nuevo, detalle')
     .eq('solicitud_id', id).order('created_at', { ascending: false }).limit(40);
   if (!data || !data.length) { el.innerHTML = ''; return; }
-  el.innerHTML = `<b style="font-size:12px">Historial</b>` + data.map(e => `<div><span>${Utils.datetime(e.created_at)}</span>${
+  el.innerHTML = `<b style="font-size:var(--fs-sm)">Historial</b>` + data.map(e => `<div><span>${Utils.datetime(e.created_at)}</span>${
     e.estado_anterior !== e.estado_nuevo ? `${ESTADOS[e.estado_anterior]||e.estado_anterior||'—'} → <b>${ESTADOS[e.estado_nuevo]||e.estado_nuevo}</b>${e.detalle ? ' · ' : ''}` : ''}${esc(e.detalle||'')}</div>`).join('');
 }
 
@@ -382,13 +383,13 @@ async function renderPago(s) {
   let h = `<h4>💳 Pago ${pagoPill(s)}</h4>`;
 
   if (s.estado_pago === 'pagado') {
-    h += `<div style="font-size:13.5px">Pagado <b>${money2(s.monto_pagado)}</b> el ${Utils.datetime(s.pagado_en)}${c ? ` en <b>${esc(c.nombre)}</b> (${esc(c.titular)})` : ''}.</div>`;
+    h += `<div style="font-size:var(--fs-md)">Pagado <b>${money2(s.monto_pagado)}</b> el ${Utils.datetime(s.pagado_en)}${c ? ` en <b>${esc(c.nombre)}</b> (${esc(c.titular)})` : ''}.</div>`;
     if (puedeAnularPago()) h += `<button class="btn btn-outline btn-sm" id="btn-anular" style="margin-top:10px">Anular pago…</button>`;
   } else {
     if (['pendiente', 'comprobante_recibido', 'en_revision'].includes(s.estado_pago) && c) {
-      h += `<div style="font-size:13.5px">Debe transferir <b>${money2(s.monto_a_pagar)}</b> a <b>${esc(c.nombre)}</b> · ${esc(c.alias || c.cvu)} (${esc(c.titular)})${s.pago_vence_en ? ` · vence ${Utils.datetime(s.pago_vence_en)}` : ''}.</div>`;
+      h += `<div style="font-size:var(--fs-md)">Debe transferir <b>${money2(s.monto_a_pagar)}</b> a <b>${esc(c.nombre)}</b> · ${esc(c.alias || c.cvu)} (${esc(c.titular)})${s.pago_vence_en ? ` · vence ${Utils.datetime(s.pago_vence_en)}` : ''}.</div>`;
     } else if (!cerrado) {
-      h += `<div style="font-size:13px;color:#555">${s.estado_pago === 'vencido' ? 'El plazo venció sin comprobante. ' : ''}${!settings.cobros_activos ? '<b>Los cobros por transferencia están apagados</b> (Cuentas bancarias → Configuración web, la ven los dueños del sistema); igual podés habilitar este pedido a mano. ' : ''}${s.total_estimado == null || s.tiene_pendientes ? 'El pedido tiene productos a cotizar: indicá el monto final para habilitar el pago.' : 'El cliente puede pagarlo desde su página, o habilitalo desde acá para mandarle los datos.'}</div>
+      h += `<div style="font-size:var(--fs-base);color:#555">${s.estado_pago === 'vencido' ? 'El plazo venció sin comprobante. ' : ''}${!settings.cobros_activos ? '<b>Los cobros por transferencia están apagados</b> (Cuentas bancarias → Configuración web, la ven los dueños del sistema); igual podés habilitar este pedido a mano. ' : ''}${s.total_estimado == null || s.tiene_pendientes ? 'El pedido tiene productos a cotizar: indicá el monto final para habilitar el pago.' : 'El cliente puede pagarlo desde su página, o habilitalo desde acá para mandarle los datos.'}</div>
         <div class="mini-form">
           <div><label>Monto a cobrar</label><input type="number" id="hab-monto" min="1" step="0.01" placeholder="${s.total_estimado != null && !s.tiene_pendientes ? Number(s.total_estimado) : 'Monto final'}"></div>
           <div style="display:flex;align-items:flex-end"><button class="btn btn-primary btn-sm" id="btn-habilitar" style="width:100%">Habilitar pago por transferencia</button></div>
@@ -418,16 +419,16 @@ async function renderPago(s) {
 
   // Comprobantes
   if (comps.length) {
-    h += `<div style="margin-top:14px;font-size:13px;font-weight:700">Comprobantes (${comps.length})</div>`;
+    h += `<div style="margin-top:14px;font-size:var(--fs-base);font-weight:700">Comprobantes (${comps.length})</div>`;
     for (const x of comps) {
       const [lbl, cls] = COMP[x.estado] || [x.estado, 'badge-muted'];
       const lec = x.lectura || {};
       h += `<div class="comp comp-${x.estado}" data-comp="${x.id}">
         <div>${/^image\//.test(x.mime || '') ? `<img data-src="${esc(x.archivo)}" alt="Comprobante" title="Ver grande">` : `<a class="ph" data-src="${esc(x.archivo)}" title="Abrir PDF" href="#">📄</a>`}</div>
         <div>
-          <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span><span class="badge ${cls}">${lbl}</span> <span style="color:#888;font-size:12px">${Utils.datetime(x.created_at)}${x.confianza != null ? ` · confianza ${x.confianza}%` : ''}</span></span></div>
-          ${x.motivo ? `<div style="color:#8A241C;font-size:12.5px;margin-top:4px">${esc(x.motivo)}</div>` : ''}
-          ${x.nota_interna ? `<div style="color:#8A4B12;font-size:12.5px;margin-top:4px">📝 ${esc(x.nota_interna)}</div>` : ''}
+          <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span><span class="badge ${cls}">${lbl}</span> <span style="color:#888;font-size:var(--fs-sm)">${Utils.datetime(x.created_at)}${x.confianza != null ? ` · confianza ${x.confianza}%` : ''}</span></span></div>
+          ${x.motivo ? `<div style="color:var(--danger-ink);font-size:var(--fs-base);margin-top:4px">${esc(x.motivo)}</div>` : ''}
+          ${x.nota_interna ? `<div style="color:var(--warning-ink);font-size:var(--fs-base);margin-top:4px">📝 ${esc(x.nota_interna)}</div>` : ''}
           ${x.leido_en ? `<dl>
             <dt>Monto leído</dt><dd>${x.monto_leido != null ? money2(x.monto_leido) : '—'}${s.monto_a_pagar != null ? ` <span style="color:#888;font-weight:400">(esperado ${money2(s.monto_a_pagar)})</span>` : ''}</dd>
             <dt>Fecha</dt><dd>${x.fecha_leida ? Utils.date(x.fecha_leida) : '—'}${lec.hora ? ' ' + esc(lec.hora) : ''}</dd>
@@ -435,7 +436,7 @@ async function renderPago(s) {
             <dt>Origen</dt><dd>${esc(lec.origen_titular || '—')}${lec.origen_banco ? ` · ${esc(lec.origen_banco)}` : ''}</dd>
             <dt>Nº operación</dt><dd>${esc(x.nro_operacion || '—')}</dd>
             ${lec.notas ? `<dt>Notas IA</dt><dd style="font-weight:400">${esc(lec.notas)}</dd>` : ''}
-          </dl>` : `<div style="font-size:12.5px;color:#888;margin-top:4px">Todavía no fue leído por la IA.</div>`}
+          </dl>` : `<div style="font-size:var(--fs-base);color:#888;margin-top:4px">Todavía no fue leído por la IA.</div>`}
           ${!['aceptado', 'rechazado'].includes(x.estado) && s.estado_pago !== 'pagado' ? `<div class="d-flex gap-2" style="flex-wrap:wrap;margin-top:6px">
             <button class="btn btn-primary btn-sm" data-aceptar="${x.id}">✓ Confirmar pago con este comprobante</button>
             <button class="btn btn-outline btn-sm" data-rechazar="${x.id}">Rechazar…</button>
@@ -448,7 +449,7 @@ async function renderPago(s) {
 
   // Pago manual
   if (s.estado_pago !== 'pagado' && !cerrado) {
-    h += `<details style="margin-top:14px"><summary style="cursor:pointer;font-size:13px;font-weight:700">Registrar pago a mano (sin comprobante, efectivo, otro medio)</summary>
+    h += `<details style="margin-top:14px"><summary style="cursor:pointer;font-size:var(--fs-base);font-weight:700">Registrar pago a mano (sin comprobante, efectivo, otro medio)</summary>
       <div class="mini-form">
         <div><label>Monto recibido</label><input type="number" id="man-monto" min="1" step="0.01" value="${s.monto_a_pagar != null ? Number(s.monto_a_pagar) : (s.total_estimado != null ? Number(s.total_estimado) : '')}"></div>
         <div><label>Cuenta donde entró</label><select id="man-cuenta">${cuentas.map(k => `<option value="${k.id}"${k.id === s.cuenta_cobro_id ? ' selected' : ''}>${esc(k.nombre)}</option>`).join('')}</select></div>
@@ -578,7 +579,7 @@ function renderChips() {
   solicitudes.forEach(s => { counts[s.estado] = (counts[s.estado] || 0) + 1; });
   const revisar = solicitudes.filter(paraRevisar).length;
   const esperando = solicitudes.filter(s => s.estado_pago === 'pendiente').length;
-  let html = `<button class="chip${actualPago === 'revisar' ? ' active' : ''}" data-pago="revisar" style="${revisar ? 'border-color:#F47A1F;color:#8A4B12;font-weight:700' : ''}">⚠️ Para revisar <span class="chip-n">${revisar}</span></button>`;
+  let html = `<button class="chip${actualPago === 'revisar' ? ' active' : ''}" data-pago="revisar" style="${revisar ? 'border-color:var(--gold);color:var(--warning-ink);font-weight:700' : ''}">⚠️ Para revisar <span class="chip-n">${revisar}</span></button>`;
   html += `<button class="chip${actualPago === 'pendiente' ? ' active' : ''}" data-pago="pendiente">⏳ Esperando pago <span class="chip-n">${esperando}</span></button>`;
   html += [['', 'Todas'], ...Object.entries(ESTADOS)].filter(([v]) => v === '' || counts[v])
     .map(([v, l]) => `<button class="chip${v === actualEst && !actualPago ? ' active' : ''}" data-estado="${v}">${l} <span class="chip-n">${counts[v] || 0}</span></button>`).join('');
@@ -641,7 +642,7 @@ function htmlMostrador(s) {
     return `<div class="sol-obs" style="background:#EEF6FF;border-color:#BFD8F6"><b>🏪 Ya está en el mostrador:</b> venta
       <a href="/admin/ventas?ver=${s.venta_id}">${esc(v?.codigo || '#' + s.venta_id)}</a>${v ? ` · ${esc(VENTA_EST(v))}` : ''}
       · <a href="/admin/entregas?tab=${v?.entrega_estado === 'entregado' ? 'hechas' : v?.entrega_tipo === 'envio' ? 'envios' : 'retiros'}">ver en Entregas</a>
-      <div style="font-size:12px;color:#5A6B85;margin-top:4px">Se cobra en Caja y se entrega desde Entregas. Para cancelarlo, anulá la venta.</div>
+      <div style="font-size:var(--fs-sm);color:#5A6B85;margin-top:4px">Se cobra en Caja y se entrega desde Entregas. Para cancelarlo, anulá la venta.</div>
       ${v && v.estado !== 'anulada' ? `<div class="d-flex gap-2" style="flex-wrap:wrap;margin-top:8px">
         <button class="btn btn-outline btn-sm" data-venta-acc="pasado">📲 Avisar al cliente</button>
         <button class="btn btn-outline btn-sm" data-venta-acc="preparar">🖨️ Para preparar</button></div>` : ''}</div>`;
@@ -649,7 +650,7 @@ function htmlMostrador(s) {
   if (!puedePasar(s)) return '';
   const pagado = s.estado_pago === 'pagado';
   return `<div class="sol-obs" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#FFF8EE;border-color:#F6D7B0">
-    <div style="flex:1;min-width:220px"><b>🏪 Pasar al mostrador</b><br><span style="font-size:12.5px">Lo convierte en una venta: ${pagado
+    <div style="flex:1;min-width:220px"><b>🏪 Pasar al mostrador</b><br><span style="font-size:var(--fs-base)">Lo convierte en una venta: ${pagado
       ? 'como ya pagó online, queda <b>pagada</b> y va directo a Entregas.'
       : 'el cliente <b>paga en la caja</b> cuando viene a retirar (o la mercadería sale cuando se cobre).'}</span></div>
     <button class="btn btn-primary btn-sm" id="btn-mostrador">Pasar al mostrador</button></div>`;

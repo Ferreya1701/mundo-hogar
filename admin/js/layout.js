@@ -127,7 +127,21 @@ const Layout = {
   ACCIONES: [
     { label:'Nuevo producto',     icon:'➕', href:'/admin/producto-form', permiso:'productos.editar', claves:'agregar cargar alta' },
     { label:'Cambiar mi contraseña', icon:'🔑', href:'/admin/clave', claves:'clave password' },
+    { label:'Modo oscuro / claro', icon:'🌙', run:'tema', claves:'tema noche dark oscuro claro' },
   ],
+  /* Tema: claro por defecto; el oscuro se elige a mano y queda guardado en
+     este navegador. Se aplica en el armazón y en todos los módulos abiertos. */
+  tema(t) {
+    if (t === undefined) t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem('mhTema', t); } catch (e) {}
+    const aplicar = doc => { try { if (t === 'dark') doc.documentElement.dataset.theme = 'dark'; else delete doc.documentElement.dataset.theme; } catch (e) {} };
+    let raiz = window;
+    try { if (window.top !== window && window.top.document) raiz = window.top; } catch (e) {}
+    aplicar(raiz.document);
+    raiz.document.querySelectorAll('iframe').forEach(f => { try { aplicar(f.contentDocument); } catch (e) {} });
+    aplicar(document);
+    raiz.document.querySelectorAll('#tema-btn').forEach(b => { b.textContent = t === 'dark' ? '☀️' : '🌙'; b.setAttribute('aria-label', t === 'dark' ? 'Pasar a modo claro' : 'Pasar a modo oscuro'); });
+  },
   irA(href) {
     try { if (window.top !== window && window.top.MHApp) { window.top.MHApp.ir(href); return; } } catch (e) {}
     if (window.MHApp) { MHApp.ir(href); return; }
@@ -159,12 +173,12 @@ const Layout = {
       const ts = norm(q.value).split(/\s+/).filter(Boolean);
       vis = items.filter(i => { const h = norm(`${i.label} ${i.tipo} ${i.claves || ''}`); return ts.every(t => h.includes(t)); });
       sel = Math.min(sel, Math.max(0, vis.length - 1));
-      lista.innerHTML = vis.length ? vis.map((i, n) => `<a href="${i.href}" class="paleta-it${n === sel ? ' sel' : ''}" role="option" aria-selected="${n === sel}" data-n="${n}"><span class="paleta-ic">${i.icon}</span><span class="paleta-lbl">${esc(i.label)}</span><span class="paleta-tipo">${esc(i.tipo)}</span></a>`).join('')
+      lista.innerHTML = vis.length ? vis.map((i, n) => `<a href="${i.href || '#'}" class="paleta-it${n === sel ? ' sel' : ''}" role="option" aria-selected="${n === sel}" data-n="${n}"><span class="paleta-ic">${i.icon}</span><span class="paleta-lbl">${esc(i.label)}</span><span class="paleta-tipo">${esc(i.tipo)}</span></a>`).join('')
         : '<div class="paleta-vacio">Nada con ese nombre</div>';
       lista.querySelector('.sel')?.scrollIntoView({ block: 'nearest' });
     };
     const cerrar = () => { bd.remove(); previo?.focus?.(); };
-    const abrir = i => { if (!i) return; cerrar(); this.irA(i.href); };
+    const abrir = i => { if (!i) return; cerrar(); if (i.run === 'tema') this.tema(); else this.irA(i.href); };
     q.addEventListener('input', () => { sel = 0; pintar(); });
     q.addEventListener('keydown', e => {
       if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(vis.length - 1, sel + 1); pintar(); }
@@ -229,6 +243,9 @@ const Layout = {
       const esMac = /Mac|iPhone|iPad/.test(navigator.platform || '');
       acciones.insertAdjacentHTML('afterbegin', `<button type="button" id="paleta-btn" class="btn btn-ghost btn-sm paleta-btn" aria-label="Ir a una pantalla (${esMac ? '⌘' : 'Ctrl'}+K)">🔍 <span class="paleta-btn-txt">Ir a…</span> <kbd>${esMac ? '⌘' : 'Ctrl'} K</kbd></button>`);
       document.getElementById('paleta-btn').addEventListener('click', () => this.abrirPaleta());
+      const oscuro = document.documentElement.dataset.theme === 'dark';
+      document.getElementById('paleta-btn').insertAdjacentHTML('afterend', `<button type="button" id="tema-btn" class="btn btn-ghost btn-sm" aria-label="${oscuro ? 'Pasar a modo claro' : 'Pasar a modo oscuro'}" title="Modo oscuro / claro">${oscuro ? '☀️' : '🌙'}</button>`);
+      document.getElementById('tema-btn').addEventListener('click', () => this.tema());
     }
     this._perfil = profile;
     this.contar(profile);
@@ -288,3 +305,10 @@ const Layout = {
 };
 
 Layout.prerender();
+
+// Si otra pestaña cambia el tema, esta lo sigue
+window.addEventListener('storage', e => {
+  if (e.key !== 'mhTema') return;
+  if (e.newValue === 'dark') document.documentElement.dataset.theme = 'dark';
+  else delete document.documentElement.dataset.theme;
+});

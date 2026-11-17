@@ -11,24 +11,25 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://vduinkzeneokkqzdgxig.supabase.co" crossorigin>
+  <script>try{if(localStorage.getItem('mhTema')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
   <link rel="stylesheet" href="/admin/css/admin.css">
   <style>
     .cc-fila { cursor:pointer; }
     .cc-fila:hover td { background:var(--bg); }
     .r { text-align:right; white-space:nowrap; }
     .deuda { font-weight:700; color:var(--night); }
-    .vencido { color:#B91C1C; font-weight:600; }
-    .favor { color:#15803D; font-weight:600; }
-    .sub { font-size:11.5px; color:var(--muted); }
+    .vencido { color:var(--danger-ink); font-weight:600; }
+    .favor { color:var(--success-ink); font-weight:600; }
+    .sub { font-size:var(--fs-sm); color:var(--muted); }
     .det-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
     .det-stats > div { background:var(--bg); border-radius:var(--r); padding:10px 12px; }
-    .det-stats b { display:block; font-size:18px; color:var(--night); margin-top:2px; }
-    .det-stats span { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+    .det-stats b { display:block; font-size:var(--fs-xl); color:var(--night); margin-top:2px; }
+    .det-stats span { font-size:var(--fs-sm); color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
     @media (max-width: 700px) { .det-stats { grid-template-columns:1fr 1fr; } }
     .det-acc { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
     tr.anulado td { text-decoration:line-through; color:var(--muted); }
     tr.anulado td.acc { text-decoration:none; }
-    .grande input { font-size:20px; font-weight:600; }
+    .grande input { font-size:var(--fs-xl); font-weight:600; }
   </style>
 </head>
 <body>

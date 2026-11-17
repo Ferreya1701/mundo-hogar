@@ -6,7 +6,7 @@
     document.body.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;
         font-family:sans-serif;padding:24px;text-align:center;background:#1A1A2E;">
-        <div style="background:#fff;border-radius:12px;padding:40px;max-width:440px">
+        <div style="background:var(--surface,#fff);border-radius:12px;padding:40px;max-width:440px">
           <div style="font-size:40px;margin-bottom:16px">⚙️</div>
           <h2 style="color:#1A1A2E;margin-bottom:8px">Configuración requerida</h2>
           <p style="color:#6B6560;margin-bottom:16px">

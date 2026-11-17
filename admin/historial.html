@@ -11,28 +11,29 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://vduinkzeneokkqzdgxig.supabase.co" crossorigin>
+  <script>try{if(localStorage.getItem('mhTema')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
   <link rel="stylesheet" href="/admin/css/admin.css">
   <style>
     .filtros { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
     .filtros select, .filtros input[type=date] { min-height:38px; }
     .filtros .search-bar { flex:1; min-width:220px; }
     .chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
-    .dia { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:18px 0 6px; }
-    .ev { display:grid; grid-template-columns:56px 1fr auto; gap:10px; align-items:start; background:#fff; border:1px solid var(--border);
+    .dia { font-size:var(--fs-sm); font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:18px 0 6px; }
+    .ev { display:grid; grid-template-columns:56px 1fr auto; gap:10px; align-items:start; background:var(--surface); border:1px solid var(--border);
           border-left:4px solid var(--border); border-radius:var(--r); padding:10px 12px; margin-bottom:6px; }
-    .ev.sens { border-left-color:#DC2626; background:#FFFBFB; }
-    .ev .hora { font-family:monospace; font-size:12.5px; color:var(--muted); padding-top:2px; }
-    .ev .que { font-size:14px; color:var(--night); line-height:1.45; }
+    .ev.sens { border-left-color:var(--danger); background:#FFFBFB; }
+    .ev .hora { font-family:monospace; font-size:var(--fs-base); color:var(--muted); padding-top:2px; }
+    .ev .que { font-size:var(--fs-md); color:var(--night); line-height:1.45; }
     .ev .que b { font-weight:600; }
-    .ev .quien { font-size:12.5px; color:var(--muted); margin-top:2px; }
-    .ev .det { margin-top:6px; font-size:12.5px; display:none; }
+    .ev .quien { font-size:var(--fs-base); color:var(--muted); margin-top:2px; }
+    .ev .det { margin-top:6px; font-size:var(--fs-base); display:none; }
     .ev.abierto .det { display:block; }
     .ev .det table { width:auto; } .ev .det td { padding:3px 10px 3px 0; border:0; vertical-align:top; }
     .ev .det td:first-child { color:var(--muted); white-space:nowrap; }
-    .ev .ver { font-size:12px; }
-    .tag-s { display:inline-block; font-size:10.5px; font-weight:700; color:#B91C1C; background:#FEE2E2; border-radius:10px; padding:1px 7px; margin-left:6px; vertical-align:1px; }
-    .antes { color:#B91C1C; text-decoration:line-through; } .despues { color:#15803D; font-weight:600; }
-    .vacio { padding:30px; text-align:center; color:var(--muted); background:#fff; border:1px dashed var(--border); border-radius:var(--r-lg); }
+    .ev .ver { font-size:var(--fs-sm); }
+    .tag-s { display:inline-block; font-size:var(--fs-xs); font-weight:700; color:var(--danger-ink); background:#FEE2E2; border-radius:var(--r); padding:1px 7px; margin-left:6px; vertical-align:1px; }
+    .antes { color:var(--danger-ink); text-decoration:line-through; } .despues { color:var(--success-ink); font-weight:600; }
+    .vacio { padding:30px; text-align:center; color:var(--muted); background:var(--surface); border:1px dashed var(--border); border-radius:var(--r-lg); }
     @media (max-width:640px) { .ev { grid-template-columns:44px 1fr; } .ev .ver { grid-column:2; } }
   </style>
 </head>
@@ -65,7 +66,7 @@
         <input type="date" id="f-desde" hidden aria-label="Desde"><input type="date" id="f-hasta" hidden aria-label="Hasta">
         <select id="f-persona" aria-label="Persona"><option value="">Todas las personas</option></select>
         <div class="search-bar"><span class="search-icon">🔍</span><input type="search" id="q" placeholder="Buscar producto, venta, persona…" autocomplete="off"></div>
-        <label style="display:flex;gap:6px;align-items:center;font-size:13px;white-space:nowrap"><input type="checkbox" id="f-sens"> Solo lo delicado</label>
+        <label style="display:flex;gap:6px;align-items:center;font-size:var(--fs-base);white-space:nowrap"><input type="checkbox" id="f-sens"> Solo lo delicado</label>
       </div>
       <div class="chips" id="chips"></div>
       <div id="lista"><div class="spinner" style="margin:40px auto"></div></div>

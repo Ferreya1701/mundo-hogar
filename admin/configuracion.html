@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://vduinkzeneokkqzdgxig.supabase.co" crossorigin>
+  <script>try{if(localStorage.getItem('mhTema')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
   <link rel="stylesheet" href="/admin/css/admin.css">
 </head>
 <body>
@@ -93,7 +94,7 @@
         <div class="card" id="card-fiscal">
           <div class="card-header"><span class="card-title">🧾 Datos fiscales (tickets y recibos)</span></div>
           <div class="card-body">
-            <p style="font-size:13px;color:var(--muted);margin-bottom:14px">
+            <p style="font-size:var(--fs-base);color:var(--muted);margin-bottom:14px">
               Lo que sale impreso arriba de cada ticket de compra y recibo, debajo del logo y el nombre de la tienda.
             </p>
             <form id="form-fiscal" class="form-grid" style="gap:14px" novalidate>
@@ -138,7 +139,7 @@
         <div class="card">
           <div class="card-header"><span class="card-title">📝 Textos de la página</span></div>
           <div class="card-body">
-            <p style="font-size:13px;color:var(--muted);margin-bottom:14px">
+            <p style="font-size:var(--fs-base);color:var(--muted);margin-bottom:14px">
               Editá los textos que se muestran en la página de inicio. Dejá un texto vacío para volver al texto original.
             </p>
             <form id="form-content" class="form-grid" style="gap:14px" novalidate>
@@ -192,14 +193,14 @@ async function loadAll() {
 
   contentRows = ct || [];
   if (!contentRows.length) {
-    $id('content-fields').innerHTML = '<p style="color:var(--muted);font-size:13px">No hay textos configurables cargados en la base.</p>';
+    $id('content-fields').innerHTML = '<p style="color:var(--muted);font-size:var(--fs-base)">No hay textos configurables cargados en la base.</p>';
     return;
   }
   let html = '';
   let lastGrupo = null;
   contentRows.forEach(r => {
     if (r.grupo !== lastGrupo) {
-      html += `<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:${lastGrupo ? '10px' : '0'}">${GRUPO_LABELS[r.grupo] || r.grupo || 'Otros'}</div>`;
+      html += `<div style="font-size:var(--fs-sm);font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:${lastGrupo ? '10px' : '0'}">${GRUPO_LABELS[r.grupo] || r.grupo || 'Otros'}</div>`;
       lastGrupo = r.grupo;
     }
     const multiline = (r.valor || '').length > 60 || /texto|descripcion|subtitulo/.test(r.clave);
@@ -256,7 +257,7 @@ function cuitValido(c) {
 }
 function cargarFiscal(st) {
   if (!('cuit' in st)) {   // todavía no se corrió sql/017
-    $id('form-fiscal').innerHTML = '<p style="font-size:13px;color:var(--warning)">Falta ejecutar <code>sql/017-datos-fiscales.sql</code> en Supabase. Hasta entonces el ticket sale sin los datos fiscales.</p>';
+    $id('form-fiscal').innerHTML = '<p style="font-size:var(--fs-base);color:var(--warning)">Falta ejecutar <code>sql/017-datos-fiscales.sql</code> en Supabase. Hasta entonces el ticket sale sin los datos fiscales.</p>';
     return;
   }
   FISCAL.forEach(k => { $id('f-' + k).value = st[k] || ''; });

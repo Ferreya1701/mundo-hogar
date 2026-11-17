@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://vduinkzeneokkqzdgxig.supabase.co" crossorigin>
+  <script>try{if(localStorage.getItem('mhTema')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
   <link rel="stylesheet" href="/admin/css/admin.css">
 </head>
 <body class="carga-stock">
@@ -44,7 +45,7 @@
       </div>
 
       <div class="card mb-3" style="border-left:4px solid var(--info)">
-        <div class="card-body" style="font-size:13px;color:var(--muted)">
+        <div class="card-body" style="font-size:var(--fs-base);color:var(--muted)">
           Recorré el depósito con el celular y escribí <b>cuántas unidades hay</b> de cada producto (el total, no lo que sumás).
           Al guardar, el producto queda con <b>stock controlado</b>: cada venta del local lo descuenta y la tienda lo vende si hay.
           Los que todavía no contaste se venden igual en el local, pero sin tocar stock, y en la web dicen "Consultar".
@@ -53,7 +54,7 @@
       </div>
 
       <div class="card mb-3" id="aviso-sql" hidden style="border-left:4px solid var(--danger)">
-        <div class="card-body" style="font-size:13px"><b>Falta ejecutar <code>sql/013-local-compras-stock.sql</code></b> en Supabase para usar el conteo (ver GUIA-STOCK-Y-VENTAS.md).</div>
+        <div class="card-body" style="font-size:var(--fs-base)"><b>Falta ejecutar <code>sql/013-local-compras-stock.sql</code></b> en Supabase para usar el conteo (ver GUIA-STOCK-Y-VENTAS.md).</div>
       </div>
 
       <div class="chips chips-filtro" id="chips"></div>
@@ -74,7 +75,7 @@
 
       <div class="barra-guardado barra-carga" id="barra" hidden>
         <span class="dirty-flag" id="resumen"></span>
-        <label id="contando-wrap" style="display:none;align-items:center;gap:6px;font-size:13px">📍 Estoy contando en
+        <label id="contando-wrap" style="display:none;align-items:center;gap:6px;font-size:var(--fs-base)">📍 Estoy contando en
           <select id="contando-en" style="min-height:36px;max-width:230px" title="Todo lo que cuentes queda ubicado en este lugar"></select>
           <button type="button" class="btn btn-ghost btn-sm" id="btn-ubic-adm" title="Agregar o editar ubicaciones">⚙</button></label>
         <button type="button" class="btn btn-outline" id="btn-descartar">Descartar</button>

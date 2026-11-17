@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://vduinkzeneokkqzdgxig.supabase.co" crossorigin>
+  <script>try{if(localStorage.getItem('mhTema')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
   <link rel="stylesheet" href="/admin/css/admin.css">
 <style>
   .stock-ref { color:var(--muted); font-weight:600; }
@@ -150,7 +151,7 @@
       <button class="modal-close" id="close-import">✕</button>
     </div>
     <div class="modal-body">
-      <p style="color:var(--muted);margin-bottom:16px;font-size:13px">
+      <p style="color:var(--muted);margin-bottom:16px;font-size:var(--fs-base)">
         Importa los 122 productos del catálogo JSON existente a la base de datos Supabase.
         Los productos ya existentes (mismo slug) serán actualizados.
       </p>
@@ -158,7 +159,7 @@
         <div style="background:var(--bg);border-radius:var(--r);height:8px;overflow:hidden;margin-bottom:8px">
           <div id="import-bar" style="height:100%;background:var(--gold);width:0%;transition:width .3s"></div>
         </div>
-        <div id="import-status" style="font-size:12px;color:var(--muted)"></div>
+        <div id="import-status" style="font-size:var(--fs-sm);color:var(--muted)"></div>
       </div>
       <div id="import-result"></div>
     </div>
@@ -222,7 +223,7 @@
         <div style="background:var(--bg);border-radius:var(--r);height:8px;overflow:hidden;margin-bottom:8px">
           <div id="pr-barra" style="height:100%;background:var(--gold);width:0%;transition:width .3s"></div>
         </div>
-        <div id="pr-estado" style="font-size:12px;color:var(--muted)"></div>
+        <div id="pr-estado" style="font-size:var(--fs-sm);color:var(--muted)"></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -872,7 +873,7 @@ function pintarPreview() {
       <td style="text-align:right;font-weight:600;color:${nuevo>actual?'var(--success)':'var(--danger)'}">
         ${Utils.currency(nuevo)}</td>
     </tr>`).join('') +
-    (cambian.length > 40 ? `<tr><td colspan="3" style="color:var(--muted);font-size:12px">…y ${cambian.length-40} más</td></tr>` : '');
+    (cambian.length > 40 ? `<tr><td colspan="3" style="color:var(--muted);font-size:var(--fs-sm)">…y ${cambian.length-40} más</td></tr>` : '');
 
   const btn = document.getElementById('pr-aplicar');
   btn.disabled = cambian.length === 0;
@@ -1029,13 +1030,13 @@ document.getElementById('btn-do-import')?.addEventListener('click', async () => 
       if (error) { fail++; } else { ok++; }
     }
     document.getElementById('import-result').innerHTML =
-      `<div style="margin-top:12px;padding:12px 16px;border-radius:var(--r);background:var(--success-bg);color:#15803D;font-size:13px">
+      `<div style="margin-top:12px;padding:12px 16px;border-radius:var(--r);background:var(--success-bg);color:var(--success-ink);font-size:var(--fs-base)">
         ✅ Importación completada: ${ok} productos importados${fail?' | '+fail+' errores':''}
       </div>`;
     await cargarProductos();
   } catch(e) {
     document.getElementById('import-result').innerHTML =
-      `<div style="margin-top:12px;padding:12px 16px;border-radius:var(--r);background:var(--danger-bg);color:var(--danger);font-size:13px">
+      `<div style="margin-top:12px;padding:12px 16px;border-radius:var(--r);background:var(--danger-bg);color:var(--danger);font-size:var(--fs-base)">
         ❌ Error: ${e.message}
       </div>`;
   }

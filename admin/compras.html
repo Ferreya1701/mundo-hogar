@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://vduinkzeneokkqzdgxig.supabase.co" crossorigin>
+  <script>try{if(localStorage.getItem('mhTema')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
   <link rel="stylesheet" href="/admin/css/admin.css">
 </head>
 <body class="compras">
@@ -43,7 +44,7 @@
           </div>
         </div>
         <div class="card mb-3" id="aviso-sql" hidden style="border-left:4px solid var(--danger)">
-          <div class="card-body" style="font-size:13px"><b>Falta ejecutar <code>sql/013-local-compras-stock.sql</code></b> en Supabase para usar las compras (ver GUIA-STOCK-Y-VENTAS.md).</div>
+          <div class="card-body" style="font-size:var(--fs-base)"><b>Falta ejecutar <code>sql/013-local-compras-stock.sql</code></b> en Supabase para usar las compras (ver GUIA-STOCK-Y-VENTAS.md).</div>
         </div>
         <div class="chips chips-filtro" id="chips-estado"></div>
         <div class="table-wrap">
@@ -217,7 +218,7 @@ function renderCompras() {
   }
   $id('tabla-compras').innerHTML = lista.map(c => `<tr data-id="${c.id}">
     <td class="c-prod"><div class="td-name" style="font-family:monospace">${esc(c.codigo)}</div><div class="td-sku">${Utils.date(c.fecha_pedido)}${c.fecha_estimada && !['recibido','cancelado'].includes(c.estado) ? ` · llega ${Utils.date(c.fecha_estimada)}` : ''}${c.fecha_recibido ? ` · recibida ${Utils.date(c.fecha_recibido)}` : ''}</div></td>
-    <td class="c-cat"><div style="font-size:13px;font-weight:500">${esc(c.proveedor || '—')}</div><div style="font-size:11.5px;color:var(--muted)">${esc(c.referencia || '')}${c.origen ? ' · ' + esc(c.origen) : ''}</div></td>
+    <td class="c-cat"><div style="font-size:var(--fs-base);font-weight:500">${esc(c.proveedor || '—')}</div><div style="font-size:var(--fs-sm);color:var(--muted)">${esc(c.referencia || '')}${c.origen ? ' · ' + esc(c.origen) : ''}</div></td>
     <td class="c-sku" data-l="Renglones" style="text-align:center">${c.total_items}</td>
     <td class="c-stock" data-l="Unidades" style="text-align:center">${c.total_unidades}</td>
     <td class="c-precio" data-l="Costo" style="text-align:right">${c.total_costo != null ? `${esc(c.moneda)} ${Number(c.total_costo).toLocaleString('es-AR')}` : '—'}</td>
@@ -253,7 +254,7 @@ async function abrirCompra(id, modoRecibir) {
         <div><b>Costo</b>${c.total_costo != null ? `${esc(c.moneda)} ${Number(c.total_costo).toLocaleString('es-AR')}${c.tipo_cambio ? ` · TC ${Number(c.tipo_cambio).toLocaleString('es-AR')}` : ''}` : '—'}</div>
         ${c.notas ? `<div style="grid-column:1/-1"><b>Notas</b>${esc(c.notas)}</div>` : ''}
       </div>
-      ${abierta ? `<div class="card mb-3" style="border-left:4px solid var(--info)"><div class="card-body" style="font-size:13px;color:var(--muted)">Escribí cuántas unidades <b>llegaron ahora</b> de cada renglón (viene precargado lo que falta). Si de un producto que <b>todavía no se contó</b> quedaban unidades viejas en el local, anotalas en "Ya había": así el stock queda completo y controlado.</div></div>` : ''}
+      ${abierta ? `<div class="card mb-3" style="border-left:4px solid var(--info)"><div class="card-body" style="font-size:var(--fs-base);color:var(--muted)">Escribí cuántas unidades <b>llegaron ahora</b> de cada renglón (viene precargado lo que falta). Si de un producto que <b>todavía no se contó</b> quedaban unidades viejas en el local, anotalas en "Ya había": así el stock queda completo y controlado.</div></div>` : ''}
       <div class="table-wrap"><table class="rec-tabla">
         <thead><tr><th>Renglón</th><th style="text-align:right">Pedido</th><th style="text-align:right">Recibido</th>${abierta ? '<th style="text-align:right">Llegaron ahora</th><th style="text-align:right">Ya había</th>' : ''}</tr></thead>
         <tbody>${(items||[]).map(i => {
@@ -571,8 +572,8 @@ function renderRevision() {
           <option value="omitir"${d.accion==='omitir'?' selected':''}>⏭ Omitir este renglón</option>
         </select>
         ${d.accion === 'crear' ? `<input type="text" class="rev-nombre" data-k="nombre" maxlength="160" value="${esc(d.nombre)}" placeholder="Nombre del producto nuevo">` : ''}
-        ${d.accion === 'buscar' ? `<input type="search" class="rev-nombre" data-k="buscar" placeholder="Escribí para buscar en el catálogo…" autofocus><div class="rev-opciones" style="margin-top:4px;font-size:12.5px"></div>` : ''}
-        ${d.dudosa && d.accion === 'vincular' ? `<div class="form-hint" style="color:#92400E;margin-top:4px">Coincidencia dudosa: confirmá que es el mismo producto.</div>` : ''}
+        ${d.accion === 'buscar' ? `<input type="search" class="rev-nombre" data-k="buscar" placeholder="Escribí para buscar en el catálogo…" autofocus><div class="rev-opciones" style="margin-top:4px;font-size:var(--fs-base)"></div>` : ''}
+        ${d.dudosa && d.accion === 'vincular' ? `<div class="form-hint" style="color:var(--warning-ink);margin-top:4px">Coincidencia dudosa: confirmá que es el mismo producto.</div>` : ''}
       </td>
     </tr>`;
   }).join('');

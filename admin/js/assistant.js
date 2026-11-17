@@ -198,7 +198,7 @@ window.MHAssistant = (function () {
     // Sin coincidencia local → probar IA (si está activada)
     const ia = await preguntarIA(q);
     if (ia) return ia;
-    return 'No tengo una respuesta preparada para eso todavía 🤔. Probá con una de las sugerencias, o preguntame por: <b>precios faltantes, stock, solicitudes, destacados, cómo crear productos/categorías/ofertas, textos de la portada o usuarios</b>.<br><span style="font-size:11.5px;color:var(--muted)">💡 Las preguntas libres se responden con IA cuando se activa la Función "asistente" (ver GUIA-ASISTENTE-IA.md).</span>';
+    return 'No tengo una respuesta preparada para eso todavía 🤔. Probá con una de las sugerencias, o preguntame por: <b>precios faltantes, stock, solicitudes, destacados, cómo crear productos/categorías/ofertas, textos de la portada o usuarios</b>.<br><span style="font-size:var(--fs-sm);color:var(--muted)">💡 Las preguntas libres se responden con IA cuando se activa la Función "asistente" (ver GUIA-ASISTENTE-IA.md).</span>';
   }
 
   /* ── IA opcional (Edge Function "asistente") ── */

@@ -11,30 +11,31 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://vduinkzeneokkqzdgxig.supabase.co" crossorigin>
+  <script>try{if(localStorage.getItem('mhTema')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
   <link rel="stylesheet" href="/admin/css/admin.css">
   <style>
     .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
     .cta-off{opacity:.55}
-    .lim{font-size:11.5px;color:#888}
+    .lim{font-size:var(--fs-sm);color:#888}
     .barra{height:6px;background:#eef1f6;border-radius:4px;overflow:hidden;margin-top:4px;min-width:90px}
     .barra i{display:block;height:100%;background:var(--success,#1E9E5A)}
-    .barra i.alto{background:#F47A1F}.barra i.tope{background:#C43B31}
+    .barra i.alto{background:var(--gold)}.barra i.tope{background:var(--danger-ink)}
     .cfg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
-    .mov-tipo-cobro{color:#14663A;font-weight:700}.mov-tipo-anulacion{color:#8A241C;font-weight:700}
-    .liq{border:1px solid var(--border,#e5e7eb);border-radius:10px;padding:12px 14px;margin-top:10px;font-size:13.5px}
-    .liq table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+    .mov-tipo-cobro{color:var(--success-ink);font-weight:700}.mov-tipo-anulacion{color:var(--danger-ink);font-weight:700}
+    .liq{border:1px solid var(--border,#e5e7eb);border-radius:var(--r);padding:12px 14px;margin-top:10px;font-size:var(--fs-md)}
+    .liq table{width:100%;border-collapse:collapse;font-size:var(--fs-base);margin-top:8px}
     .liq td,.liq th{padding:4px 6px;border-bottom:1px solid #f0f0f0;text-align:left}
-    .av-cta{border:1px solid var(--border,#e5e7eb);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+    .av-cta{border:1px solid var(--border,#e5e7eb);border-radius:var(--r);padding:12px 14px;margin-bottom:10px}
     .av-dir{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
-    .av-dir code{background:#F3F6FB;border-radius:6px;padding:4px 8px;font-size:13px;word-break:break-all}
-    .av-estado{font-size:13px;margin-top:4px}
-    .av-gmail{background:#EAF1FB;border-radius:8px;padding:8px 10px;margin-top:8px;font-size:13px}
-    .av-pasos{font-size:13px;line-height:1.6;margin:8px 0 0 18px}
-    .av-est{font-size:12px;font-weight:700;border-radius:20px;padding:2px 8px;white-space:nowrap}
-    .av-est-usado{background:#E8F6EE;color:#14663A}.av-est-asignado{background:#EAF1FB;color:#0A2E63}
-    .av-est-sin_asignar{background:#FFF4E8;color:#8A4B12}.av-est-venta_local{background:#F3F0FF;color:#4B2E83}
+    .av-dir code{background:#F3F6FB;border-radius:var(--r-sm);padding:4px 8px;font-size:var(--fs-base);word-break:break-all}
+    .av-estado{font-size:var(--fs-base);margin-top:4px}
+    .av-gmail{background:var(--info-bg);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:var(--fs-base)}
+    .av-pasos{font-size:var(--fs-base);line-height:1.6;margin:8px 0 0 18px}
+    .av-est{font-size:var(--fs-sm);font-weight:700;border-radius:var(--r-full);padding:2px 8px;white-space:nowrap}
+    .av-est-usado{background:var(--success-bg);color:var(--success-ink)}.av-est-asignado{background:var(--info-bg);color:var(--night)}
+    .av-est-sin_asignar{background:var(--warning-bg);color:var(--warning-ink)}.av-est-venta_local{background:var(--violet-bg);color:#4B2E83}
     .av-est-descartado,.av-est-no_es_ingreso{background:#f0f0f0;color:#777}
-    .aviso-legal{background:#FFF4E8;border-radius:10px;padding:12px 14px;font-size:12.5px;color:#8A4B12;line-height:1.5;margin-top:14px}
+    .aviso-legal{background:var(--warning-bg);border-radius:var(--r);padding:12px 14px;font-size:var(--fs-base);color:var(--warning-ink);line-height:1.5;margin-top:14px}
   </style>
 </head>
 <body>
@@ -102,7 +103,7 @@
           <select id="mov-cuenta" style="min-width:170px"><option value="">Todas las cuentas</option></select>
           <input type="month" id="mov-mes" style="min-width:150px">
           <select id="mov-tipo" style="min-width:130px"><option value="">Cobros y anulaciones</option><option value="cobro">Solo cobros</option><option value="anulacion">Solo anulaciones</option></select>
-          <span id="mov-count" style="font-size:13px;color:var(--muted,#888);font-weight:600"></span>
+          <span id="mov-count" style="font-size:var(--fs-base);color:var(--muted,#888);font-weight:600"></span>
           <button class="btn btn-outline btn-sm" id="mov-export" style="margin-left:auto">⬇ Exportar CSV</button>
         </div>
         <div class="table-wrap">
@@ -110,20 +111,20 @@
             <thead><tr><th>Fecha</th><th>Cuenta</th><th>Tipo</th><th>Pedido</th><th>Cliente</th><th class="num">Monto</th><th>Nº operación</th><th>Detalle</th><th>Usuario</th></tr></thead>
             <tbody id="tabla-mov"></tbody>
           </table>
-          <div style="padding:10px 16px;font-size:13.5px;font-weight:700;text-align:right" id="mov-total"></div>
+          <div style="padding:10px 16px;font-size:var(--fs-md);font-weight:700;text-align:right" id="mov-total"></div>
         </div>
       </section>
 
       <!-- LIQUIDACIONES -->
       <section id="tab-liquidaciones" hidden>
         <div class="card" id="liq-cerrar-card" hidden>
-          <div class="card-header"><span class="card-title">Cerrar un mes</span><span style="font-size:12px;color:#888">Solo dueños del sistema</span></div>
+          <div class="card-header"><span class="card-title">Cerrar un mes</span><span style="font-size:var(--fs-sm);color:#888">Solo dueños del sistema</span></div>
           <div class="card-body">
-            <p style="font-size:13.5px;color:var(--muted);margin-bottom:12px">El cierre congela lo cobrado por <b>pedidos web</b> en ese mes, por cuenta (cobros menos anulaciones; las ventas del local no entran), y calcula la comisión con el porcentaje de Configuración web. Un mes cerrado no cambia aunque después se anule un pago: la diferencia se ve en el mes siguiente.</p>
+            <p style="font-size:var(--fs-md);color:var(--muted);margin-bottom:12px">El cierre congela lo cobrado por <b>pedidos web</b> en ese mes, por cuenta (cobros menos anulaciones; las ventas del local no entran), y calcula la comisión con el porcentaje de Configuración web. Un mes cerrado no cambia aunque después se anule un pago: la diferencia se ve en el mes siguiente.</p>
             <div class="d-flex gap-2" style="align-items:center;flex-wrap:wrap">
               <input type="month" id="liq-periodo" style="min-width:150px">
               <button class="btn btn-primary btn-sm" id="btn-cerrar-liq">Cerrar liquidación</button>
-              <span id="liq-preview" style="font-size:13px;color:#555"></span>
+              <span id="liq-preview" style="font-size:var(--fs-base);color:#555"></span>
             </div>
           </div>
         </div>
@@ -134,7 +135,7 @@
       <section id="tab-avisos" hidden>
         <div id="avisos-falta" class="card" style="margin-bottom:16px" hidden><div class="card-body" style="color:#8A4B12">Falta ejecutar <code>sql/032-avisos-banco.sql</code> en Supabase para usar los avisos del banco.</div></div>
         <div class="card">
-          <div class="card-body" style="font-size:13.5px;line-height:1.6">
+          <div class="card-body" style="font-size:var(--fs-md);line-height:1.6">
             <b>Cómo se verifica un pago sin pasarela.</b> Cada titular reenvía a su dirección (abajo) los mails de <i>"Recibiste una transferencia"</i> de su banco o Mercado Pago.
             Cuando el comprobante del cliente coincide <b>y</b> llega el aviso del banco por el mismo importe, el pago se confirma solo.
             Si en <b id="av-min-txt">7</b> minutos no llega el aviso, sale una alerta acá en el panel y por mail para revisarlo a mano, y si el aviso llega después, igual se confirma solo.
@@ -180,7 +181,7 @@
         <div class="card" style="margin-top:16px">
           <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
             <span class="card-title">🏦 Últimos avisos recibidos</span>
-            <label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="av-solo-sueltos"> Solo los que no tienen pedido</label>
+            <label style="font-size:var(--fs-base);display:flex;gap:6px;align-items:center"><input type="checkbox" id="av-solo-sueltos"> Solo los que no tienen pedido</label>
           </div>
           <div class="table-wrap">
             <table>
@@ -194,7 +195,7 @@
       <!-- CONFIG -->
       <section id="tab-config" hidden>
         <div class="card">
-          <div class="card-header"><span class="card-title">⚙️ Configuración web: cobros por transferencia</span><span style="font-size:12px;color:#888">Solo la ven y la cambian los dueños del sistema</span></div>
+          <div class="card-header"><span class="card-title">⚙️ Configuración web: cobros por transferencia</span><span style="font-size:var(--fs-sm);color:#888">Solo la ven y la cambian los dueños del sistema</span></div>
           <div class="card-body">
             <form id="form-cfg" novalidate>
               <div class="cfg-grid">
@@ -227,7 +228,7 @@
         </div>
         <div class="card" style="margin-top:16px">
           <div class="card-header"><span class="card-title">🤖 Lectura automática de comprobantes</span></div>
-          <div class="card-body" style="font-size:13.5px;line-height:1.6" id="ia-estado">Comprobando…</div>
+          <div class="card-body" style="font-size:var(--fs-md);line-height:1.6" id="ia-estado">Comprobando…</div>
         </div>
       </section>
     </main>
@@ -279,14 +280,14 @@ function renderCuentas() {
     return;
   }
   tb.innerHTML = cuentas.map(c => `<tr class="${c.activa ? '' : 'cta-off'}">
-    <td><b>${esc(c.nombre)}</b>${c.es_respaldo ? ' <span class="badge badge-gold">respaldo</span>' : ''}<div style="font-size:12px;color:#888">${esc(c.titular)}${c.cuit_cuil ? ' · ' + esc(c.cuit_cuil) : ''}</div></td>
-    <td style="font-size:12.5px">${c.alias ? `<div><b>${esc(c.alias)}</b></div>` : ''}${c.cvu ? `<div style="font-family:monospace;font-size:11.5px">${esc(c.cvu)}</div>` : ''}<div style="color:#888;font-size:11.5px">${esc(c.banco)}</div></td>
+    <td><b>${esc(c.nombre)}</b>${c.es_respaldo ? ' <span class="badge badge-gold">respaldo</span>' : ''}<div style="font-size:var(--fs-sm);color:#888">${esc(c.titular)}${c.cuit_cuil ? ' · ' + esc(c.cuit_cuil) : ''}</div></td>
+    <td style="font-size:var(--fs-base)">${c.alias ? `<div><b>${esc(c.alias)}</b></div>` : ''}${c.cvu ? `<div style="font-family:monospace;font-size:var(--fs-sm)">${esc(c.cvu)}</div>` : ''}<div style="color:#888;font-size:var(--fs-sm)">${esc(c.banco)}</div></td>
     <td style="text-align:center"><label class="toggle-wrap" style="justify-content:center"><div class="toggle"><input type="checkbox" data-activa="${c.id}" ${c.activa ? 'checked' : ''}><div class="toggle-track"></div><div class="toggle-thumb"></div></div></label></td>
     <td style="text-align:center">${c.peso}</td>
     <td class="num">${money(c.cobrado_hoy)}${c.limite_diario ? `<div class="lim">de ${money(c.limite_diario)}</div>${barra(Number(c.cobrado_hoy), c.limite_diario)}` : ''}</td>
     <td class="num">${money(c.cobrado_mes)}<div class="lim">${c.cobros_mes} cobro${c.cobros_mes == 1 ? '' : 's'}${c.limite_mensual ? ` · de ${money(c.limite_mensual)}` : ''}</div>${c.limite_mensual ? barra(Number(c.cobrado_mes) + Number(c.pendiente), c.limite_mensual) : ''}</td>
     <td class="num">${money(c.pendiente)}<div class="lim">${c.pedidos_pendientes} pedido${c.pedidos_pendientes == 1 ? '' : 's'}</div></td>
-    <td style="font-size:12.5px;color:#555;white-space:nowrap">${c.ultimo_cobro ? Utils.timeAgo(c.ultimo_cobro) : '—'}</td>
+    <td style="font-size:var(--fs-base);color:#555;white-space:nowrap">${c.ultimo_cobro ? Utils.timeAgo(c.ultimo_cobro) : '—'}</td>
     <td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" data-editar="${c.id}">Editar</button> <button class="btn btn-ghost btn-sm" data-movs="${c.id}">Movimientos</button></td>
   </tr>`).join('');
 }
@@ -401,15 +402,15 @@ async function cargarMovimientos() {
   const nombreCta = id => (cuentas.find(c => c.id === id) || {}).nombre || id;
   $id('mov-count').textContent = `${movimientos.length} movimiento${movimientos.length === 1 ? '' : 's'}`;
   $id('tabla-mov').innerHTML = movimientos.length ? movimientos.map(m => `<tr>
-    <td style="white-space:nowrap;font-size:12.5px">${Utils.datetime(m.fecha)}</td>
+    <td style="white-space:nowrap;font-size:var(--fs-base)">${Utils.datetime(m.fecha)}</td>
     <td>${esc(nombreCta(m.cuenta_cobro_id))}</td>
     <td class="mov-tipo-${m.tipo}">${m.tipo === 'cobro' ? 'Cobro' : 'Anulación'}</td>
-    <td style="font-family:monospace;font-size:12px">${m.solicitudes ? `<a href="/admin/pedidos?ver=${m.solicitud_id}">${esc(m.solicitudes.codigo)}</a>` : '—'}</td>
+    <td style="font-family:monospace;font-size:var(--fs-sm)">${m.solicitudes ? `<a href="/admin/pedidos?ver=${m.solicitud_id}">${esc(m.solicitudes.codigo)}</a>` : '—'}</td>
     <td>${esc(m.solicitudes ? m.solicitudes.cliente_nombre : '')}</td>
     <td class="num ${m.tipo === 'anulacion' ? 'text-danger' : ''}">${m.tipo === 'anulacion' ? '−' : ''}${money(m.monto)}</td>
-    <td style="font-size:12px">${esc(m.nro_operacion || '')}</td>
-    <td style="font-size:12px;color:#555">${esc(m.detalle || '')}</td>
-    <td style="font-size:12px;color:#888">${esc(m.usuario_id ? (perfiles[m.usuario_id] || '…') : 'automático')}</td>
+    <td style="font-size:var(--fs-sm)">${esc(m.nro_operacion || '')}</td>
+    <td style="font-size:var(--fs-sm);color:#555">${esc(m.detalle || '')}</td>
+    <td style="font-size:var(--fs-sm);color:#888">${esc(m.usuario_id ? (perfiles[m.usuario_id] || '…') : 'automático')}</td>
   </tr>`).join('') : `<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">📒</div><h3>Sin movimientos</h3><p>Cada pago confirmado aparece acá, en la cuenta donde entró.</p></div></td></tr>`;
   const total = movimientos.reduce((s, m) => s + (m.tipo === 'cobro' ? 1 : -1) * Number(m.monto), 0);
   $id('mov-total').textContent = movimientos.length ? `Neto del período: ${money(total)}` : '';
@@ -435,14 +436,14 @@ async function cargarLiquidaciones() {
     (com || []).forEach(c => { const l = data.find(x => x.id === c.id); if (l) { l.porcentaje = c.porcentaje; l.comision = c.comision; } });
   }
   const el = $id('liq-lista');
-  if (!data || !data.length) { el.innerHTML = '<p style="font-size:13.5px;color:var(--muted)">Todavía no hay meses cerrados.</p>'; return; }
+  if (!data || !data.length) { el.innerHTML = '<p style="font-size:var(--fs-md);color:var(--muted)">Todavía no hay meses cerrados.</p>'; return; }
   el.innerHTML = data.map(l => {
     const ctas = (l.detalle && l.detalle.cuentas) || [];
     return `<div class="liq">
       <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><b>${l.periodo}</b><span>Cobrado por pedidos web <b>${money(l.total_cobrado)}</b>${esDueno && l.comision != null ? ` · Comisión ${l.porcentaje}% = <b>${money(l.comision)}</b>` : ''}</span></div>
-      <div style="font-size:12px;color:#888">Cerrada el ${Utils.datetime(l.created_at)}</div>
+      <div style="font-size:var(--fs-sm);color:#888">Cerrada el ${Utils.datetime(l.created_at)}</div>
       ${ctas.length ? `<table><thead><tr><th>Cuenta</th><th>Titular</th><th class="num">Cobros</th><th class="num">Anulaciones</th><th class="num">Total</th></tr></thead><tbody>
-        ${ctas.map(c => `<tr><td>${esc(c.nombre)}</td><td>${esc(c.titular)}</td><td class="num">${c.cobros}</td><td class="num">${c.anulaciones}</td><td class="num">${money(c.total)}</td></tr>`).join('')}</tbody></table>` : '<div style="font-size:12.5px;color:#888;margin-top:6px">Sin movimientos en el mes.</div>'}
+        ${ctas.map(c => `<tr><td>${esc(c.nombre)}</td><td>${esc(c.titular)}</td><td class="num">${c.cobros}</td><td class="num">${c.anulaciones}</td><td class="num">${money(c.total)}</td></tr>`).join('')}</tbody></table>` : '<div style="font-size:var(--fs-base);color:#888;margin-top:6px">Sin movimientos en el mes.</div>'}
       <div style="margin-top:8px"><button class="btn btn-ghost btn-sm" data-liq-csv="${l.id}">⬇ Pedidos del mes (CSV)</button></div>
     </div>`;
   }).join('');
@@ -555,7 +556,7 @@ function estadoCuentaAvisos(k) {
 
 function renderAvisosCuentas() {
   const el = $id('avisos-cuentas');
-  if (!cuentas.length) { el.innerHTML = '<p style="font-size:13.5px;color:var(--muted)">Primero cargá las cuentas en la pestaña Cuentas.</p>'; return; }
+  if (!cuentas.length) { el.innerHTML = '<p style="font-size:var(--fs-md);color:var(--muted)">Primero cargá las cuentas en la pestaña Cuentas.</p>'; return; }
   el.innerHTML = cuentas.map(c => {
     const k = avisosCca.find(x => x.cuenta_cobro_id === c.id);
     if (!k) return '';
@@ -565,9 +566,9 @@ function renderAvisosCuentas() {
       <div class="av-estado">${estadoCuentaAvisos(k)}</div>
       <div class="av-dir"><code>${esc(dir)}</code><button class="btn btn-outline btn-sm" data-copiar="${esc(dir)}">Copiar</button></div>
       ${k.gmail_codigo || k.gmail_link ? `<div class="av-gmail">📩 Gmail pidió confirmar el reenvío ${k.gmail_en ? Utils.timeAgo(k.gmail_en) : ''}:
-        ${k.gmail_codigo ? ` código <b style="font-size:15px;letter-spacing:1px">${esc(k.gmail_codigo)}</b> <button class="btn btn-ghost btn-sm" data-copiar="${esc(k.gmail_codigo)}">Copiar</button>` : ''}
+        ${k.gmail_codigo ? ` código <b style="font-size:var(--fs-lg);letter-spacing:1px">${esc(k.gmail_codigo)}</b> <button class="btn btn-ghost btn-sm" data-copiar="${esc(k.gmail_codigo)}">Copiar</button>` : ''}
         ${k.gmail_link ? ` · <a href="${esc(k.gmail_link)}" target="_blank" rel="noopener">o abrí este enlace</a> (con la sesión de Gmail del titular)` : ''}</div>` : ''}
-      <details style="margin-top:8px"><summary style="cursor:pointer;font-size:13px;font-weight:700">Cómo configurarlo (una sola vez, 5 minutos)</summary>
+      <details style="margin-top:8px"><summary style="cursor:pointer;font-size:var(--fs-base);font-weight:700">Cómo configurarlo (una sola vez, 5 minutos)</summary>
         <ol class="av-pasos">
           <li>En la app del banco o de Mercado Pago, prendé los <b>avisos por mail de transferencias recibidas</b> (Configuración → Notificaciones; en los bancos, Homebanking → Avisos).</li>
           <li>En Gmail, <b>desde la computadora</b>: ⚙️ → <i>Ver todos los ajustes</i> → <i>Reenvío y correo POP/IMAP</i> → <i>Agregar una dirección de reenvío</i> → pegá la dirección de arriba → <i>Siguiente</i> → <i>Continuar</i>.</li>
@@ -575,7 +576,7 @@ function renderAvisosCuentas() {
           <li>Abrí un mail de <i>"Recibiste…"</i> del banco → <b>⋮</b> → <i>Filtrar mensajes similares</i> → <i>Crear filtro</i> → tildá <i>Reenviarlo a</i> y elegí la dirección → <i>Crear filtro</i>.</li>
           <li>Listo: con la próxima transferencia que entre, esta cuenta pasa a <b>✅ Verificando</b>.</li>
         </ol>
-        <p style="font-size:12.5px;color:#888;margin-top:6px">La dirección es secreta: no la compartas. Si se filtró, generá otra (y cambiá el filtro de Gmail). <button class="btn btn-ghost btn-sm" data-regenerar="${c.id}">Generar dirección nueva</button></p>
+        <p style="font-size:var(--fs-base);color:#888;margin-top:6px">La dirección es secreta: no la compartas. Si se filtró, generá otra (y cambiá el filtro de Gmail). <button class="btn btn-ghost btn-sm" data-regenerar="${c.id}">Generar dirección nueva</button></p>
       </details>
     </div>`;
   }).join('');
@@ -587,12 +588,12 @@ function renderAvisos() {
   const lista = $id('av-solo-sueltos').checked ? sueltos : avisosLista.filter(a => a.tipo !== 'confirmacion_gmail');
   const nombreCta = id => (cuentas.find(c => c.id === id) || {}).nombre || '—';
   $id('tabla-avisos').innerHTML = lista.length ? lista.map(a => `<tr>
-    <td style="white-space:nowrap;font-size:12.5px">${Utils.datetime(a.recibido_en)}</td>
+    <td style="white-space:nowrap;font-size:var(--fs-base)">${Utils.datetime(a.recibido_en)}</td>
     <td>${esc(nombreCta(a.cuenta_cobro_id))}</td>
     <td class="num">${a.monto != null ? money(a.monto) : '—'}</td>
-    <td style="font-size:12.5px">${esc(a.ordenante || '')}${a.remitente_banco ? '' : `<div style="color:#8A241C;font-size:11.5px">⚠️ remitente no reconocido: ${esc(a.remitente || '')}</div>`}${a.tipo !== 'ingreso' ? `<div style="color:#888;font-size:11.5px">${esc(a.asunto || '')}</div>` : ''}</td>
-    <td><span class="av-est av-est-${a.estado}">${AV_EST[a.estado] || a.estado}</span>${a.nota ? `<div style="font-size:11.5px;color:#888">${esc(a.nota)}</div>` : ''}</td>
-    <td style="font-family:monospace;font-size:12px">${a.solicitud_id ? `<a href="/admin/pedidos?ver=${a.solicitud_id}">${esc(a.solicitudes?.codigo || '#' + a.solicitud_id)}</a>` : ''}</td>
+    <td style="font-size:var(--fs-base)">${esc(a.ordenante || '')}${a.remitente_banco ? '' : `<div style="color:var(--danger-ink);font-size:var(--fs-sm)">⚠️ remitente no reconocido: ${esc(a.remitente || '')}</div>`}${a.tipo !== 'ingreso' ? `<div style="color:#888;font-size:var(--fs-sm)">${esc(a.asunto || '')}</div>` : ''}</td>
+    <td><span class="av-est av-est-${a.estado}">${AV_EST[a.estado] || a.estado}</span>${a.nota ? `<div style="font-size:var(--fs-sm);color:#888">${esc(a.nota)}</div>` : ''}</td>
+    <td style="font-family:monospace;font-size:var(--fs-sm)">${a.solicitud_id ? `<a href="/admin/pedidos?ver=${a.solicitud_id}">${esc(a.solicitudes?.codigo || '#' + a.solicitud_id)}</a>` : ''}</td>
     <td style="white-space:nowrap">${a.tipo === 'ingreso' && a.estado === 'sin_asignar' ? `<button class="btn btn-outline btn-sm" data-av-asignar="${a.id}">Asignar a pedido</button> <button class="btn btn-ghost btn-sm" data-av-descartar="${a.id}">Descartar</button>` : ''}</td>
   </tr>`).join('') : `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📭</div><h3>Sin avisos</h3><p>Cuando un titular reenvíe su primer aviso del banco, aparece acá.</p></div></td></tr>`;
 }

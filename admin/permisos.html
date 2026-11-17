@@ -11,20 +11,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://vduinkzeneokkqzdgxig.supabase.co" crossorigin>
+  <script>try{if(localStorage.getItem('mhTema')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
   <link rel="stylesheet" href="/admin/css/admin.css">
   <style>
     .perm-tabla th.col-rol, .perm-tabla td.col-rol { text-align:center; width:130px; }
-    .perm-tabla td.modulo { background:var(--bg); font-weight:600; color:var(--night); font-size:12px;
+    .perm-tabla td.modulo { background:var(--bg); font-weight:600; color:var(--night); font-size:var(--fs-sm);
                             text-transform:uppercase; letter-spacing:.04em; padding-top:14px; }
     .perm-nombre { font-weight:500; }
-    .perm-desc { font-size:12px; color:var(--muted); margin-top:2px; }
+    .perm-desc { font-size:var(--fs-sm); color:var(--muted); margin-top:2px; }
     .perm-tabla input[type=checkbox] { width:20px; height:20px; cursor:pointer; accent-color:var(--gold); }
     .perm-tabla input[type=checkbox]:disabled { cursor:not-allowed; opacity:.55; }
     .perm-tabla tr.cambiado td.col-rol { background:rgba(244,122,31,.08); }
     .perm-barra { position:sticky; bottom:0; display:flex; gap:10px; justify-content:flex-end; align-items:center;
                   padding:12px 0; background:linear-gradient(transparent, var(--bg) 30%); }
-    .perm-barra .pendientes { margin-right:auto; font-size:13px; color:var(--muted); }
-    .perm-fijos { font-size:13px; color:var(--muted); line-height:1.6; }
+    .perm-barra .pendientes { margin-right:auto; font-size:var(--fs-base); color:var(--muted); }
+    .perm-fijos { font-size:var(--fs-base); color:var(--muted); line-height:1.6; }
     @media (max-width: 640px) {
       .perm-tabla th.col-rol, .perm-tabla td.col-rol { width:72px; }
       .perm-desc { display:none; }

@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://vduinkzeneokkqzdgxig.supabase.co" crossorigin>
+  <script>try{if(localStorage.getItem('mhTema')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
   <link rel="stylesheet" href="/admin/css/admin.css">
 </head>
 <body class="ventas">
@@ -165,10 +166,10 @@ function render() {
     return;
   }
   $id('tabla-body').innerHTML = lista.map(v => `<tr class="${v.estado==='anulada'?'vta-estado-anulada':''}" data-id="${v.id}">
-    <td class="c-fecha" style="white-space:nowrap;color:var(--muted);font-size:12px">${Utils.datetime(v.fecha)}</td>
-    <td class="c-cod" style="font-family:monospace;font-size:12px">${esc(v.codigo)}</td>
-    <td class="c-cli"><div style="font-weight:500;font-size:13px">${esc(v.cliente_nombre || 'Consumidor final')}</div><div style="font-size:11.5px;color:var(--muted)">${esc(v.vendedor_nombre||'')}</div></td>
-    <td class="c-items" data-l="Ítems" style="font-size:12.5px;color:var(--muted)">${(() => { const it = (v.venta_items||[]).filter(i => i.cantidad > 0); return it.slice(0,3).map(i => `${i.cantidad}× ${esc(i.nombre)}`).join('<br>') + (it.length > 3 ? `<br>… y ${it.length - 3} más` : ''); })()}</td>
+    <td class="c-fecha" style="white-space:nowrap;color:var(--muted);font-size:var(--fs-sm)">${Utils.datetime(v.fecha)}</td>
+    <td class="c-cod" style="font-family:monospace;font-size:var(--fs-sm)">${esc(v.codigo)}</td>
+    <td class="c-cli"><div style="font-weight:500;font-size:var(--fs-base)">${esc(v.cliente_nombre || 'Consumidor final')}</div><div style="font-size:var(--fs-sm);color:var(--muted)">${esc(v.vendedor_nombre||'')}</div></td>
+    <td class="c-items" data-l="Ítems" style="font-size:var(--fs-base);color:var(--muted)">${(() => { const it = (v.venta_items||[]).filter(i => i.cantidad > 0); return it.slice(0,3).map(i => `${i.cantidad}× ${esc(i.nombre)}`).join('<br>') + (it.length > 3 ? `<br>… y ${it.length - 3} más` : ''); })()}</td>
     <td class="c-medio"><span class="vta-medio vta-medio-${esc(v.medio_pago)}">${esc(MEDIOS[v.medio_pago]||v.medio_pago)}</span></td>
     <td class="c-total" style="text-align:right;font-weight:600">${money(v.total)}</td>
     <td class="c-est">${v.estado === 'anulada' ? '<span class="badge badge-danger">Anulada</span>' : v.estado === 'pendiente_cobro' ? `<span class="badge badge-warning">${v.devuelta_motivo ? 'Devuelta por caja' : 'Esperando cobro'}</span>` : '<span class="badge badge-success">Cobrada</span>'}${Number(v.ediciones) > 0 ? ' <span class="badge badge-warning" title="Se quitaron productos después de la venta">Modificada</span>' : ''}</td>
@@ -209,7 +210,7 @@ function abrir(id) {
         <div><b>Vendedor</b>${esc(v.vendedor_nombre||'—')}</div>
         <div><b>Cliente</b>${esc(v.cliente_nombre||'Consumidor final')}${v.cliente_telefono ? ' · ' + esc(v.cliente_telefono) : ''}</div>
         ${v.origen === 'web' ? `<div><b>Origen</b>🌐 Pedido web${v.solicitud_id && Auth.puede('pedidos.gestionar', perfil) ? ` · <a href="/admin/pedidos?ver=${v.solicitud_id}">ver pedido</a>` : ''}</div>` : ''}
-        <div><b>Medio de pago</b><span class="vta-medio vta-medio-${esc(v.medio_pago)}">${esc(MEDIOS[v.medio_pago]||v.medio_pago)}</span>${v.cc_cuenta_id && Auth.puede('cc.ver', perfil) ? ` <a href="/admin/cuentas-corrientes?cuenta=${v.cc_cuenta_id}" style="font-size:12px">ver cuenta →</a>` : ''}</div>
+        <div><b>Medio de pago</b><span class="vta-medio vta-medio-${esc(v.medio_pago)}">${esc(MEDIOS[v.medio_pago]||v.medio_pago)}</span>${v.cc_cuenta_id && Auth.puede('cc.ver', perfil) ? ` <a href="/admin/cuentas-corrientes?cuenta=${v.cc_cuenta_id}" style="font-size:var(--fs-sm)">ver cuenta →</a>` : ''}</div>
         ${v.retira_nombre ? `<div><b>Retiró</b>${esc(v.retira_nombre)}</div>` : ''}
         ${v.entrega_tipo && v.entrega_tipo !== 'en_el_momento' ? `<div style="grid-column:1/-1"><b>Entrega</b>${v.entrega_tipo === 'retiro' ? '🏬 Retira en el local' : `🚚 Envío a ${esc(v.envio_direccion || '')}, ${esc(v.envio_localidad || '')}`}
           · ${v.entrega_estado === 'entregado' ? `entregada ${Utils.datetime(v.entregada_en)}${v.recibio_nombre ? ' a ' + esc(v.recibio_nombre) : ''}${v.envio_seguimiento ? ' · guía ' + esc(v.envio_seguimiento) : ''}` : v.entrega_estado === 'listo' ? 'preparada, falta entregar' : 'pendiente'}
@@ -222,8 +223,8 @@ function abrir(id) {
         ${v.estado==='anulada' ? `<div style="grid-column:1/-1;color:var(--danger)"><b>Anulada</b>${Utils.datetime(v.anulada_en)} · ${esc(v.motivo_anulacion||'')}</div>` : ''}
       </div>
       <table class="vta-items"><thead><tr><th>Producto</th><th class="r">Cant.</th><th class="r">Precio</th><th class="r">Subtotal</th><th>Stock</th></tr></thead>
-      <tbody>${(v.venta_items||[]).sort((a,b)=>a.orden-b.orden).map(i => `<tr${i.cantidad === 0 ? ' style="color:var(--muted);text-decoration:line-through"' : ''}><td>${esc(i.nombre)}${i.cantidad_original != null && i.cantidad_original !== i.cantidad ? `<div style="font-size:11px;color:var(--warning);text-decoration:none">se quitaron ${i.cantidad_original - i.cantidad} de ${i.cantidad_original}</div>` : ''}${i.sku?`<div style="font-size:11px;color:var(--muted)">${esc(i.sku)}</div>`:''}</td><td class="r">${i.cantidad}</td><td class="r">${money(i.precio_unitario)}${Number(i.recargo_unitario) > 0 ? `<div style="font-size:11px;color:var(--muted)">incl. +${money(i.recargo_unitario)} cta. cte.</div>` : ''}</td><td class="r">${money(i.subtotal)}</td><td>${i.afecto_stock ? `<span class="ctrl ctrl-si">descontó → ${i.stock_posterior}</span>` : (i.producto_id ? '<span class="ctrl ctrl-no">sin tocar stock</span>' : '<span class="ctrl ctrl-libre">fuera del catálogo</span>')}</td></tr>`).join('')}</tbody></table>
-      <div style="text-align:right;font-size:14px">${Number(v.descuento)>0 ? `Subtotal ${money(v.subtotal)} · Descuento −${money(v.descuento)}<br>` : ''}<b style="font-size:18px">Total ${money(v.total)}</b></div>
+      <tbody>${(v.venta_items||[]).sort((a,b)=>a.orden-b.orden).map(i => `<tr${i.cantidad === 0 ? ' style="color:var(--muted);text-decoration:line-through"' : ''}><td>${esc(i.nombre)}${i.cantidad_original != null && i.cantidad_original !== i.cantidad ? `<div style="font-size:var(--fs-xs);color:var(--warning);text-decoration:none">se quitaron ${i.cantidad_original - i.cantidad} de ${i.cantidad_original}</div>` : ''}${i.sku?`<div style="font-size:var(--fs-xs);color:var(--muted)">${esc(i.sku)}</div>`:''}</td><td class="r">${i.cantidad}</td><td class="r">${money(i.precio_unitario)}${Number(i.recargo_unitario) > 0 ? `<div style="font-size:var(--fs-xs);color:var(--muted)">incl. +${money(i.recargo_unitario)} cta. cte.</div>` : ''}</td><td class="r">${money(i.subtotal)}</td><td>${i.afecto_stock ? `<span class="ctrl ctrl-si">descontó → ${i.stock_posterior}</span>` : (i.producto_id ? '<span class="ctrl ctrl-no">sin tocar stock</span>' : '<span class="ctrl ctrl-libre">fuera del catálogo</span>')}</td></tr>`).join('')}</tbody></table>
+      <div style="text-align:right;font-size:var(--fs-md)">${Number(v.descuento)>0 ? `Subtotal ${money(v.subtotal)} · Descuento −${money(v.descuento)}<br>` : ''}<b style="font-size:var(--fs-xl)">Total ${money(v.total)}</b></div>
       <div id="_ediciones"></div>
     </div>
     <div class="modal-footer">
@@ -257,8 +258,8 @@ async function cargarEdiciones(ventaId, el) {
   const { data, error } = await db.from('venta_ediciones').select('*').eq('venta_id', ventaId).order('fecha');
   if (error || !data?.length) return;
   el.innerHTML = `<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px">
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:6px">Productos quitados después de la venta</div>
-    ${data.map(e => `<div style="font-size:13px;margin-bottom:6px">${Utils.datetime(e.fecha)} · <b>${esc(e.usuario_nombre || '')}</b> · ${money(e.total_anterior)} → ${money(e.total_nuevo)}
+    <div style="font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:6px">Productos quitados después de la venta</div>
+    ${data.map(e => `<div style="font-size:var(--fs-base);margin-bottom:6px">${Utils.datetime(e.fecha)} · <b>${esc(e.usuario_nombre || '')}</b> · ${money(e.total_anterior)} → ${money(e.total_nuevo)}
       <div style="color:var(--muted)">${(e.detalle || []).map(d => `−${d.quitadas} ${esc(d.nombre)}`).join(', ')} · “${esc(e.motivo)}”</div></div>`).join('')}
   </div>`;
 }
@@ -274,11 +275,11 @@ function modalQuitar(v) {
     : `sale de la caja como devolución (${esc(MEDIOS[v.medio_pago] || v.medio_pago)})`;
   bd.innerHTML = `<div class="modal modal-lg"><div class="modal-header"><h3 class="modal-title">Quitar productos · ${esc(v.codigo)}</h3><button class="modal-close" data-x aria-label="Cerrar">×</button></div>
     <div class="modal-body">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Marcá cuántas unidades <b>no se lleva</b> el cliente. El stock vuelve solo y la diferencia ${destino}.</p>
+      <p style="font-size:var(--fs-base);color:var(--muted);margin-bottom:10px">Marcá cuántas unidades <b>no se lleva</b> el cliente. El stock vuelve solo y la diferencia ${destino}.</p>
       <table class="vta-items"><thead><tr><th>Producto</th><th class="r">Vendidas</th><th class="r">Precio</th><th class="r" style="width:150px">Quitar</th></tr></thead>
       <tbody>${its.map(i => `<tr><td>${esc(i.nombre)}</td><td class="r">${i.cantidad}</td><td class="r">${money(i.precio_unitario)}</td>
         <td class="r"><div class="qty-ctl" style="justify-content:flex-end"><button type="button" data-q="-1" data-id="${i.id}" aria-label="Menos">−</button><input type="number" min="0" max="${i.cantidad}" value="0" data-id="${i.id}" aria-label="Unidades a quitar" style="width:52px;text-align:center"><button type="button" data-q="1" data-id="${i.id}" aria-label="Más">+</button></div></td></tr>`).join('')}</tbody></table>
-      <div style="text-align:right;margin-top:10px;font-size:14px" id="_res"></div>
+      <div style="text-align:right;margin-top:10px;font-size:var(--fs-md)" id="_res"></div>
       <div class="form-group" style="margin-top:12px"><label>Motivo <span class="req">*</span></label><input type="text" id="_mot" maxlength="300" placeholder="Ej: al retirar no quiso la pava"></div>
     </div>
     <div class="modal-footer"><button class="btn btn-outline" data-x>Cancelar</button><button class="btn btn-primary" id="_ok" disabled>Quitar</button></div></div>`;

@@ -25,13 +25,13 @@ const AlertasCobros = (() => {
     st.id = 'ac-estilos';
     st.textContent = `
       .ac-caja{position:fixed;right:16px;bottom:16px;z-index:9000;width:min(380px,calc(100vw - 32px));display:flex;flex-direction:column;gap:8px}
-      .ac-item{background:#fff;border:1px solid #F4C38F;border-left:5px solid #F47A1F;border-radius:10px;box-shadow:0 8px 24px rgba(10,46,99,.18);padding:10px 12px;font-size:13px;line-height:1.4}
-      .ac-item.urgente{border-left-color:#C43B31;border-color:#F0B4AE}
-      .ac-tit{font-weight:700;color:#0A2E63;margin-bottom:2px}
-      .ac-det{color:#555;font-size:12.5px}
+      .ac-item{background:var(--surface);border:1px solid #F4C38F;border-left:5px solid var(--gold);border-radius:var(--r);box-shadow:0 8px 24px rgba(10,46,99,.18);padding:10px 12px;font-size:var(--fs-base);line-height:1.4}
+      .ac-item.urgente{border-left-color:var(--danger-ink);border-color:#F0B4AE}
+      .ac-tit{font-weight:700;color:var(--night);margin-bottom:2px}
+      .ac-det{color:#555;font-size:var(--fs-base)}
       .ac-acc{display:flex;gap:6px;margin-top:8px;justify-content:flex-end}
-      .ac-mas{font-size:12px;text-align:right;color:#8A4B12}
-      .ac-mas button{background:none;border:0;color:#0A2E63;font-weight:700;cursor:pointer;padding:0}`;
+      .ac-mas{font-size:var(--fs-sm);text-align:right;color:var(--warning-ink)}
+      .ac-mas button{background:none;border:0;color:var(--night);font-weight:700;cursor:pointer;padding:0}`;
     document.head.appendChild(st);
   }
 

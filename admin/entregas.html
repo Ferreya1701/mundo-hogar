@@ -11,34 +11,35 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://vduinkzeneokkqzdgxig.supabase.co" crossorigin>
+  <script>try{if(localStorage.getItem('mhTema')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
   <link rel="stylesheet" href="/admin/css/admin.css">
   <style>
     .tabs { display:flex; gap:6px; border-bottom:2px solid var(--border); margin-bottom:16px; flex-wrap:wrap; }
-    .tabs button { background:none; border:0; padding:10px 14px; font-size:14px; font-weight:600; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+    .tabs button { background:none; border:0; padding:10px 14px; font-size:var(--fs-md); font-weight:600; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
     .tabs button.active { color:var(--night); border-bottom-color:var(--gold); }
-    .tabs .n { background:var(--bg); border-radius:20px; padding:0 8px; margin-left:4px; font-size:12px; }
+    .tabs .n { background:var(--bg); border-radius:var(--r-full); padding:0 8px; margin-left:4px; font-size:var(--fs-sm); }
     .tabs button.active .n { background:var(--gold); color:#fff; }
     .grupo { margin-bottom:22px; }
-    .grupo-tit { display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:14px; font-weight:700; color:var(--night); margin-bottom:8px; }
-    .grupo-tit .sub { font-weight:500; color:var(--muted); font-size:13px; }
+    .grupo-tit { display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:var(--fs-md); font-weight:700; color:var(--night); margin-bottom:8px; }
+    .grupo-tit .sub { font-weight:500; color:var(--muted); font-size:var(--fs-base); }
     .grupo-tit .acc { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
     .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px; }
-    .card-e { background:#fff; border:1px solid var(--border); border-left:4px solid var(--border); border-radius:var(--r-lg); padding:12px 14px; display:flex; flex-direction:column; gap:6px; }
+    .card-e { background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--border); border-radius:var(--r-lg); padding:12px 14px; display:flex; flex-direction:column; gap:6px; }
     .card-e.pagada { border-left-color:var(--success); } .card-e.cc { border-left-color:var(--blue); } .card-e.sinpagar { border-left-color:var(--warning); }
     .card-e.lista { box-shadow:0 0 0 2px var(--success-bg) inset; }
-    .card-e.atrasada .fecha { color:#B91C1C; font-weight:700; }
+    .card-e.atrasada .fecha { color:var(--danger-ink); font-weight:700; }
     .cab { display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
-    .cod { font-family:monospace; font-size:12.5px; color:var(--muted); }
+    .cod { font-family:monospace; font-size:var(--fs-base); color:var(--muted); }
     .nom { font-weight:700; color:var(--night); }
-    .meta { font-size:12.5px; color:var(--muted); }
-    .items { font-size:13px; line-height:1.5; }
-    .items .ub { color:var(--muted); font-size:12px; }
+    .meta { font-size:var(--fs-base); color:var(--muted); }
+    .items { font-size:var(--fs-base); line-height:1.5; }
+    .items .ub { color:var(--muted); font-size:var(--fs-sm); }
     .accs { display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; }
     .accs .btn-primary { flex:1; justify-content:center; }
-    .estado-pago { font-size:11px; font-weight:700; padding:1px 8px; border-radius:20px; }
-    .ep-ok { background:var(--success-bg); color:#15803D; } .ep-cc { background:var(--info-bg); color:var(--blue-dark); } .ep-no { background:var(--warning-bg); color:#92400E; }
+    .estado-pago { font-size:var(--fs-xs); font-weight:700; padding:1px 8px; border-radius:var(--r-full); }
+    .ep-ok { background:var(--success-bg); color:var(--success-ink); } .ep-cc { background:var(--info-bg); color:var(--blue-dark); } .ep-no { background:var(--warning-bg); color:var(--warning-ink); }
     .sel-e { width:18px; height:18px; accent-color:var(--gold); }
-    .vacio { padding:30px; text-align:center; color:var(--muted); background:#fff; border:1px dashed var(--border); border-radius:var(--r-lg); }
+    .vacio { padding:30px; text-align:center; color:var(--muted); background:var(--surface); border:1px dashed var(--border); border-radius:var(--r-lg); }
     .filtros { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
     .filtros .search-bar { flex:1; min-width:200px; }
   </style>
@@ -265,7 +266,7 @@ function entregar(v) {
     ${items(v)}
     <div class="form-group"><label>¿Quién lo retira?</label><input type="text" id="rn" maxlength="120" value="${esc(v.retira_nombre || v.cliente_nombre || '')}"></div>
     <div class="form-group"><label>DNI (opcional)</label><input type="text" id="rd" maxlength="20" inputmode="numeric"></div>
-    <label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="imp" checked> Imprimir comprobante para que firme</label>`,
+    <label style="display:flex;gap:8px;align-items:center;font-size:var(--fs-base)"><input type="checkbox" id="imp" checked> Imprimir comprobante para que firme</label>`,
   'Entregar', async bd => {
     const { error } = await db.rpc('venta_entregar', { p_ids: [v.id], p_datos: { recibio_nombre: bd.querySelector('#rn').value, recibio_dni: bd.querySelector('#rd').value } });
     if (error) { Utils.toast(msgError(error, 'entregar'), 'error', 7000); return false; }

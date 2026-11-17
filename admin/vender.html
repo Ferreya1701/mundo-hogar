@@ -11,51 +11,52 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://vduinkzeneokkqzdgxig.supabase.co" crossorigin>
+  <script>try{if(localStorage.getItem('mhTema')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
   <link rel="stylesheet" href="/admin/css/admin.css">
 <style>
-  .ctrl-cc { background:rgba(244,122,31,.13); color:#B35208; }
+  .ctrl-cc { background:rgba(244,122,31,.13); color:var(--warning-ink); }
   .cc-res { display:flex; flex-direction:column; gap:4px; margin-top:6px; max-height:220px; overflow:auto; }
-  .cc-item { display:flex; justify-content:space-between; gap:8px; text-align:left; padding:8px 10px; border:1px solid var(--border); border-radius:var(--r); background:#fff; cursor:pointer; font-size:13px; }
+  .cc-item { display:flex; justify-content:space-between; gap:8px; text-align:left; padding:8px 10px; border:1px solid var(--border); border-radius:var(--r); background:var(--surface); cursor:pointer; font-size:var(--fs-base); }
   .cc-item:hover { border-color:var(--blue); }
   .cc-sel { border:1px solid var(--border); border-radius:var(--r); padding:10px 12px; background:var(--bg); display:flex; flex-direction:column; gap:4px; }
-  .cc-dato { font-size:12.5px; color:var(--muted); }
+  .cc-dato { font-size:var(--fs-base); color:var(--muted); }
   .ent-campos { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
   .ent-campos input, .ent-campos select { width:100%; min-height:38px; }
-  .ent-campos label { font-size:12px; color:var(--muted); display:flex; flex-direction:column; gap:3px; }
+  .ent-campos label { font-size:var(--fs-sm); color:var(--muted); display:flex; flex-direction:column; gap:3px; }
   #en-caja { padding:10px 14px; border-left:4px solid var(--warning); }
-  .ec-tit { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:6px; }
-  .ec-fila { display:flex; justify-content:space-between; gap:10px; align-items:center; padding:8px 0; border-top:1px solid var(--border); font-size:13.5px; flex-wrap:wrap; }
+  .ec-tit { font-size:var(--fs-xs); font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:6px; }
+  .ec-fila { display:flex; justify-content:space-between; gap:10px; align-items:center; padding:8px 0; border-top:1px solid var(--border); font-size:var(--fs-md); flex-wrap:wrap; }
   .ec-fila.devuelta { background:var(--danger-bg); margin:0 -14px; padding:8px 14px; }
-  .ec-motivo { color:#B91C1C; font-size:13px; margin-top:3px; }
+  .ec-motivo { color:var(--danger-ink); font-size:var(--fs-base); margin-top:3px; }
   .ec-acc { display:flex; gap:6px; align-items:center; }
-  .pos-espera { background:var(--warning-bg); color:#92400E; font-weight:700; border-radius:var(--r); padding:10px 12px; margin:10px 0; text-align:center; }
-  .pos-espera span { font-weight:500; font-size:13px; }
-  .pos-pagada { background:var(--success-bg); color:#15803D; font-weight:700; border-radius:var(--r); padding:10px 12px; margin-bottom:8px; text-align:center; }
-  .cta-banco { margin-top:8px; border:1px solid var(--border); border-left:4px solid var(--blue); border-radius:var(--r); padding:10px 12px; background:var(--bg); font-size:13px; }
-  .cta-banco.cta-alerta { border-left-color:var(--danger); color:#B91C1C; }
-  .cta-lbl { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .pos-espera { background:var(--warning-bg); color:var(--warning-ink); font-weight:700; border-radius:var(--r); padding:10px 12px; margin:10px 0; text-align:center; }
+  .pos-espera span { font-weight:500; font-size:var(--fs-base); }
+  .pos-pagada { background:var(--success-bg); color:var(--success-ink); font-weight:700; border-radius:var(--r); padding:10px 12px; margin-bottom:8px; text-align:center; }
+  .cta-banco { margin-top:8px; border:1px solid var(--border); border-left:4px solid var(--blue); border-radius:var(--r); padding:10px 12px; background:var(--bg); font-size:var(--fs-base); }
+  .cta-banco.cta-alerta { border-left-color:var(--danger); color:var(--danger-ink); }
+  .cta-lbl { font-size:var(--fs-xs); font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
   .cta-dato { display:flex; align-items:center; gap:10px; justify-content:space-between; margin:4px 0 2px; }
-  .cta-dato b { font-size:19px; color:var(--night); word-break:break-all; }
-  .cta-sub { font-size:12px; color:var(--muted); margin-top:4px; }
+  .cta-dato b { font-size:var(--fs-xl); color:var(--night); word-break:break-all; }
+  .cta-sub { font-size:var(--fs-sm); color:var(--muted); margin-top:4px; }
   #cc-q, #retira { width:100%; min-height:40px; }
   /* Ficha del producto: mouse encima (computadora) o ⓘ (celular) */
   .pos-item { position:relative; }
-  .pos-info { position:absolute; top:4px; right:4px; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:var(--blue); background:var(--bg); border:1px solid var(--border); opacity:.75; }
+  .pos-info { position:absolute; top:4px; right:4px; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:var(--fs-base); font-weight:700; color:var(--blue); background:var(--bg); border:1px solid var(--border); opacity:.75; }
   .pos-info:hover { opacity:1; border-color:var(--blue); }
   @media (hover:hover) and (pointer:fine) { .pos-info { opacity:0; } .pos-item:hover .pos-info { opacity:.8; } }
-  .pf { position:fixed; z-index:8000; width:340px; max-width:calc(100vw - 24px); max-height:calc(100vh - 24px); overflow:auto; background:#fff; border:1px solid var(--border); border-radius:14px; box-shadow:0 14px 40px rgba(10,46,99,.25); padding:12px; font-size:13px; }
+  .pf { position:fixed; z-index:8000; width:340px; max-width:calc(100vw - 24px); max-height:calc(100vh - 24px); overflow:auto; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); box-shadow:0 14px 40px rgba(10,46,99,.25); padding:12px; font-size:var(--fs-base); }
   .pf:not(.fijo) { pointer-events:none; }   /* la ficha al pasar el mouse no tapa clics; para ampliar, ⓘ */
-  .pf-tip { margin-top:8px; font-size:11.5px; color:var(--muted); }
+  .pf-tip { margin-top:8px; font-size:var(--fs-sm); color:var(--muted); }
   .pf.fijo { left:50% !important; top:50% !important; transform:translate(-50%,-50%); width:min(420px, calc(100vw - 24px)); }
   .pf-bg { position:fixed; inset:0; background:rgba(10,20,40,.45); z-index:7999; }
-  .pf-img { width:100%; aspect-ratio:1/1; object-fit:contain; background:var(--bg); border-radius:10px; cursor:zoom-in; }
-  .pf-ph { width:100%; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; font-size:60px; background:var(--bg); border-radius:10px; }
+  .pf-img { width:100%; aspect-ratio:1/1; object-fit:contain; background:var(--bg); border-radius:var(--r); cursor:zoom-in; }
+  .pf-ph { width:100%; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; font-size:60px; background:var(--bg); border-radius:var(--r); }
   .pf-mini { display:flex; gap:6px; margin-top:6px; overflow-x:auto; }
-  .pf-mini img { width:46px; height:46px; object-fit:cover; border-radius:6px; border:2px solid transparent; cursor:pointer; flex:none; }
+  .pf-mini img { width:46px; height:46px; object-fit:cover; border-radius:var(--r-sm); border:2px solid transparent; cursor:pointer; flex:none; }
   .pf-mini img.sel { border-color:var(--blue); }
-  .pf h4 { font-size:15px; margin:10px 0 4px; color:var(--night); line-height:1.3; }
-  .pf-precio { font-size:18px; font-weight:800; color:var(--night); }
-  .pf-precio s { font-size:13px; color:var(--muted); font-weight:500; margin-left:6px; }
+  .pf h4 { font-size:var(--fs-lg); margin:10px 0 4px; color:var(--night); line-height:1.3; }
+  .pf-precio { font-size:var(--fs-xl); font-weight:800; color:var(--night); }
+  .pf-precio s { font-size:var(--fs-base); color:var(--muted); font-weight:500; margin-left:6px; }
   .pf dl { display:grid; grid-template-columns:auto 1fr; gap:3px 10px; margin:8px 0 0; }
   .pf dt { color:var(--muted); } .pf dd { margin:0; font-weight:600; word-break:break-word; }
   .pf-desc { margin-top:8px; color:#444; line-height:1.45; white-space:pre-line; }
@@ -91,12 +92,12 @@
         </div>
       </div>
 
-      <div class="card mb-3" id="aviso-caja" hidden style="border-left:4px solid var(--warning);padding:10px 14px;font-size:13px">
+      <div class="card mb-3" id="aviso-caja" hidden style="border-left:4px solid var(--warning);padding:10px 14px;font-size:var(--fs-base)">
         💵 <b>La caja está cerrada.</b> Podés armar ventas igual: quedan esperando y se cobran cuando se abra la caja.
         <a href="/admin/caja" id="aviso-caja-link" hidden>Abrir la caja →</a>
       </div>
       <div class="card mb-3" id="aviso-sql" hidden style="border-left:4px solid var(--danger)">
-        <div class="card-body" style="font-size:13px">
+        <div class="card-body" style="font-size:var(--fs-base)">
           <b>Falta activar las ventas en la base de datos.</b> Ejecutá <code>sql/013-local-compras-stock.sql</code> en Supabase (ver GUIA-STOCK-Y-VENTAS.md). Hasta entonces esta pantalla no puede registrar ventas.
         </div>
       </div>
@@ -135,7 +136,7 @@
         <!-- ── Ticket ── -->
         <aside class="card pos-ticket" id="ticket">
           <div class="pos-ticket-bar" id="ticket-bar">
-            <div><div style="font-size:12px;color:var(--muted)" id="bar-items">Sin productos</div><b id="bar-total">$ 0</b></div>
+            <div><div style="font-size:var(--fs-sm);color:var(--muted)" id="bar-items">Sin productos</div><b id="bar-total">$ 0</b></div>
             <button type="button" class="btn btn-primary btn-sm" id="bar-abrir">Ver ticket ▲</button>
           </div>
           <div class="card-header"><span class="card-title">Ticket</span><button type="button" class="btn btn-ghost btn-sm" id="btn-vaciar">Vaciar</button></div>
@@ -535,8 +536,8 @@ async function pedirPrecio(nombre, actual) {
     bd.innerHTML = `<div class="modal" style="max-width:360px">
       <div class="modal-header"><h3 class="modal-title">Precio de venta</h3></div>
       <div class="modal-body">
-        <p style="font-size:13px;color:var(--muted);margin-bottom:10px">${esc(nombre)}${actual==null?' no tiene precio cargado. Escribí a cuánto se vende:':''}</p>
-        <input type="text" id="_pp" inputmode="decimal" autocomplete="off" value="${actual ?? ''}" placeholder="0" style="width:100%;min-height:48px;font-size:18px;text-align:right">
+        <p style="font-size:var(--fs-base);color:var(--muted);margin-bottom:10px">${esc(nombre)}${actual==null?' no tiene precio cargado. Escribí a cuánto se vende:':''}</p>
+        <input type="text" id="_pp" inputmode="decimal" autocomplete="off" value="${actual ?? ''}" placeholder="0" style="width:100%;min-height:48px;font-size:var(--fs-xl);text-align:right">
       </div>
       <div class="modal-footer"><button class="btn btn-outline" id="_pno">Cancelar</button><button class="btn btn-primary" id="_pok">Aceptar</button></div></div>`;
     document.body.appendChild(bd);
@@ -655,7 +656,7 @@ function renderTicket() {
   body.innerHTML = lineas + `
     <div class="pos-totales">
       <div class="fila"><span>Subtotal</span><b>${money(subtotal)}</b></div>
-      ${recargoTotal ? `<div class="fila" style="font-size:12.5px;color:var(--muted)"><span>incluye recargo cta. cte.</span><span>${money(recargoTotal)}</span></div>` : ''}
+      ${recargoTotal ? `<div class="fila" style="font-size:var(--fs-base);color:var(--muted)"><span>incluye recargo cta. cte.</span><span>${money(recargoTotal)}</span></div>` : ''}
       <div class="fila"><span>Descuento ($)</span><input type="text" id="desc" inputmode="decimal" autocomplete="off" placeholder="0" value="${esc(descActual)}"></div>
       <div class="pos-total"><span>Total</span><span id="total-txt">${money(subtotal - desc)}</span></div>
     </div>

@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://vduinkzeneokkqzdgxig.supabase.co" crossorigin>
+  <script>try{if(localStorage.getItem('mhTema')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
   <link rel="stylesheet" href="/admin/css/admin.css">
 </head>
 <body>
@@ -126,12 +127,12 @@ function renderTable() {
     const cnt = prodCount[c.id] || {total:0,activos:0};
     return `<tr>
       <td><div style="font-weight:500">${c.nombre}</div></td>
-      <td><code style="font-size:11px;background:var(--bg);padding:2px 6px;border-radius:4px">${c.slug}</code></td>
+      <td><code style="font-size:var(--fs-xs);background:var(--bg);padding:2px 6px;border-radius:4px">${c.slug}</code></td>
       <td style="text-align:center">
         ${cnt.total === 0
           ? '<span class="badge badge-warning" data-tip="Sin productos: no aparece con contenido en la tienda">Vacía</span>'
           : `<span style="font-weight:600">${cnt.total}</span>
-             <span style="color:var(--muted);font-size:11px"> (${cnt.activos} act.)</span>`}
+             <span style="color:var(--muted);font-size:var(--fs-xs)"> (${cnt.activos} act.)</span>`}
       </td>
       <td>${c.activo?'<span class="badge badge-success">Activa</span>':'<span class="badge badge-muted">Inactiva</span>'}</td>
       <td>
